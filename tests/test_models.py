@@ -40,6 +40,7 @@ def shoulder(naan, manager):
 # N2  NAAN は文字列
 # --------------------------------------------------------------------------
 
+
 def test_n2_leading_zero_naans_coexist():
     """`099999` と `99999` は**別の行**として共存できる。"""
     Naan.objects.create(naan="99999", name="A")
@@ -51,6 +52,7 @@ def test_n2_leading_zero_naans_coexist():
 # --------------------------------------------------------------------------
 # D3  権威と転送先は排他
 # --------------------------------------------------------------------------
+
 
 def test_d3_authoritative_naan_cannot_have_a_redirect():
     with pytest.raises(IntegrityError):
@@ -73,6 +75,7 @@ def test_d3_delegated_naan_is_allowed(naan):
 # B2  shoulder の規約
 # --------------------------------------------------------------------------
 
+
 def test_b2_shoulder_validator_rejects_multi_segment(naan):
     s = Shoulder(shoulder="/kb1/x2", naan=naan)
     with pytest.raises(ValidationError):
@@ -88,6 +91,7 @@ def test_b2_shoulder_is_unique_per_naan(naan, manager):
 # --------------------------------------------------------------------------
 # E1 / I6  既存 ARK を黙って上書きしない
 # --------------------------------------------------------------------------
+
 
 def test_e1_bare_save_cannot_create_an_ark(shoulder, naan):
     """**arklet で最重大だった欠陥を、モデル側で不可能にする。**"""
@@ -114,6 +118,7 @@ def test_updating_an_existing_ark_still_works(shoulder):
 # --------------------------------------------------------------------------
 # 採番
 # --------------------------------------------------------------------------
+
 
 def test_mint_produces_a_verifiable_ark(shoulder):
     ark, collisions = Ark.objects.mint(shoulder=shoulder, url="https://x.example/", title="t")
@@ -142,11 +147,17 @@ def test_mint_is_unique_across_many(shoulder):
 # I5  条件つき unique 制約でローテーションを表現する
 # --------------------------------------------------------------------------
 
+
 def _client(manager, naan, label, active=True, **kw):
     return Client.objects.create(
-        name=label, label=label, manager=manager, naan=naan, active=active,
+        name=label,
+        label=label,
+        manager=manager,
+        naan=naan,
+        active=active,
         client_type=Client.CLIENT_CONFIDENTIAL,
-        authorization_grant_type=Client.GRANT_CLIENT_CREDENTIALS, **kw
+        authorization_grant_type=Client.GRANT_CLIENT_CREDENTIALS,
+        **kw,
     )
 
 
@@ -168,7 +179,10 @@ def test_i5_rotation_deactivate_then_reissue(manager, naan):
 
 def test_break_glass_client_carries_expiry(manager, naan):
     c = _client(
-        manager, naan, "incident-2026-08", authority=Client.Authority.NAAN,
+        manager,
+        naan,
+        "incident-2026-08",
+        authority=Client.Authority.NAAN,
         expires_at=timezone.now() + timezone.timedelta(hours=72),
     )
     assert c.authority == "naan"
@@ -179,6 +193,7 @@ def test_break_glass_client_carries_expiry(manager, naan):
 # P2 の出口条件: オンボーディングを 1 通り通せる
 # --------------------------------------------------------------------------
 
+
 def test_onboarding_walkthrough():
     """判定 → Manager → shoulder → default → Client → 採番 まで通す。
 
@@ -186,10 +201,16 @@ def test_onboarding_walkthrough():
     個別 NAAN の機関でも手順は同じになる。
     """
     # 1. 判定: 個別 NAAN を渡す機関（岡崎3研究所を想定）
-    n = Naan.objects.create(naan="12345", name="基礎生物学研究所", is_authoritative=True,
-                            na_policy="NP | NR, OP, CC | 2026 |")
+    n = Naan.objects.create(
+        naan="12345",
+        name="基礎生物学研究所",
+        is_authoritative=True,
+        na_policy="NP | NR, OP, CC | 2026 |",
+    )
     # 2. Manager
-    m = Manager.objects.create(naan=n, name="NIBB", commitment_level=CommitmentLevel.PERMANENT_STABLE)
+    m = Manager.objects.create(
+        naan=n, name="NIBB", commitment_level=CommitmentLevel.PERMANENT_STABLE
+    )
     # 3. shoulder（3 文字・乱数・不透明）
     s = Shoulder.objects.create(shoulder=generate_shoulder(), naan=n, manager=m)
     s.full_clean()
@@ -199,8 +220,9 @@ def test_onboarding_walkthrough():
     # 5. Client
     c = _client(m, n, "nibb-ingest", allowed_scopes="ark:mint")
     # 6. 採番
-    ark, _ = Ark.objects.mint(shoulder=m.default_shoulder, url="https://nibb.example/r/1",
-                              created_by=c.client_id)
+    ark, _ = Ark.objects.mint(
+        shoulder=m.default_shoulder, url="https://nibb.example/r/1", created_by=c.client_id
+    )
     naan_part, _, name = ark.ark.partition("/")
     assert naan_part == "12345"
     assert verify_ark_check_digit(naan_part, name)

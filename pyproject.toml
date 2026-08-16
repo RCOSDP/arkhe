@@ -29,3 +29,6 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+# 日本語の散文行は文字数と表示幅がずれるので E501 は使わない。
+# コード行の折り返しは `ruff format` に任せる。
+ignore = ["E501"]

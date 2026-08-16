@@ -169,7 +169,9 @@ class Client(AbstractApplication):
     naan = models.ForeignKey(Naan, on_delete=models.PROTECT, related_name="clients")
 
     #: **到達範囲はクライアント登録の属性。トークン要求で指定させない**（権限昇格を防ぐ）。
-    authority = models.CharField(max_length=16, choices=Authority.choices, default=Authority.MANAGER)
+    authority = models.CharField(
+        max_length=16, choices=Authority.choices, default=Authority.MANAGER
+    )
 
     #: 付与する操作。**S1-2: `SCOPES_BACKEND_CLASS` でこれを強制しないと、
     #: 登録に無い scope をトークン要求で取れてしまう。**
@@ -255,7 +257,7 @@ class Ark(models.Model):
     format = models.TextField(blank=True, default="")
     relation = models.TextField(blank=True, default="")
     source = models.TextField(blank=True, default="")
-    who = models.TextField(blank=True, default="")   # C3
+    who = models.TextField(blank=True, default="")  # C3
     when = models.TextField(blank=True, default="")  # C3
 
     # R2: 監査証跡

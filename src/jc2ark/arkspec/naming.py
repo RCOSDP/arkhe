@@ -130,8 +130,7 @@ def is_structural_at(text: str, index: int) -> bool:
     if index == 0 or index == len(text) - 1:
         return False
     return (
-        text[index - 1] not in QUALIFIER_SEPARATORS
-        and text[index + 1] not in QUALIFIER_SEPARATORS
+        text[index - 1] not in QUALIFIER_SEPARATORS and text[index + 1] not in QUALIFIER_SEPARATORS
     )
 
 

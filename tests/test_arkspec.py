@@ -42,6 +42,7 @@ from jc2ark.arkspec.shoulder import (
 # betanumeric / チェックディジット
 # --------------------------------------------------------------------------
 
+
 def test_betanumeric_charset_excludes_vowels_and_ell():
     assert len(BETANUMERIC) == 29
     for banned in "aeioul":
@@ -99,8 +100,8 @@ def test_verify_ark_check_digit_takes_naan_and_name():
     base = check_digit_base(naan, f"{shoulder}{noid}")
     name = f"{shoulder}{noid}{noid_check_digit(base)}"
     assert verify_ark_check_digit(naan, name)
-    assert not verify_ark_check_digit("99998", name)   # NAAN 違いは弾く
-    assert not verify_check_digit(name)                # name だけでは合わない
+    assert not verify_ark_check_digit("99998", name)  # NAAN 違いは弾く
+    assert not verify_check_digit(name)  # name だけでは合わない
 
 
 def test_check_digit_base_includes_the_slash():
@@ -131,6 +132,7 @@ def test_generate_noid_uses_only_betanumeric():
 # A1  ラベルの大小非依存 / NAAN は小文字化・name は大小保持
 # --------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("label", ["ark:", "ARK:", "Ark:", "aRk:"])
 def test_a1_label_is_case_insensitive(label):
     parsed = parse_ark(f"{label}/99999/kb1d191j10ds")
@@ -140,7 +142,7 @@ def test_a1_label_is_case_insensitive(label):
 
 def test_a1_naan_is_lowercased_but_name_keeps_case():
     parsed = parse_ark("ark:/BCD12/Kb1D191J10ds")
-    assert parsed.naan == "bcd12"      # NAAN は小文字化
+    assert parsed.naan == "bcd12"  # NAAN は小文字化
     assert parsed.name == "Kb1D191J10ds"  # name の大小は保持
 
 
@@ -158,6 +160,7 @@ def test_a1_nma_prefix_is_returned():
 # --------------------------------------------------------------------------
 # N2  NAAN は文字列。先頭ゼロは別の NAAN
 # --------------------------------------------------------------------------
+
 
 def test_n2_leading_zero_is_a_different_naan():
     """**arklet の最重要バグ。** `int(naan)` で `099999` と `99999` が潰れていた。"""
@@ -177,6 +180,7 @@ def test_n2_naan_is_str_not_int():
 # N3  betanumeric NAAN（歴史的 NAAN）
 # --------------------------------------------------------------------------
 
+
 def test_n3_betanumeric_naan_is_accepted():
     assert parse_ark("ark:/bcd12/xyz").naan == "bcd12"
 
@@ -190,6 +194,7 @@ def test_n3_naan_rejects_non_betanumeric():
 # --------------------------------------------------------------------------
 # F1  NAAN の長さ制限
 # --------------------------------------------------------------------------
+
 
 def test_f1_overlong_naan_is_rejected_before_conversion():
     with pytest.raises(ArkParseError):
@@ -207,6 +212,7 @@ def test_malformed_arks_are_rejected():
 # A2  ハイフンは無意味
 # --------------------------------------------------------------------------
 
+
 def test_a2_hyphens_are_insignificant():
     assert strip_hyphens("kb1d-191j-10ds") == "kb1d191j10ds"
     assert strip_hyphens("kb1d191j10ds") == "kb1d191j10ds"
@@ -222,6 +228,7 @@ def test_a2_split_measures_head_without_hyphens_but_keeps_tail_verbatim():
 # N4  構造文字の正規化 / `.` は両側に非構造文字が要る
 # --------------------------------------------------------------------------
 
+
 def test_n4_consecutive_slashes_are_collapsed():
     assert normalize_structural("kb1xyz//entry") == "kb1xyz/entry"
     assert normalize_structural("kb1xyz///a//b") == "kb1xyz/a/b"
@@ -229,10 +236,10 @@ def test_n4_consecutive_slashes_are_collapsed():
 
 def test_n4_period_needs_non_structural_on_both_sides():
     assert is_structural_at("a.b", 1)
-    assert not is_structural_at("a..b", 1)   # 右が構造文字
-    assert not is_structural_at("a..b", 2)   # 左が構造文字
-    assert not is_structural_at(".ab", 0)    # 先頭
-    assert not is_structural_at("ab.", 2)    # 末尾
+    assert not is_structural_at("a..b", 1)  # 右が構造文字
+    assert not is_structural_at("a..b", 2)  # 左が構造文字
+    assert not is_structural_at(".ab", 0)  # 先頭
+    assert not is_structural_at("ab.", 2)  # 末尾
 
 
 def test_n4_no_impossible_ancestor_from_double_period():
@@ -243,6 +250,7 @@ def test_n4_no_impossible_ancestor_from_double_period():
 # --------------------------------------------------------------------------
 # D5 / B3  祖先は最長一致。`.`（変種）も走査対象
 # --------------------------------------------------------------------------
+
 
 def test_d5_ancestors_are_yielded_longest_first():
     got = list(gen_prefixes("nx1npwkrkq4v/entry/instrument/detector"))
@@ -272,6 +280,7 @@ def test_no_ancestors_for_a_bare_name():
 # B2 / N5  shoulder の規約と不透明性
 # --------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("good", ["/x5", "/kb1", "/bcd7", "/z9"])
 def test_b2_valid_shoulders(good):
     validate_shoulder(good)
@@ -290,12 +299,12 @@ def test_n5_generated_shoulders_are_opaque_and_valid():
     for _ in range(200):
         s = generate_shoulder()
         validate_shoulder(s)
-        assert len(s) == 4          # '/' + 2 子音 + 1 数字
-        assert s[-1].isdigit()      # first-digit 規約の末尾
+        assert len(s) == 4  # '/' + 2 子音 + 1 数字
+        assert s[-1].isdigit()  # first-digit 規約の末尾
 
 
 def test_shoulder_capacity_matches_the_design():
-    assert shoulder_capacity(3) == 3610   # 800 機関で使用率 22.2%
+    assert shoulder_capacity(3) == 3610  # 800 機関で使用率 22.2%
     assert shoulder_capacity(2) == 190
 
 
