@@ -65,6 +65,7 @@ class MintView(_Base):
         s = MintSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         shoulder = authz.shoulder_for(client, s.validated_data.get("shoulder") or None)
+        authz.assert_within_quota(client)
         ark, _ = Ark.objects.mint(
             shoulder=shoulder, created_by=client.client_id, **s.fields_for_mint()
         )
@@ -86,6 +87,7 @@ class BulkMintView(_Base):
             raise ValidationError({"data": f"1 リクエストは {BULK_LIMIT} 件まで"})
         # 到達範囲の検証を**先に全件済ませる**（1 件でも範囲外なら何も作らない）。
         shoulders = [authz.shoulder_for(client, r.get("shoulder") or None) for r in rows]
+        authz.assert_within_quota(client, len(rows))
         made = []
         with transaction.atomic():
             for sh, row in zip(shoulders, rows, strict=True):

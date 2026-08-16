@@ -9,7 +9,15 @@
 
 from __future__ import annotations
 
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from datetime import timedelta
+
+from django.utils import timezone
+from rest_framework.exceptions import (
+    NotFound,
+    PermissionDenied,
+    Throttled,
+    ValidationError,
+)
 
 from .models import Ark, AuditEvent, Client, Shoulder
 
@@ -96,6 +104,27 @@ def fetch_for_update(client: Client, keys: list[str]) -> dict[str, Ark]:
     if missing:
         raise NotFound({"missing": missing[:20], "count": len(missing)})
     return found
+
+
+def assert_within_quota(client: Client, count: int = 1) -> None:
+    """R3: 機関単位の 1 日あたり採番上限。**一機関の暴走を止める。**
+
+    `Manager.quota_per_day` が null なら無制限。break-glass（authority=naan）は
+    manager を持たないので対象外——障害対応で止まっては困る。
+    """
+    manager = client.manager
+    if manager is None or manager.quota_per_day is None:
+        return
+    since = timezone.now() - timedelta(days=1)
+    used = Ark.objects.filter(shoulder__manager_id=manager.pk, created_at__gte=since).count()
+    if used + count > manager.quota_per_day:
+        raise Throttled(
+            detail={
+                "quota_per_day": manager.quota_per_day,
+                "used_last_24h": used,
+                "requested": count,
+            }
+        )
 
 
 def audit(client: Client, action: str, target: str = "", **detail) -> None:

@@ -348,3 +348,35 @@ def test_openapi_declares_the_scopes(client, world):
     schema = r.json()
     assert schema["paths"]["/mint"]["post"]["security"][0]["oauth2"] == ["ark:mint"]
     assert schema["paths"]["/update"]["put"]["security"][0]["oauth2"] == ["ark:update"]
+
+
+# --------------------------------------------------------------------------
+# R3  割当量
+# --------------------------------------------------------------------------
+
+
+def test_r3_quota_stops_a_runaway_manager(client, world):
+    world["A"].quota_per_day = 2
+    world["A"].save()
+    ca = make_client(world["A"], world["naan"], "a")
+    h = auth(client, ca)
+    assert post(client, "/mint", h, {}).status_code == 201
+    assert post(client, "/mint", h, {}).status_code == 201
+    assert post(client, "/mint", h, {}).status_code == 429
+
+
+def test_r3_bulk_mint_checks_the_whole_batch(client, world):
+    world["A"].quota_per_day = 3
+    world["A"].save()
+    ca = make_client(world["A"], world["naan"], "a")
+    r = post(client, "/bulk_mint", auth(client, ca), {"data": [{}, {}, {}, {}]})
+    assert r.status_code == 429
+    assert Ark.objects.count() == 0
+
+
+def test_r3_break_glass_is_not_throttled(client, world):
+    """障害対応で止まっては困るので、break-glass は quota の対象外。"""
+    world["A"].quota_per_day = 0
+    world["A"].save()
+    c = make_client(None, world["naan"], "bg", authority=Client.Authority.NAAN)
+    assert post(client, "/mint", auth(client, c), {"shoulder": "/kb1"}).status_code == 201
