@@ -7,11 +7,21 @@ arklet は combined で minter も 302 を返していたが、ここでは分�
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from jc2ark.ark import views_resolve
+from jc2ark.ark import views_api, views_resolve
 
 minter_patterns = [
+    # OAuth2: /o/token/ ・ revoke ・ introspect ・ .well-known
     path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
+    path("mint", views_api.MintView.as_view(), name="mint"),
+    path("update", views_api.UpdateView.as_view(), name="update"),
+    path("bulk_mint", views_api.BulkMintView.as_view(), name="bulk_mint"),
+    path("bulk_update", views_api.BulkUpdateView.as_view(), name="bulk_update"),
+    path("bulk_query", views_api.BulkQueryView.as_view(), name="bulk_query"),
+    # OpenAPI（外部機関が既製のクライアントで繋げるように出す）
+    path("openapi.json", SpectacularAPIView.as_view(), name="schema"),
+    path("docs", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
     path("admin/", admin.site.urls),
 ]
 
