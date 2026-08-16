@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>{{ erc.ark }}</title>
+<style>
+ body{font:16px/1.7 system-ui,sans-serif;max-width:52rem;margin:3rem auto;padding:0 1.5rem;color:#1a1a1a}
+ h1{font-size:1.15rem;font-family:ui-monospace,monospace;word-break:break-all;margin:0 0 .25rem}
+ .note{color:#666;font-size:.85rem;margin:0 0 2rem}
+ dl{display:grid;grid-template-columns:9rem 1fr;gap:.5rem 1.5rem;margin:0}
+ dt{color:#666;font-size:.85rem}
+ dd{margin:0;word-break:break-word}
+ code{font-family:ui-monospace,monospace;background:#f4f4f5;padding:.1em .35em;border-radius:3px}
+ @media(prefers-color-scheme:dark){body{background:#111;color:#eee}.note,dt{color:#999}code{background:#222}}
+</style>
+<h1>{{ erc.ark }}</h1>
+{% if res.inherited_from %}
+  <p class="note">このメタデータは <code>{{ res.inherited_from }}</code> から継承しています
+  （修飾子 <code>{{ res.suffix }}</code> の部分は採番されていません）。</p>
+{% elif not erc.where %}
+  <p class="note">この識別子に転送先はありません。<strong>記述そのものが応答です。</strong>
+  物理オブジェクトなど、所在が変わりうる対象に使われます。</p>
+{% endif %}
+<dl>
+  {% if erc.what %}<dt>what</dt><dd>{{ erc.what }}</dd>{% endif %}
+  {% if erc.who %}<dt>who</dt><dd>{{ erc.who }}</dd>{% endif %}
+  {% if erc.when %}<dt>when</dt><dd>{{ erc.when }}</dd>{% endif %}
+  {% if erc.where %}<dt>where</dt><dd><a href="{{ erc.where }}">{{ erc.where }}</a></dd>{% endif %}
+  {% if erc.type %}<dt>type</dt><dd>{{ erc.type }}</dd>{% endif %}
+  {% if erc.format %}<dt>format</dt><dd><code>{{ erc.format }}</code></dd>{% endif %}
+  {% if erc.identifier %}<dt>identifier</dt><dd><code>{{ erc.identifier }}</code></dd>{% endif %}
+  {% if erc.relation %}<dt>relation</dt><dd>{{ erc.relation }}</dd>{% endif %}
+  {% if erc.source %}<dt>source</dt><dd>{{ erc.source }}</dd>{% endif %}
+  {% if erc.commitment %}<dt>commitment</dt><dd>{{ erc.commitment }}</dd>{% endif %}
+  {% if erc.commitment_level %}<dt>水準</dt><dd><code>{{ erc.commitment_level }}</code></dd>{% endif %}
+</dl>
