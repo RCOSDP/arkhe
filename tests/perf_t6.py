@@ -90,7 +90,7 @@ def test_t6_mint_latency_is_independent_of_client_count(capsys):
             hdr = {"HTTP_AUTHORIZATION": f"Bearer {tok}"}
             t_tok, _ = _timed(get_token, 5)
             med, p95 = _timed(
-                lambda: http.post("/mint", data="{}", content_type="application/json", **hdr)
+                lambda h=hdr: http.post("/mint", data="{}", content_type="application/json", **h)
             )
             results[total] = med
             print(f"  {total:>12} {t_tok:>10.1f}ms {med:>12.2f}ms {p95:>9.2f}ms")
