@@ -53,6 +53,13 @@ def shoulder_for(client: Client, requested: str | None) -> Shoulder:
     if manager is None or not manager.active:
         raise PermissionDenied("client has no active manager")
 
+    # **クライアントが shoulder に固定されている場合はそれだけ。**
+    # 同じ shoulder を複数のクライアントが使うのは正常（鍵は共有しない）。
+    if client.shoulder_id is not None:
+        if requested and requested != client.shoulder.shoulder:
+            raise PermissionDenied(f"shoulder {requested} はこのクライアントの範囲外")
+        return client.shoulder
+
     if not requested:
         if manager.default_shoulder_id is None:
             raise ValidationError({"shoulder": "この機関に default_shoulder が設定されていない"})

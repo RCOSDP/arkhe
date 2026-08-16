@@ -380,3 +380,121 @@ def test_r3_break_glass_is_not_throttled(client, world):
     world["A"].save()
     c = make_client(None, world["naan"], "bg", authority=Client.Authority.NAAN)
     assert post(client, "/mint", auth(client, c), {"shoulder": "/kb1"}).status_code == 201
+
+
+# --------------------------------------------------------------------------
+# 同一 shoulder に複数のクライアント（鍵を共有しない）
+# --------------------------------------------------------------------------
+
+
+def test_multiple_clients_share_a_shoulder_but_not_keys(client, world):
+    """**同一 naan.shoulder に対して採番する主体は複数いるのが普通。**
+
+    InvenioRDM の web-api / worker、一括投入バッチ、外部システム。
+    それぞれに別の資格情報を出し、**鍵は共有しない**。
+    """
+    from jc2ark.ark.onboarding import issue_client
+
+    api, s_api = issue_client(manager=world["A"], label="web-api", shoulder=world["sa"])
+    wrk, s_wrk = issue_client(manager=world["A"], label="worker", shoulder=world["sa"])
+    assert api.client_id != wrk.client_id
+    assert s_api != s_wrk
+
+    for c, sec in ((api, s_api), (wrk, s_wrk)):
+        r = client.post(
+            "/o/token/",
+            {"grant_type": "client_credentials", "client_id": c.client_id, "client_secret": sec},
+        )
+        tok = json.loads(r.content)["access_token"]
+        made = post(client, "/mint", {"HTTP_AUTHORIZATION": f"Bearer {tok}"}, {})
+        assert made.status_code == 201
+        # **同じ shoulder に入る**
+        assert made.json()["ark"].startswith("ark:/99999/kb1")
+        # **誰が採番したかは分かれる**
+        assert (
+            Ark.objects.get(pk=made.json()["ark"].removeprefix("ark:/")).created_by == c.client_id
+        )
+
+
+def test_revoking_one_client_does_not_affect_the_others(client, world):
+    """鍵を分けておく最大の利点。**1 つ漏れても、それだけ止められる。**"""
+    from jc2ark.ark.onboarding import issue_client
+
+    api, s_api = issue_client(manager=world["A"], label="web-api", shoulder=world["sa"])
+    wrk, s_wrk = issue_client(manager=world["A"], label="worker", shoulder=world["sa"])
+
+    def mint_with(c, sec):
+        r = client.post(
+            "/o/token/",
+            {"grant_type": "client_credentials", "client_id": c.client_id, "client_secret": sec},
+        )
+        tok = json.loads(r.content).get("access_token")
+        if tok is None:
+            return 401
+        return post(client, "/mint", {"HTTP_AUTHORIZATION": f"Bearer {tok}"}, {}).status_code
+
+    assert mint_with(api, s_api) == 201
+    api.active = False
+    api.save()
+    assert mint_with(api, s_api) in (401, 403), "止めた側は使えない"
+    assert mint_with(wrk, s_wrk) == 201, "もう一方は動き続ける"
+
+
+def test_clients_can_have_different_scopes_on_the_same_shoulder(client, world):
+    """用途ごとに絞れる。**投入専用には mint だけ渡す。**"""
+    from jc2ark.ark.onboarding import issue_client
+
+    ingest, s1 = issue_client(
+        manager=world["A"], label="ingest", scopes="ark:mint", shoulder=world["sa"]
+    )
+    curate, s2 = issue_client(
+        manager=world["A"], label="curate", scopes="ark:mint ark:update", shoulder=world["sa"]
+    )
+
+    def hdr(c, sec):
+        r = client.post(
+            "/o/token/",
+            {"grant_type": "client_credentials", "client_id": c.client_id, "client_secret": sec},
+        )
+        return {"HTTP_AUTHORIZATION": f"Bearer {json.loads(r.content)['access_token']}"}
+
+    h1, h2 = hdr(ingest, s1), hdr(curate, s2)
+    made = post(client, "/mint", h1, {"url": "https://a.example/"}).json()["ark"]
+    assert put(client, "/update", h1, {"ark": made, "url": "https://b.example/"}).status_code == 403
+    assert put(client, "/update", h2, {"ark": made, "url": "https://b.example/"}).status_code == 200
+
+
+def test_a_pinned_client_cannot_use_another_shoulder_of_the_same_manager(client, world):
+    """shoulder に固定したクライアントは、同じ機関の別 shoulder にも行けない。"""
+    from jc2ark.ark.models import Shoulder
+    from jc2ark.ark.onboarding import issue_client
+
+    other = Shoulder.objects.create(shoulder="/kb9", naan=world["naan"], manager=world["A"])
+    c, sec = issue_client(manager=world["A"], label="pinned", shoulder=world["sa"])
+    r = client.post(
+        "/o/token/",
+        {"grant_type": "client_credentials", "client_id": c.client_id, "client_secret": sec},
+    )
+    h = {"HTTP_AUTHORIZATION": f"Bearer {json.loads(r.content)['access_token']}"}
+    assert post(client, "/mint", h, {"shoulder": other.shoulder}).status_code == 403
+    assert post(client, "/mint", h, {"shoulder": "/kb1"}).status_code == 201
+
+
+def test_two_active_clients_cannot_share_a_label(world):
+    """**用途名で区別できるようにする。** どれを失効させるか迷わないため。"""
+    from django.db import IntegrityError
+
+    from jc2ark.ark.onboarding import issue_client
+
+    issue_client(manager=world["A"], label="web-api")
+    with pytest.raises(IntegrityError):
+        issue_client(manager=world["A"], label="web-api")
+
+
+def test_issue_client_command(world, capsys):
+    from django.core.management import call_command
+
+    call_command("issue_client", "機関A", "batch-importer", "--shoulder", "/kb1")
+    out = capsys.readouterr().out
+    assert "追加クライアントを発行した" in out
+    assert "共有しないこと" in out

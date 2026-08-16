@@ -79,6 +79,35 @@ def onboard(
 
 
 @transaction.atomic
+def issue_client(
+    *, manager: Manager, label: str, scopes: str = "ark:mint", shoulder: Shoulder | None = None
+) -> tuple[Client, str]:
+    """既存の機関に**追加の**クライアントを発行する。
+
+    **同一 shoulder に複数のクライアントが並ぶのは正常。** 鍵を共有させないための
+    仕組みで、`(manager, label)` が有効なものの中で一意になる。
+    """
+    if not label.strip():
+        raise ValueError("label（用途）は必須")
+    if shoulder is not None and shoulder.manager_id != manager.pk:
+        raise ValueError("shoulder がこの機関のものでない")
+    secret = secrets.token_urlsafe(32)
+    client = Client(
+        name=f"{manager.name} / {label}",
+        label=label,
+        manager=manager,
+        naan=manager.naan,
+        shoulder=shoulder,
+        allowed_scopes=scopes,
+        client_type=Client.CLIENT_CONFIDENTIAL,
+        authorization_grant_type=Client.GRANT_CLIENT_CREDENTIALS,
+        client_secret=secret,
+    )
+    client.save()
+    return client, secret
+
+
+@transaction.atomic
 def issue_break_glass(
     *, naan: Naan, label: str, hours: int = 72, scopes: str = "ark:mint ark:update"
 ) -> tuple[Client, str]:

@@ -173,6 +173,16 @@ class Client(AbstractApplication):
         max_length=16, choices=Authority.choices, default=Authority.MANAGER
     )
 
+    #: **この Client が使える shoulder を 1 つに固定する**（任意）。
+    #:
+    #: **同一 shoulder に対して複数のクライアントが採番しうる**——InvenioRDM の
+    #: web-api / worker / 一括投入バッチのように、同じ名前空間を使う主体が複数
+    #: いるのが普通。**それぞれに別の資格情報を発行し、鍵を共有させない。**
+    #: null なら manager が持つ shoulder のどれでも使える。
+    shoulder = models.ForeignKey(
+        "Shoulder", null=True, blank=True, on_delete=models.PROTECT, related_name="clients"
+    )
+
     #: 付与する操作。**S1-2: `SCOPES_BACKEND_CLASS` でこれを強制しないと、
     #: 登録に無い scope をトークン要求で取れてしまう。**
     allowed_scopes = models.CharField(max_length=200, default="ark:mint")
