@@ -59,6 +59,21 @@ def verify_check_digit(base_with_digit: str) -> bool:
     return noid_check_digit(body) == digit
 
 
+def check_digit_base(naan: str, name_without_digit: str) -> str:
+    """検査桁を計算する対象（base compact name）を組み立てる。
+
+    ⚠️ **NAAN と name のあいだの `/` を含める。** 仕様は「label を除いた base
+    compact name に対して計算する」と定めており、compact name は `99999/kb1…`
+    である。arklet も `f"{naan}{shoulder}{noid}"`（shoulder は `/kb1`）として
+    スラッシュを含んでいる。
+
+    **`/` は betanumeric に無いのでスコアには算入されないが、以降の文字の位置を
+    1 つずらすため、含めるかどうかで検査桁が変わる。** 揃えないと arklet が採番
+    した ARK と相互に検証できない。
+    """
+    return f"{naan}/{name_without_digit}"
+
+
 def verify_ark_check_digit(naan: str, name: str) -> bool:
     """`ark:/<naan>/<name>` の検査桁を検証する。**呼び出し側はこちらを使う。**
 
@@ -69,7 +84,9 @@ def verify_ark_check_digit(naan: str, name: str) -> bool:
     修飾子（`/` や `.` 以降）は検査桁の対象外（N7）なので、**base name だけを
     渡すこと**。祖先探索で切り出した base を渡す想定。
     """
-    return verify_check_digit(f"{naan}{name}")
+    if len(name) < 2:
+        return False
+    return noid_check_digit(check_digit_base(naan, name[:-1])) == name[-1]
 
 
 def generate_noid(length: int) -> str:

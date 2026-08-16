@@ -9,7 +9,7 @@ dependencies = []
 [project.optional-dependencies]
 app = ["Django>=5.2,<6.0", "django-oauth-toolkit>=3.4,<4.0",
        "djangorestframework>=3.18", "drf-spectacular>=0.30", "psycopg[binary]>=3.2"]
-dev = ["pytest>=8", "pytest-cov", "ruff"]
+dev = ["pytest>=8", "pytest-django", "pytest-cov", "ruff"]
 
 [build-system]
 requires = ["hatchling"]
@@ -21,6 +21,7 @@ packages = ["src/jc2ark"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+DJANGO_SETTINGS_MODULE = "jc2ark.entrypoints.settings"
 
 [tool.ruff]
 line-length = 100

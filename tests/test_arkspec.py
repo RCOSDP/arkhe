@@ -14,6 +14,7 @@ import pytest
 from jc2ark.arkspec.betanumeric import (
     BETANUMERIC,
     CONSONANTS,
+    check_digit_base,
     generate_noid,
     noid_check_digit,
     verify_ark_check_digit,
@@ -90,16 +91,32 @@ def test_verify_check_digit_roundtrip():
 
 
 def test_verify_ark_check_digit_takes_naan_and_name():
-    """検査桁は **naan + shoulder + noid** に対して計算される（N7）。
+    """検査桁は **naan + "/" + shoulder + noid** に対して計算される（N7）。
 
     blade だけを渡すと合わない——この API の誤用は実際に踏んだので固定する。
     """
     naan, shoulder, noid = "99999", "kb1", "d191j10d"
-    base = f"{naan}{shoulder}{noid}"
+    base = check_digit_base(naan, f"{shoulder}{noid}")
     name = f"{shoulder}{noid}{noid_check_digit(base)}"
     assert verify_ark_check_digit(naan, name)
     assert not verify_ark_check_digit("99998", name)   # NAAN 違いは弾く
-    assert not verify_check_digit(name)                # blade+shoulder だけでは合わない
+    assert not verify_check_digit(name)                # name だけでは合わない
+
+
+def test_check_digit_base_includes_the_slash():
+    """**NAAN と name のあいだの `/` を含める。**
+
+    `/` は betanumeric に無いのでスコアには入らないが、以降の文字の位置を 1 つ
+    ずらすため、含めるかどうかで検査桁が変わる。arklet と揃えないと相互に検証
+    できなくなる。
+    """
+    naan, name = "99999", "kb1d191j10d"
+    assert check_digit_base(naan, name) == "99999/kb1d191j10d"
+    with_slash = noid_check_digit(f"{naan}/{name}")
+    without_slash = noid_check_digit(f"{naan}{name}")
+    assert with_slash != without_slash, "スラッシュの有無で値が変わることを固定する"
+    # arklet の採番と同じ組み立て（shoulder に先頭スラッシュを含む形）と一致する
+    assert noid_check_digit(f"{naan}{'/kb1'}{'d191j10d'}") == with_slash
 
 
 def test_generate_noid_uses_only_betanumeric():
