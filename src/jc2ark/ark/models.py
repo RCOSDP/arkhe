@@ -71,6 +71,11 @@ class Naan(models.Model):
     #: NAA ポリシー。`NP | NR, OP, CC | 2026 | <URL>`（`ark_design_policy.md` §5）。
     na_policy = models.CharField(max_length=500, blank=True, default="")
 
+    #: **この NAAN の採番を外で行う場合の案内先。** 解決はここが続けることが
+    #: ありうる（`is_authoritative=True` のまま minter だけ外）。`/.well-known/ark`
+    #: で公開し、クライアントがどこへ行けばよいか分かるようにする。
+    minter = models.URLField(blank=True, default="")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -123,6 +128,20 @@ class Manager(models.Model):
         return f"{self.name} @ {self.naan_id}"
 
 
+class ShoulderStatus(models.TextChoices):
+    """shoulder の管理状態。
+
+    **名前空間は一度配ったら取り戻せない**（NR を宣言する以上、既存 ARK は解決し
+    続ける）。だから「押さえてあるが使わせない」「もう新規は採らない」を状態として
+    持てるようにする。
+    """
+
+    ACTIVE = "active", "採番できる"
+    RESERVED = "reserved", "**リザーブ枠。** 名前空間を押さえてあるだけで採番できない"
+    DELEGATED = "delegated", "**採番は外部 minter。** ここでは受けず案内する"
+    RETIRED = "retired", "新規採番はしない。**既存 ARK は解決し続ける**（NR）"
+
+
 class Shoulder(models.Model):
     """NAAN の下位名前空間。機関への名前空間の委譲を担う。"""
 
@@ -139,14 +158,32 @@ class Shoulder(models.Model):
     #: 先頭の `303 ` に対応する（実装は解決フロー側）。
     redirect = models.CharField(max_length=500, blank=True, default="")
 
-    #: N2T の `minter`。**第1期は未使用**（採番の委譲は個別 NAAN で行う）。
+    #: N2T の `minter`。**採番の委譲先。** `status=delegated` のとき、mint 要求は
+    #: ここへ案内する（**プロキシしない**。理由は `views_api.MintView` を参照）。
     minter = models.URLField(blank=True, default="")
+
+    status = models.CharField(
+        max_length=16, choices=ShoulderStatus.choices, default=ShoulderStatus.ACTIVE, db_index=True
+    )
+    #: リザーブや委譲の理由。運用の記録。
+    note = models.CharField(max_length=500, blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        constraints = [UniqueConstraint(fields=["shoulder", "naan"], name="uniq_shoulder_per_naan")]
+        constraints = [
+            UniqueConstraint(fields=["shoulder", "naan"], name="uniq_shoulder_per_naan"),
+            # 委譲するなら行き先が要る。無いと mint 要求を案内できない。
+            models.CheckConstraint(
+                condition=~Q(status="delegated") | ~Q(minter=""),
+                name="delegated_shoulder_needs_a_minter",
+            ),
+        ]
+
+    @property
+    def can_mint_here(self) -> bool:
+        return self.status == ShoulderStatus.ACTIVE
 
     def __str__(self) -> str:
         return f"{self.naan_id}{self.shoulder}"

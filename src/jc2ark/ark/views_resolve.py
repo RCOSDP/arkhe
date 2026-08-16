@@ -119,14 +119,24 @@ def well_known_ark(request):
     できるようにする。**機関ドメインでリゾルバを常設する以上、発見可能性は運用上の
     価値がある。**
     """
-    from .models import Naan
+    from .models import Naan, Shoulder, ShoulderStatus
 
-    naans = list(Naan.objects.filter(is_authoritative=True).values("naan", "na_policy"))
+    naans = list(Naan.objects.filter(is_authoritative=True).values("naan", "na_policy", "minter"))
+    # **採番が外に出ている名前空間は公開して案内する。** クライアントがどこへ行けば
+    # よいか分かるようにするため（我々は mint を代理しない）。
+    delegated = {
+        f"{s.naan_id}{s.shoulder}": s.minter
+        for s in Shoulder.objects.filter(status=ShoulderStatus.DELEGATED).select_related("naan")
+    }
     return JsonResponse(
         {
             "ark_resolver": True,
             "naans": [n["naan"] for n in naans],
             "na_policy": {n["naan"]: n["na_policy"] for n in naans if n["na_policy"]},
+            "minters": {
+                **{n["naan"]: n["minter"] for n in naans if n["minter"]},
+                **delegated,
+            },
             "inflections": ["?info", "?json", "??"],
             "suffix_passthrough": True,
         },

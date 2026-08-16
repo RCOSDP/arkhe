@@ -19,7 +19,7 @@ from rest_framework.exceptions import (
     ValidationError,
 )
 
-from .models import Ark, AuditEvent, Client, Shoulder
+from .models import Ark, AuditEvent, Client, Shoulder, ShoulderStatus
 
 
 def client_of(request) -> Client:
@@ -72,6 +72,39 @@ def shoulder_for(client: Client, requested: str | None) -> Shoulder:
         # **他機関の shoulder を指定しても、存在の有無を漏らさず一律に拒む。**
         raise PermissionDenied(f"shoulder {requested} はこのクライアントの範囲外")
     return found
+
+
+class ShoulderDelegated(PermissionDenied):
+    """**採番はここではなく外部 minter で行う。** 行き先を添えて返す。
+
+    プロキシしない——プロキシすると (1) 名前空間を誰が消費したか二重管理になり、
+    (2) 応答が失われたとき**誰も指していない ARK** が両側に残りうる。ARK は
+    NR を宣言する識別子なので、それは取り返しがつかない。
+    """
+
+    def __init__(self, shoulder: Shoulder):
+        self.minter = shoulder.minter
+        super().__init__(
+            {
+                "detail": f"shoulder {shoulder.shoulder} の採番は委譲されている",
+                "minter": shoulder.minter,
+                "note": shoulder.note,
+            }
+        )
+
+
+def assert_shoulder_mintable(shoulder: Shoulder) -> None:
+    """**リザーブ枠・委譲・引退した shoulder では採番しない。**"""
+    if shoulder.status == ShoulderStatus.ACTIVE:
+        return
+    if shoulder.status == ShoulderStatus.DELEGATED:
+        raise ShoulderDelegated(shoulder)
+    raise PermissionDenied(
+        {
+            "detail": f"shoulder {shoulder.shoulder} は status={shoulder.status} で採番できない",
+            "note": shoulder.note,
+        }
+    )
 
 
 def assert_may_touch(client: Client, ark: Ark) -> None:

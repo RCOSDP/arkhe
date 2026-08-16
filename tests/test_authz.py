@@ -498,3 +498,133 @@ def test_issue_client_command(world, capsys):
     out = capsys.readouterr().out
     assert "追加クライアントを発行した" in out
     assert "共有しないこと" in out
+
+
+# --------------------------------------------------------------------------
+# shoulder の管理状態（リザーブ枠・採番の委譲・引退）
+# --------------------------------------------------------------------------
+
+
+def _hdr(http, c, sec):
+    r = http.post(
+        "/o/token/",
+        {"grant_type": "client_credentials", "client_id": c.client_id, "client_secret": sec},
+    )
+    return {"HTTP_AUTHORIZATION": f"Bearer {json.loads(r.content)['access_token']}"}
+
+
+def test_reserved_shoulder_cannot_be_minted_into(client, world):
+    """**リザーブ枠**は名前空間を押さえるだけ。採番はできない。"""
+    from jc2ark.ark.models import ShoulderStatus
+    from jc2ark.ark.onboarding import issue_client
+
+    world["sa"].status = ShoulderStatus.RESERVED
+    world["sa"].note = "第2段階の機関テナント用に確保"
+    world["sa"].save()
+    c, sec = issue_client(manager=world["A"], label="x", shoulder=world["sa"])
+    r = post(client, "/mint", _hdr(client, c, sec), {})
+    assert r.status_code == 403
+    assert "reserved" in json.dumps(r.json())
+
+
+def test_delegated_shoulder_answers_307_with_the_minter(client, world):
+    """**採番が外部 minter にある shoulder は、案内する。プロキシしない。**
+
+    代理で呼ぶと、応答が失われたときに「向こうでは採番されたがこちらは知らない
+    ARK」が生まれる。NR を宣言する識別子では取り返しがつかない。
+    """
+    from jc2ark.ark.models import ShoulderStatus
+    from jc2ark.ark.onboarding import issue_client
+
+    world["sa"].status = ShoulderStatus.DELEGATED
+    world["sa"].minter = "https://nibb.example/ark/mint"
+    world["sa"].save()
+    c, sec = issue_client(manager=world["A"], label="x", shoulder=world["sa"])
+    r = post(client, "/mint", _hdr(client, c, sec), {})
+    assert r.status_code == 307
+    assert r["Location"] == "https://nibb.example/ark/mint"
+    assert Ark.objects.count() == 0, "こちらでは採番していない"
+
+
+def test_delegated_shoulder_requires_a_minter():
+    """行き先の無い委譲は作らせない（案内できないため）。"""
+    from django.db import IntegrityError
+
+    from jc2ark.ark.models import Naan, Shoulder, ShoulderStatus
+
+    n = Naan.objects.create(naan="99999", name="x")
+    with pytest.raises(IntegrityError):
+        Shoulder.objects.create(shoulder="/kb1", naan=n, status=ShoulderStatus.DELEGATED)
+
+
+def test_retired_shoulder_stops_minting_but_keeps_resolving(client, world):
+    """**引退しても既存 ARK は解決し続ける**（NR を守る）。"""
+    from jc2ark.ark.models import ShoulderStatus
+    from jc2ark.ark.onboarding import issue_client
+
+    c, sec = issue_client(manager=world["A"], label="x", shoulder=world["sa"])
+    h = _hdr(client, c, sec)
+    made = post(client, "/mint", h, {"url": "https://a.example/"}).json()["ark"]
+
+    world["sa"].status = ShoulderStatus.RETIRED
+    world["sa"].save()
+    assert post(client, "/mint", h, {}).status_code == 403
+
+    from jc2ark.ark.repository import DjangoArkRepository
+    from jc2ark.ark.resolution import Outcome, resolve
+
+    key = made.removeprefix("ark:/")
+    naan, _, name = key.partition("/")
+    assert resolve(DjangoArkRepository(), naan, name).outcome is Outcome.REDIRECT
+
+
+def test_bulk_mint_stops_if_any_shoulder_is_not_mintable(client, world):
+    from jc2ark.ark.models import ShoulderStatus
+    from jc2ark.ark.onboarding import issue_client
+
+    world["sb"].status = ShoulderStatus.RESERVED
+    world["sb"].save()
+    c, sec = issue_client(manager=world["A"], label="x")  # 機関 A の全 shoulder
+    # 機関 A は /kb1 のみなので、/kb2 は範囲外 → 403（reserved の前に弾かれる）
+    r = post(client, "/bulk_mint", _hdr(client, c, sec), {"data": [{}, {"shoulder": "/kb2"}]})
+    assert r.status_code == 403
+    assert Ark.objects.count() == 0
+
+
+def test_reserve_shoulder_helper(world):
+    """リザーブ枠は**乱数割当で当たらない**（unique 制約が効く）。"""
+    from jc2ark.ark.models import ShoulderStatus
+    from jc2ark.ark.onboarding import reserve_shoulder
+
+    r = reserve_shoulder(naan=world["naan"], note="第2段階用")
+    assert r.status == ShoulderStatus.RESERVED
+    assert r.manager_id is None
+
+    d = reserve_shoulder(
+        naan=world["naan"], note="岡崎の自前 minter 用", minter="https://nibb.example/mint"
+    )
+    assert d.status == ShoulderStatus.DELEGATED
+
+
+def test_well_known_advertises_delegated_minters(client, world, settings):
+    """**採番が外に出ている名前空間は公開して案内する。**"""
+    import importlib
+
+    from jc2ark.ark.models import ShoulderStatus
+
+    world["sa"].status = ShoulderStatus.DELEGATED
+    world["sa"].minter = "https://nibb.example/ark/mint"
+    world["sa"].save()
+    settings.IS_RESOLVER = True
+    from jc2ark.entrypoints import urls
+
+    importlib.reload(urls)
+    # URL リゾルバのキャッシュを落とす（settings 経由で再設定すると効く）。
+    settings.ROOT_URLCONF = "jc2ark.entrypoints.urls"
+    try:
+        body = client.get("/.well-known/ark").json()
+        assert body["minters"]["99999/kb1"] == "https://nibb.example/ark/mint"
+    finally:
+        settings.IS_RESOLVER = False
+        importlib.reload(urls)
+        settings.ROOT_URLCONF = "jc2ark.entrypoints.urls"

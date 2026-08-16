@@ -17,7 +17,7 @@ from django.db import IntegrityError, transaction
 
 from jc2ark.arkspec.shoulder import DEFAULT_SHOULDER_LENGTH, generate_shoulder
 
-from .models import Client, CommitmentLevel, Manager, Naan, Shoulder
+from .models import Client, CommitmentLevel, Manager, Naan, Shoulder, ShoulderStatus
 
 SHOULDER_ALLOCATION_RETRIES = 50
 
@@ -76,6 +76,40 @@ def onboard(
     )
     client.save()
     return Onboarded(manager=manager, shoulder=shoulder, client=client, client_secret=secret)
+
+
+@transaction.atomic
+def reserve_shoulder(
+    *,
+    naan: Naan,
+    note: str = "",
+    manager: Manager | None = None,
+    minter: str = "",
+    length: int = DEFAULT_SHOULDER_LENGTH,
+) -> Shoulder:
+    """**リザーブ枠**を切る。名前空間を押さえるだけで採番はできない。
+
+    用途:
+      - 将来の機関のために先に確保する
+      - **外部 minter に渡す予定の枠**を先に切っておく（`minter` を渡すと
+        `delegated` になり、mint 要求はそこへ案内される）
+      - 乱数割当で当たってほしくない枠を除外する
+    """
+    status = ShoulderStatus.DELEGATED if minter else ShoulderStatus.RESERVED
+    for _ in range(SHOULDER_ALLOCATION_RETRIES):
+        try:
+            with transaction.atomic():
+                return Shoulder.objects.create(
+                    shoulder=generate_shoulder(length),
+                    naan=naan,
+                    manager=manager,
+                    minter=minter,
+                    status=status,
+                    note=note,
+                )
+        except IntegrityError:
+            continue
+    raise RuntimeError("shoulder の空きが見つからない（長さを増やすこと）")
 
 
 @transaction.atomic

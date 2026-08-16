@@ -35,6 +35,19 @@ BULK_LIMIT = 100
 class _Base(APIView):
     permission_classes = [TokenHasScope, ClientStillValid]
 
+    def handle_exception(self, exc):
+        """委譲された shoulder への mint は **307 で行き先を案内する。**
+
+        **プロキシはしない。** 我々が外部 minter を代理で呼ぶと、応答が失われた
+        ときに「向こうでは採番されたがこちらは知らない ARK」が生まれる。ARK は
+        NR を宣言する識別子で取り消せないので、二重管理を作らない。
+        """
+        if isinstance(exc, authz.ShoulderDelegated) and exc.minter:
+            r = Response(exc.detail, status=307)
+            r["Location"] = exc.minter
+            return r
+        return super().handle_exception(exc)
+
 
 def _key(raw: str) -> str:
     """`ark:/99999/xyz` でも `99999/xyz` でも受ける。"""
@@ -65,6 +78,7 @@ class MintView(_Base):
         s = MintSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         shoulder = authz.shoulder_for(client, s.validated_data.get("shoulder") or None)
+        authz.assert_shoulder_mintable(shoulder)
         authz.assert_within_quota(client)
         ark, _ = Ark.objects.mint(
             shoulder=shoulder, created_by=client.client_id, **s.fields_for_mint()
@@ -87,6 +101,8 @@ class BulkMintView(_Base):
             raise ValidationError({"data": f"1 リクエストは {BULK_LIMIT} 件まで"})
         # 到達範囲の検証を**先に全件済ませる**（1 件でも範囲外なら何も作らない）。
         shoulders = [authz.shoulder_for(client, r.get("shoulder") or None) for r in rows]
+        for sh in shoulders:
+            authz.assert_shoulder_mintable(sh)
         authz.assert_within_quota(client, len(rows))
         made = []
         with transaction.atomic():
