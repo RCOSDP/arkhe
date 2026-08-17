@@ -118,6 +118,13 @@ class Manager(models.Model):
     quota_per_day = models.PositiveIntegerField(null=True, blank=True)  # R3。null は無制限
     active = models.BooleanField(default=True)
 
+    #: **統廃合の承継先。** 大学の統合・吸収・閉学で管理主体が変わっても、
+    #: **識別子は壊さない**（`NR` を宣言している以上、解決は続ける）。系譜を
+    #: 辿れるように残す。`ark_succession.md` §2.1。
+    succeeded_by = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="predecessors"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -184,6 +191,20 @@ class Shoulder(models.Model):
     @property
     def can_mint_here(self) -> bool:
         return self.status == ShoulderStatus.ACTIVE
+
+    def delete(self, *args, **kwargs):
+        """**shoulder は消さない。**
+
+        削除すると乱数割当が同じ文字列を再び当てうる＝**`NR`（No Re-assignment）
+        違反の芽**になる。機関が消えても行は残し、`status=retired` にする
+        （`ark_succession.md` S2）。
+
+        とくに `delegated` だった shoulder は、**外部 minter が我々の知らない
+        識別子を作っている可能性**があるので絶対に消せない。
+        """
+        raise RuntimeError(
+            "shoulder は削除しない（名前空間の再利用は NR 違反）。status=retired にすること。"
+        )
 
     def __str__(self) -> str:
         return f"{self.naan_id}{self.shoulder}"

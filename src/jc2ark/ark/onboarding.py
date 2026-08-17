@@ -17,7 +17,15 @@ from django.db import IntegrityError, transaction
 
 from jc2ark.arkspec.shoulder import DEFAULT_SHOULDER_LENGTH, generate_shoulder
 
-from .models import Client, CommitmentLevel, Manager, Naan, Shoulder, ShoulderStatus
+from .models import (
+    AuditEvent,
+    Client,
+    CommitmentLevel,
+    Manager,
+    Naan,
+    Shoulder,
+    ShoulderStatus,
+)
 
 SHOULDER_ALLOCATION_RETRIES = 50
 
@@ -76,6 +84,60 @@ def onboard(
     )
     client.save()
     return Onboarded(manager=manager, shoulder=shoulder, client=client, client_secret=secret)
+
+
+@transaction.atomic
+def succeed(*, predecessor: Manager, successor: Manager, retire_shoulders: bool = False) -> dict:
+    """**統廃合の承継。** 旧機関の名前空間を承継先に移す。
+
+    `ark_succession.md` §2.1。**既存 ARK は 1 本も変わらない**——`Ark.shoulder` は
+    そのままで、その shoulder の管理主体だけが変わる。解決先も変わらない。
+
+    **shoulder は消さない**（名前空間の再利用は `NR` 違反）。`retire_shoulders=True`
+    なら新規採番だけ止める。
+
+    旧機関のクライアントは全部失効させる——**承継後は承継先の資格情報で採番する**。
+    """
+    if predecessor.pk == successor.pk:
+        raise ValueError("承継元と承継先が同じ")
+    if predecessor.naan_id != successor.naan_id:
+        # NAAN をまたぐ承継は、レジストリ側（who / where）の変更を伴うので
+        # 自動化しない（ARK Alliance への人手申請が要る。§2.2）。
+        raise ValueError("NAAN をまたぐ承継はここでは扱わない（レジストリの who 変更が要る）")
+
+    moved = list(predecessor.shoulders.all())
+    for sh in moved:
+        sh.manager = successor
+        if retire_shoulders:
+            sh.status = ShoulderStatus.RETIRED
+            sh.note = (sh.note + " / ").lstrip(" /") + f"{predecessor.name} から承継"
+        sh.save()
+
+    revoked = list(predecessor.clients.filter(active=True))
+    for c in revoked:
+        c.active = False
+        c.save(update_fields=["active"])
+
+    if successor.default_shoulder_id is None and moved:
+        successor.default_shoulder = moved[0]
+        successor.save(update_fields=["default_shoulder"])
+
+    predecessor.active = False
+    predecessor.succeeded_by = successor
+    predecessor.save(update_fields=["active", "succeeded_by"])
+
+    AuditEvent.objects.create(
+        client_id="",
+        authority="operator",
+        action="succeed",
+        target=f"{predecessor.name} -> {successor.name}",
+        detail={
+            "shoulders": [s.shoulder for s in moved],
+            "revoked_clients": [c.client_id for c in revoked],
+            "retired": retire_shoulders,
+        },
+    )
+    return {"shoulders": [s.shoulder for s in moved], "revoked": len(revoked)}
 
 
 @transaction.atomic
