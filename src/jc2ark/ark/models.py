@@ -42,11 +42,11 @@ class CommitmentLevel(models.TextChoices):
     NLM の軸に無い JC2 の追加で、**物理オブジェクト**に使う。
     """
 
-    NOT_GUARANTEED = "not-guaranteed", "Not Guaranteed（検証系・開発系）"
-    PERMANENT_DYNAMIC = "permanent-dynamic", "Permanent: Dynamic Content（機関テナントの既定）"
-    PERMANENT_STABLE = "permanent-stable", "Permanent: Stable Content"
-    PERMANENT_UNCHANGING = "permanent-unchanging", "Permanent: Unchanging Content"
-    DESCRIPTIVE_ONLY = "descriptive-only", "記述のみ（物理オブジェクト。所在は変わりうる）"
+    NOT_GUARANTEED = "not-guaranteed", "保証なし（検証・開発系）"
+    PERMANENT_DYNAMIC = "permanent-dynamic", "恒久・内容は更新されうる（既定）"
+    PERMANENT_STABLE = "permanent-stable", "恒久・内容は実質不変"
+    PERMANENT_UNCHANGING = "permanent-unchanging", "恒久・内容は一切不変"
+    DESCRIPTIVE_ONLY = "descriptive-only", "記述のみ（所在は変わりうる）"
 
 
 class Naan(models.Model):
@@ -144,9 +144,9 @@ class ShoulderStatus(models.TextChoices):
     """
 
     ACTIVE = "active", "採番できる"
-    RESERVED = "reserved", "**リザーブ枠。** 名前空間を押さえてあるだけで採番できない"
-    DELEGATED = "delegated", "**採番は外部 minter。** ここでは受けず案内する"
-    RETIRED = "retired", "新規採番はしない。**既存 ARK は解決し続ける**（NR）"
+    RESERVED = "reserved", "リザーブ枠（採番できない）"
+    DELEGATED = "delegated", "採番は外部 minter（案内する）"
+    RETIRED = "retired", "新規採番なし（既存は解決し続ける）"
 
 
 class Shoulder(models.Model):
@@ -218,8 +218,8 @@ class Client(AbstractApplication):
     """
 
     class Authority(models.TextChoices):
-        MANAGER = "manager", "その manager の shoulder のみ"
-        NAAN = "naan", "NAAN 配下の全 shoulder（break-glass。平時は発行しない）"
+        MANAGER = "manager", "その機関の shoulder のみ"
+        NAAN = "naan", "NAAN 配下の全 shoulder（break-glass）"
 
     manager = models.ForeignKey(
         Manager, null=True, blank=True, on_delete=models.CASCADE, related_name="clients"

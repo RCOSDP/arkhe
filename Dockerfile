@@ -9,7 +9,7 @@ COPY src ./src
 RUN uv pip install --system --no-cache \
       "Django>=5.2,<6.0" "django-oauth-toolkit>=3.4,<4.0" \
       "djangorestframework>=3.18" "drf-spectacular>=0.30" \
-      "psycopg[binary]>=3.2" "gunicorn>=23" \
+      "psycopg[binary]>=3.2" "gunicorn>=23" "whitenoise>=6.6" \
  && uv pip install --system --no-cache --no-deps -e .
 
 COPY manage.py entrypoint.sh ./

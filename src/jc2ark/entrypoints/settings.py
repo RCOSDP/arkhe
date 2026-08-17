@@ -31,6 +31,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # 管理画面の静的ファイルを gunicorn 単体で配れるようにする。
+    # DEBUG=False では Django が /static/ を配らないので、これが無いと
+    # admin が素の HTML になる。
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -79,6 +83,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = os.environ.get("JC2ARK_STATIC_ROOT", str(BASE_DIR / "static"))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_TZ = True
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 # ---- OAuth2（S1 の結果を反映） ----
 OAUTH2_PROVIDER_APPLICATION_MODEL = "ark.Client"
