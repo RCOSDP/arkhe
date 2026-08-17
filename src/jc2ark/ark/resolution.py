@@ -38,9 +38,10 @@ class Inflection(Enum):
     """`?` で始まる問い合わせ。**仕様上の必須は `?info` だけ**（C1 の訂正）。"""
 
     NONE = "none"
-    INFO = "info"  # 人間可読の記述（MUST）
-    JSON = "json"  # 機械可読（arklet 由来の拡張）
-    POLICY = "policy"  # `??` — 永続性宣言を返す（C4）
+    BRIEF = "brief"  # `?`     — ERC/ANVL の簡潔な記述
+    INFO = "info"  # `?info` — 人間可読の記述（MUST）
+    JSON = "json"  # `?json` — 機械可読（arklet 由来の拡張）
+    POLICY = "policy"  # `??`    — 永続性宣言を返す（C4）
 
     @property
     def wants_metadata(self) -> bool:

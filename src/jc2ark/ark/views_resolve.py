@@ -29,22 +29,46 @@ DC_FIELDS = ("title", "type", "identifier", "format", "relation", "source", "com
 
 
 def _inflection(request) -> Inflection:
-    """生のクエリ文字列から inflection を判定する。
+    """inflection を判定する。
 
-    `??` はクエリ文字列が `"?"` になる。`?info` / `?json` はそのまま。
+    | 記法 | `QUERY_STRING` | 返すもの |
+    | --- | --- | --- |
+    | `?` | `""`（**生の URI で見分ける**） | ERC/ANVL の簡潔な記述 |
+    | `??` | `"?"` | 永続性宣言（C4） |
+    | `?info` | `"info"` | 人間可読の記述（**仕様上の必須**） |
+    | `?json` | `"json"` | 機械可読 |
 
-    ⚠️ **裸の `?`（brief）は WSGI では検出できない**——`…/name?` のクエリ文字列は
-    空で、inflection 無しと区別がつかない。仕様上 `?` は optional なので採らない
-    （C1 の訂正）。必須の `?info` は検出できる。
+    **裸の `?` は `QUERY_STRING` だけでは見分けられない**——`…/name?` も `…/name`
+    もクエリ文字列は空になる。**gunicorn が `RAW_URI` に生のリクエスト URI を
+    入れる**ので、そこで判定する（実測: アクセスログにも `GET …/name?` と残る）。
+    `RAW_URI` が無い環境（Django の開発サーバやテストクライアント）では `?` を
+    諦めて inflection 無しとして扱う——**仕様上 `?` は optional** なので、
+    そこで壊れるものは無い。
     """
-    raw = request.META.get("QUERY_STRING", "")
-    if raw == "?":
+    qs = request.META.get("QUERY_STRING", "")
+    if qs == "?":
         return Inflection.POLICY
-    if raw == "info":
+    if qs == "info":
         return Inflection.INFO
-    if raw == "json":
+    if qs == "json":
         return Inflection.JSON
+    if not qs:
+        raw = request.META.get("RAW_URI") or request.META.get("REQUEST_URI") or ""
+        if raw.endswith("?"):
+            return Inflection.BRIEF
     return Inflection.NONE
+
+
+def _anvl(pairs) -> str:
+    """ERC/ANVL 形式。**ARK が伝統的に `?` で返してきた形。**
+
+    値の改行は継続行にする（ANVL の折り返し規約）。
+    """
+    lines = ["erc:"]
+    for key, value in pairs:
+        if value:
+            lines.append(f"{key}: " + str(value).replace("\n", "\n    "))
+    return "\n".join(lines) + "\n"
 
 
 def _erc(res) -> dict:
@@ -90,6 +114,20 @@ def resolve_ark(request, ark: str):
 
     # DESCRIBE
     erc = _erc(res)
+    if res.inflection is Inflection.BRIEF:
+        # `?` — ERC の 4 要素だけを簡潔に返す。`?info`（HTML）より軽く、
+        # `?json` より素朴。**対象に到達できなくても、これは答えられる**（FAIR A2）。
+        return HttpResponse(
+            _anvl(
+                [
+                    ("who", erc["who"]),
+                    ("what", erc["what"]),
+                    ("when", erc["when"]),
+                    ("where", erc["where"] or erc["ark"]),
+                ]
+            ),
+            content_type="text/plain; charset=utf-8",
+        )
     if res.inflection is Inflection.JSON:
         return JsonResponse(erc, json_dumps_params={"ensure_ascii": False})
     if res.inflection is Inflection.POLICY:

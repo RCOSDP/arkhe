@@ -364,3 +364,62 @@ def test_minter_does_not_expose_resolution(client, minted, settings):
     """**arklet は combined で minter も 302 を返していた。** ここでは分ける。"""
     assert settings.JC2ARK_ROLE == "minter"
     assert client.get(f"/ark:/{minted.ark}").status_code == 404
+
+
+# --------------------------------------------------------------------------
+# C1  inflection の 4 形態
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_bare_question_mark_returns_erc_anvl(resolver_client, minted):
+    """`?` — **ERC/ANVL の簡潔な記述。** ARK が伝統的に返してきた形。
+
+    裸の `?` は `QUERY_STRING` だけでは見分けられないので、**gunicorn が入れる
+    `RAW_URI`** で判定する（実測: アクセスログにも `GET …/name?` と残る）。
+    """
+    r = resolver_client.get(f"/ark:/{minted.ark}", RAW_URI=f"/ark:/{minted.ark}?")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert body.startswith("erc:")
+    assert "what: テスト資料" in body
+    assert "who: NII" in body
+
+
+@pytest.mark.django_db
+def test_without_raw_uri_the_bare_question_mark_is_ignored(resolver_client, minted):
+    """`RAW_URI` が無い環境では諦める。**仕様上 `?` は optional** なので壊れない。"""
+    assert resolver_client.get(f"/ark:/{minted.ark}").status_code == 302
+
+
+@pytest.mark.django_db
+def test_double_question_mark_is_not_confused_with_the_single_one(resolver_client, minted):
+    """`??` は `QUERY_STRING == "?"` で判定するので、`RAW_URI` があっても揺れない。"""
+    r = resolver_client.get(f"/ark:/{minted.ark}??", RAW_URI=f"/ark:/{minted.ark}??")
+    assert r.json()["na_policy"].startswith("NP | NR, OP, CC")
+
+
+@pytest.mark.django_db
+def test_all_four_inflections_are_distinct(resolver_client, minted):
+    k = minted.ark
+    got = {
+        "(なし)": resolver_client.get(f"/ark:/{k}").status_code,
+        "?": resolver_client.get(f"/ark:/{k}", RAW_URI=f"/ark:/{k}?")["Content-Type"],
+        "?info": resolver_client.get(f"/ark:/{k}?info")["Content-Type"],
+        "?json": resolver_client.get(f"/ark:/{k}?json")["Content-Type"],
+        "??": resolver_client.get(f"/ark:/{k}??")["Content-Type"],
+    }
+    assert got["(なし)"] == 302
+    assert got["?"].startswith("text/plain")
+    assert got["?info"].startswith("text/html")
+    assert got["?json"].startswith("application/json")
+    assert got["??"].startswith("application/json")
+
+
+@pytest.mark.django_db
+def test_brief_survives_suffix_passthrough(resolver_client, minted):
+    """C5: **祖先から継承しても答えられる**（FAIR A2）。"""
+    p = f"/ark:/{minted.ark}/entry/detector"
+    r = resolver_client.get(p, RAW_URI=p + "?")
+    assert r.status_code == 200
+    assert r.content.decode().startswith("erc:")
