@@ -83,9 +83,14 @@ USE_TZ = True
 # ---- OAuth2（S1 の結果を反映） ----
 OAUTH2_PROVIDER_APPLICATION_MODEL = "ark.Client"
 OAUTH2_PROVIDER = {
+    # **発行・更新・墓碑化・読み取りを分ける。**
+    # 「発行はさせないが更新はさせる」は実際に起きる（離脱した機関の転送先維持）。
+    # 墓碑化を update と分けるのは、**それが「対象が失われた」という宣言**であり、
+    # 転送先の付け替えとは意味も影響も違うから。投入バッチには絶対に渡さない。
     "SCOPES": {
         "ark:mint": "ARK を採番する",
-        "ark:update": "ARK を更新する",
+        "ark:update": "転送先とメタデータを更新する",
+        "ark:tombstone": "対象が失われたと宣言する（墓碑化）",
         "ark:read": "ARK のメタデータを読む",
     },
     "ACCESS_TOKEN_EXPIRE_SECONDS": int(os.environ.get("JC2ARK_TOKEN_TTL", "3600")),

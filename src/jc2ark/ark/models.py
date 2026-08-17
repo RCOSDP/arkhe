@@ -356,6 +356,18 @@ class Ark(models.Model):
             )
         return super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        """**ARK は消さない。**
+
+        行を消すと解決が止まる＝**識別子が壊れる**。`NR` を宣言している以上、
+        これは許されない。対象が失われたときは **tombstone に付け替える**か、
+        `url` を空にして**記述を返す**（FAIR A2。`ark_succession.md` §2.4）。
+        """
+        raise RuntimeError(
+            "ARK は削除しない（解決が止まる＝識別子が壊れる）。"
+            "tombstone に付け替えるか url を空にすること。"
+        )
+
     def __str__(self) -> str:
         return f"ark:/{self.ark}"
 

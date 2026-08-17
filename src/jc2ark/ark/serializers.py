@@ -83,5 +83,18 @@ class BulkUpdateSerializer(serializers.Serializer):
     data = UpdateSerializer(many=True)
 
 
+class TombstoneSerializer(serializers.Serializer):
+    """墓碑化の入力。
+
+    **ARK は削除できない**（`NR` を宣言している）。消せるのは対象への到達性だけで、
+    識別子とメタデータは残る。`url` を渡せばそこへ、渡さなければ**リゾルバ自身が
+    記述を返す**（FAIR A2。物理オブジェクトと同じ経路）。
+    """
+
+    ark = serializers.CharField()
+    url = serializers.URLField(required=False, allow_blank=True, default="")
+    commitment = serializers.CharField(required=False, allow_blank=True, default="")
+
+
 class BulkQuerySerializer(serializers.Serializer):
     data = serializers.ListField(child=serializers.CharField(), allow_empty=False)

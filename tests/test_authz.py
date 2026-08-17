@@ -628,3 +628,78 @@ def test_well_known_advertises_delegated_minters(client, world, settings):
         settings.IS_RESOLVER = False
         importlib.reload(urls)
         settings.ROOT_URLCONF = "jc2ark.entrypoints.urls"
+
+
+# --------------------------------------------------------------------------
+# 発行 / 更新 / 墓碑化 の権限分離
+# --------------------------------------------------------------------------
+
+
+def test_mint_update_and_tombstone_are_separate_powers(client, world):
+    """**「発行はさせないが更新はさせる」**は実際に起きる（離脱した機関の転送先維持）。
+
+    墓碑化を update と分けるのは、**それが「対象が失われた」という宣言**であり、
+    転送先の付け替えとは意味も影響も違うから。取り消しにくく、公開されると信頼に
+    関わるので、投入バッチのような日常の書き手には渡さない。
+    """
+    from jc2ark.ark.onboarding import issue_client
+
+    ingest, s1 = issue_client(manager=world["A"], label="ingest", scopes="ark:mint")
+    keeper, s2 = issue_client(manager=world["A"], label="keeper", scopes="ark:update")
+    curator, s3 = issue_client(
+        manager=world["A"], label="curator", scopes="ark:update ark:tombstone"
+    )
+    h1, h2, h3 = (_hdr(client, c, s) for c, s in ((ingest, s1), (keeper, s2), (curator, s3)))
+
+    made = post(client, "/mint", h1, {"url": "https://a.example/"}).json()["ark"]
+    assert post(client, "/mint", h2, {}).status_code == 403, "更新係は発行できない"
+
+    assert put(client, "/update", h2, {"ark": made, "url": "https://b.example/"}).status_code == 200
+    assert put(client, "/tombstone", h2, {"ark": made}).status_code == 403, "更新係は墓碑化できない"
+    assert put(client, "/tombstone", h3, {"ark": made}).status_code == 200
+
+
+def test_tombstone_clears_the_target_but_keeps_the_identifier(client, world):
+    """**ARK は削除できない。** 消せるのは対象への到達性だけ。"""
+    from jc2ark.ark.onboarding import issue_client
+
+    c, sec = issue_client(manager=world["A"], label="curator", scopes="ark:mint ark:tombstone")
+    h = _hdr(client, c, sec)
+    made = post(client, "/mint", h, {"url": "https://a.example/", "title": "紀要 第1号"}).json()[
+        "ark"
+    ]
+    key = made.removeprefix("ark:/")
+
+    put(client, "/tombstone", h, {"ark": made, "commitment": "対象は失われた。識別子は維持する"})
+    a = Ark.objects.get(pk=key)
+    assert a.url == "", "転送先は消える"
+    assert a.title == "紀要 第1号", "**メタデータは残る**（FAIR A2）"
+    assert a.commitment.startswith("対象は失われた")
+
+    # リゾルバは記述そのものを返す
+    from jc2ark.ark.repository import DjangoArkRepository
+    from jc2ark.ark.resolution import Outcome, resolve
+
+    naan_part, _, name = key.partition("/")
+    assert resolve(DjangoArkRepository(), naan_part, name).outcome is Outcome.DESCRIBE
+
+
+def test_tombstone_can_point_at_a_tombstone_page(client, world):
+    from jc2ark.ark.onboarding import issue_client
+
+    c, sec = issue_client(manager=world["A"], label="x", scopes="ark:mint ark:tombstone")
+    h = _hdr(client, c, sec)
+    made = post(client, "/mint", h, {"url": "https://a.example/"}).json()["ark"]
+    put(client, "/tombstone", h, {"ark": made, "url": "https://a.example/tombstone/1"})
+    assert Ark.objects.get(pk=made.removeprefix("ark:/")).url.endswith("/tombstone/1")
+
+
+def test_tombstone_respects_the_manager_boundary(client, world):
+    from jc2ark.ark.onboarding import issue_client
+
+    a, sa = issue_client(manager=world["A"], label="x", scopes="ark:mint")
+    b, sb = issue_client(manager=world["B"], label="y", scopes="ark:tombstone")
+    made = post(client, "/mint", _hdr(client, a, sa), {"url": "https://a.example/"}).json()["ark"]
+    r = put(client, "/tombstone", _hdr(client, b, sb), {"ark": made})
+    assert r.status_code in (403, 404)
+    assert Ark.objects.get(pk=made.removeprefix("ark:/")).url == "https://a.example/"

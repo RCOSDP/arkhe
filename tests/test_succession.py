@@ -181,3 +181,78 @@ def test_succeed_command(naan, capsys):
     out = capsys.readouterr().out
     assert "承継を記録した" in out
     assert "既存 ARK は 1 本も変わらない" in out
+
+
+# --------------------------------------------------------------------------
+# §5  機関の離脱（組織は存続する）
+# --------------------------------------------------------------------------
+
+
+def test_departure_stops_minting_but_never_stops_resolving(naan):
+    """**核心。** 新規採番は止めるが、解決は永久に続ける。
+
+    `ark:/<NII の NAAN>/…` である以上**振り直せない**（振り直す＝元の識別子を殺す）。
+    NII が NAAN 保有者として 302 を返し続けるしかない。
+    """
+    from jc2ark.ark.onboarding import depart
+
+    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
+    ark = _mint(m, "https://old.example/1")
+    depart(manager=m)
+    assert Shoulder.objects.get(pk=ark.shoulder_id).status == ShoulderStatus.RETIRED
+    assert _resolves_to(ark).outcome is Outcome.REDIRECT
+
+
+def test_departure_can_point_everything_at_the_institutions_resolver(naan):
+    """**推奨の形。** 一括で機関のリゾルバへ向け、以後の運用を機関側に閉じる。
+
+    離脱した機関に「移転のたびに NII へ更新を投げる」作業を強いると、放置されて
+    死んだリンクが残る。**継続作業を要求しない形**にしておく。
+    """
+    from jc2ark.ark.onboarding import depart
+
+    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
+    a1 = _mint(m, "https://old.example/1")
+    a2 = _mint(m, "https://old.example/2")
+
+    r = depart(manager=m, resolver_template="https://repo.univ.ac.jp/ark/${blade}")
+    assert r["urls_rewritten"] == 2
+
+    for a in (a1, a2):
+        loc = _resolves_to(a).location
+        assert loc.startswith("https://repo.univ.ac.jp/ark/")
+        assert loc.endswith(a.assigned_name[3:]), "blade が展開されている"
+
+    # 未登録の名前も機関のリゾルバへ（shoulder の redirect）
+    assert Shoulder.objects.get(pk=a1.shoulder_id).redirect.startswith("https://repo.univ.ac.jp/")
+
+
+def test_departure_can_keep_update_only_credentials(naan):
+    """**「発行はさせないが更新はさせる」。** scope を分けた設計がここで効く。"""
+    from jc2ark.ark.onboarding import depart
+
+    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
+    r = depart(manager=m, keep_update_label="post-departure")
+    client, _secret = r["update_client"]
+    assert client.allowed_scopes == "ark:update"
+    assert m.clients.filter(active=True).count() == 1
+    m.refresh_from_db()
+    assert m.active, "更新権限を残すなら機関は有効のまま"
+
+
+def test_departure_without_anything_deactivates_the_manager(naan):
+    from jc2ark.ark.onboarding import depart
+
+    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
+    depart(manager=m)
+    m.refresh_from_db()
+    assert not m.active
+    assert m.clients.filter(active=True).count() == 0
+
+
+def test_arks_are_never_deleted(naan):
+    """**行を消すと解決が止まる＝識別子が壊れる。** NR が許さない。"""
+    m = onboard(naan=naan, name="A大学", label="ingest").manager
+    ark = _mint(m, "https://a.example/1")
+    with pytest.raises(RuntimeError, match="識別子が壊れる"):
+        ark.delete()

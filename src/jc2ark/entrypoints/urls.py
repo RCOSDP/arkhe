@@ -16,6 +16,7 @@ minter_patterns = [
     path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
     path("mint", views_api.MintView.as_view(), name="mint"),
     path("update", views_api.UpdateView.as_view(), name="update"),
+    path("tombstone", views_api.TombstoneView.as_view(), name="tombstone"),
     path("bulk_mint", views_api.BulkMintView.as_view(), name="bulk_mint"),
     path("bulk_update", views_api.BulkUpdateView.as_view(), name="bulk_update"),
     path("bulk_query", views_api.BulkQueryView.as_view(), name="bulk_query"),

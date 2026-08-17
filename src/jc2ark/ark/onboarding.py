@@ -18,6 +18,7 @@ from django.db import IntegrityError, transaction
 from jc2ark.arkspec.shoulder import DEFAULT_SHOULDER_LENGTH, generate_shoulder
 
 from .models import (
+    Ark,
     AuditEvent,
     Client,
     CommitmentLevel,
@@ -84,6 +85,78 @@ def onboard(
     )
     client.save()
     return Onboarded(manager=manager, shoulder=shoulder, client=client, client_secret=secret)
+
+
+@transaction.atomic
+def depart(
+    *,
+    manager: Manager,
+    resolver_template: str = "",
+    keep_update_label: str = "",
+) -> dict:
+    """**機関が JC2 を離れる**（組織は存続する。統廃合とは別）。
+
+    `ark_succession.md` §5。核心は 1 点——**新規採番は止めるが、解決は永久に続ける。**
+    `ark:/<NII の NAAN>/…` という形である以上、**振り直せない**（振り直す＝元の
+    識別子を殺す）ので、NII が NAAN 保有者として 302 を返し続けるしかない。
+
+    **`resolver_template` を渡すのが推奨。** 既存 ARK の転送先を機関のリゾルバへ
+    一括で向け直し、shoulder にも同じ委譲を設定する。**これで以後の運用が機関側に
+    閉じる**——離脱した機関に「移転のたびに NII へ更新を投げる」作業を強いない。
+    放置されると死んだリンクが残るので、継続作業を要求しない形にしておく。
+
+    テンプレートは `Shoulder.redirect` と同じ記法（`$id` / `${blade}`）。
+    例: ``https://repo.univ.ac.jp/ark/${blade}``
+    """
+    from .resolution import expand_redirect
+
+    shoulders = list(manager.shoulders.all())
+    rewritten = 0
+
+    if resolver_template:
+        for sh in shoulders:
+            # 未登録の名前も機関のリゾルバへ。
+            sh.redirect = resolver_template
+        for ark in Ark.objects.filter(shoulder__in=shoulders).iterator():
+            _, ark.url = expand_redirect(resolver_template, ark.naan_id, ark.assigned_name)
+            ark.save(update_fields=["url"])
+            rewritten += 1
+
+    for sh in shoulders:
+        sh.status = ShoulderStatus.RETIRED
+        sh.note = (sh.note + " / ").lstrip(" /") + "離脱により新規採番を停止"
+        sh.save()
+
+    revoked = [c.client_id for c in manager.clients.filter(active=True)]
+    manager.clients.update(active=False)
+
+    issued = None
+    if keep_update_label:
+        # **更新権限だけ残す。** scope を分けてある設計がここで効く。
+        issued, secret = issue_client(manager=manager, label=keep_update_label, scopes="ark:update")
+    else:
+        manager.active = False
+        manager.save(update_fields=["active"])
+
+    AuditEvent.objects.create(
+        client_id="",
+        authority="operator",
+        action="depart",
+        target=manager.name,
+        detail={
+            "shoulders": [s.shoulder for s in shoulders],
+            "urls_rewritten": rewritten,
+            "revoked_clients": revoked,
+            "resolver_template": resolver_template,
+            "update_client": issued.client_id if issued else None,
+        },
+    )
+    return {
+        "shoulders": [s.shoulder for s in shoulders],
+        "urls_rewritten": rewritten,
+        "revoked": len(revoked),
+        "update_client": (issued, secret) if issued else None,
+    }
 
 
 @transaction.atomic

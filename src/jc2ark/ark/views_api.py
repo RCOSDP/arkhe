@@ -25,6 +25,7 @@ from .serializers import (
     BulkQuerySerializer,
     BulkUpdateSerializer,
     MintSerializer,
+    TombstoneSerializer,
     UpdateSerializer,
 )
 
@@ -153,6 +154,35 @@ class BulkUpdateView(_Base):
                 _apply(ark, row, client).save()
         authz.audit(client, "bulk_update", detail_count=len(rows))
         return Response({"updated": len(rows)})
+
+
+class TombstoneView(_Base):
+    """**対象が失われたと宣言する。** ARK は削除しない。
+
+    `NR`（No Re-assignment）を宣言している以上、識別子は消せない。消せるのは
+    対象への到達性だけで、**識別子とメタデータは残る**。
+
+    **scope を `ark:update` と分けてある。** 墓碑化は「どこにあるか」ではなく
+    「もう無い」という宣言で、意味も影響も違う。取り消しにくく、公開されると
+    信頼に関わるので、投入バッチのような日常の書き手には渡さない。
+    """
+
+    required_scopes = ["ark:tombstone"]
+
+    def put(self, request):
+        client = authz.client_of(request)
+        s = TombstoneSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        ark = authz.fetch_for_update(client, [_key(s.validated_data["ark"])]).popitem()[1]
+        authz.assert_may_touch(client, ark)
+        # url が空なら、リゾルバが記述そのものを返す（D6 と同じ経路）。
+        ark.url = s.validated_data.get("url", "")
+        if s.validated_data.get("commitment"):
+            ark.commitment = s.validated_data["commitment"]
+        ark.updated_by = client.client_id
+        ark.save()
+        authz.audit(client, "tombstone", ark.pk)
+        return Response(ArkOutSerializer(ark).data)
 
 
 class BulkQueryView(_Base):
