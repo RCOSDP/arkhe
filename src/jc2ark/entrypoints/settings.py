@@ -13,8 +13,22 @@ SECRET_KEY = os.environ.get("JC2ARK_SECRET_KEY", "dev-only-insecure")
 DEBUG = os.environ.get("JC2ARK_DEBUG", "0") == "1"
 ALLOWED_HOSTS = os.environ.get("JC2ARK_ALLOWED_HOSTS", "*").split(",")
 
-#: resolver として動くか。SC2 のルータと URL 構成がこれを見る。
-IS_RESOLVER = os.environ.get("RESOLVER", "0") == "1"
+#: **プロセスの役割。** 出す口も DB ロールも役割で変える。
+#:
+#:   minter    採番・更新の API と OAuth2 の token endpoint。**外部公開しうる**
+#:   resolver  解決だけ。無認証・読み取り専用ロール
+#:   admin     **Django admin だけ。決して外部公開しない**
+#:
+#: **admin を minter から分けているのは、minter を外部公開する可能性があるから。**
+#: 同じプロセスに置くと、セッション認証の管理画面がインターネットに露出する。
+JC2ARK_ROLE = os.environ.get(
+    "JC2ARK_ROLE", "resolver" if os.environ.get("RESOLVER") == "1" else "minter"
+)
+if JC2ARK_ROLE not in ("minter", "resolver", "admin"):
+    raise ValueError(f"JC2ARK_ROLE は minter / resolver / admin のいずれか（{JC2ARK_ROLE!r}）")
+
+IS_RESOLVER = JC2ARK_ROLE == "resolver"
+IS_ADMIN = JC2ARK_ROLE == "admin"
 
 INSTALLED_APPS = [
     "django.contrib.admin",

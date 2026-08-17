@@ -247,18 +247,24 @@ def test_base_name_stops_at_the_first_structural_character():
 pytestmark_http = pytest.mark.django_db
 
 
-@pytest.fixture
-def resolver_client(settings, client):
-    settings.IS_RESOLVER = True
-    settings.ROOT_URLCONF = "jc2ark.entrypoints.urls"
+def _use_role(settings, role):
+    """プロセスの役割を切り替える（URL 構成が変わる）。"""
     import importlib
 
+    settings.JC2ARK_ROLE = role
+    settings.IS_RESOLVER = role == "resolver"
+    settings.IS_ADMIN = role == "admin"
     from jc2ark.entrypoints import urls
 
     importlib.reload(urls)
+    settings.ROOT_URLCONF = "jc2ark.entrypoints.urls"
+
+
+@pytest.fixture
+def resolver_client(settings, client):
+    _use_role(settings, "resolver")
     yield client
-    settings.IS_RESOLVER = False
-    importlib.reload(urls)
+    _use_role(settings, "minter")
 
 
 @pytest.fixture
@@ -356,5 +362,5 @@ def test_n1_well_known_ark(resolver_client, minted):
 @pytest.mark.django_db
 def test_minter_does_not_expose_resolution(client, minted, settings):
     """**arklet は combined で minter も 302 を返していた。** ここでは分ける。"""
-    assert settings.IS_RESOLVER is False
+    assert settings.JC2ARK_ROLE == "minter"
     assert client.get(f"/ark:/{minted.ark}").status_code == 404

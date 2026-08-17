@@ -9,20 +9,32 @@ WORKERS="${JC2ARK_WORKERS:-3}"
 TIMEOUT="${JC2ARK_TIMEOUT:-60}"
 GRACEFUL="${JC2ARK_GRACEFUL_TIMEOUT:-30}"
 
-if [ "${RESOLVER:-0}" = "1" ]; then
-  # M8: resolver は**読み取り専用ロール**で動くのでマイグレーションしない。
-  echo "starting resolver on :${PORT} (read-only role, timeout=${TIMEOUT}s)"
-else
-  echo "running migrations"
-  python manage.py migrate --noinput
-  python manage.py collectstatic --noinput >/dev/null 2>&1 || true
-  if [ -n "${JC2ARK_ADMIN_USER:-}" ]; then
-    DJANGO_SUPERUSER_PASSWORD="${JC2ARK_ADMIN_PASSWORD:-}" \
-      python manage.py createsuperuser --noinput \
-      --username "$JC2ARK_ADMIN_USER" --email "admin@example.invalid" 2>/dev/null || true
-  fi
-  echo "starting minter on :${PORT} (timeout=${TIMEOUT}s)"
-fi
+ROLE="${JC2ARK_ROLE:-$([ "${RESOLVER:-0}" = "1" ] && echo resolver || echo minter)}"
+export JC2ARK_ROLE="$ROLE"
+
+case "$ROLE" in
+  resolver)
+    # M8: resolver は**読み取り専用ロール**で動くのでマイグレーションしない。
+    python manage.py collectstatic --noinput >/dev/null 2>&1 || true
+    ;;
+  admin)
+    # **決して外部公開しない**運用者向けの画面。スキーマは minter が作る。
+    python manage.py collectstatic --noinput >/dev/null 2>&1 || true
+    ;;
+  minter)
+    # スキーマと superuser は**書き手である minter が用意する**。
+    # admin 側に置くと、admin を止めている間にマイグレーションが走らない。
+    echo "running migrations"
+    python manage.py migrate --noinput
+    python manage.py collectstatic --noinput >/dev/null 2>&1 || true
+    if [ -n "${JC2ARK_ADMIN_USER:-}" ]; then
+      DJANGO_SUPERUSER_PASSWORD="${JC2ARK_ADMIN_PASSWORD:-}" \
+        python manage.py createsuperuser --noinput \
+        --username "$JC2ARK_ADMIN_USER" --email "admin@example.invalid" 2>/dev/null || true
+    fi
+    ;;
+esac
+echo "starting ${ROLE} on :${PORT} (timeout=${TIMEOUT}s)"
 
 exec gunicorn jc2ark.entrypoints.wsgi:application \
   --bind "0.0.0.0:${PORT}" \

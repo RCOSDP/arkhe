@@ -608,26 +608,19 @@ def test_reserve_shoulder_helper(world):
 
 def test_well_known_advertises_delegated_minters(client, world, settings):
     """**採番が外に出ている名前空間は公開して案内する。**"""
-    import importlib
-
     from jc2ark.ark.models import ShoulderStatus
 
     world["sa"].status = ShoulderStatus.DELEGATED
     world["sa"].minter = "https://nibb.example/ark/mint"
     world["sa"].save()
-    settings.IS_RESOLVER = True
-    from jc2ark.entrypoints import urls
+    from tests.test_resolution import _use_role
 
-    importlib.reload(urls)
-    # URL リゾルバのキャッシュを落とす（settings 経由で再設定すると効く）。
-    settings.ROOT_URLCONF = "jc2ark.entrypoints.urls"
+    _use_role(settings, "resolver")
     try:
         body = client.get("/.well-known/ark").json()
         assert body["minters"]["99999/kb1"] == "https://nibb.example/ark/mint"
     finally:
-        settings.IS_RESOLVER = False
-        importlib.reload(urls)
-        settings.ROOT_URLCONF = "jc2ark.entrypoints.urls"
+        _use_role(settings, "minter")
 
 
 # --------------------------------------------------------------------------
