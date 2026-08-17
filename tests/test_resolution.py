@@ -479,3 +479,59 @@ def test_optional_labels_are_omitted_rather_than_marked_unavailable(resolver_cli
     assert "commitment-level: permanent-dynamic" in body
     # kernel の 4 要素は落とさない（この記録は `when` が空）
     assert "when: (:unav)" in body
+
+
+@pytest.mark.django_db
+def test_info_shows_the_kernel_even_when_values_are_missing(resolver_client, minted):
+    """`?info` でも kernel の 4 要素を落とさない。**`?` と同じ理由。**"""
+    minted.who = ""
+    minted.when = ""
+    minted.save(update_fields=["who", "when"])
+    body = resolver_client.get(f"/ark:/{minted.ark}?info").content.decode()
+    for label in ("who", "what", "when", "where"):
+        assert f"<dt>{label}</dt>" in body
+    assert body.count("(:unav)") == 2
+
+
+@pytest.mark.django_db
+def test_info_carries_the_permanence_declaration(resolver_client, minted):
+    """C4: **`?info` は仕様上の必須 inflection。**
+
+    ここに永続性宣言が無いと、人間の読み手は「誰がどれだけ面倒を見るのか」を
+    知る手段が無い（`??` は optional なので、そちらに置くだけでは足りない）。
+    """
+    body = resolver_client.get(f"/ark:/{minted.ark}?info").content.decode()
+    assert "NP | NR, OP, CC" in body
+    assert "permanent-dynamic" in body
+    assert "恒久・内容は更新されうる" in body  # 符号だけでなく人間向けの表示名も
+
+
+@pytest.mark.django_db
+def test_info_links_to_the_other_representations_with_absolute_paths(resolver_client, minted):
+    """導線が無いと `?` や `??` の存在に気づけない。
+
+    **先頭の `/` が要る**——相対のまま `ark:/…` と書くと、ブラウザが `ark:` を
+    URI スキームとみなして遷移に失敗する。
+    """
+    body = resolver_client.get(f"/ark:/{minted.ark}?info").content.decode()
+    for suffix in ("?", "??", "?json"):
+        assert f'href="/ark:/{minted.ark}{suffix}"' in body
+    assert 'href="ark:/' not in body  # スキーム扱いされる書き方が残っていないこと
+
+
+@pytest.mark.django_db
+def test_info_leaks_no_template_comments(resolver_client, minted):
+    """**Django の `{# #}` は単一行専用。** 複数行に跨ると剥がれずに配信される。
+
+    `{% comment %}` を使うこと。設計意図を書いたコメントが利用者に見えてしまう。
+    """
+    body = resolver_client.get(f"/ark:/{minted.ark}?info").content.decode()
+    assert "{#" not in body and "#}" not in body
+    assert "draft-kunze-erc-01" not in body  # 実際に漏れていた文言
+
+
+@pytest.mark.django_db
+def test_info_writes_the_inherited_ark_in_full(resolver_client, minted):
+    """継承元も `ark:/…` と書く。**素の鍵で見せると別物に見える。**"""
+    body = resolver_client.get(f"/ark:/{minted.ark}/entry?info").content.decode()
+    assert f"<code>ark:/{minted.ark}</code>" in body

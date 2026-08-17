@@ -98,6 +98,12 @@ def _erc(res) -> dict:
         "where": ark.url + res.suffix if ark.url else "",
         **{f: getattr(ark, f) for f in DC_FIELDS},
         "commitment_level": ark.shoulder.manager.commitment_level if ark.shoulder.manager else "",
+        # `permanent-dynamic` だけ見せられても意味が伝わらないので、人間向けの
+        # 表示名も渡す（`?info` で使う）。
+        "commitment_label": (
+            manager.get_commitment_level_display() if (manager := ark.shoulder.manager) else ""
+        ),
+        "na_policy": ark.naan.na_policy,
         "inherited_from": f"ark:/{res.inherited_from}" if res.inherited_from else "",
         "suffix": res.suffix,
         "created_at": ark.created_at.isoformat() if ark.created_at else "",
