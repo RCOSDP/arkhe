@@ -319,10 +319,9 @@ def test_http_json_inflection(resolver_client, minted):
 @pytest.mark.django_db
 def test_c4_policy_inflection_returns_both_layers(resolver_client, minted):
     """`??` は **NAA ポリシー（NAAN 単位）と NMA コミットメント（対象単位）の両方**を返す。"""
-    r = resolver_client.get(f"/ark:/{minted.ark}??")
-    body = r.json()
-    assert body["na_policy"] == "NP | NR, OP, CC | 2026 |"
-    assert body["commitment_level"] == "permanent-dynamic"
+    body = resolver_client.get(f"/ark:/{minted.ark}??").content.decode()
+    assert "policy: NP | NR, OP, CC | 2026 |" in body
+    assert "commitment-level: permanent-dynamic" in body
 
 
 @pytest.mark.django_db
@@ -395,8 +394,10 @@ def test_without_raw_uri_the_bare_question_mark_is_ignored(resolver_client, mint
 @pytest.mark.django_db
 def test_double_question_mark_is_not_confused_with_the_single_one(resolver_client, minted):
     """`??` は `QUERY_STRING == "?"` で判定するので、`RAW_URI` があっても揺れない。"""
-    r = resolver_client.get(f"/ark:/{minted.ark}??", RAW_URI=f"/ark:/{minted.ark}??")
-    assert r.json()["na_policy"].startswith("NP | NR, OP, CC")
+    body = resolver_client.get(
+        f"/ark:/{minted.ark}??", RAW_URI=f"/ark:/{minted.ark}??"
+    ).content.decode()
+    assert "policy: NP | NR, OP, CC" in body
 
 
 @pytest.mark.django_db
@@ -413,7 +414,8 @@ def test_all_four_inflections_are_distinct(resolver_client, minted):
     assert got["?"].startswith("text/plain")
     assert got["?info"].startswith("text/html")
     assert got["?json"].startswith("application/json")
-    assert got["??"].startswith("application/json")
+    # `??` は **JSON ではなく ANVL**。実測で n2t.net もそう返す（2026-08-17）。
+    assert got["??"].startswith("text/plain")
 
 
 @pytest.mark.django_db
@@ -423,3 +425,57 @@ def test_brief_survives_suffix_passthrough(resolver_client, minted):
     r = resolver_client.get(p, RAW_URI=p + "?")
     assert r.status_code == 200
     assert r.content.decode().startswith("erc:")
+
+
+@pytest.mark.django_db
+def test_missing_kernel_elements_get_the_reserved_code(resolver_client, minted):
+    """ERC: **値が無くても要素は落とさず、理由を示す符号を置く。**
+
+    draft-kunze-erc-01「a best effort に失敗したら、その場に標準値を置かねば
+    ならない」。空欄にすると「まだ入れていない」と「元から無い」が区別できない。
+    """
+    minted.who = ""
+    minted.when = ""
+    minted.save(update_fields=["who", "when"])
+    body = resolver_client.get(
+        f"/ark:/{minted.ark}", RAW_URI=f"/ark:/{minted.ark}?"
+    ).content.decode()
+    assert "who: (:unav)" in body
+    assert "when: (:unav)" in body
+    assert body.count("\n") == 5  # erc: ＋ 4 要素。**要素は必ず 4 つ**
+
+
+@pytest.mark.django_db
+def test_double_question_mark_is_brief_plus_the_commitment(resolver_client, minted):
+    """`??` = `?` ＋ 永続性宣言。draft-42 の「more metadata」と
+    arks.org の「maintenance commitment」は、こう組めば両立する。"""
+    k = minted.ark
+    brief = resolver_client.get(f"/ark:/{k}", RAW_URI=f"/ark:/{k}?").content.decode()
+    more = resolver_client.get(f"/ark:/{k}??").content.decode()
+    for line in brief.splitlines():
+        assert line in more.splitlines(), f"`?` の {line!r} が `??` に無い"
+    assert "policy: " in more
+    assert "commitment-level: " in more
+
+
+@pytest.mark.django_db
+def test_json_still_carries_the_policy(resolver_client, minted):
+    """`??` を ANVL に寄せたので、**JSON が要る利用者は `?json` で全部取れる**こと。"""
+    d = resolver_client.get(f"/ark:/{minted.ark}?json").json()
+    assert d["na_policy"].startswith("NP | NR, OP, CC")
+    assert "commitment" in d
+
+
+@pytest.mark.django_db
+def test_optional_labels_are_omitted_rather_than_marked_unavailable(resolver_client, minted):
+    """**符号で埋めるのは kernel の 4 要素だけ。**
+
+    対象単位の `commitment` が空でも、約束は `commitment-level` で分かっている。
+    そこに `(:unav)` を置くと「我々の約束が不明」と読めてしまう。
+    """
+    assert minted.commitment == ""
+    body = resolver_client.get(f"/ark:/{minted.ark}??").content.decode()
+    assert "commitment: " not in body
+    assert "commitment-level: permanent-dynamic" in body
+    # kernel の 4 要素は落とさない（この記録は `when` が空）
+    assert "when: (:unav)" in body

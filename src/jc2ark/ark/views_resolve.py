@@ -5,8 +5,6 @@ DRF に載せない。302 を返すだけで OpenAPI の対象でもない。
 
 from __future__ import annotations
 
-import json
-
 from django.conf import settings
 from django.http import (
     HttpResponse,
@@ -59,15 +57,34 @@ def _inflection(request) -> Inflection:
     return Inflection.NONE
 
 
+#: ERC が定める「値が無いときの符号」。**空欄で済ませてはいけない。**
+#: draft-kunze-erc-01: "If a best effort to supply a value fails, in its place
+#: **must** be given a standardized value indicating the reason for the missing
+#: value." 空にすると「まだ入れていない」と「そもそも無い」が区別できなくなる。
+#: 我々はどちらか判別できないので、一律 `(:unav)`（値が得られない、不明かもしれない）
+#: を使う——`(:unas)`（未割当）や `(:none)`（元から無い）を騙るより正直。
+UNAVAILABLE = "(:unav)"
+
+
 def _anvl(pairs) -> str:
-    """ERC/ANVL 形式。**ARK が伝統的に `?` で返してきた形。**
+    """ERC/ANVL 形式。**ARK が伝統的に `?` / `??` で返してきた形。**
+
+    実測（2026-08-17）: `n2t.net/ark:/13030/m5s75pdz??` は `text/plain` で
+    `erc.who:` / `erc.what:` / `erc.when:` を返す。JSON ではない。
 
     値の改行は継続行にする（ANVL の折り返し規約）。
+
+    **空文字を渡した要素は `(:unav)` で必ず出し、`None` を渡した要素は行ごと省く。**
+    使い分けは意図的で、符号を義務づけられているのは **kernel の 4 要素
+    （who / what / when / where）だけ**。任意ラベルまで `(:unav)` で埋めると、
+    別のところで分かっている事実を「不明」と偽ることになる。
     """
     lines = ["erc:"]
     for key, value in pairs:
-        if value:
-            lines.append(f"{key}: " + str(value).replace("\n", "\n    "))
+        if value is None:
+            continue
+        text = str(value).strip() or UNAVAILABLE
+        lines.append(f"{key}: " + text.replace("\n", "\n    "))
     return "\n".join(lines) + "\n"
 
 
@@ -129,22 +146,44 @@ def resolve_ark(request, ark: str):
             content_type="text/plain; charset=utf-8",
         )
     if res.inflection is Inflection.JSON:
-        return JsonResponse(erc, json_dumps_params={"ensure_ascii": False})
+        # `??` を ANVL に寄せたぶん、**JSON が要る利用者はここで全部取れる**ように
+        # 永続性宣言も載せる。
+        return JsonResponse(
+            {**erc, "na_policy": res.ark.naan.na_policy, "commitment": res.ark.commitment},
+            json_dumps_params={"ensure_ascii": False},
+        )
     if res.inflection is Inflection.POLICY:
-        # C4: `??` は**永続性宣言**を返す。
+        # `??` は **`?` の内容 ＋ 永続性宣言**（C4）。
+        #
+        # 二つの出典が食い違って見えるが、こう組むと両立する:
+        #   draft-kunze-ark-42 … "'?' (brief metadata) and '??' (more metadata)"
+        #   arks.org/about/ark-features … "a maintenance commitment from the
+        #                                  current server"
+        # **「more」の中身が commitment**、と読めばよい。形式も ANVL に揃える
+        # （実測: n2t.net の `??` は text/plain の ANVL を返す）。JSON が要る
+        # ときは `?json` があるので、ここで二重に持つ必要は無い。
         naan = res.ark.naan
         return HttpResponse(
-            json.dumps(
-                {
-                    "ark": erc["ark"],
-                    "na_policy": naan.na_policy,  # NAA ポリシー（NAAN 単位）
-                    "commitment": res.ark.commitment,  # NMA コミットメント（対象単位）
-                    "commitment_level": erc["commitment_level"],
-                },
-                ensure_ascii=False,
-                indent=2,
+            _anvl(
+                [
+                    ("who", erc["who"]),
+                    ("what", erc["what"]),
+                    ("when", erc["when"]),
+                    ("where", erc["where"] or erc["ark"]),
+                    ("about", erc["ark"]),
+                    # NAA ポリシー（NAAN 単位・我々が名前空間に対して負う約束）
+                    ("policy", naan.na_policy),
+                    # NMA コミットメント（対象単位・この対象をどう保つか）。
+                    # **空なら行ごと省く。** `(:unav)` を置くと「我々の約束が
+                    # 不明」に読めるが、約束は下の `commitment-level` で分かって
+                    # いる。ERC が符号を義務づけるのは kernel の 4 要素だけ。
+                    ("commitment", res.ark.commitment or None),
+                    ("commitment-level", erc["commitment_level"]),
+                    # 祖先から継承したなら、どこからかを明示する（C5）
+                    ("inherited-from", erc["inherited_from"] or None),
+                ]
             ),
-            content_type="application/json; charset=utf-8",
+            content_type="text/plain; charset=utf-8",
         )
     return render(request, "ark/info.html", {"erc": erc, "res": res})
 
@@ -175,7 +214,7 @@ def well_known_ark(request):
                 **{n["naan"]: n["minter"] for n in naans if n["minter"]},
                 **delegated,
             },
-            "inflections": ["?info", "?json", "??"],
+            "inflections": ["?", "?info", "?json", "??"],
             "suffix_passthrough": True,
         },
         json_dumps_params={"ensure_ascii": False},
