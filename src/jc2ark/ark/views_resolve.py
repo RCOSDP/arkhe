@@ -275,6 +275,9 @@ def well_known_ark(request):
             },
             "inflections": ["?", "?info", "?json", "??"],
             "suffix_passthrough": True,
+            # D4: `ark:/<naan>`（名前だけ無い形）にも答える。**N2T は階層を遡って
+            # ここまで見る**ので、対応の有無を宣言しておく価値がある。
+            "naan_description": True,
         },
         json_dumps_params={"ensure_ascii": False},
     )

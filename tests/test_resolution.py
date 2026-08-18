@@ -648,3 +648,19 @@ def test_d4_a_foreign_naan_is_forwarded_to_its_own_resolver(resolver_client, min
     r = resolver_client.get("/ark:/67890")
     assert r.status_code == 302
     assert r["Location"].startswith("https://other.example/")
+
+
+@pytest.mark.django_db
+def test_well_known_declares_what_we_actually_support(resolver_client, minted):
+    """**宣言と実装がずれていないこと。** ずれた宣言は無いより悪い。"""
+    d = resolver_client.get("/.well-known/ark").json()
+    assert d["inflections"] == ["?", "?info", "?json", "??"]
+    for inflection in d["inflections"]:
+        r = resolver_client.get(
+            f"/ark:/{minted.ark}{inflection}", RAW_URI=f"/ark:/{minted.ark}{inflection}"
+        )
+        assert r.status_code == 200, inflection
+    assert d["naan_description"] is True
+    assert resolver_client.get("/ark:/99999").status_code == 200
+    assert d["suffix_passthrough"] is True
+    assert resolver_client.get(f"/ark:/{minted.ark}/child").status_code == 302
