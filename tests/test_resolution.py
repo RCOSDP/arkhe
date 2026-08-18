@@ -587,3 +587,64 @@ def test_http_normalization_applies_end_to_end(resolver_client, minted):
         r = resolver_client.get(variant)
         assert r.status_code == 302, variant
         assert r["Location"] == "https://repo.example/records/1", variant
+
+
+# --------------------------------------------------------------------------
+# D4  NAAN だけの ARK
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_d4_naan_only_ark_describes_the_namespace(resolver_client, minted):
+    """`ark:/99999` は名前空間そのものを指す。**400 で突き返さない。**"""
+    r = resolver_client.get("/ark:/99999")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "ark:/99999" in body
+    assert "NP | NR, OP, CC" in body
+
+
+@pytest.mark.django_db
+def test_d4_naan_only_ark_answers_every_inflection(resolver_client, minted):
+    got = {
+        "?json": resolver_client.get("/ark:/99999?json"),
+        "?info": resolver_client.get("/ark:/99999?info"),
+        "??": resolver_client.get("/ark:/99999??"),
+    }
+    assert got["?json"].json()["naan"] == "99999"
+    assert got["?json"].json()["authoritative"] is True
+    assert got["?info"]["Content-Type"].startswith("text/html")
+    assert "policy: NP | NR, OP, CC" in got["??"].content.decode()
+
+
+@pytest.mark.django_db
+def test_d4_does_not_list_the_shoulders(resolver_client, minted):
+    """**N5: shoulder は不透明。** 並べると機関の構成が読めてしまう。
+
+    委譲済み minter は `/.well-known/ark` で公開しているので、必要な情報は別経路で
+    取れる。ここで機関ごとの割り当てまで見せる理由が無い。
+    """
+    for path in ("/ark:/99999", "/ark:/99999?json"):
+        body = resolver_client.get(path).content.decode()
+        assert "/kb1" not in body
+        assert "機関A" not in body
+
+
+@pytest.mark.django_db
+def test_d4_unknown_naan_only_ark_goes_to_the_global_resolver(resolver_client, minted):
+    """D2 と揃える。**知らない名前空間は上位に投げる。**"""
+    r = resolver_client.get("/ark:/77777")
+    assert r.status_code == 302
+    assert r["Location"] == "https://n2t.net/ark:/77777"
+
+
+@pytest.mark.django_db
+def test_d4_a_foreign_naan_is_forwarded_to_its_own_resolver(resolver_client, minted):
+    from jc2ark.ark.models import Naan
+
+    Naan.objects.create(
+        naan="67890", name="他所", is_authoritative=False, redirect="https://other.example/"
+    )
+    r = resolver_client.get("/ark:/67890")
+    assert r.status_code == 302
+    assert r["Location"].startswith("https://other.example/")

@@ -16,12 +16,17 @@
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import IntegrityError, models
 from django.db.models import Q, UniqueConstraint
 from oauth2_provider.models import AbstractApplication
 
 from jc2ark.arkspec.betanumeric import check_digit_base, generate_noid, noid_check_digit
-from jc2ark.arkspec.naming import MAX_NAAN_LENGTH, ark_key
+from jc2ark.arkspec.naming import (
+    MAX_NAAN_LENGTH,
+    ark_key,
+    normalize_structural,
+    strip_hyphens,
+)
 from jc2ark.arkspec.shoulder import InvalidShoulder, validate_shoulder
 
 MINT_COLLISION_RETRIES = 10
@@ -264,6 +269,10 @@ class Client(AbstractApplication):
         return f"{self.label or self.name} [{self.authority}]"
 
 
+class AlreadyRegistered(Exception):
+    """B4: 修飾子付き ARK が既に在る。**上書きせず呼び出し側に返す。**"""
+
+
 class ArkMinter(models.Manager):
     """`Ark` の採番。**`create()` を使い `save()` を直接呼ばない**（I6）。"""
 
@@ -291,11 +300,44 @@ class ArkMinter(models.Manager):
                     updated_by=created_by,
                     **fields,
                 )
-            except models.utils.IntegrityError:  # pragma: no cover - 実質発生しない
+            except IntegrityError:  # 衝突。**握りつぶさず数えて採り直す**
                 collisions += 1
                 continue
             return ark, collisions
         raise RuntimeError(f"gave up minting after {collisions} collision(s)")
+
+    def register_qualified(self, *, base: Ark, qualifier: str, created_by: str = "", **fields):
+        """B4: **既存 ARK に修飾子を付けた行を登録する。**
+
+        「NOID を省略した採番」ではない。**修飾子は新しい名前ではなく、既存の名前に
+        対する部分参照**なので、チェックディジットも付け直さない（N7: 検査桁は base
+        compact name に対して計算され、修飾子を含まない）。
+
+        用途は **suffix passthrough の上書き**——既定では祖先の URL に修飾子を
+        continuation として足すが、「このサブツリーだけ別ストレージ」「この変換版だけ
+        別の所在」を表したいときに、その 1 点だけ明示的に登録する。
+
+        `shoulder` は base から継ぐ。**別の shoulder に生やせてはいけない**——
+        修飾子は base の名前空間の内側にあるものだから。
+        """
+        if not qualifier.startswith(("/", ".")):
+            raise ValueError("修飾子は '/'（包含）か '.'（変種）で始めること")
+        name = strip_hyphens(normalize_structural(base.assigned_name + qualifier))
+        if name == base.assigned_name or not name.startswith(base.assigned_name):
+            raise ValueError(f"修飾子が base を指していない: {qualifier!r}")
+        try:
+            return self.create(
+                ark=ark_key(base.naan_id, name),
+                naan_id=base.naan_id,
+                shoulder=base.shoulder,
+                assigned_name=name,
+                created_by=created_by,
+                updated_by=created_by,
+                **fields,
+            )
+        except IntegrityError as exc:
+            # E1: 既に在るものを黙って上書きしない。更新は `update` の仕事。
+            raise AlreadyRegistered(f"ark:/{ark_key(base.naan_id, name)} は既に登録済み") from exc
 
 
 class Ark(models.Model):
@@ -370,6 +412,39 @@ class Ark(models.Model):
 
     def __str__(self) -> str:
         return f"ark:/{self.ark}"
+
+
+class MintReceipt(models.Model):
+    """F4: **採番の控え。** 同じ `request_id` の再送に、前回と同じ ARK を返す。
+
+    採番は再試行できない——ARK は `NR`（再割当てしない）を宣言する識別子で、応答が
+    失われたときに再送すると**誰も指していない ARK が増える**（＝死んだ番号）。
+    ark-client が `mint` を再試行しないのはこのため。
+
+    だが**万オーダーの投入では、途中でネットワークが切れるほうが普通**
+    （OME-NGFF の well、MIxS の試料）。「再試行できない」まま放置すると、
+    運用側は「どこまで採番されたか」を自力で突き合わせる羽目になる。
+
+    **控えを持てば、再送を安全にできる。** 呼び出し側が `request_id` を付け、
+    サーバは (client, request_id) で 1 行に固定する。これが outbox パターンの
+    受け側——分割は `BULK_LIMIT`、冪等はこの表、リトライは呼び出し側の自由。
+
+    **client ごとに独立**。他機関の `request_id` と衝突しないし、鍵の推測で
+    他機関の ARK を引くこともできない。
+    """
+
+    client_id = models.CharField(max_length=255, db_index=True)
+    request_id = models.CharField(max_length=200)
+    ark = models.ForeignKey("Ark", on_delete=models.PROTECT, related_name="receipts")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=["client_id", "request_id"], name="one_ark_per_request_id")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.client_id}:{self.request_id} -> ark:/{self.ark_id}"
 
 
 class AuditEvent(models.Model):

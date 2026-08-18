@@ -19,7 +19,7 @@ from django.views.decorators.http import require_safe
 from jc2ark.arkspec.naming import ArkParseError, parse_ark
 
 from .repository import DjangoArkRepository
-from .resolution import Inflection, Outcome, resolve
+from .resolution import Inflection, Outcome, expand_redirect, resolve
 
 #: ERC / Dublin Core として `?info` に出す項目。
 ERC_FIELDS = ("who", "what", "when", "where")
@@ -114,9 +114,15 @@ def _erc(res) -> dict:
 @require_safe
 def resolve_ark(request, ark: str):
     try:
-        parsed = parse_ark(f"ark:{ark}" if not ark.lower().startswith("ark:") else ark)
+        parsed = parse_ark(
+            f"ark:{ark}" if not ark.lower().startswith("ark:") else ark,
+            allow_naan_only=True,  # D4
+        )
     except ArkParseError as exc:
         return HttpResponseBadRequest(str(exc))
+
+    if not parsed.name:
+        return _resolve_naan(request, parsed.naan)
 
     res = resolve(
         DjangoArkRepository(),
@@ -192,6 +198,53 @@ def resolve_ark(request, ark: str):
             content_type="text/plain; charset=utf-8",
         )
     return render(request, "ark/info.html", {"erc": erc, "res": res})
+
+
+def _resolve_naan(request, naan: str):
+    """D4: **NAAN だけの ARK。** `ark:/99999` は名前空間そのものを指す。
+
+    N2T は識別子を後ろから削って `ark:/12345` まで遡るので、ここに何も無いと
+    「NAAN は知っているが何も言えない」状態になる。
+
+    **shoulder の一覧は出さない。** shoulder は不透明にする方針（N5）で、
+    並べると機関の構成が読めてしまう。出すのは NAAN 単位の事実だけ——
+    委譲済み minter は `/.well-known/ark` で既に公開している。
+    """
+    from .models import Naan
+
+    obj = Naan.objects.filter(naan=naan).first()
+    if obj is None:
+        # D2 と同じ扱い。知らない名前空間は上位に投げる。
+        base = getattr(settings, "JC2ARK_GLOBAL_RESOLVER", "https://n2t.net")
+        return HttpResponseRedirect(f"{base}/ark:/{naan}", status=302)
+    if not obj.is_authoritative and obj.redirect:
+        return HttpResponseRedirect(expand_redirect(obj.redirect, naan, "")[1], status=302)
+
+    facts = {
+        "ark": f"ark:/{naan}",
+        "naan": naan,
+        "name": obj.name,
+        "authoritative": obj.is_authoritative,
+        "na_policy": obj.na_policy,
+        "minter": obj.minter,
+    }
+    inflection = _inflection(request)
+    if inflection is Inflection.JSON:
+        return JsonResponse(facts, json_dumps_params={"ensure_ascii": False})
+    if inflection in (Inflection.BRIEF, Inflection.POLICY):
+        return HttpResponse(
+            _anvl(
+                [
+                    ("who", obj.name),
+                    ("what", f"NAAN {naan}（名前空間）"),
+                    ("when", None),
+                    ("where", f"ark:/{naan}"),
+                    ("policy", obj.na_policy),
+                ]
+            ),
+            content_type="text/plain; charset=utf-8",
+        )
+    return render(request, "ark/naan.html", {"naan": facts})
 
 
 @require_safe

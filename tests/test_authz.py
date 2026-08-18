@@ -696,3 +696,196 @@ def test_tombstone_respects_the_manager_boundary(client, world):
     r = put(client, "/tombstone", _hdr(client, b, sb), {"ark": made})
     assert r.status_code in (403, 404)
     assert Ark.objects.get(pk=made.removeprefix("ark:/")).url == "https://a.example/"
+
+
+# ==========================================================================
+# B4  修飾子付き ARK の登録
+# ==========================================================================
+
+
+def test_b4_a_qualifier_can_be_registered_on_an_existing_ark(client, world):
+    """**suffix passthrough の既定を 1 点だけ上書きする。**"""
+    c = make_client(world["A"], world["naan"], "b4")
+    h = auth(client, c)
+    base = post(client, "/mint", h, {"url": "https://repo.example/scan.nxs"}).json()["ark"]
+    r = post(
+        client,
+        "/register",
+        h,
+        {
+            "ark": base,
+            "qualifier": "/entry/detector",
+            "url": "https://cold.example/det",
+        },
+    )
+    assert r.status_code == 201, r.content
+    assert r.json()["ark"] == f"{base}/entry/detector"
+
+
+def test_b4_the_registered_qualifier_wins_over_passthrough(client, world):
+    """登録した 1 点だけが別の所在に向き、**兄弟は祖先から継ぐ**こと。"""
+    from jc2ark.ark.repository import DjangoArkRepository
+    from jc2ark.ark.resolution import resolve
+
+    c = make_client(world["A"], world["naan"], "b4b")
+    h = auth(client, c)
+    base = post(client, "/mint", h, {"url": "https://repo.example/scan.nxs"}).json()["ark"]
+    post(
+        client,
+        "/register",
+        h,
+        {
+            "ark": base,
+            "qualifier": "/entry/detector",
+            "url": "https://cold.example/det",
+        },
+    )
+    name = base.removeprefix("ark:/99999/")
+    repo = DjangoArkRepository()
+    assert resolve(repo, "99999", f"{name}/entry/detector").location == "https://cold.example/det"
+    assert resolve(repo, "99999", f"{name}/entry/other").location == (
+        "https://repo.example/scan.nxs/entry/other"
+    )
+
+
+def test_b4_variant_qualifier_works_too(client, world):
+    c = make_client(world["A"], world["naan"], "b4c")
+    h = auth(client, c)
+    base = post(client, "/mint", h, {"url": "https://repo.example/run.mzML"}).json()["ark"]
+    r = post(
+        client,
+        "/register",
+        h,
+        {
+            "ark": base,
+            "qualifier": ".mzMLb",
+            "url": "https://repo.example/run.mzMLb",
+        },
+    )
+    assert r.status_code == 201
+    assert r.json()["ark"] == f"{base}.mzMLb"
+
+
+def test_b4_a_qualifier_must_start_with_a_structural_character(client, world):
+    """`entry` のような裸の文字列は**別の名前**であって修飾子ではない。"""
+    c = make_client(world["A"], world["naan"], "b4d")
+    h = auth(client, c)
+    base = post(client, "/mint", h, {"url": "https://x.example/"}).json()["ark"]
+    assert post(client, "/register", h, {"ark": base, "qualifier": "entry"}).status_code == 400
+
+
+def test_b4_registering_twice_does_not_overwrite(client, world):
+    """E1: **既に在るものを黙って上書きしない。** 更新は `update` の仕事。"""
+    c = make_client(world["A"], world["naan"], "b4e")
+    h = auth(client, c)
+    base = post(client, "/mint", h, {"url": "https://x.example/"}).json()["ark"]
+    body = {"ark": base, "qualifier": "/a", "url": "https://first.example/"}
+    assert post(client, "/register", h, body).status_code == 201
+    again = post(client, "/register", h, {**body, "url": "https://second.example/"})
+    assert again.status_code == 400
+    assert "既に登録済み" in again.content.decode()
+
+
+def test_b4_update_scope_alone_cannot_create_a_qualifier(client, world):
+    """**新しく解決可能な識別子が増える**ので `ark:mint` が要る。
+
+    発行と更新を分けた趣旨がここで効く——投入バッチに更新だけ渡す運用で、
+    識別子を増やされては困る。
+    """
+    c = make_client(world["A"], world["naan"], "b4f", scopes="ark:update")
+    mint_client = make_client(world["A"], world["naan"], "b4f-mint")
+    base = post(client, "/mint", auth(client, mint_client), {"url": "https://x.example/"})
+    r = post(client, "/register", auth(client, c), {"ark": base.json()["ark"], "qualifier": "/a"})
+    assert r.status_code == 403
+
+
+def test_b4_cannot_qualify_another_managers_ark(client, world):
+    c_a = make_client(world["A"], world["naan"], "b4g")
+    c_b = make_client(world["B"], world["naan"], "b4h")
+    base = post(client, "/mint", auth(client, c_a), {"url": "https://x.example/"}).json()["ark"]
+    r = post(client, "/register", auth(client, c_b), {"ark": base, "qualifier": "/a"})
+    assert r.status_code in (403, 404)
+
+
+# ==========================================================================
+# F4  冪等な採番（outbox の受け側）
+# ==========================================================================
+
+
+def test_f4_resending_the_same_request_id_does_not_mint_twice(client, world):
+    """**採番は再試行できない**——`NR` を宣言する識別子は取り消せないので、応答が
+    失われたときに再送すると誰も指していない ARK が増える。控えがあれば安全になる。
+    """
+    c = make_client(world["A"], world["naan"], "f4")
+    h = auth(client, c)
+    body = {"url": "https://repo.example/1", "request_id": "batch-7/row-42"}
+    first = post(client, "/mint", h, body)
+    second = post(client, "/mint", h, body)
+    assert first.status_code == 201
+    assert second.status_code == 200  # 再送は「作った」ではない
+    assert first.json()["ark"] == second.json()["ark"]
+    assert Ark.objects.count() == 1
+
+
+def test_f4_request_ids_are_scoped_to_the_client(client, world):
+    """**他機関の `request_id` と衝突しない。** 鍵の推測で他所の ARK も引けない。"""
+    ca = make_client(world["A"], world["naan"], "f4a")
+    cb = make_client(world["B"], world["naan"], "f4b")
+    body = {"url": "https://repo.example/1", "request_id": "row-1"}
+    a = post(client, "/mint", auth(client, ca), body)
+    b = post(client, "/mint", auth(client, cb), body)
+    assert a.status_code == b.status_code == 201
+    assert a.json()["ark"] != b.json()["ark"]
+
+
+def test_f4_without_a_request_id_nothing_changes(client, world):
+    """鍵を付けない呼び出しは従来どおり。**毎回新しい番号。**"""
+    c = make_client(world["A"], world["naan"], "f4c")
+    h = auth(client, c)
+    a = post(client, "/mint", h, {"url": "https://repo.example/1"})
+    b = post(client, "/mint", h, {"url": "https://repo.example/1"})
+    assert a.json()["ark"] != b.json()["ark"]
+
+
+def test_f4_a_partially_delivered_batch_can_be_resent_whole(client, world):
+    """**切れた塊をそのまま再送できる。** 万オーダーの投入で効く。"""
+    c = make_client(world["A"], world["naan"], "f4d")
+    h = auth(client, c)
+    rows = [{"url": f"https://repo.example/{i}", "request_id": f"row-{i}"} for i in range(5)]
+    first = post(client, "/bulk_mint", h, {"data": rows[:3]})
+    assert first.status_code == 201 and first.json()["created"] == 3
+    whole = post(client, "/bulk_mint", h, {"data": rows})
+    assert whole.status_code == 201
+    assert (whole.json()["created"], whole.json()["replayed"]) == (2, 3)
+    assert Ark.objects.count() == 5
+    # **並びが入力どおりであること**——再送ぶんと新規ぶんが混ざるので
+    assert [a["url"] for a in whole.json()["minted"]] == [r["url"] for r in rows]
+    # 先に採番した 3 本は同じ ARK のまま
+    assert [a["ark"] for a in whole.json()["minted"][:3]] == [
+        a["ark"] for a in first.json()["minted"]
+    ]
+
+
+def test_f4_resending_a_fully_delivered_batch_creates_nothing(client, world):
+    c = make_client(world["A"], world["naan"], "f4e")
+    h = auth(client, c)
+    rows = [{"url": f"https://repo.example/{i}", "request_id": f"r{i}"} for i in range(3)]
+    post(client, "/bulk_mint", h, {"data": rows})
+    again = post(client, "/bulk_mint", h, {"data": rows})
+    assert again.status_code == 200  # 何も作っていない
+    assert again.json()["created"] == 0
+    assert Ark.objects.count() == 3
+
+
+def test_f4_the_receipt_is_written_in_the_same_transaction(client, world):
+    """控えを別トランザクションにすると、**書く前に落ちたときに二重採番**になる。"""
+    from unittest.mock import patch
+
+    from jc2ark.ark.models import MintReceipt
+
+    c = make_client(world["A"], world["naan"], "f4f")
+    h = auth(client, c)
+    with patch.object(MintReceipt.objects, "create", side_effect=RuntimeError("boom")):
+        with pytest.raises(RuntimeError):
+            post(client, "/mint", h, {"url": "https://x.example/", "request_id": "k"})
+    assert Ark.objects.count() == 0  # 採番も巻き戻っていること

@@ -228,3 +228,34 @@ def test_onboarding_walkthrough():
     assert verify_ark_check_digit(naan_part, name)
     assert ark.shoulder.manager == m
     assert m.commitment_level == "permanent-stable"
+
+
+def test_e1_a_mint_collision_is_retried_not_crashed(db):
+    """**衝突の except 節そのものが壊れていないこと。**
+
+    `models.utils.IntegrityError` は存在しない属性で、衝突した瞬間に
+    `AttributeError` になっていた。「実質発生しない」ので誰も踏まないが、
+    **踏んだときに一番困る経路**（採番の最中）だった。
+    """
+    from unittest.mock import patch
+
+    from jc2ark.ark.models import Ark, Manager, Naan, Shoulder
+
+    n = Naan.objects.create(naan="99999", name="JC2")
+    m = Manager.objects.create(naan=n, name="機関A")
+    s = Shoulder.objects.create(shoulder="/kb1", naan=n, manager=m)
+    first, _ = Ark.objects.mint(shoulder=s, url="https://x.example/")
+    # 1 回目だけ衝突させる
+    real = Ark.objects.create
+    calls = {"n": 0}
+
+    def flaky(**kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise IntegrityError("duplicate key")
+        return real(**kw)
+
+    with patch.object(Ark.objects, "create", side_effect=flaky):
+        ark, collisions = Ark.objects.mint(shoulder=s, url="https://y.example/")
+    assert collisions == 1
+    assert ark.pk != first.pk

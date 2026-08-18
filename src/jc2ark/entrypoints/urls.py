@@ -22,6 +22,7 @@ minter_patterns = [
     # OAuth2: /o/token/ ・ revoke ・ introspect ・ .well-known
     path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
     path("mint", views_api.MintView.as_view(), name="mint"),
+    path("register", views_api.RegisterView.as_view(), name="register"),
     path("update", views_api.UpdateView.as_view(), name="update"),
     path("tombstone", views_api.TombstoneView.as_view(), name="tombstone"),
     path("bulk_mint", views_api.BulkMintView.as_view(), name="bulk_mint"),

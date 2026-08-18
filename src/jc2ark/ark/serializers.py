@@ -42,6 +42,14 @@ class MintSerializer(serializers.Serializer):
     """
 
     shoulder = serializers.CharField(required=False, allow_blank=True)
+    #: F4: **再送しても二重に採番しないための鍵。** 呼び出し側が付ける。
+    request_id = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        max_length=200,
+        help_text="冪等鍵。同じ値で再送すると、前回採番した ARK をそのまま返す",
+    )
     url = serializers.URLField(required=False, allow_blank=True, default="")
     title = serializers.CharField(required=False, allow_blank=True, default="")
     type = serializers.CharField(required=False, allow_blank=True, default="")
@@ -57,6 +65,37 @@ class MintSerializer(serializers.Serializer):
     def fields_for_mint(self) -> dict:
         d = dict(self.validated_data)
         d.pop("shoulder", None)
+        d.pop("request_id", None)
+        return d
+
+
+class RegisterSerializer(serializers.Serializer):
+    """B4: 修飾子付き ARK の登録。
+
+    **`ark` は既存の base、`qualifier` はその後ろに付ける部分参照。**
+    採番ではないので NOID もチェックディジットも生成しない。
+    """
+
+    ark = serializers.CharField(help_text="既存の base ARK（`ark:/99999/xyz`）")
+    qualifier = serializers.CharField(
+        help_text="`/`（包含）か `.`（変種）で始まる修飾子。例 `/entry/detector`・`.mzml`"
+    )
+    url = serializers.URLField(required=False, allow_blank=True, default="")
+    title = serializers.CharField(required=False, allow_blank=True, default="")
+    type = serializers.CharField(required=False, allow_blank=True, default="")
+    identifier = serializers.CharField(required=False, allow_blank=True, default="")
+    format = serializers.CharField(required=False, allow_blank=True, default="")
+    relation = serializers.CharField(required=False, allow_blank=True, default="")
+    source = serializers.CharField(required=False, allow_blank=True, default="")
+    commitment = serializers.CharField(required=False, allow_blank=True, default="")
+    metadata = serializers.CharField(required=False, allow_blank=True, default="")
+    who = serializers.CharField(required=False, allow_blank=True, default="")
+    when = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def fields_for_register(self) -> dict:
+        d = dict(self.validated_data)
+        d.pop("ark", None)
+        d.pop("qualifier", None)
         return d
 
 

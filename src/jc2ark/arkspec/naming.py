@@ -51,13 +51,14 @@ class ArkParseError(ValueError):
     """ARK として解釈できない。"""
 
 
-def parse_ark(ark: str) -> ParsedArk:
+def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
     """ARK 文字列を (nma, naan, name) に分解する。
 
     A1: `ark:` / `ARK:` / `Ark:` を受け、**NAAN は小文字化、name の大小は保持**する。
     N2: NAAN を**文字列のまま**返す。`099999` と `99999` は別の NAAN。
     N3: betanumeric NAAN を受理する。
     F1: 長さ制限を先に適用する。
+    D4: `allow_naan_only=True` なら `ark:/99999`（名前なし）も受け、`name=""` を返す。
     """
     if not isinstance(ark, str):
         raise ArkParseError("ARK must be a string")
@@ -70,7 +71,12 @@ def parse_ark(ark: str) -> ParsedArk:
     rest = rest.lstrip("/")
     naan, slash, name = rest.partition("/")
     if not slash or not name:
-        raise ArkParseError("Not a valid ARK: missing name part")
+        # D4: **NAAN だけの ARK は不正ではない。** `ark:/99999` は「その名前空間
+        # そのもの」を指し、N2T も階層を遡ってここまで見る。呼び出し側が扱えるよう
+        # `name=""` で返す——扱えない側は `allow_naan_only=False` で弾ける。
+        if not allow_naan_only:
+            raise ArkParseError("Not a valid ARK: missing name part")
+        name = ""
 
     # F1: 変換や照合の前に長さで弾く。
     if not naan or len(naan) > MAX_NAAN_LENGTH:
