@@ -92,27 +92,67 @@ def ark_key(naan: str, name: str) -> str:
     return f"{naan}/{name}"
 
 
+#: A3: 除去するハイフン様文字。
+#:
+#: 仕様（draft-kunze-ark-42 §3.2）: "All hyphens are removed. Implementors should
+#: be aware that **non-ASCII hyphen-like characters (eg, U+2010 to U+2015) may
+#: arrive in the place of hyphens**."
+#:
+#: `eg` とあるとおり例示なので、実務で届くものを足した。**日本語の文書は Word 由来が
+#: 多く、`-` が自動的に `–`（EN DASH）に置換される**。全角入力の `－` も同じ理由。
+#:
+#: `ー`（U+30FC 長音符）は**入れない**。見た目は似ているが punctuation ではなく
+#: 修飾文字で、ここに入れると日本語として意味のある文字を黙って消すことになる。
+#: ARK の名前は betanumeric なので、混入していれば結局 404 になる——診断が
+#: 「未登録」になるだけで、識別子を書き換えてしまうよりはよい。
+HYPHENS = (
+    "-"  # U+002D HYPHEN-MINUS
+    "\u2010"  # HYPHEN
+    "\u2011"  # NON-BREAKING HYPHEN
+    "\u2012"  # FIGURE DASH
+    "\u2013"  # EN DASH ← Word の自動置換で最も多い
+    "\u2014"  # EM DASH
+    "\u2015"  # HORIZONTAL BAR
+    "\u2212"  # MINUS SIGN ← 全角・数式由来
+    "\uff0d"  # FULLWIDTH HYPHEN-MINUS
+)
+_HYPHEN_TABLE = dict.fromkeys(map(ord, HYPHENS))
+
+#: 構造文字（成分の区切り）。`/` は包含、`.` は変種。
+STRUCTURAL = "/."
+_STRUCTURAL_RUN = re.compile(r"([/.])[/.]+")
+
+
 def strip_hyphens(text: str) -> str:
     """ハイフンを落とす。
 
     A2: ハイフンは可読性のために入るか、行折り返しで紛れ込むので、**字句比較では
-    無視する**。
+    無視する**。A3: ASCII だけでなく `HYPHENS` の全部を落とす。
 
-    Derived from arklet.
+    Derived from arklet（A3 で非 ASCII に拡張）。
     """
-    return text.replace("-", "")
+    return text.translate(_HYPHEN_TABLE)
 
 
 def normalize_structural(text: str) -> str:
     """構造文字を正規化する。
 
-    N4: 仕様の正規化 8 段階の最終段。**連続するスラッシュは 1 つに畳む。**
+    N4。仕様（draft-kunze-ark-42 §3.2）:
 
-    連続するピリオドは畳まない——`.` は「両側に非構造文字がある場合のみ」構造文字
-    として働くので（下記 `is_structural_at`）、`a..b` の `.` はそもそも成分を
-    区切っていない。畳むと別の名前になってしまう。
+    > Structural characters (slash and period) are normalized: **initial and final
+    > occurrences are removed**, and **two structural characters in a row (e.g., //
+    > or ./) are replaced by the first character**, iterating until each occurrence
+    > has at least one non-structural character on either side.
+
+    以前はスラッシュの連続しか畳んでおらず、「`.` は両側に非構造文字がある場合のみ
+    構造文字だから畳まない」と書いていた。**これは規則の取り違えだった**——
+    「両側に非構造文字」は*畳んだ後*の終了条件（`iterating **until** …`）であって、
+    畳まない理由ではない。**先に畳み、その結果に対して構造性を判定する**。
+
+    連続を 1 回の `sub` で潰せるのは、正規表現が走り全体を貪欲に取るため。
+    結果として構造文字が隣り合うことは無くなり、終了条件が満たされる。
     """
-    return re.sub(r"/{2,}", "/", text)
+    return _STRUCTURAL_RUN.sub(r"\1", text.strip(STRUCTURAL))
 
 
 def is_structural_at(text: str, index: int) -> bool:
@@ -159,7 +199,7 @@ def split_after_normalized(text: str, length: int) -> tuple[str, str]:
     """
     seen = 0
     for i, char in enumerate(text):
-        if char == "-":
+        if char in HYPHENS:  # A3: 非 ASCII のハイフンも数に入れない
             continue
         if seen == length:
             return text[:i], text[i:]

@@ -535,3 +535,55 @@ def test_info_writes_the_inherited_ark_in_full(resolver_client, minted):
     """継承元も `ark:/…` と書く。**素の鍵で見せると別物に見える。**"""
     body = resolver_client.get(f"/ark:/{minted.ark}/entry?info").content.decode()
     assert f"<code>ark:/{minted.ark}</code>" in body
+
+
+# --------------------------------------------------------------------------
+# N4 / A3  正規化が解決に効いていること
+# --------------------------------------------------------------------------
+
+
+def test_n4_trailing_slash_does_not_leak_into_the_target():
+    """`…/name/` は素の ARK と同一。**末尾スラッシュを転送先に付けない。**
+
+    仕様: "initial and final occurrences are removed"。
+    """
+    repo = _repo(arks={f"99999/{GOOD}": FakeArk(url="https://repo/x")})
+    bare = resolve(repo, "99999", GOOD)
+    with_slash = resolve(repo, "99999", GOOD + "/")
+    assert with_slash.location == bare.location == "https://repo/x"
+    assert with_slash.suffix == ""
+
+
+def test_n4_double_period_reaches_the_variant_instead_of_looking_mistranscribed():
+    """`x..mzml` は `x.mzml` に正規化され、祖先に届く。
+
+    **直す前は「転記ミス」という別の診断で 404 になっていた**——正規化されない
+    まま名前全体で検査桁が計算されていたため。変種要求の打ち間違いは実際に起きる。
+    """
+    repo = _repo(arks={f"99999/{GOOD}": FakeArk(url="https://repo/run.mzMLb")})
+    r = resolve(repo, "99999", f"{GOOD}..mzml")
+    assert r.outcome is Outcome.REDIRECT
+    assert r.location == "https://repo/run.mzMLb.mzml"
+    assert r.suffix == ".mzml"
+
+
+def test_n4_leading_period_is_dropped():
+    repo = _repo(arks={f"99999/{GOOD}": FakeArk(url="https://repo/x")})
+    assert resolve(repo, "99999", "." + GOOD).outcome is Outcome.REDIRECT
+
+
+@pytest.mark.parametrize("dash", ["-", "‐", "‑", "‒", "–", "—", "―", "−", "－"])
+def test_a3_hyphen_like_characters_resolve(dash):
+    """**Word や PDF から貼られた ARK が解決すること。**"""
+    repo = _repo(arks={f"99999/{GOOD}": FakeArk(url="https://repo/x")})
+    mangled = GOOD[:4] + dash + GOOD[4:]
+    assert resolve(repo, "99999", mangled).location == "https://repo/x"
+
+
+@pytest.mark.django_db
+def test_http_normalization_applies_end_to_end(resolver_client, minted):
+    k = minted.ark
+    for variant in (f"/ark:/{k}/", f"/ark:/{k}//", f"/ark:/{k[:8]}–{k[8:]}"):
+        r = resolver_client.get(variant)
+        assert r.status_code == 302, variant
+        assert r["Location"] == "https://repo.example/records/1", variant

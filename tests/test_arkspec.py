@@ -320,3 +320,99 @@ def test_first_digit_convention_splits_without_a_separator():
     assert split_shoulder("kb1k4m2p9x") == ("kb1", "k4m2p9x")
     assert split_shoulder("bb1z93ht2dv2") == ("bb1", "z93ht2dv2")
     assert split_shoulder("nodigits") == ("", "nodigits")
+
+
+# --------------------------------------------------------------------------
+# N4  構造文字の正規化（draft-kunze-ark-42 §3.2）
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "src,want",
+    [
+        # "two structural characters in a row … replaced by the first character"
+        ("abc//def", "abc/def"),
+        ("abc///def", "abc/def"),
+        ("abc..def", "abc.def"),
+        ("abc./def", "abc.def"),
+        ("abc/.def", "abc/def"),
+        ("a//.//b", "a/b"),
+        # "initial and final occurrences are removed"
+        ("abc/", "abc"),
+        ("abc.", "abc"),
+        ("/abc", "abc"),
+        (".abc", "abc"),
+        ("/abc/", "abc"),
+        # 触らないもの
+        ("abc/def", "abc/def"),
+        ("abc.def", "abc.def"),
+        ("abc", "abc"),
+    ],
+)
+def test_n4_structural_normalization_follows_the_spec(src, want):
+    assert normalize_structural(src) == want
+
+
+def test_n4_normalization_converges_in_one_pass():
+    """「収束するまで反復」を 1 回の sub で満たせること。
+
+    正規表現が走り全体を貪欲に取るので、結果に構造文字の隣接は残らない。
+    """
+    got = normalize_structural("a/././/./b")
+    assert got == "a/b"
+    assert normalize_structural(got) == got  # 冪等
+
+
+def test_n4_a_name_of_only_structural_characters_collapses_to_nothing():
+    """病的な入力。**空になっても落ちない**こと（呼び出し側で未登録として扱う）。"""
+    assert normalize_structural("...") == ""
+    assert normalize_structural("/") == ""
+
+
+# --------------------------------------------------------------------------
+# A3  非 ASCII のハイフン様文字
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "char,name",
+    [
+        ("-", "HYPHEN-MINUS"),
+        ("‐", "HYPHEN"),
+        ("‑", "NON-BREAKING HYPHEN"),
+        ("‒", "FIGURE DASH"),
+        ("–", "EN DASH"),
+        ("—", "EM DASH"),
+        ("―", "HORIZONTAL BAR"),
+        ("−", "MINUS SIGN"),
+        ("－", "FULLWIDTH HYPHEN-MINUS"),
+    ],
+)
+def test_a3_hyphen_like_characters_are_removed(char, name):
+    """**Word や PDF から貼られた ARK が落ちないこと。**
+
+    仕様: "non-ASCII hyphen-like characters (eg, U+2010 to U+2015) may arrive in
+    the place of hyphens"。`-` が `–` に自動置換されるのは日本語の文書で実際に起きる。
+    """
+    assert strip_hyphens(f"kb1d{char}191j{char}10ds") == "kb1d191j10ds", name
+
+
+def test_a3_the_prolonged_sound_mark_is_not_a_hyphen():
+    """`ー`（U+30FC）は落とさない。**punctuation ではなく修飾文字。**
+
+    見た目が似ているからと落とすと、日本語として意味のある文字を黙って消すことに
+    なる。ARK の名前は betanumeric なので、混入していれば結局は未登録になる——
+    識別子を書き換えてしまうよりよい。
+    """
+    assert strip_hyphens("kb1dー191j") == "kb1dー191j"
+
+
+def test_a3_split_counts_past_every_hyphen_flavour():
+    """**head/tail の分割位置がずれないこと。**
+
+    数える側が ASCII だけ飛ばしていると、非 ASCII のハイフンぶん位置がずれて
+    修飾子の切り出しを間違える。
+    """
+    head, tail = split_after_normalized("kb1d–191j－10ds/entry", 12)
+    assert strip_hyphens(head) == "kb1d191j10ds"
+    assert tail == "/entry"

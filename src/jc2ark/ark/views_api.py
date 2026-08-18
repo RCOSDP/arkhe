@@ -14,7 +14,13 @@ from oauth2_provider.contrib.rest_framework import TokenHasScope
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from jc2ark.arkspec.naming import ArkParseError, ark_key, parse_ark, strip_hyphens
+from jc2ark.arkspec.naming import (
+    ArkParseError,
+    ark_key,
+    normalize_structural,
+    parse_ark,
+    strip_hyphens,
+)
 
 from . import authz
 from .models import Ark
@@ -58,7 +64,9 @@ def _key(raw: str) -> str:
         from rest_framework.exceptions import ValidationError
 
         raise ValidationError({"ark": str(exc)}) from exc
-    return ark_key(p.naan, strip_hyphens(p.name))
+    # **解決側と同じ正規化を通す。** ここだけ素通しにすると、`…/x/` や `…/x..v`
+    # を送ったクライアントが「同じ ARK」を更新できず 404 になる。
+    return ark_key(p.naan, strip_hyphens(normalize_structural(p.name)))
 
 
 def _apply(ark: Ark, data: dict, client) -> Ark:
