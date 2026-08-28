@@ -18,8 +18,8 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
-from jc2ark.arkspec.betanumeric import verify_ark_check_digit
-from jc2ark.arkspec.naming import (
+from arkhe.arkspec.betanumeric import verify_ark_check_digit
+from arkhe.arkspec.naming import (
     QUALIFIER_SEPARATORS,
     ark_key,
     gen_prefixes,
@@ -28,7 +28,7 @@ from jc2ark.arkspec.naming import (
     split_after_normalized,
     strip_hyphens,
 )
-from jc2ark.arkspec.shoulder import split_shoulder
+from arkhe.arkspec.shoulder import split_shoulder
 
 #: D2: 未知 NAAN の取次先。設定可能にする。
 DEFAULT_GLOBAL_RESOLVER = "https://n2t.net"
