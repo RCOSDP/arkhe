@@ -92,6 +92,32 @@ arkhe client add alice@example.ac.jp 99999 --manager 1 --person \
 > バッチとして全件書き換え」に化けるのは脆いので、経路そのものを塞いでいる。
 > 逆向きも同じで、人の主体は API キーで認証できない。
 
+### ID とパスワードでログインする
+
+外部 IdP が無い機関のための入口。
+
+```bash
+export ARKHE_ADMIN_LOGIN=password
+export ARKHE_SESSION_SECRET="$(python -c 'import secrets;print(secrets.token_urlsafe(48))')"
+
+arkhe client add alice@example.ac.jp 99999 --manager 1 --person
+arkhe client passwd alice@example.ac.jp     # 入力は画面に出ない
+```
+
+**`oidc` や `proxy` が使えるならそちらがよい。** 身元の管理が 1 か所に集まり、退職や
+異動が組織側の操作だけで効く。`password` は、それが無い機関でも単体で建てられる
+ようにするためのもの。
+
+守っていること:
+
+* 平文は保存しない（Argon2）
+* **利用者の存在を漏らさない。** 未登録でも誤ったパスワードでも、同じ応答・同じ所要時間
+* **総当たりを止める。** 5 回続けて失敗すると 15 分受け付けない。ログイン画面を出す
+  以上、これが無いと辞書攻撃に素で晒される
+* 長さだけを要求する（12 文字以上）。記号や大文字を強いる規則は、覚えられない文字列を
+  生んで結局どこかに書き留められるので採らない
+* パスワードを持てるのは**人の主体だけ**。変更しても古い行は消さず無効にする
+
 ## 開発
 
 ```bash

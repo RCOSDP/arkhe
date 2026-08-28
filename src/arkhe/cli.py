@@ -206,6 +206,25 @@ def breakglass(
         typer.echo(f"↑ {days} 日で失効します。操作は全件監査に残ります。", err=True)
 
 
+@client_app.command("passwd")
+def client_passwd(
+    client_id: str,
+    password: str = typer.Option(
+        ..., prompt=True, hide_input=True, confirmation_prompt=True,
+        help="12 文字以上。入力は画面に出ない",
+    ),
+):
+    """人の主体にパスワードを設定する（管理画面へのローカルログイン用）。"""
+    with _session() as s:
+        c = s.scalar(select(Client).where(Client.client_id == client_id))
+        if c is None:
+            typer.echo(f"主体 {client_id} が見つかりません", err=True)
+            raise typer.Exit(1)
+        ops.set_password(s, _root(), client_pk=c.id, password=password)
+        s.commit()
+        typer.echo(f"{client_id} のパスワードを設定しました")
+
+
 @client_app.command("revoke")
 def client_revoke(credential_id: int):
     """失効させる。**行は消さない**（いつ失効したかを残す）。"""

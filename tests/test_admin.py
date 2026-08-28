@@ -315,3 +315,107 @@ def test_人の主体はAPIキーで認証できない(db, world, root):
 
     with pytest.raises(AuthError):
         apikey.authenticate(db, raw)
+
+
+# ------------------------------------------------------- ID とパスワード
+#
+# 外部 IdP を持たない機関でも単体で建てられるようにするための入口。
+# oidc / proxy が使えるならそちらがよい（身元の管理が 1 か所に集まる）。
+
+
+@pytest.fixture
+def with_password(db, world, root):
+    """人の主体を 1 つ作り、パスワードを設定する。"""
+    c = ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint",
+                            subject_type="person")
+    db.flush()
+    ops.set_password(db, root, client_pk=c.id, password="correct-horse-battery")
+    db.commit()
+    return c
+
+
+def _pw_client(raw_app):
+    from fastapi.testclient import TestClient
+
+    return TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False)
+
+
+def test_パスワードでログインできる(db, world, with_password, raw_app):
+    cli = _pw_client(raw_app)
+    assert cli.get("/admin/").status_code == 302  # 未ログインはログインへ
+    assert cli.get("/admin/login").status_code == 200
+    r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
+                                       "password": "correct-horse-battery"})
+    assert r.status_code == 302 and r.headers["location"] == "/admin/"
+    assert "A機関" in cli.get("/admin/").text
+
+
+def test_誤ったパスワードは入れない(db, world, with_password, raw_app):
+    cli = _pw_client(raw_app)
+    r = cli.post("/admin/login", data={"username": "alice@example.ac.jp", "password": "wrong"})
+    assert r.status_code == 401
+    assert cli.get("/admin/").status_code == 302
+
+
+def test_存在しないIDと誤ったパスワードを区別しない(db, world, with_password, raw_app):
+    """**「その ID は無い」と分かると、利用者の一覧を総当たりで作れる。**"""
+    cli = _pw_client(raw_app)
+    a = cli.post("/admin/login", data={"username": "alice@example.ac.jp", "password": "wrong"})
+    b = cli.post("/admin/login", data={"username": "nobody@example.ac.jp", "password": "wrong"})
+    assert a.status_code == b.status_code == 401
+    from arkhe.api import i18n
+
+    assert i18n.JA["login.failed"] in a.text and i18n.JA["login.failed"] in b.text
+
+
+def test_連続失敗で一時的に施錠される(db, world, with_password, raw_app):
+    """**ログイン画面を出す以上、これが無いと辞書攻撃に素で晒される。**"""
+    from arkhe.auth import password as pw
+
+    cli = _pw_client(raw_app)
+    for _ in range(pw.MAX_ATTEMPTS):
+        cli.post("/admin/login", data={"username": "alice@example.ac.jp", "password": "wrong"})
+    # 正しいパスワードでも受け付けない
+    r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
+                                       "password": "correct-horse-battery"})
+    assert r.status_code == 401
+
+
+def test_短いパスワードは設定できない(db, world, root):
+    c = ops.register_client(db, root, client_id="bob@example.ac.jp", naan="99999",
+                            manager_id=world["a"].id, subject_type="person")
+    db.flush()
+    with pytest.raises(Invalid):
+        ops.set_password(db, root, client_pk=c.id, password="short")
+
+
+def test_機械の主体にパスワードは設定できない(db, world, root):
+    """機械はパスワードを覚えない。持たせると書き留められた鍵が増えるだけ。"""
+    c = ops.register_client(db, root, client_id="batch2", naan="99999",
+                            manager_id=world["a"].id)
+    db.flush()
+    with pytest.raises(Invalid):
+        ops.set_password(db, root, client_pk=c.id, password="long-enough-password")
+
+
+def test_パスワードの変更で古いものは通らなくなる(db, world, root, with_password, raw_app):
+    """**古い行は消さずに無効化する**（いつ変えたかが残る）。"""
+    ops.set_password(db, root, client_pk=with_password.id, password="a-brand-new-secret")
+    db.commit()
+    cli = _pw_client(raw_app)
+    old = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
+                                         "password": "correct-horse-battery"})
+    assert old.status_code == 401
+    new = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
+                                         "password": "a-brand-new-secret"})
+    assert new.status_code == 302
+
+
+def test_外部URLへのリダイレクトに使えない(db, world, with_password, raw_app):
+    """next に外部 URL を入れられると、ログイン直後に別サイトへ飛ばす踏み台になる。"""
+    cli = _pw_client(raw_app)
+    r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
+                                       "password": "correct-horse-battery",
+                                       "next": "https://evil.example.com/"})
+    assert r.headers["location"] == "/admin/"

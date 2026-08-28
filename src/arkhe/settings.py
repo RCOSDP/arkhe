@@ -21,7 +21,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 Mechanism = Literal["apikey", "oauth2", "oidc"]
-AdminLogin = Literal["bearer", "oidc", "proxy"]
+AdminLogin = Literal["bearer", "password", "oidc", "proxy"]
 
 
 class Settings(BaseSettings):
@@ -62,9 +62,13 @@ class Settings(BaseSettings):
     #: **ブラウザは Authorization ヘッダを付けられない。** API は Bearer で足りるが、
     #: 人が管理画面に入る経路は別に要る。
     #:
-    #:   bearer  既定。ログイン画面を持たない（自動化・curl 専用）
-    #:   oidc    arkhe が OIDC のクライアントとして認可コードフローを回す
-    #:   proxy   前段の認証プロキシが済ませた前提で、そのヘッダを信じる
+    #:   bearer    既定。ログイン画面を持たない（自動化・curl 専用）
+    #:   password  arkhe が ID とパスワードを預かる。**外部 IdP が無くても単体で建つ**
+    #:   oidc      arkhe が OIDC のクライアントとして認可コードフローを回す
+    #:   proxy     前段の認証プロキシが済ませた前提で、そのヘッダを信じる
+    #:
+    #: **oidc / proxy が使えるならそちらがよい。** 身元の管理が 1 か所に集まり、
+    #: 退職や異動が組織側の操作だけで効く。password は、それが無い機関のためのもの。
     admin_login: AdminLogin = "bearer"
 
     #: セッション Cookie の署名鍵と寿命。**既定値は持たない。**

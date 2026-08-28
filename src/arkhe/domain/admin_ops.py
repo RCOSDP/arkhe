@@ -23,6 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from arkhe.auth import apikey, oauth2
+from arkhe.auth import password as pw
 from arkhe.auth.errors import Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import (
@@ -386,6 +387,47 @@ def issue_credential(
     session.flush()
     audit(session, p, "issue_credential", client.client_id, kind=kind)
     return IssuedCredential(credential=cred, secret=raw)
+
+
+def set_password(session: Session, p: Principal, *, client_pk: int, password: str) -> Credential:
+    """人の主体にパスワードを設定する（既にあれば置き換える）。
+
+    **人にしか設定しない。** 機械はパスワードを覚えないし、覚えさせると
+    「どこかに書き留められた鍵」が増えるだけになる。
+
+    置き換えのときは**古い行を無効にして新しい行を足す**——いつ変えたかが残る。
+    """
+    client = session.get(Client, client_pk)
+    if client is None:
+        raise NotFound({"client": client_pk})
+    _require_naan(p, client.naan)
+    if not p.is_naan_wide and client.manager_id != p.manager_id:
+        raise Forbidden("この主体はこの管理者の範囲外")
+    if client.subject_type != Subject.PERSON:
+        raise Invalid({"subject_type": "パスワードは人の主体にだけ設定できる"})
+
+    try:
+        hashed = pw.hash_password(password)
+    except pw.WeakPassword as exc:
+        raise Invalid({"password": str(exc)}) from exc
+
+    for old in session.scalars(
+        select(Credential).where(
+            Credential.client_pk == client.id,
+            Credential.kind == CredentialKind.PASSWORD,
+            Credential.active.is_(True),
+        )
+    ):
+        old.active = False
+
+    cred = Credential(
+        client_pk=client.id, kind=CredentialKind.PASSWORD.value,
+        prefix="", hashed=hashed, label="password",
+    )
+    session.add(cred)
+    session.flush()
+    audit(session, p, "set_password", client.client_id)
+    return cred
 
 
 def revoke_credential(session: Session, p: Principal, *, credential_id: int) -> Credential:

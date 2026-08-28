@@ -364,8 +364,15 @@ class Client(Base):
 
 
 class CredentialKind(StrEnum):
+    """資格情報の種別。**人が持てるのはパスワードだけ。**
+
+    API キーと client_secret は機械のもの——人に配ると、その人が組織を離れても
+    鍵が生き残る。逆にパスワードは機械に持たせない（覚える主体がいない）。
+    """
+
     API_KEY = "api_key"  # arklet 方式。平文は発行時に一度だけ返す
     CLIENT_SECRET = "client_secret"  # OAuth2 client_credentials 用
+    PASSWORD = "password"  # 管理画面へのローカルログイン（人のみ）
 
 
 class Credential(Base):
@@ -394,6 +401,14 @@ class Credential(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    #: **総当たりを止める。** ログイン画面を出す以上、これが無いと辞書攻撃に
+    #: 素で晒される。API キーは 256 bit の乱数なので対象外だが、人が決める
+    #: パスワードは推測されうる。
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     client: Mapped[Client] = relationship(back_populates="credentials")
 

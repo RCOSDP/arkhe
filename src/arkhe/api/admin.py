@@ -118,7 +118,7 @@ def admin_principal(request: Request, session: Db, cfg: Config) -> Principal:
     try:
         return authenticate(bearer(request), session, cfg)
     except AuthError:
-        if cfg.admin_login == "oidc":
+        if cfg.admin_login in ("oidc", "password"):
             raise NeedsLogin(str(request.url.path)) from None
         raise
 
@@ -324,8 +324,65 @@ def _redirect_uri(request: Request) -> str:
     return str(request.url_for("admin_callback"))
 
 
+def _login_page(request: Request, cfg: Config, *, error: str = "", status: int = 200):
+    lang = i18n.pick(request)
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        {
+            "request": request,
+            "lang": lang,
+            "langs": i18n.LANGS,
+            "t": i18n.translator(lang),
+            "error": error,
+            "next_url": request.query_params.get("next", "/admin/"),
+        },
+        status_code=status,
+    )
+
+
+@router.post("/login", name="admin_login_submit")
+def login_submit(
+    request: Request,
+    session: Db,
+    cfg: Config,
+    username: Annotated[str, Form()] = "",
+    password: Annotated[str, Form()] = "",
+    next: Annotated[str, Form()] = "/admin/",  # noqa: A002
+):
+    """ID とパスワードを確かめてセッションにする。
+
+    **失敗しても理由を分けない。** 「その ID は無い」と分かると、利用者の一覧を
+    総当たりで作れてしまう。
+    """
+    if cfg.admin_login != "password":
+        return PlainTextResponse("この構成にログイン画面はありません", status_code=404)
+    from arkhe.auth import password as pw
+
+    try:
+        principal = pw.authenticate(session, username, password)
+    except AuthError as exc:
+        session.commit()  # 失敗回数と施錠を残す
+        return _login_page(request, cfg, error=str(exc.detail), status=401)
+    session.commit()
+
+    # **入れ先は自分のところに限る。** 外部 URL を next に入れられると、
+    # ログイン直後に別サイトへ飛ばす踏み台になる（open redirect）。
+    target = next if next.startswith("/admin") else "/admin/"
+    r = RedirectResponse(target, status_code=302)
+    sess.set_cookie(
+        r,
+        sess.issue(principal.client_id, secret=cfg.session_secret, ttl=cfg.session_ttl,
+                   extra={"via": "password"}),
+        ttl=cfg.session_ttl, secure=cfg.session_secure,
+    )
+    return r
+
+
 @router.get("/login", name="admin_login")
 def login(request: Request, cfg: Config):
+    if cfg.admin_login == "password":
+        return _login_page(request, cfg)
     if cfg.admin_login != "oidc":
         return PlainTextResponse(
             "この構成にログイン画面はありません（ARKHE_ADMIN_LOGIN を確認してください）",

@@ -109,6 +109,14 @@ JA: dict[str, str] = {
     "au.detail": "詳細",
     "au.count": "件",
     "au.empty": "記録がありません。",
+    # ログイン
+    "login.title": "管理画面にログイン",
+    "login.id": "ID",
+    "login.id_ph": "メールアドレスなど",
+    "login.password": "パスワード",
+    "login.submit": "ログイン",
+    "login.failed": "ID かパスワードが違います",
+    "login.logout": "ログアウト",
 }
 
 EN: dict[str, str] = {
@@ -197,6 +205,13 @@ EN: dict[str, str] = {
     "au.detail": "Detail",
     "au.count": "entries",
     "au.empty": "Nothing recorded.",
+    "login.title": "Sign in to the admin interface",
+    "login.id": "ID",
+    "login.id_ph": "your email address, for example",
+    "login.password": "Password",
+    "login.submit": "Sign in",
+    "login.failed": "That ID and password do not match",
+    "login.logout": "Sign out",
 }
 
 CATALOGS = {"ja": JA, "en": EN}

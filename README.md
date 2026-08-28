@@ -127,6 +127,36 @@ account had been revoked.
 > so the path itself is closed. The reverse holds too: a person subject cannot
 > authenticate with an API key.
 
+### Signing in with an ID and password
+
+A way in for institutions with no external IdP.
+
+```bash
+export ARKHE_ADMIN_LOGIN=password
+export ARKHE_SESSION_SECRET="$(python -c 'import secrets;print(secrets.token_urlsafe(48))')"
+
+arkhe client add alice@example.ac.jp 99999 --manager 1 --person
+arkhe client passwd alice@example.ac.jp     # input is not echoed
+```
+
+**Prefer `oidc` or `proxy` where they are available.** Identity then lives in one
+place, and someone leaving or moving is handled by the organisation alone.
+`password` exists so that an institution without any of that can still stand this up
+on its own.
+
+What it holds to:
+
+* Nothing is stored in the clear (Argon2).
+* **It does not reveal who exists.** An unknown ID and a wrong password produce the
+  same answer in the same amount of time.
+* **Brute force is stopped.** Five consecutive failures lock the account for fifteen
+  minutes. Publishing a login form without this leaves it plainly open to a
+  dictionary attack.
+* Only length is required (12 characters). Rules demanding symbols and capitals
+  produce strings nobody can remember, which end up written down somewhere.
+* Only a person subject can hold a password. Changing it deactivates the old row
+  rather than deleting it.
+
 ## Getting started
 
 ```bash
