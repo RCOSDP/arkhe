@@ -14,6 +14,7 @@ from __future__ import annotations
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
+from arkhe import __version__
 from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.domain.authz import Invalid, NotFound, ShoulderDelegated, Throttled
 from arkhe.settings import Settings, get_settings
@@ -104,7 +105,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title="arkhe",
         summary="ARK identifier infrastructure — minter and resolver as separate services",
         description=API_DESCRIPTION,
-        version="0.2.0",
+        version=__version__,
         license_info={"name": "MIT", "identifier": "MIT"},
         openapi_tags=TAGS,
         docs_url="/api/docs",

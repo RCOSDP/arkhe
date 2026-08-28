@@ -127,3 +127,26 @@ def test_ER図が実装と食い違わない():
         # 図にあるのに実装に無い列は、消し忘れか綴り違い（title は what_title と表記）
         stale = {c for c in cols if c not in real and c not in {"what_title"}}
         assert not stale, f"{name}: 図にあるが実装に無い列 {sorted(stale)}"
+
+
+def test_版は一か所からしか来ない():
+    """**版を 2 か所に書くと、必ずどちらかが古くなる。**
+
+    `pyproject.toml` を唯一の出どころとし、パッケージも OpenAPI もそこから読む。
+    """
+    import tomllib
+    from pathlib import Path
+
+    import arkhe
+
+    root = Path(__file__).resolve().parents[1]
+    declared = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
+    assert arkhe.__version__ == declared
+
+    # ソースに版の文字列を直書きしていないこと
+    hits = [
+        f"{p.relative_to(root)}"
+        for p in (root / "src").rglob("*.py")
+        if declared in p.read_text(encoding="utf-8")
+    ]
+    assert not hits, f"版が直書きされている: {hits}"

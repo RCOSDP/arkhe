@@ -75,6 +75,7 @@ plugins:
             API: API
             Project: プロジェクト
             Contributing: 参加する
+            Versioning: バージョン
             Changelog: 変更履歴
 
 markdown_extensions:
@@ -89,7 +90,8 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.highlight: {anchor_linenums: true}
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  # ルートの CHANGELOG をドキュメントに取り込む（二重管理しない）
+  - pymdownx.snippets: {base_path: ['.', 'docs']}
   - pymdownx.tabbed: {alternate_style: true}
   # Mermaid をそのまま書けるようにする（画像を書き出す手順を挟まない）
   - pymdownx.superfences:
@@ -132,4 +134,5 @@ nav:
       - API: reference/api.md
   - Project:
       - Contributing: project/contributing.md
+      - Versioning: project/versioning.md
       - Changelog: project/changelog.md

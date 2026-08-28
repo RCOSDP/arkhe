@@ -6,6 +6,8 @@ on:
     paths: ["docs/**", "mkdocs.yml", "src/**", "scripts/export_openapi.py", ".github/workflows/docs.yml"]
   pull_request:
     paths: ["docs/**", "mkdocs.yml"]
+  # 手で起動できるようにしておく（課金の停止などで自動実行が落ちたときに要る）
+  workflow_dispatch:
 
 permissions:
   contents: read
