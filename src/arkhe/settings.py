@@ -15,10 +15,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 Mechanism = Literal["apikey", "oauth2", "oidc"]
 
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     resolver: bool = False
 
     debug: bool = False
-    allowed_hosts: list[str] = Field(default_factory=lambda: ["*"])
+    allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"])
 
     # ---------------------------------------------------------------- DB
     database_url: str = "postgresql+psycopg://arkhe@localhost/arkhe"
@@ -40,7 +40,11 @@ class Settings(BaseSettings):
     read_database_url: str = ""
 
     # ---------------------------------------------------------------- 認証
-    auth: list[Mechanism] = Field(default_factory=lambda: ["apikey", "oidc"])
+    #: `NoDecode` を付けるのは、pydantic-settings が環境変数の list を JSON として
+    #: 解釈しようとするため。`ARKHE_AUTH=apikey,oidc` と書けるようにする。
+    auth: Annotated[list[Mechanism], NoDecode] = Field(
+        default_factory=lambda: ["apikey", "oidc"]
+    )
 
     #: `oauth2`（自前発行）用。トークンの署名鍵と寿命。
     token_secret: str = ""

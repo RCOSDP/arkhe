@@ -26,6 +26,7 @@ from arkhe.auth import apikey, oauth2
 from arkhe.auth.errors import Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import (
+    Ark,
     Authority,
     Client,
     Credential,
@@ -353,3 +354,133 @@ def revoke_credential(session: Session, p: Principal, *, credential_id: int) -> 
     cred.expires_at = cred.expires_at or datetime.now(UTC)
     audit(session, p, "revoke_credential", client.client_id, credential=credential_id)
     return cred
+
+
+# ------------------------------------------------------------- 承継と離脱
+#
+# ここが ARK の思想がいちばん出るところ。**管理主体がどう変わっても、識別子は
+# 壊さない。** `NR`（再割当てしない）を宣言している以上、`ark:/<NAAN>/…` という
+# 形で配ってしまった名前は振り直せない——振り直すことは元の識別子を殺すこと。
+# だから解決は続け、変えるのは「誰が新規に採番するか」と「どこへ転送するか」だけ。
+
+
+def succeed(
+    session: Session,
+    p: Principal,
+    *,
+    predecessor_id: int,
+    successor_id: int,
+    retire: bool = True,
+) -> dict:
+    """統廃合。**旧機関の名前空間を承継先に移す。**
+
+    shoulder ごと移すので、既存 ARK の `shoulder_id` は変わらない＝**識別子も
+    解決先も無傷**。変わるのは「その名前空間を今後誰が預かるか」だけ。
+
+    `retire=True` なら移した shoulder の新規採番を止める（既存は解決し続ける）。
+    承継先が自分の shoulder で採番を続け、旧名前空間は読み取り専用になる形。
+    """
+    pre = session.get(Manager, predecessor_id)
+    suc = session.get(Manager, successor_id)
+    if pre is None or suc is None:
+        raise NotFound({"manager": [predecessor_id, successor_id]})
+    _require_manager(session, p, pre)
+    _require_naan(p, suc.naan)
+    if pre.id == suc.id:
+        raise Invalid({"successor": "自分自身は承継先にできない"})
+    if pre.naan != suc.naan:
+        # NAAN を跨ぐ承継は shoulder の移動では表せない（名前空間ごと別物）。
+        raise Invalid({"successor": "NAAN を跨ぐ承継はできない（識別子の形が変わるため）"})
+
+    moved = []
+    for sh in list(pre.shoulders):
+        sh.manager_id = suc.id
+        if retire:
+            sh.status = ShoulderStatus.RETIRED.value
+            sh.note = (sh.note + " / ").lstrip(" /") + f"{pre.name} から承継"
+        moved.append(f"{sh.naan}{sh.shoulder}")
+    pre.succeeded_by_id = suc.id
+    pre.active = False
+    # 旧機関の資格情報は止める。**行は消さない**（誰の鍵だったかを残す）。
+    revoked = [c.client_id for c in session.scalars(
+        select(Client).where(Client.manager_id == pre.id, Client.active.is_(True))
+    )]
+    for c in session.scalars(select(Client).where(Client.manager_id == pre.id)):
+        c.active = False
+
+    audit(session, p, "succeed", pre.name, successor=suc.name, shoulders=moved, revoked=revoked)
+    return {"moved": moved, "revoked": revoked, "successor": suc.name}
+
+
+def depart(
+    session: Session,
+    p: Principal,
+    *,
+    manager_id: int,
+    resolver_template: str = "",
+    keep_update_label: str = "",
+) -> dict:
+    """**機関が離れる**（組織は存続する。統廃合とは別）。
+
+    核心は 1 点——**新規採番は止めるが、解決は永久に続ける。**
+    `ark:/<この NAAN>/…` という形で配った以上、振り直せないので、NAAN の保有者が
+    302 を返し続けるしかない。
+
+    **`resolver_template` を渡すのが推奨。** 既存 ARK の転送先を機関のリゾルバへ
+    一括で向け直し、shoulder にも同じ委譲を設定する。**これで以後の運用が機関側に
+    閉じる**——離れた機関に「移転のたびに我々へ更新を投げる」作業を強いない。
+    継続作業を要求する形にすると、放置されて死んだリンクが残る。
+
+    テンプレートは `Shoulder.redirect` と同じ記法（`$id` / `${blade}`）。
+    例: ``https://repo.univ.ac.jp/ark/${blade}``
+    """
+    from arkhe.domain.resolution import expand_redirect
+
+    manager = session.get(Manager, manager_id)
+    if manager is None:
+        raise NotFound({"manager": manager_id})
+    _require_manager(session, p, manager)
+
+    shoulders = list(manager.shoulders)
+    rewritten = 0
+    if resolver_template:
+        ids = [sh.id for sh in shoulders]
+        for sh in shoulders:
+            sh.redirect = resolver_template  # 未登録の名前も機関のリゾルバへ
+        for ark in session.scalars(select(Ark).where(Ark.shoulder_id.in_(ids))):
+            _, ark.url = expand_redirect(resolver_template, ark.naan, ark.assigned_name)
+            rewritten += 1
+
+    for sh in shoulders:
+        sh.status = ShoulderStatus.RETIRED.value
+        sh.note = (sh.note + " / ").lstrip(" /") + "離脱により新規採番を停止"
+
+    revoked = [c.client_id for c in session.scalars(
+        select(Client).where(Client.manager_id == manager.id, Client.active.is_(True))
+    )]
+    for c in session.scalars(select(Client).where(Client.manager_id == manager.id)):
+        c.active = False
+
+    issued = None
+    if keep_update_label:
+        # **更新権限だけ残す。** scope を分けてある設計がここで効く——
+        # 新規採番はできないが、転送先の付け替えは自分でできる。
+        client = register_client(
+            session, p, client_id=f"{manager.name}-{keep_update_label}",
+            naan=manager.naan, manager_id=manager.id, scopes="ark:update",
+            label=keep_update_label,
+        )
+        issued = issue_credential(session, p, client_pk=client.id).secret
+
+    manager.active = False
+    audit(
+        session, p, "depart", manager.name,
+        shoulders=[f"{s.naan}{s.shoulder}" for s in shoulders],
+        rewritten=rewritten, revoked=revoked,
+    )
+    return {
+        "shoulders": [f"{s.naan}{s.shoulder}" for s in shoulders],
+        "rewritten": rewritten,
+        "revoked": revoked,
+        "update_secret": issued,
+    }
