@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from jc2ark.arkspec.betanumeric import (
+from arkhe.arkspec.betanumeric import (
     BETANUMERIC,
     CONSONANTS,
     check_digit_base,
@@ -20,7 +20,7 @@ from jc2ark.arkspec.betanumeric import (
     verify_ark_check_digit,
     verify_check_digit,
 )
-from jc2ark.arkspec.naming import (
+from arkhe.arkspec.naming import (
     ArkParseError,
     ark_key,
     gen_prefixes,
@@ -30,7 +30,7 @@ from jc2ark.arkspec.naming import (
     split_after_normalized,
     strip_hyphens,
 )
-from jc2ark.arkspec.shoulder import (
+from arkhe.arkspec.shoulder import (
     InvalidShoulder,
     generate_shoulder,
     shoulder_capacity,

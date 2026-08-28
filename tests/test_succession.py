@@ -1,258 +1,126 @@
-"""統廃合と承継のテスト（`ark_succession.md`）。
+"""承継と離脱。**管理主体がどう変わっても、識別子は壊さない。**
 
-**上位の原則は「識別子は壊さない」。** 組織が消えても解決は続ける。
+`NR`（再割当てしない）を宣言している以上、配ってしまった名前は振り直せない——
+振り直すことは元の識別子を殺すこと。だから解決は続け、変えるのは「誰が新規に
+採番するか」と「どこへ転送するか」だけ。
 """
 
 from __future__ import annotations
 
 import pytest
 
-from jc2ark.ark.models import Ark, Naan, Shoulder, ShoulderStatus
-from jc2ark.ark.onboarding import onboard, succeed
-from jc2ark.ark.repository import DjangoArkRepository
-from jc2ark.ark.resolution import Outcome, resolve
-
-pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def naan():
-    return Naan.objects.create(naan="99999", name="JC2", na_policy="NP | NR, OP, CC | 2026 |")
+from arkhe.db.repository import SqlArkRepository
+from arkhe.domain import admin_ops as ops
+from arkhe.domain import minting
+from arkhe.domain.authz import Invalid
+from arkhe.domain.resolution import Outcome, resolve
 
 
-def _mint(m, url):
-    ark, _ = Ark.objects.mint(shoulder=m.default_shoulder, url=url)
-    return ark
+def _resolve(db, key):
+    naan, name = key.split("/", 1)
+    return resolve(SqlArkRepository(db), naan, name)
 
 
-def _resolves_to(ark):
-    naan_part, _, name = ark.ark.partition("/")
-    return resolve(DjangoArkRepository(), naan_part, name)
+def test_承継しても解決先は変わらない(db, world, root):
+    arks = [
+        minting.mint(db, shoulder=world["sh_a"], created_by="a", url=f"https://a/{i}")[0]
+        for i in range(3)
+    ]
+    db.commit()
+    keys = [a.ark for a in arks]
 
+    ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["b"].id)
+    db.commit()
 
-# --------------------------------------------------------------------------
-# 統合（A + B → C）
-# --------------------------------------------------------------------------
-
-
-def test_merger_keeps_every_identifier_resolving(naan):
-    """**A ＋ B → C。既存 ARK は 1 本も変わらない。解決先も変わらない。**"""
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    b = onboard(naan=naan, name="B大学", label="ingest").manager
-    c = onboard(naan=naan, name="C大学（統合後）", label="ingest").manager
-
-    ark_a = _mint(a, "https://a.example/1")
-    ark_b = _mint(b, "https://b.example/1")
-
-    succeed(predecessor=a, successor=c)
-    succeed(predecessor=b, successor=c)
-
-    for ark, url in ((ark_a, "https://a.example/1"), (ark_b, "https://b.example/1")):
-        r = _resolves_to(ark)
+    for i, k in enumerate(keys):
+        r = _resolve(db, k)
         assert r.outcome is Outcome.REDIRECT
-        assert r.location == url, "解決先が変わっていない"
-
-    # 名前空間は C に移った
-    assert {s.manager_id for s in Shoulder.objects.filter(manager__isnull=False)} == {c.pk}
+        assert r.location == f"https://a/{i}"  # **無傷**
 
 
-def test_successor_can_mint_into_the_inherited_namespace(naan):
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    c = onboard(naan=naan, name="C大学", label="ingest").manager
-    a_shoulder = a.default_shoulder.shoulder
-
-    succeed(predecessor=a, successor=c)
-    c.refresh_from_db()
-    sh = Shoulder.objects.get(shoulder=a_shoulder)
-    ark, _ = Ark.objects.mint(shoulder=sh, url="https://c.example/1")
-    assert ark.shoulder.manager_id == c.pk
+def test_承継すると名前空間の預かり主が変わる(db, world, root):
+    ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["b"].id)
+    db.commit()
+    assert world["sh_a"].manager_id == world["b"].id
+    assert world["a"].succeeded_by_id == world["b"].id
+    assert world["a"].active is False
 
 
-def test_succession_revokes_the_old_credentials(naan):
-    """承継後は**承継先の資格情報で採番する**。"""
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    c = onboard(naan=naan, name="C大学", label="ingest").manager
-    assert a.clients.filter(active=True).count() == 1
-    succeed(predecessor=a, successor=c)
-    assert a.clients.filter(active=True).count() == 0
-    assert c.clients.filter(active=True).count() == 1
+def test_承継後は旧名前空間で新規採番できない(db, world, root):
+    ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["b"].id, retire=True)
+    db.commit()
+    assert world["sh_a"].status == "retired"
 
 
-def test_succession_is_recorded_in_the_lineage_and_the_audit(naan):
-    from jc2ark.ark.models import AuditEvent
-
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    c = onboard(naan=naan, name="C大学", label="ingest").manager
-    succeed(predecessor=a, successor=c)
-    a.refresh_from_db()
-    assert a.succeeded_by_id == c.pk and not a.active
-    assert list(c.predecessors.values_list("name", flat=True)) == ["A大学"]
-    ev = AuditEvent.objects.get(action="succeed")
-    assert "A大学 -> C大学" in ev.target
+def test_承継はNAANを跨げない(db, world, root):
+    """跨ぐと識別子の形が変わる＝別の名前になってしまう。"""
+    with pytest.raises(Invalid):
+        ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["c"].id)
 
 
-def test_retire_stops_new_minting_but_keeps_resolving(naan):
-    """`--retire`: **新規採番は止めるが、既存 ARK は解決し続ける。**"""
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    c = onboard(naan=naan, name="C大学", label="ingest").manager
-    ark = _mint(a, "https://a.example/1")
-
-    succeed(predecessor=a, successor=c, retire_shoulders=True)
-    sh = Shoulder.objects.get(pk=ark.shoulder_id)
-    assert sh.status == ShoulderStatus.RETIRED
-    assert not sh.can_mint_here
-    assert _resolves_to(ark).location == "https://a.example/1"
-
-
-# --------------------------------------------------------------------------
-# S2  名前空間の再利用を防ぐ
-# --------------------------------------------------------------------------
-
-
-def test_shoulders_are_never_deleted(naan):
-    """**削除は NR 違反の芽。** 乱数割当が同じ文字列を再び当てうる。"""
-    m = onboard(naan=naan, name="A大学", label="ingest").manager
-    with pytest.raises(RuntimeError, match="NR 違反"):
-        m.default_shoulder.delete()
+def test_離脱_転送先を機関のリゾルバへ一括で向け直す(db, world, root):
+    arks = [
+        minting.mint(db, shoulder=world["sh_a"], created_by="a", url="https://old/x")[0]
+        for _ in range(2)
+    ]
+    db.commit()
+    r = ops.depart(
+        db, root, manager_id=world["a"].id,
+        resolver_template="https://repo.example.ac.jp/ark/${blade}",
+    )
+    db.commit()
+    assert r["rewritten"] == 2
+    for a in arks:
+        res = _resolve(db, a.ark)
+        assert res.location.startswith("https://repo.example.ac.jp/ark/")
 
 
-def test_a_retired_shoulder_is_not_handed_out_again(naan):
-    """行が残っているので unique 制約で再割当されない。"""
-    m = onboard(naan=naan, name="A大学", label="ingest").manager
-    taken = m.default_shoulder.shoulder
-    m.default_shoulder.status = ShoulderStatus.RETIRED
-    m.default_shoulder.save()
-    others = {onboard(naan=naan, name=f"機関{i}", label="l").shoulder.shoulder for i in range(40)}
-    assert taken not in others
+def test_離脱_未登録の名前も機関のリゾルバへ流れる(db, world, root):
+    """**継続作業を要求する形にすると放置されて死んだリンクが残る。**
+    以後の運用が機関側に閉じるよう、shoulder にも同じ委譲を置く。"""
+    from arkhe.arkspec.betanumeric import check_digit_base, noid_check_digit
+
+    ops.depart(
+        db, root, manager_id=world["a"].id,
+        resolver_template="https://repo.example.ac.jp/ark/${blade}",
+    )
+    db.commit()
+    stem = "a1zzzzzzzz"
+    name = stem + noid_check_digit(check_digit_base("99999", stem))
+    res = _resolve(db, f"99999/{name}")
+    assert res.outcome is Outcome.REDIRECT
+    assert res.reason == "delegated by shoulder"
 
 
-# --------------------------------------------------------------------------
-# 閉学（承継先なし）
-# --------------------------------------------------------------------------
+def test_離脱_新規採番は止まるが解決は続く(db, world, root):
+    ark, _ = minting.mint(db, shoulder=world["sh_a"], created_by="a", url="https://old/x")
+    db.commit()
+    ops.depart(db, root, manager_id=world["a"].id)
+    db.commit()
+    assert world["sh_a"].status == "retired"
+    assert _resolve(db, ark.ark).outcome is Outcome.REDIRECT  # **解決は続く**
 
 
-def test_closure_without_a_successor_keeps_resolving(naan):
-    """**承継先が無くても解決は続ける。** 引き受けるのが我々の役割。"""
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    ark = _mint(a, "https://a.example/1")
-    a.active = False
-    a.save()
-    for sh in a.shoulders.all():
-        sh.status = ShoulderStatus.RETIRED
-        sh.save()
-    a.clients.update(active=False)
-    assert _resolves_to(ark).outcome is Outcome.REDIRECT
+def test_離脱_更新権限だけ残せる(db, world, root):
+    """scope を分けた設計がここで効く——新規採番はできないが、転送先の付け替えは
+    自分でできる。"""
+    r = ops.depart(db, root, manager_id=world["a"].id, keep_update_label="self-managed")
+    db.commit()
+    assert r["update_secret"]
+    from arkhe.auth import apikey
+
+    p = apikey.authenticate(db, r["update_secret"])
+    assert p.scopes == frozenset({"ark:update"})
 
 
-def test_lost_target_falls_back_to_the_description(naan):
-    """§2.4: リンク先が消えたら **url を空にして記述を返す**（FAIR A2）。"""
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    ark = _mint(a, "https://a.example/1")
-    ark.url = ""
-    ark.title = "A大学 紀要 第1号"
-    ark.commitment = "識別子とメタデータは維持するが、対象の所在は失われた"
-    ark.save()
-    r = _resolves_to(ark)
-    assert r.outcome is Outcome.DESCRIBE
-    assert r.status == 200
+def test_離脱で古い鍵は止まるが行は残る(db, world, root):
+    from sqlalchemy import select
 
+    from arkhe.db.models import Client
 
-# --------------------------------------------------------------------------
-# NAAN をまたぐ承継は自動化しない
-# --------------------------------------------------------------------------
-
-
-def test_cross_naan_succession_is_refused(naan):
-    """§2.2: レジストリの `who` 変更（ARK Alliance への人手申請）が要るので、
-    ここでは扱わない。"""
-    other = Naan.objects.create(naan="12345", name="岡崎")
-    a = onboard(naan=naan, name="A大学", label="ingest").manager
-    b = onboard(naan=other, name="NIBB", label="ingest").manager
-    with pytest.raises(ValueError, match="NAAN をまたぐ"):
-        succeed(predecessor=a, successor=b)
-
-
-def test_succeed_command(naan, capsys):
-    from django.core.management import call_command
-
-    onboard(naan=naan, name="A大学", label="ingest")
-    onboard(naan=naan, name="C大学", label="ingest")
-    call_command("succeed", "A大学", "C大学", "--retire")
-    out = capsys.readouterr().out
-    assert "承継を記録した" in out
-    assert "既存 ARK は 1 本も変わらない" in out
-
-
-# --------------------------------------------------------------------------
-# §5  機関の離脱（組織は存続する）
-# --------------------------------------------------------------------------
-
-
-def test_departure_stops_minting_but_never_stops_resolving(naan):
-    """**核心。** 新規採番は止めるが、解決は永久に続ける。
-
-    `ark:/<NII の NAAN>/…` である以上**振り直せない**（振り直す＝元の識別子を殺す）。
-    NII が NAAN 保有者として 302 を返し続けるしかない。
-    """
-    from jc2ark.ark.onboarding import depart
-
-    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
-    ark = _mint(m, "https://old.example/1")
-    depart(manager=m)
-    assert Shoulder.objects.get(pk=ark.shoulder_id).status == ShoulderStatus.RETIRED
-    assert _resolves_to(ark).outcome is Outcome.REDIRECT
-
-
-def test_departure_can_point_everything_at_the_institutions_resolver(naan):
-    """**推奨の形。** 一括で機関のリゾルバへ向け、以後の運用を機関側に閉じる。
-
-    離脱した機関に「移転のたびに NII へ更新を投げる」作業を強いると、放置されて
-    死んだリンクが残る。**継続作業を要求しない形**にしておく。
-    """
-    from jc2ark.ark.onboarding import depart
-
-    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
-    a1 = _mint(m, "https://old.example/1")
-    a2 = _mint(m, "https://old.example/2")
-
-    r = depart(manager=m, resolver_template="https://repo.univ.ac.jp/ark/${blade}")
-    assert r["urls_rewritten"] == 2
-
-    for a in (a1, a2):
-        loc = _resolves_to(a).location
-        assert loc.startswith("https://repo.univ.ac.jp/ark/")
-        assert loc.endswith(a.assigned_name[3:]), "blade が展開されている"
-
-    # 未登録の名前も機関のリゾルバへ（shoulder の redirect）
-    assert Shoulder.objects.get(pk=a1.shoulder_id).redirect.startswith("https://repo.univ.ac.jp/")
-
-
-def test_departure_can_keep_update_only_credentials(naan):
-    """**「発行はさせないが更新はさせる」。** scope を分けた設計がここで効く。"""
-    from jc2ark.ark.onboarding import depart
-
-    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
-    r = depart(manager=m, keep_update_label="post-departure")
-    client, _secret = r["update_client"]
-    assert client.allowed_scopes == "ark:update"
-    assert m.clients.filter(active=True).count() == 1
-    m.refresh_from_db()
-    assert m.active, "更新権限を残すなら機関は有効のまま"
-
-
-def test_departure_without_anything_deactivates_the_manager(naan):
-    from jc2ark.ark.onboarding import depart
-
-    m = onboard(naan=naan, name="離脱大学", label="ingest").manager
-    depart(manager=m)
-    m.refresh_from_db()
-    assert not m.active
-    assert m.clients.filter(active=True).count() == 0
-
-
-def test_arks_are_never_deleted(naan):
-    """**行を消すと解決が止まる＝識別子が壊れる。** NR が許さない。"""
-    m = onboard(naan=naan, name="A大学", label="ingest").manager
-    ark = _mint(m, "https://a.example/1")
-    with pytest.raises(RuntimeError, match="識別子が壊れる"):
-        ark.delete()
+    ops.register_client(db, root, client_id="a-web", naan="99999", manager_id=world["a"].id)
+    db.commit()
+    ops.depart(db, root, manager_id=world["a"].id)
+    db.commit()
+    still = db.scalar(select(Client).where(Client.client_id == "a-web"))
+    assert still is not None and still.active is False  # 誰の鍵だったかを残す
