@@ -82,9 +82,19 @@ def onboard(
 
 
 @shoulder_app.command("add")
-def shoulder_add(naan: str, shoulder: str, manager: int = typer.Option(None, help="機関 id")):
+def shoulder_add(
+    naan: str,
+    shoulder: str,
+    manager: int = typer.Option(None, help="機関 id"),
+    reserve: bool = typer.Option(False, help="押さえるだけで採番させない"),
+    note: str = typer.Option("", help="運用の記録"),
+):
+    """名前空間を切り出す。`--reserve` で将来用に確保できる。"""
     with _session() as s:
-        sh = ops.add_shoulder(s, _root(), naan=naan, shoulder=shoulder, manager_id=manager)
+        sh = ops.add_shoulder(
+            s, _root(), naan=naan, shoulder=shoulder, manager_id=manager,
+            status="reserved" if reserve else "active", note=note,
+        )
         s.commit()
         typer.echo(f"{sh.naan}{sh.shoulder} を切り出しました")
 

@@ -156,7 +156,12 @@ def set_succession(
 
 
 def _add_shoulder(
-    session: Session, *, naan: str, shoulder: str, manager: Manager | None
+    session: Session,
+    *,
+    naan: str,
+    shoulder: str,
+    manager: Manager | None,
+    status: str = ShoulderStatus.ACTIVE.value,
 ) -> Shoulder:
     if not shoulder.startswith("/"):
         shoulder = "/" + shoulder
@@ -165,7 +170,10 @@ def _add_shoulder(
     ):
         raise Invalid({"shoulder": f"{naan}{shoulder} は既に在る"})
     sh = Shoulder(
-        shoulder=shoulder, naan=naan, manager_id=manager.id if manager else None
+        shoulder=shoulder,
+        naan=naan,
+        manager_id=manager.id if manager else None,
+        status=status,
     )
     session.add(sh)
     session.flush()
@@ -173,17 +181,35 @@ def _add_shoulder(
 
 
 def add_shoulder(
-    session: Session, p: Principal, *, naan: str, shoulder: str, manager_id: int | None = None
+    session: Session,
+    p: Principal,
+    *,
+    naan: str,
+    shoulder: str,
+    manager_id: int | None = None,
+    status: str = ShoulderStatus.ACTIVE.value,
+    note: str = "",
 ) -> Shoulder:
-    """名前空間を切り出す。**NAAN 単位以上の権限が要る**（配る側の操作）。"""
+    """名前空間を切り出す。**NAAN 単位以上の権限が要る**（配る側の操作）。
+
+    `status=reserved` で「押さえてあるが使わせない」状態で作れる。**予約は作成時に
+    しか指定できない**——active から reserved へ戻す遷移は許していないため
+    （一度採番できる状態にした名前空間を、後から「未使用扱い」にはできない）。
+    """
     _require_naan(p, naan)
     if not p.is_naan_wide:
         raise Forbidden("shoulder の追加は NAAN 単位以上の権限が要る")
     manager = session.get(Manager, manager_id) if manager_id else None
     if manager_id and manager is None:
         raise NotFound({"manager": manager_id})
-    sh = _add_shoulder(session, naan=naan, shoulder=shoulder, manager=manager)
-    audit(session, p, "add_shoulder", f"{naan}{shoulder}")
+    if status not in (ShoulderStatus.ACTIVE, ShoulderStatus.RESERVED):
+        raise Invalid({"status": "作成時に指定できるのは active か reserved のみ"})
+    sh = _add_shoulder(
+        session, naan=naan, shoulder=shoulder, manager=manager, status=status
+    )
+    if note:
+        sh.note = note
+    audit(session, p, "add_shoulder", f"{naan}{shoulder}", status=status)
     return sh
 
 

@@ -129,3 +129,20 @@ def test_翻訳に抜けが無い():
 
     for lang, cat in i18n.CATALOGS.items():
         assert set(cat) == set(i18n.JA), f"{lang} に抜けがある"
+
+
+def test_予約は作成時にしか指定できない(db, world, root):
+    """**active から reserved へは戻せない。** 一度採番できる状態にした名前空間を
+    後から「未使用扱い」にはできない。"""
+    sh = ops.add_shoulder(db, root, naan="99999", shoulder="/rv", status="reserved")
+    db.commit()
+    assert sh.status == ShoulderStatus.RESERVED
+    with pytest.raises(Invalid):
+        ops.add_shoulder(db, root, naan="99999", shoulder="/bad", status="retired")
+
+
+def test_予約枠は採番できるようにできる(db, world, root):
+    sh = ops.add_shoulder(db, root, naan="99999", shoulder="/rv", status="reserved")
+    db.commit()
+    ops.set_shoulder_status(db, root, shoulder_id=sh.id, status="active")
+    assert sh.status == ShoulderStatus.ACTIVE

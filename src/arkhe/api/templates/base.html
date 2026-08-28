@@ -69,6 +69,7 @@ aside {
   border-right: 1px solid var(--line); background: var(--panel);
   padding: 18px 12px; display: flex; flex-direction: column; gap: 4px;
   position: sticky; top: 0; height: 100vh;
+  overflow-y: auto;   /* ウィンドウが低いときに項目が届かなくならないように */
 }
 .brand { display: flex; align-items: center; gap: 9px; padding: 6px 10px 20px; }
 .brand .mark {
@@ -93,10 +94,11 @@ aside a.nav[aria-current] { background: var(--accent-soft); color: var(--accent)
 aside a.nav svg { width: 16px; height: 16px; flex: none; stroke-width: 1.8; }
 
 .rail-foot { margin-top: auto; border-top: 1px solid var(--line); padding: 14px 10px 4px; }
-.langs { display: flex; gap: 2px; padding: 2px; margin-bottom: 12px;
-         background: var(--line-2); border-radius: var(--r-sm); }
-.langs .lang { flex: 1; text-align: center; font-size: 12px; padding: 4px 0;
-               border-radius: 5px; color: var(--ink-3); transition: all .12s ease; }
+/* 言語切替。**ヘッダーに置く**——サイドバーの底だとウィンドウが低いとき見切れる。 */
+.langs { display: flex; gap: 2px; padding: 2px; background: var(--line-2);
+         border-radius: var(--r-sm); }
+.langs .lang { font-size: 12px; line-height: 1.5; padding: 3px 10px; border-radius: 5px;
+               color: var(--ink-3); transition: all .12s ease; white-space: nowrap; }
 .langs .lang:hover { color: var(--ink); }
 .langs .lang.on { background: var(--panel); color: var(--ink); font-weight: 600;
                   box-shadow: var(--shadow); }
@@ -254,12 +256,6 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
     {{ t("nav.audit") }}</a>
 
   <div class="rail-foot">
-    <div class="langs" role="group" aria-label="{{ t('lang.label') }}">
-      {% for code, label in langs.items() %}
-        <a href="?lang={{ code }}" class="lang{% if code == lang %} on{% endif %}"
-           hreflang="{{ code }}">{{ label }}</a>
-      {% endfor %}
-    </div>
     <div class="chip">
       <span class="av">{{ principal.client_id[:2]|upper }}</span>
       <span class="id">
@@ -274,6 +270,12 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   <header class="bar">
     <div class="crumb">arkhe <span>/</span> <b>{% block crumb %}{% endblock %}</b></div>
     <div class="right">
+      <div class="langs" role="group" aria-label="{{ t('lang.label') }}">
+        {% for code, label in langs.items() %}
+          <a href="?lang={{ code }}" class="lang{% if code == lang %} on{% endif %}"
+             hreflang="{{ code }}" lang="{{ code }}">{{ label }}</a>
+        {% endfor %}
+      </div>
       <span class="pill {{ principal.authority }}">{{ t("au." ~ principal.authority) }}</span>
     </div>
   </header>
