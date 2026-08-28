@@ -1,39 +1,47 @@
 # arkhe
 
-ARK 識別子の基盤。**採番（minter）と解決（resolver）を別プロセスで動かす。**
+*[日本語版はこちら / Japanese version](README.ja.md)*
 
-ARK は DOI / Handle と違い、有償の登録機関と中央基盤を前提としない識別子体系で、
-「**永続性は文字列の性質ではなく、サービスの問題**」という立場を取る。arkhe はその立場のまま、
-機関へ名前空間を委譲し、永続性の水準を各機関が自己申告できる形で運用するための実装。
+Infrastructure for **ARK** identifiers. **Minting and resolution run as separate
+processes.**
 
-名前の由来はギリシャ語 ἀρχή（始原・原理）。参照が始まる点、という意味。
+Unlike DOI and Handle, ARK presumes no paid registration agency and no central
+infrastructure. It holds that **persistence is not a property of the string but a
+matter of service**. arkhe implements that position: it delegates namespaces to
+institutions and lets each of them declare, for itself, the level of commitment it
+is prepared to keep.
 
-FastAPI ＋ SQLAlchemy 2.0。`src/arkhe/arkspec/`（ARK 仕様の純関数層）と
-`src/arkhe/domain/resolution.py`（解決の決定ロジック）は **stdlib しか使わない**ので、
-仕様の検証だけしたい利用者は何もインストールせずに読める。
+The name is the Greek ἀρχή — beginning, first principle. The point at which a
+reference starts.
 
-設計・受け入れ条件・実装計画・仕様適合状況の各文書は、JC2 の作業リポジトリ側にある
-（`ark_design_policy.md` / `ark_acceptance_criteria.md` / `ark_implementation_plan.md` /
-`ark_conformance_jc2ark.md` ほか）。
+Built on FastAPI and SQLAlchemy 2.0. `src/arkhe/arkspec/` (the ARK specification as
+pure functions) and `src/arkhe/domain/resolution.py` (the resolution decision logic)
+**depend on nothing but the standard library**, so anyone who only wants to check
+the specification can read them without installing a thing.
 
-## 構成
+The design notes, acceptance criteria, implementation plan and conformance record
+live in the JC2 working repository (`ark_design_policy.md`,
+`ark_acceptance_criteria.md`, `ark_implementation_plan.md`,
+`ark_conformance_jc2ark.md`, and others).
+
+## Layout
 
 | | |
 | --- | --- |
-| `src/arkhe/arkspec/` | **ARK 仕様の純関数層。フレームワークにも DB にも依存しない。** 仕様の難所はここ |
-| `src/arkhe/domain/` | 解決・認可・採番・管理操作・承継。**HTTP を知らない** |
-| `src/arkhe/db/` | SQLAlchemy のモデルとリポジトリ |
-| `src/arkhe/auth/` | 3 つの認証機構（apikey / oauth2 / oidc）と `Principal` |
-| `src/arkhe/api/` | FastAPI のルータ、管理画面、国際化 |
+| `src/arkhe/arkspec/` | **The ARK specification as pure functions. No framework, no database.** The hard parts of the spec live here |
+| `src/arkhe/domain/` | Resolution, authorization, minting, administrative operations, succession. **Knows nothing about HTTP** |
+| `src/arkhe/db/` | SQLAlchemy models and the repository |
+| `src/arkhe/auth/` | Three authentication mechanisms (apikey / oauth2 / oidc) and `Principal` |
+| `src/arkhe/api/` | FastAPI routers, the admin interface, internationalisation |
 
-`ARKHE_RESOLVER=1` で resolver として起動する。**minter に解決の口は無く、resolver に
-採番の口も無い**（別々にスケールさせ、resolver を読み取り専用ロールとレプリカに
-向けるため）。
+Set `ARKHE_RESOLVER=1` to run as a resolver. **A minter has no resolution endpoint,
+and a resolver has no minting endpoint** — so the two can be scaled separately and
+the resolver can be pointed at a read-only role and a replica.
 
-## 認証
+## Authentication
 
-**排他の「モード」ではなく、機構を個別に有効化する。** 移行期に「API キーと OIDC の
-両方を受ける」が普通に要るため。
+**Mechanisms are enabled individually, not selected as one exclusive mode.** During
+a migration you routinely need to accept both an API key and an OIDC token.
 
 ```
 ARKHE_AUTH=apikey,oidc
@@ -41,36 +49,63 @@ ARKHE_AUTH=apikey,oidc
 
 | | |
 | --- | --- |
-| `apikey` | 個人アクセストークン方式。**arkhe 単体で完結する**（外部依存なし） |
-| `oauth2` | arkhe 自身が発行する。**client_credentials だけ**——ARK の採番は機関システムからの M2M で、認可コードフローが解く「利用者が第三者アプリに代理を許可する」構図が無いため |
-| `oidc` | 外部の認可サーバ（Keycloak 等）が発行した JWT を検証する。人間のログインが要る場面はこちらに委譲する |
+| `apikey` | A personal access token. **Self-contained** — arkhe needs nothing external |
+| `oauth2` | Issued by arkhe itself. **Client credentials only** — ARK minting is machine-to-machine from an institution's repository, so the situation the authorization code flow exists to solve (a user granting a third-party app the right to act on their behalf) never arises |
+| `oidc` | Validates a JWT issued by an external authorization server such as Keycloak. Delegate here when a human has to log in |
 
-どの機構で認証しても `Principal` 1 つに集約され、**認可の判断は 1 か所**に集まる。
+Whichever mechanism authenticates, the result collapses into a single `Principal`,
+so **the authorization decision is made in one place** rather than branching per
+mechanism.
 
-到達範囲は 3 段（`system` / `naan` / `manager`）。**配られた側が、配った側より広く
-届くことはない。**
+Reach has three tiers — `system`, `naan`, `manager`. **No principal can reach
+further than the one that granted it.**
 
-## 開発
+## What the invariants protect
+
+ARK declares that names are never re-assigned. That single commitment is what most
+of this codebase is arranged around.
+
+- **An ARK is never deleted.** Deleting the row stops resolution, which breaks the
+  identifier. When a target is lost you tombstone it, or empty its target so the
+  resolver returns a description instead.
+- **A shoulder is never deleted.** Random assignment could hand out the same string
+  again. A departed institution's namespace is retired, not removed.
+- **A retired shoulder cannot be reactivated.** You cannot rule out that something
+  outside used the name in the meantime.
+- **Minting never turns into an update.** A primary key collision must fail, not
+  silently rewrite where an existing ARK points.
+
+Succession and departure are built on the same commitment: however the custodian
+changes, the identifier survives. What changes is who mints next and where the
+target points.
+
+## Getting started
 
 ```bash
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
 python -m pytest -q          # 184 tests
 python -m ruff check src tests
 
-# 台帳を組み立てる
-arkhe naan add 99999 "国立情報学研究所"
-arkhe onboard 99999 "基礎生物学研究所" --shoulder /x9
+# Build up the ledger
+arkhe naan add 99999 "National Institute of Informatics"
+arkhe onboard 99999 "National Institute for Basic Biology" --shoulder /x9
 arkhe client add nibb-web 99999 --manager 1
-arkhe client key nibb-web        # 平文はこの一度しか表示されない
+arkhe client key nibb-web        # the plaintext is shown this once and never again
 
-# 起動
+# Run it
 uvicorn arkhe.app:create_app --factory
 ```
 
-管理画面は `/admin/`（日英切替つき）。API のドキュメントは `/api/docs`。
+The admin interface is at `/admin/` (Japanese and English). API documentation is at
+`/api/docs`.
 
-## 由来
+## Provenance
 
-`src/jc2ark/arkspec/` の一部は Internet Archive の
-[arklet](https://github.com/internetarchive/arklet)（MIT）から派生している。
-該当箇所には出典を記し、`LICENSE` に著作権表示と許諾文を含めている。
+Part of `src/arkhe/arkspec/` is derived from the Internet Archive's
+[arklet](https://github.com/internetarchive/arklet) (MIT). The derived passages
+carry an attribution in place, and [LICENSE](LICENSE) reproduces the copyright
+notice and permission text.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

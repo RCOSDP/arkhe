@@ -25,7 +25,7 @@ SOFTWARE.
 Portions derived from internetarchive/arklet
 ================================================================================
 
-Parts of `src/jc2ark/arkspec/` are derived from the Internet Archive's arklet
+Parts of `src/arkhe/arkspec/` are derived from the Internet Archive's arklet
 (https://github.com/internetarchive/arklet), used under the MIT License.
 Derived functions are marked in the source with a "Derived from arklet" note.
 
