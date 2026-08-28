@@ -99,3 +99,31 @@ def test_B4_修飾子は区切り文字で始める(db, world, bad):
     db.commit()
     with pytest.raises(ValueError):
         minting.register_qualified(db, base=base, qualifier=bad, created_by="t")
+
+
+def test_ER図が実装と食い違わない():
+    """**図は放っておくと古くなる。** 表と主要な列が図に出ているかを見る。
+
+    全列の一致までは求めない（図は要点を選ぶもの）。ただし**表を足したのに図に
+    書かなかった**、**列を消したのに図に残っている**は検出する。
+    """
+    import re
+    from pathlib import Path
+
+    from arkhe.db.models import Base
+
+    doc = Path(__file__).resolve().parents[1] / "docs" / "data-model.ja.md"
+    text = doc.read_text(encoding="utf-8")
+    block = re.search(r"```mermaid\n(.*?)```", text, re.S).group(1)
+
+    for name, table in Base.metadata.tables.items():
+        assert name.upper() in block, f"{name} が ER 図に無い"
+        drawn = set(re.findall(rf"{name.upper()} \{{(.*?)\n    \}}", block, re.S))
+        if not drawn:
+            continue
+        lines = next(iter(drawn)).strip().splitlines()
+        cols = {ln.split()[1] for ln in lines if len(ln.split()) > 1}
+        real = set(table.columns.keys())
+        # 図にあるのに実装に無い列は、消し忘れか綴り違い（title は what_title と表記）
+        stale = {c for c in cols if c not in real and c not in {"what_title"}}
+        assert not stale, f"{name}: 図にあるが実装に無い列 {sorted(stale)}"

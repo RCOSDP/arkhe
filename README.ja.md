@@ -32,6 +32,8 @@ FastAPI ＋ SQLAlchemy 2.0。`src/arkhe/arkspec/`（ARK 仕様の純関数層）
 採番の口も無い**（別々にスケールさせ、resolver を読み取り専用ロールとレプリカに
 向けるため）。
 
+データモデルは [`docs/data-model.ja.md`](docs/data-model.ja.md)（ER 図）。
+
 ## 認証
 
 **排他の「モード」ではなく、機構を個別に有効化する。** 移行期に「API キーと OIDC の

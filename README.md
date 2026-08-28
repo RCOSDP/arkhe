@@ -38,6 +38,8 @@ Set `ARKHE_RESOLVER=1` to run as a resolver. **A minter has no resolution endpoi
 and a resolver has no minting endpoint** — so the two can be scaled separately and
 the resolver can be pointed at a read-only role and a replica.
 
+The data model is in [`docs/data-model.md`](docs/data-model.md), with an ER diagram.
+
 ## Authentication
 
 **Mechanisms are enabled individually, not selected as one exclusive mode.** During
