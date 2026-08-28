@@ -1,7 +1,5 @@
 # Data model
 
-*[日本語版はこちら / Japanese version](data-model.ja.md)*
-
 One chain — `Naan → Manager → Shoulder → Ark` — carries every NAAN. **Even an
 institution with a NAAN of its own goes through a shoulder.** Skip that and the model
 forks per NAAN, and the first-digit convention holds for some NAANs and not others.

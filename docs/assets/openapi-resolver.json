@@ -1,0 +1,224 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "arkhe",
+    "summary": "ARK identifier infrastructure — minter and resolver as separate services",
+    "description": "ARK 識別子の採番と解決。\n\n**ARK は再割当てしない（NR）。** この一点が API の形をほぼ決めている。\n\n* **採番した ARK は取り消せない。** 削除の口は無く、対象が失われたときは\n  `tombstone`（記述は残り、到達性だけが落ちる）。\n* **再送で番号を増やさない。** `request_id` を付けて送れば、同じ値の再送には\n  前回と同じ ARK が返る。万オーダーの投入は途中で切れる方が普通なので、\n  切れた塊はそのまま再送してよい。\n* **shoulder はリクエストで指定しても広がらない。** 到達範囲は資格情報の\n  登録属性で決まる。省略すれば機関の既定が使われる。\n* **子リソースは採番しない。** `ark:/99999/x9abc/page/3` のような深い参照は\n  suffix passthrough が賄うので、1 レコード 1 採番で足りる。\n\n### 認証\n\n`Authorize` から Bearer トークンを入れる。受け付ける資格情報は起動時の\n`ARKHE_AUTH` で決まり、API キー・arkhe が発行したトークン・外部の認可サーバが\n発行した JWT のいずれか（併用可）。\n\n**公開情報の読取に認証は要らない。** リポジトリは公開レコードを誰にでも見せる\nものだから。\n",
+    "license": {
+      "name": "MIT",
+      "identifier": "MIT"
+    },
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/.well-known/ark": {
+      "get": {
+        "tags": [
+          "resolve"
+        ],
+        "summary": "Well Known Ark",
+        "description": "このリゾルバが何を預かっているかを機械可読で公開する。\n\n**採番を外に委ねている NAAN があるとき、クライアントがどこへ行けばよいか**を\nここで分かるようにする（`Naan.minter` / `Shoulder.minter`）。",
+        "operationId": "well_known_ark__well_known_ark_get",
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ark:{rest}": {
+      "get": {
+        "tags": [
+          "resolve"
+        ],
+        "summary": "Resolve Ark",
+        "operationId": "resolve_ark_ark__rest__get",
+        "parameters": [
+          {
+            "name": "rest",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rest"
+            }
+          },
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ark:/{rest}": {
+      "get": {
+        "tags": [
+          "resolve"
+        ],
+        "summary": "Resolve Ark",
+        "operationId": "resolve_ark_ark___rest__get",
+        "parameters": [
+          {
+            "name": "rest",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rest"
+            }
+          },
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "ark",
+      "description": "採番と更新。**書き込みは到達範囲の内側にしか届かない。**"
+    },
+    {
+      "name": "resolve",
+      "description": "解決。`?`（簡潔な記述）・`??`（永続性宣言）・`?info`（人間向け）・`?json`（機械可読）の inflection を持つ。**対象に到達できなくても記述は答えられる**（FAIR A2）。`ARKHE_RESOLVER=1` で起動したときだけ現れる。"
+    }
+  ]
+}

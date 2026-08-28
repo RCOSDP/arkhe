@@ -1,5 +1,7 @@
 # arkhe
 
+**Documentation: <https://rcosdp.github.io/arkhe/>**
+
 *[日本語版はこちら / Japanese version](README.ja.md)*
 
 Infrastructure for **ARK** identifiers. **Minting and resolution run as separate

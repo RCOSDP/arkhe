@@ -1,0 +1,6 @@
+/* API の埋め込み。Swagger UI をそのまま置くと縦に伸びすぎるので枠を切る。 */
+.api-frame { border: 1px solid var(--md-default-fg-color--lightest); border-radius: .3rem;
+             overflow: hidden; margin: 1rem 0; }
+.api-frame iframe { width: 100%; height: 70vh; min-height: 460px; border: 0; display: block; }
+/* Mermaid を中央に置き、はみ出すときだけ横スクロールさせる。 */
+.mermaid { text-align: center; overflow-x: auto; }

@@ -1,7 +1,5 @@
 # データモデル
 
-*[English version](data-model.md)*
-
 `Naan → Manager → Shoulder → Ark` の 1 本で全 NAAN を扱う。**個別 NAAN を持つ機関でも
 shoulder を必ず使う**——使わないと NAAN ごとにモデルが分岐し、first-digit 規約が NAAN に
 よって成立したりしなかったりする。

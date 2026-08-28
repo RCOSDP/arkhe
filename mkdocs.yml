@@ -1,0 +1,135 @@
+# arkhe のドキュメント。**Markdown だけで書けること**を最優先にしてある。
+#   - 本文は docs/ 以下の .md。日本語は同じ名前に `.ja` を挟む（docs/index.ja.md）
+#   - 図は Mermaid をコードブロックに書く（画像を書き出す手順を挟まない）
+#   - API 仕様は実装から生成した openapi.json を読ませる（手で二重に書かない）
+site_name: arkhe
+site_description: ARK identifier infrastructure — minter and resolver as separate services
+site_url: https://rcosdp.github.io/arkhe/
+repo_url: https://github.com/RCOSDP/arkhe
+repo_name: RCOSDP/arkhe
+edit_uri: edit/main/docs/
+copyright: MIT — National Institute of Informatics
+
+theme:
+  name: material
+  language: en
+  icon:
+    logo: material/key-chain
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle: {icon: material/weather-night, name: Switch to dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle: {icon: material/weather-sunny, name: Switch to light mode}
+  features:
+    # navigation.instant は i18n の言語切替と両立しない（警告になる）
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+  # 日英。**同じ名前に `.ja` を挟むだけ**で対訳になる（別ディレクトリを掘らない）。
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ja
+          name: 日本語
+          build: true
+          nav_translations:
+            Introduction: はじめに
+            Overview: arkhe とは
+            Quickstart: クイックスタート
+            Concepts: 考え方
+            What ARK is: ARK とは何か
+            Delegation: 委譲の構造
+            Invariants: 壊さないもの
+            Guides: 手引き
+            Authentication: 認証
+            Admin interface: 管理画面
+            Succession and departure: 承継と離脱
+            Deployment: デプロイ
+            Reference: リファレンス
+            Configuration: 設定
+            CLI: コマンド
+            Data model: データモデル
+            API: API
+            Project: プロジェクト
+            Contributing: 参加する
+            Changelog: 変更履歴
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc: {permalink: true, toc_depth: 3}
+  - pymdownx.details
+  - pymdownx.highlight: {anchor_linenums: true}
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed: {alternate_style: true}
+  # Mermaid をそのまま書けるようにする（画像を書き出す手順を挟まない）
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra:
+  alternate:
+    - name: English
+      link: /arkhe/
+      lang: en
+    - name: 日本語
+      link: /arkhe/ja/
+      lang: ja
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/RCOSDP/arkhe
+
+extra_css: [assets/extra.css]
+
+nav:
+  - Introduction:
+      - Overview: index.md
+      - Quickstart: quickstart.md
+  - Concepts:
+      - What ARK is: concepts/ark.md
+      - Delegation: concepts/delegation.md
+      - Invariants: concepts/invariants.md
+  - Guides:
+      - Authentication: guides/authentication.md
+      - Admin interface: guides/admin.md
+      - Succession and departure: guides/succession.md
+      - Deployment: guides/deployment.md
+  - Reference:
+      - Configuration: reference/configuration.md
+      - CLI: reference/cli.md
+      - Data model: reference/data-model.md
+      - API: reference/api.md
+  - Project:
+      - Contributing: project/contributing.md
+      - Changelog: project/changelog.md

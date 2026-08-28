@@ -1,5 +1,7 @@
 # arkhe
 
+**ドキュメント: <https://rcosdp.github.io/arkhe/ja/>**
+
 *[English version](README.md)*
 
 ARK 識別子の基盤。**採番（minter）と解決（resolver）を別プロセスで動かす。**

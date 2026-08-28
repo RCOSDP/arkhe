@@ -112,7 +112,7 @@ def test_ER図が実装と食い違わない():
 
     from arkhe.db.models import Base
 
-    doc = Path(__file__).resolve().parents[1] / "docs" / "data-model.ja.md"
+    doc = Path(__file__).resolve().parents[1] / "docs" / "reference" / "data-model.ja.md"
     text = doc.read_text(encoding="utf-8")
     block = re.search(r"```mermaid\n(.*?)```", text, re.S).group(1)
 

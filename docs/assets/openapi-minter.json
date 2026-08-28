@@ -1,0 +1,1014 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "arkhe",
+    "summary": "ARK identifier infrastructure — minter and resolver as separate services",
+    "description": "ARK 識別子の採番と解決。\n\n**ARK は再割当てしない（NR）。** この一点が API の形をほぼ決めている。\n\n* **採番した ARK は取り消せない。** 削除の口は無く、対象が失われたときは\n  `tombstone`（記述は残り、到達性だけが落ちる）。\n* **再送で番号を増やさない。** `request_id` を付けて送れば、同じ値の再送には\n  前回と同じ ARK が返る。万オーダーの投入は途中で切れる方が普通なので、\n  切れた塊はそのまま再送してよい。\n* **shoulder はリクエストで指定しても広がらない。** 到達範囲は資格情報の\n  登録属性で決まる。省略すれば機関の既定が使われる。\n* **子リソースは採番しない。** `ark:/99999/x9abc/page/3` のような深い参照は\n  suffix passthrough が賄うので、1 レコード 1 採番で足りる。\n\n### 認証\n\n`Authorize` から Bearer トークンを入れる。受け付ける資格情報は起動時の\n`ARKHE_AUTH` で決まり、API キー・arkhe が発行したトークン・外部の認可サーバが\n発行した JWT のいずれか（併用可）。\n\n**公開情報の読取に認証は要らない。** リポジトリは公開レコードを誰にでも見せる\nものだから。\n",
+    "license": {
+      "name": "MIT",
+      "identifier": "MIT"
+    },
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/api/mint": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Mint",
+        "operationId": "mint_api_mint_post",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MintIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mint/bulk": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Bulk Mint",
+        "operationId": "bulk_mint_api_mint_bulk_post",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkMintIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkMintOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/register": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Register",
+        "description": "B4: **既存 ARK に修飾子を付けた行を登録する。**\n\n既定では suffix passthrough が任意の深さを賄う。この口は**その既定を 1 点だけ\n上書きする**ためにある——「このサブツリーだけ別ストレージ」「この変換版だけ別の所在」。\n\n**`ark:mint` を要求する。** 採番ではないが、**新しく解決可能な識別子が増える**\nので、更新権限しか持たない主体に渡してはいけない。",
+        "operationId": "register_api_register_post",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/update": {
+      "put": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Update",
+        "description": "既存 ARK を更新する。**対象の shoulder の manager を照合する**（M3）。",
+        "operationId": "update_api_update_put",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/update/bulk": {
+      "put": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Bulk Update",
+        "description": "M5: **辞書で引き当て、部分適用しない。**",
+        "operationId": "bulk_update_api_update_bulk_put",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkUpdateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tombstone": {
+      "put": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Tombstone",
+        "description": "**対象が失われたと宣言する。** ARK は削除しない。\n\n`NR`（No Re-assignment）を宣言している以上、識別子は消せない。消せるのは\n対象への到達性だけで、**識別子とメタデータは残る**。\n\n**scope を `ark:update` と分けてある。** 墓碑化は「どこにあるか」ではなく\n「もう無い」という宣言で、意味も影響も違う。取り消しにくく、公開されると\n信頼に関わるので、投入バッチのような日常の書き手には渡さない。",
+        "operationId": "tombstone_api_tombstone_put",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TombstoneIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/query": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Bulk Query",
+        "description": "M4: **読み取りも到達範囲に絞る**（arklet は認可を一切していなかった）。",
+        "operationId": "bulk_query_api_query_post",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkQueryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkQueryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/oauth/token": {
+      "post": {
+        "tags": [
+          "oauth"
+        ],
+        "summary": "アクセストークンを発行する（client_credentials）",
+        "description": "RFC 6749 §4.4 の client_credentials。\n\n資格情報は **本文でも Basic 認証でも**受ける（§2.3.1 は Basic を推奨し、\n本文も認めている。既存のクライアントライブラリはどちらも使う）。",
+        "operationId": "token_oauth_token_post",
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_token_oauth_token_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArkOut": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": ""
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier",
+            "default": ""
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": ""
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation",
+            "default": ""
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": ""
+          },
+          "commitment": {
+            "type": "string",
+            "title": "Commitment",
+            "default": ""
+          },
+          "metadata": {
+            "type": "string",
+            "title": "Metadata",
+            "default": ""
+          },
+          "who": {
+            "type": "string",
+            "title": "Who",
+            "default": ""
+          },
+          "when": {
+            "type": "string",
+            "title": "When",
+            "default": ""
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "ArkOut"
+      },
+      "Body_token_oauth_token_post": {
+        "properties": {
+          "grant_type": {
+            "type": "string",
+            "title": "Grant Type",
+            "default": ""
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id",
+            "default": ""
+          },
+          "client_secret": {
+            "type": "string",
+            "title": "Client Secret",
+            "default": ""
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "Body_token_oauth_token_post"
+      },
+      "BulkMintIn": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MintIn"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BulkMintIn"
+      },
+      "BulkMintOut": {
+        "properties": {
+          "minted": {
+            "items": {
+              "$ref": "#/components/schemas/ArkOut"
+            },
+            "type": "array",
+            "title": "Minted"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          },
+          "replayed": {
+            "type": "integer",
+            "title": "Replayed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "minted",
+          "created",
+          "replayed"
+        ],
+        "title": "BulkMintOut"
+      },
+      "BulkQueryIn": {
+        "properties": {
+          "data": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BulkQueryIn"
+      },
+      "BulkQueryOut": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ArkOut"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BulkQueryOut"
+      },
+      "BulkUpdateIn": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/UpdateIn"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BulkUpdateIn"
+      },
+      "BulkUpdateOut": {
+        "properties": {
+          "updated": {
+            "type": "integer",
+            "title": "Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated"
+        ],
+        "title": "BulkUpdateOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MintIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": ""
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier",
+            "default": ""
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": ""
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation",
+            "default": ""
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": ""
+          },
+          "commitment": {
+            "type": "string",
+            "title": "Commitment",
+            "default": ""
+          },
+          "metadata": {
+            "type": "string",
+            "title": "Metadata",
+            "default": ""
+          },
+          "who": {
+            "type": "string",
+            "title": "Who",
+            "default": ""
+          },
+          "when": {
+            "type": "string",
+            "title": "When",
+            "default": ""
+          },
+          "shoulder": {
+            "type": "string",
+            "title": "Shoulder",
+            "default": ""
+          },
+          "request_id": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Request Id",
+            "description": "冪等鍵。同じ値で再送すると、前回採番した ARK をそのまま返す",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "MintIn",
+        "description": "採番の入力。\n\n**`shoulder` は任意。** 省略すると機関の `default_shoulder` が使われる。\n指定した場合も**範囲を広げる手段にはならない**（登録された到達範囲内かを\n検証するだけ）。`naan` は受け取らない——主体が決めるものだから。"
+      },
+      "RegisterIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": ""
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier",
+            "default": ""
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": ""
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation",
+            "default": ""
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": ""
+          },
+          "commitment": {
+            "type": "string",
+            "title": "Commitment",
+            "default": ""
+          },
+          "metadata": {
+            "type": "string",
+            "title": "Metadata",
+            "default": ""
+          },
+          "who": {
+            "type": "string",
+            "title": "Who",
+            "default": ""
+          },
+          "when": {
+            "type": "string",
+            "title": "When",
+            "default": ""
+          },
+          "ark": {
+            "type": "string",
+            "title": "Ark",
+            "description": "既存の base ARK（`ark:/99999/xyz`）"
+          },
+          "qualifier": {
+            "type": "string",
+            "title": "Qualifier",
+            "description": "`/`（包含）か `.`（変種）で始める"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark",
+          "qualifier"
+        ],
+        "title": "RegisterIn",
+        "description": "B4: 修飾子付き ARK の登録。\n\n**`ark` は既存の base、`qualifier` はその後ろに付ける部分参照。**\n採番ではないので NOID もチェックディジットも生成しない。"
+      },
+      "TombstoneIn": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "commitment": {
+            "type": "string",
+            "title": "Commitment",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "TombstoneIn",
+        "description": "**対象が失われたと宣言する。** ARK は削除しない。"
+      },
+      "UpdateIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": ""
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier",
+            "default": ""
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": ""
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation",
+            "default": ""
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": ""
+          },
+          "commitment": {
+            "type": "string",
+            "title": "Commitment",
+            "default": ""
+          },
+          "metadata": {
+            "type": "string",
+            "title": "Metadata",
+            "default": ""
+          },
+          "who": {
+            "type": "string",
+            "title": "Who",
+            "default": ""
+          },
+          "when": {
+            "type": "string",
+            "title": "When",
+            "default": ""
+          },
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "UpdateIn"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "description": "API キー（apikey モード）、arkhe が発行したトークン（oauth2 モード）、外部の認可サーバが発行した JWT（oidc モード）のいずれか。有効な機構は ARKHE_AUTH で決まる。",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "ark",
+      "description": "採番と更新。**書き込みは到達範囲の内側にしか届かない。**"
+    },
+    {
+      "name": "resolve",
+      "description": "解決。`?`（簡潔な記述）・`??`（永続性宣言）・`?info`（人間向け）・`?json`（機械可読）の inflection を持つ。**対象に到達できなくても記述は答えられる**（FAIR A2）。`ARKHE_RESOLVER=1` で起動したときだけ現れる。"
+    }
+  ]
+}
