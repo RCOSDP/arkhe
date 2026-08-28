@@ -1,18 +1,16 @@
-# syntax=docker/dockerfile:1
-FROM python:3.12-slim AS base
-ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+# arkhe のイメージ。**依存は pyproject の [app] だけ**（arkspec と resolution は
+# stdlib しか使わないので、本来ここに要るのは HTTP と DB の分だけ）。
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+
 WORKDIR /app
-
-RUN pip install --no-cache-dir uv
 COPY pyproject.toml README.md ./
-COPY src ./src
-RUN uv pip install --system --no-cache \
-      "Django>=5.2,<6.0" "django-oauth-toolkit>=3.4,<4.0" \
-      "djangorestframework>=3.18" "drf-spectacular>=0.30" \
-      "psycopg[binary]>=3.2" "gunicorn>=23" "whitenoise>=6.6" \
- && uv pip install --system --no-cache --no-deps -e .
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
+RUN pip install --no-cache-dir '.[app]'
 
-COPY manage.py entrypoint.sh ./
-RUN chmod +x entrypoint.sh
-EXPOSE 8080
-ENTRYPOINT ["/app/entrypoint.sh"]
+EXPOSE 8000
+# 既定は minter + admin。resolver として動かすなら ARKHE_RESOLVER=1 を渡す。
+CMD ["uvicorn", "arkhe.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

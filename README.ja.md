@@ -118,6 +118,9 @@ arkhe client passwd alice@example.ac.jp     # 入力は画面に出ない
   生んで結局どこかに書き留められるので採らない
 * パスワードを持てるのは**人の主体だけ**。変更しても古い行は消さず無効にする
 
+参照: [`compose/oidc/`](compose/oidc/) に Keycloak を立てて `oidc` モードを
+そのまま体験できる compose 一式がある。
+
 ## 開発
 
 ```bash

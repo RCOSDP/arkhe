@@ -1,0 +1,96 @@
+# arkhe を OIDC モードで体験する一式。
+#
+# ## issuer の文字列を揃えるのが要点
+#
+# 認可サーバの issuer は、**ブラウザから見た URL と arkhe（コンテナ）から見た URL が
+# 同じ文字列**でなければならない。食い違うと `iss` の検証で落ちる。
+#
+# ここでは `keycloak.localhost:8080` に揃える:
+#   ブラウザ  keycloak.localhost → 127.0.0.1 → 公開ポート 8080 → Keycloak
+#   arkhe     keycloak.localhost → compose のネットワークエイリアス → Keycloak:8080
+#
+# `*.localhost` は多くの環境で 127.0.0.1 に解決される（systemd-resolved・主要ブラウザ）。
+# 解決されないときは hosts に `127.0.0.1 keycloak.localhost` を足す。
+#
+#   docker compose up -d --build
+#   → http://localhost:8057/admin/  （ops / naan-admin / nibb、いずれも arkhe-demo-2026）
+name: arkhe-oidc
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # **issuer をこの文字列に固定する。** 既定だと要求の Host から組み立てられ、
+      # ブラウザ経由とコンテナ経由で食い違う。
+      KC_HOSTNAME: http://keycloak.localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "false"
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./realm-arkhe.json:/opt/keycloak/data/import/realm-arkhe.json:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      default:
+        aliases: [keycloak.localhost]
+    healthcheck:
+      # **このイメージに curl は入っていない。** bash の /dev/tcp で叩く
+      # （CMD-SHELL は /bin/sh なので bash を明示する）。
+      test: ["CMD", "bash", "-c",
+             "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.1\\r\\nHost: x\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q UP <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: arkhe
+      POSTGRES_PASSWORD: arkhe
+      POSTGRES_DB: arkhe
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arkhe"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  arkhe:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: arkhe:local
+    depends_on:
+      db: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
+    environment:
+      ARKHE_DATABASE_URL: postgresql+psycopg://arkhe:arkhe@db/arkhe
+      # 管理画面の入口。**arkhe は OIDC のクライアント(RP)として認可コードフローを回す**
+      # （認可サーバにはならない。トークンを発行せず、同意も預からない）。
+      ARKHE_ADMIN_LOGIN: oidc
+      ARKHE_OIDC_ISSUER: http://keycloak.localhost:8080/realms/arkhe
+      ARKHE_ADMIN_CLIENT_ID: arkhe-admin
+      ARKHE_ADMIN_CLIENT_SECRET: arkhe-admin-secret-for-demo-only
+      # 体験用の値。**本番では必ず差し替える。**
+      ARKHE_SESSION_SECRET: demo-only-session-secret-change-me-0123456789
+      ARKHE_SESSION_SECURE: "false"   # http で動かすため。HTTPS なら外す
+      # API 側は API キーで受ける（OIDC のトークンを API に使うなら oidc を足す）。
+      ARKHE_AUTH: apikey
+    ports:
+      - "127.0.0.1:8057:8000"
+    # ブラウザが使う `localhost:8055` を、コンテナからも同じ名前で引けるようにする
+    # （認可サーバへ渡す redirect_uri を組み立てるため）。
+    extra_hosts:
+      - "localhost.localdomain:host-gateway"
+    command: >
+      sh -c "alembic upgrade head && python -m arkhe.seed_demo &&
+             uvicorn arkhe.app:create_app --factory --host 0.0.0.0 --port 8000"
+
+volumes:
+  pgdata:
+
+networks:
+  default:

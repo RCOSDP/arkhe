@@ -157,6 +157,9 @@ What it holds to:
 * Only a person subject can hold a password. Changing it deactivates the old row
   rather than deleting it.
 
+See [`compose/oidc/`](compose/oidc/) for a compose stack that stands up Keycloak
+and lets you try `oidc` mode as it actually behaves.
+
 ## Getting started
 
 ```bash

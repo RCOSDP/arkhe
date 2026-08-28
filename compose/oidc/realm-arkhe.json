@@ -1,0 +1,79 @@
+{
+  "realm": "arkhe",
+  "enabled": true,
+  "displayName": "arkhe",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginTheme": "keycloak",
+  "clients": [
+    {
+      "clientId": "arkhe-admin",
+      "name": "arkhe 管理画面",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "arkhe-admin-secret-for-demo-only",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8057/admin/callback",
+        "http://127.0.0.1:8057/admin/callback",
+        "http://arkhe.localhost:8057/admin/callback"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "ops",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "ops@example.ac.jp",
+      "firstName": "運用者",
+      "lastName": "システム",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "arkhe-demo-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "naan-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "naan-admin@example.ac.jp",
+      "firstName": "NAAN",
+      "lastName": "管理者",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "arkhe-demo-2026",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "nibb",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "nibb@example.ac.jp",
+      "firstName": "基礎生物",
+      "lastName": "研究所",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "arkhe-demo-2026",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

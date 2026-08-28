@@ -1,19 +1,18 @@
-"""初期スキーマ
+"""initial schema
 
-Revision ID: b0c8cc628c00
+Revision ID: 85063df8430e
 Revises: 
-Create Date: 2026-08-28 16:45:48.059939
+Create Date: 2026-08-28 22:04:45.073090
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import Text  # JSONB の astext_type に要る
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'b0c8cc628c00'
+revision: str = '85063df8430e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,33 +28,13 @@ def upgrade() -> None:
     sa.Column('authority', sa.String(length=16), nullable=False),
     sa.Column('action', sa.String(length=32), nullable=False),
     sa.Column('target', sa.String(length=200), nullable=False),
-    sa.Column('detail', sa.JSON().with_variant(postgresql.JSONB(astext_type=Text()), 'postgresql'), nullable=False),
+    sa.Column('detail', sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), 'postgresql'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('audit_event', schema=None) as batch_op:
         batch_op.create_index('ix_audit_authority_at', ['authority', 'at'], unique=False)
         batch_op.create_index(batch_op.f('ix_audit_event_at'), ['at'], unique=False)
         batch_op.create_index(batch_op.f('ix_audit_event_client_id'), ['client_id'], unique=False)
-
-    op.create_table('manager',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('naan', sa.String(length=10), nullable=False),
-    sa.Column('name', sa.String(length=200), nullable=False),
-    sa.Column('default_shoulder_id', sa.Integer(), nullable=True),
-    sa.Column('commitment_level', sa.String(length=32), nullable=False),
-    sa.Column('quota_per_day', sa.Integer(), nullable=True),
-    sa.Column('active', sa.Boolean(), nullable=False),
-    sa.Column('succeeded_by_id', sa.Integer(), nullable=True),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.ForeignKeyConstraint(['default_shoulder_id'], ['shoulder.id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['naan'], ['naan.naan'], ),
-    sa.ForeignKeyConstraint(['succeeded_by_id'], ['manager.id'], ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('naan', 'name', name='uniq_manager_name_per_naan')
-    )
-    with op.batch_alter_table('manager', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_manager_naan'), ['naan'], unique=False)
 
     op.create_table('naan',
     sa.Column('naan', sa.String(length=10), nullable=False),
@@ -70,6 +49,26 @@ def upgrade() -> None:
     sa.CheckConstraint("(is_authoritative AND redirect = '') OR (NOT is_authoritative AND redirect <> '')", name='naan_redirect_only_when_not_authoritative'),
     sa.PrimaryKeyConstraint('naan')
     )
+    op.create_table('manager',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('naan', sa.String(length=10), nullable=False),
+    sa.Column('name', sa.String(length=200), nullable=False),
+    sa.Column('default_shoulder_id', sa.Integer(), nullable=True),
+    sa.Column('commitment_level', sa.String(length=32), nullable=False),
+    sa.Column('quota_per_day', sa.Integer(), nullable=True),
+    sa.Column('active', sa.Boolean(), nullable=False),
+    sa.Column('succeeded_by_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['default_shoulder_id'], ['shoulder.id'], name='fk_manager_default_shoulder', ondelete='SET NULL', use_alter=True),
+    sa.ForeignKeyConstraint(['naan'], ['naan.naan'], ),
+    sa.ForeignKeyConstraint(['succeeded_by_id'], ['manager.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('naan', 'name', name='uniq_manager_name_per_naan')
+    )
+    with op.batch_alter_table('manager', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_manager_naan'), ['naan'], unique=False)
+
     op.create_table('shoulder',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('shoulder', sa.String(length=50), nullable=False),
@@ -130,6 +129,7 @@ def upgrade() -> None:
     sa.Column('client_id', sa.String(length=255), nullable=False),
     sa.Column('naan', sa.String(length=10), nullable=False),
     sa.Column('manager_id', sa.Integer(), nullable=True),
+    sa.Column('subject_type', sa.String(length=16), nullable=False),
     sa.Column('authority', sa.String(length=16), nullable=False),
     sa.Column('shoulder_id', sa.Integer(), nullable=True),
     sa.Column('allowed_scopes', sa.String(length=200), nullable=False),
@@ -146,7 +146,7 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_client_client_id'), ['client_id'], unique=True)
         batch_op.create_index(batch_op.f('ix_client_manager_id'), ['manager_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_client_naan'), ['naan'], unique=False)
-        batch_op.create_index('uniq_active_label_per_manager', ['manager_id', 'label'], unique=True, postgresql_where=sa.text('active IS 1'), sqlite_where=sa.text('active IS 1'))
+        batch_op.create_index('uniq_active_label_per_manager', ['manager_id', 'label'], unique=True, postgresql_where=sa.text('active IS true'), sqlite_where=sa.text('active IS true'))
 
     op.create_table('credential',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -159,6 +159,8 @@ def upgrade() -> None:
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('last_used_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('failed_attempts', sa.Integer(), nullable=False),
+    sa.Column('locked_until', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['client_pk'], ['client.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -195,7 +197,7 @@ def downgrade() -> None:
 
     op.drop_table('credential')
     with op.batch_alter_table('client', schema=None) as batch_op:
-        batch_op.drop_index('uniq_active_label_per_manager', postgresql_where=sa.text('active IS 1'), sqlite_where=sa.text('active IS 1'))
+        batch_op.drop_index('uniq_active_label_per_manager', postgresql_where=sa.text('active IS true'), sqlite_where=sa.text('active IS true'))
         batch_op.drop_index(batch_op.f('ix_client_naan'))
         batch_op.drop_index(batch_op.f('ix_client_manager_id'))
         batch_op.drop_index(batch_op.f('ix_client_client_id'))
@@ -215,11 +217,11 @@ def downgrade() -> None:
         batch_op.drop_index(batch_op.f('ix_shoulder_manager_id'))
 
     op.drop_table('shoulder')
-    op.drop_table('naan')
     with op.batch_alter_table('manager', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_manager_naan'))
 
     op.drop_table('manager')
+    op.drop_table('naan')
     with op.batch_alter_table('audit_event', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_audit_event_client_id'))
         batch_op.drop_index(batch_op.f('ix_audit_event_at'))

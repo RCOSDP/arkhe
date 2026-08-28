@@ -157,8 +157,20 @@ class Manager(Base):
     name: Mapped[str] = mapped_column(String(200))
 
     #: mint 要求が shoulder を省略したときに使う。**全 Manager が必ず 1 つ持つ。**
+    #:
+    #: `manager → shoulder → manager` の**循環参照**になる。PostgreSQL は
+    #: CREATE TABLE の時点で参照先を要求するので、そのままでは作成順が決まらない。
+    #: `use_alter` で「両方できてから ALTER で足す」形にし、名前も付ける
+    #: （名前が無いと落とせない）。**SQLite では見えない問題**なので、
+    #: 移行の検証は Postgres で行うこと。
     default_shoulder_id: Mapped[int | None] = mapped_column(
-        ForeignKey("shoulder.id", ondelete="SET NULL"), nullable=True
+        ForeignKey(
+            "shoulder.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_manager_default_shoulder",
+        ),
+        nullable=True,
     )
 
     commitment_level: Mapped[str] = mapped_column(
