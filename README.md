@@ -160,6 +160,40 @@ What it holds to:
 See [`compose/oidc/`](compose/oidc/) for a compose stack that stands up Keycloak
 and lets you try `oidc` mode as it actually behaves.
 
+### Issuing API tokens without Keycloak
+
+Include `oauth2` in `ARKHE_AUTH` and **arkhe issues the tokens itself**, so an
+institution that cannot stand up a separate authorization server can still speak
+OAuth 2 to the API.
+
+```bash
+export ARKHE_AUTH=oauth2
+export ARKHE_TOKEN_SECRET="$(python -c 'import secrets;print(secrets.token_urlsafe(48))')"
+
+arkhe client add univ-repo 99999 --manager 1 --scopes "ark:mint ark:update"
+arkhe client key univ-repo --kind client_secret     # shown once, never again
+
+curl -X POST http://localhost:8000/oauth/token \
+  -d grant_type=client_credentials -d client_id=univ-repo -d client_secret=...
+```
+
+**Client credentials is the only grant.** ARK minting is machine-to-machine from an
+institution's own system, so the situation the authorization code flow exists to
+solve never arises. When a human has to sign in, delegate through
+`ARKHE_ADMIN_LOGIN`.
+
+Deliberately absent, so nobody is surprised later: `authorization_code` and PKCE,
+`refresh_token`, introspection, revocation. If you come to need them, moving to a
+real authorization server is safer than growing half of one here.
+
+| | arkhe alone | Keycloak required |
+| --- | --- | --- |
+| `apikey` | yes | |
+| `oauth2` | yes | |
+| `oidc` | | yes |
+
+They **combine** — `ARKHE_AUTH=apikey,oidc` is a normal thing to want while migrating.
+
 ## Getting started
 
 ```bash

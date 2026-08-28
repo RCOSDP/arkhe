@@ -121,6 +121,39 @@ arkhe client passwd alice@example.ac.jp     # 入力は画面に出ない
 参照: [`compose/oidc/`](compose/oidc/) に Keycloak を立てて `oidc` モードを
 そのまま体験できる compose 一式がある。
 
+### API の認証を単体で済ませる（Keycloak なし）
+
+`ARKHE_AUTH` に `oauth2` を含めると、**arkhe 自身がトークンを配る**。認可サーバを
+別に立てられない機関でも、OAuth2 の作法で API を叩ける。
+
+```bash
+export ARKHE_AUTH=oauth2
+export ARKHE_TOKEN_SECRET="$(python -c 'import secrets;print(secrets.token_urlsafe(48))')"
+
+arkhe client add univ-repo 99999 --manager 1 --scopes "ark:mint ark:update"
+arkhe client key univ-repo --kind client_secret     # 平文はこの一度だけ
+
+curl -X POST http://localhost:8000/oauth/token \
+  -d grant_type=client_credentials -d client_id=univ-repo -d client_secret=...
+# → {"access_token": "...", "token_type": "Bearer", "expires_in": 3600, "scope": "..."}
+```
+
+**grant は client_credentials だけ。** ARK の採番は機関のシステムからの M2M で、
+認可コードフロー（利用者が第三者アプリに代理を許可する手順）が要る場面が無い。
+人のログインが要るなら `ARKHE_ADMIN_LOGIN` で外部に委譲する。
+
+実装しないものを明記しておく: `authorization_code` / PKCE、`refresh_token`、
+introspection、revocation。これらが要るようになったら、その時点で外部の認可サーバに
+寄せるほうが安全——中途半端な認可サーバを育てるより。
+
+| | arkhe 単体 | Keycloak が要る |
+| --- | --- | --- |
+| `apikey` | ○ | |
+| `oauth2` | ○ | |
+| `oidc` | | ○ |
+
+`ARKHE_AUTH=apikey,oidc` のように**併用できる**（移行期に両方受けたい場面がある）。
+
 ## 開発
 
 ```bash

@@ -123,4 +123,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(mint.router)
     app.include_router(admin.router)
+    if "oauth2" in s.auth:
+        # **自前でトークンを配るときだけ口を開ける。** 使わない構成に
+        # 認可サーバの入口を生やさない。
+        from arkhe.api import token
+
+        app.include_router(token.router)
     return app

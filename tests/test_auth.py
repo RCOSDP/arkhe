@@ -120,3 +120,93 @@ def test_break_glassには期限が要る(db, world, root):
         ops.register_client(
             db, root, client_id="bg", naan="99999", authority=Authority.NAAN.value
         )
+
+
+# ------------------------------------------- 自前でトークンを配る（Keycloak 不要）
+
+
+@pytest.fixture
+def standalone(factory):
+    """`ARKHE_AUTH=oauth2` の素のアプリ。**外部の認可サーバを使わない構成。**"""
+    from fastapi.testclient import TestClient
+
+    from arkhe.app import create_app
+    from arkhe.db import session as session_mod
+    from arkhe.settings import Settings, get_settings
+
+    cfg = Settings(auth=["oauth2"], database_url="sqlite://", token_secret=SECRET)
+    app = create_app(cfg)
+
+    def one_session():
+        s = factory()
+        try:
+            yield s
+        finally:
+            s.close()
+
+    app.dependency_overrides[session_mod.get_session] = one_session
+    app.dependency_overrides[get_settings] = lambda: cfg
+    return TestClient(app, follow_redirects=False)
+
+
+def test_単体でトークンを取ってAPIを叩ける(db, world, root, client_with_keys, standalone):
+    """**Keycloak が無くても OAuth2 の作法で API を叩ける。**"""
+    _, _, secret = client_with_keys
+    r = standalone.post(
+        "/oauth/token",
+        data={"grant_type": "client_credentials", "client_id": "a-web",
+              "client_secret": secret},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["token_type"] == "Bearer" and body["expires_in"] > 0
+    assert r.headers["cache-control"] == "no-store"  # RFC 6749 §5.1
+
+    m = standalone.post(
+        "/api/mint",
+        json={"url": "https://example.org/1"},
+        headers={"Authorization": f"Bearer {body['access_token']}"},
+    )
+    assert m.status_code == 201
+
+
+def test_Basic認証でも資格情報を渡せる(db, world, client_with_keys, standalone):
+    """RFC 6749 §2.3.1 は Basic を推奨し、本文も認めている。既存の
+    クライアントライブラリはどちらも使う。"""
+    import base64
+
+    _, _, secret = client_with_keys
+    creds = base64.b64encode(f"a-web:{secret}".encode()).decode()
+    r = standalone.post(
+        "/oauth/token", data={"grant_type": "client_credentials"},
+        headers={"Authorization": f"Basic {creds}"},
+    )
+    assert r.status_code == 200
+
+
+def test_client_credentials以外のgrantは持たない(db, world, standalone):
+    """**実装しないものを明示して返す。** 後から「無い」と驚かないように。"""
+    r = standalone.post("/oauth/token", data={"grant_type": "authorization_code", "code": "x"})
+    assert r.status_code == 400 and r.json()["error"] == "unsupported_grant_type"
+
+
+def test_誤った資格情報はinvalid_client(db, world, client_with_keys, standalone):
+    r = standalone.post(
+        "/oauth/token",
+        data={"grant_type": "client_credentials", "client_id": "a-web", "client_secret": "no"},
+    )
+    assert r.status_code == 401 and r.json()["error"] == "invalid_client"
+    # 存在しないクライアントでも同じ応答（名前を総当たりで探せないように）
+    r2 = standalone.post(
+        "/oauth/token",
+        data={"grant_type": "client_credentials", "client_id": "nope", "client_secret": "no"},
+    )
+    assert r2.json() == r.json()
+
+
+def test_oauth2を使わない構成に発行の口は無い(db, world, app):
+    """**使わない構成に認可サーバの入口を生やさない。**"""
+    from fastapi.testclient import TestClient
+
+    c = TestClient(app, follow_redirects=False)
+    assert c.post("/oauth/token", data={"grant_type": "client_credentials"}).status_code == 404
