@@ -364,13 +364,18 @@ class Client(Base):
     __table_args__ = (
         # I5: **有効なものだけ (manager, label) で一意。** 旧を無効化して同名で
         # 新規発行できる＝ローテーションが型として表現される。
+        #
+        # **空のラベルは制約の外。** 空は「名前を付けていない」であって、名前が
+        # 衝突しているのではない。含めると、1 機関にラベル無しの主体を 2 つ置け
+        # なくなる（web-api / web-ui / worker のように役割で分ける普通の構成が
+        # 通らない）。
         Index(
             "uniq_active_label_per_manager",
             "manager_id",
             "label",
             unique=True,
-            postgresql_where=active.is_(True),
-            sqlite_where=active.is_(True),
+            postgresql_where=active.is_(True) & (label != ""),
+            sqlite_where=active.is_(True) & (label != ""),
         ),
     )
 

@@ -181,3 +181,32 @@ def test_変更履歴が日英で揃っている():
 
     declared = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
     assert declared in en, f"{declared} の項が変更履歴に無い"
+
+
+def test_ラベル無しの主体は機関ごとに何個でも置ける(db, world, root):
+    """**空のラベルは「名前が衝突している」ではない。**
+
+    含めてしまうと、web-api / web-ui / worker のように役割で分ける普通の構成が
+    1 機関で通らなくなる（鍵を共有させる圧力になる）。
+    """
+    from arkhe.domain import admin_ops as ops
+
+    sh = world["a"].default_shoulder
+    for cid in ("p1", "p2", "p3"):
+        ops.register_client(db, root, client_id=cid, naan=sh.naan, shoulder_id=sh.id)
+    db.commit()
+
+
+def test_同じラベルは有効なうちは一つだけ(db, world, root):
+    """ラベルを付けたものは従来どおり一意（ローテーションの型は壊さない）。"""
+    from arkhe.domain import admin_ops as ops
+
+    sh = world["a"].default_shoulder
+    ops.register_client(db, root, client_id="l1", naan=sh.naan, shoulder_id=sh.id, label="bot")
+    db.commit()
+    with pytest.raises(IntegrityError):
+        # register_client は flush するので、ここで一意制約に当たる。
+        ops.register_client(
+            db, root, client_id="l2", naan=sh.naan, shoulder_id=sh.id, label="bot"
+        )
+    db.rollback()
