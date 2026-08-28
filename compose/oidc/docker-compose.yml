@@ -12,8 +12,17 @@
 # `*.localhost` は多くの環境で 127.0.0.1 に解決される（systemd-resolved・主要ブラウザ）。
 # 解決されないときは hosts に `127.0.0.1 keycloak.localhost` を足す。
 #
+# ## 役割ごとにプロセスを分けてある
+#
+# 本番と同じ形にしてある——**minter に解決の口は無く、resolver に採番の口は無い**。
+# resolver は認証を一切要さないので、Keycloak を落としても解決だけは生き続ける
+# （それを実際に試せるのがこの一式を分けている理由）。
+#
 #   docker compose up -d --build
-#   → http://localhost:8057/admin/  （ops / naan-admin / nibb、いずれも arkhe-demo-2026）
+#   → http://localhost:8057/admin/   管理画面と採番 API
+#   → http://localhost:8058/ark:/…   解決（認証不要）
+#
+# 利用者は ops / naan-admin / nibb、いずれもパスワードは arkhe-demo-2026。
 name: arkhe-oidc
 
 services:
@@ -86,13 +95,28 @@ services:
       ARKHE_OIDC_AUDIENCE: arkhe-api
     ports:
       - "127.0.0.1:8057:8000"
-    # ブラウザが使う `localhost:8055` を、コンテナからも同じ名前で引けるようにする
-    # （認可サーバへ渡す redirect_uri を組み立てるため）。
-    extra_hosts:
-      - "localhost.localdomain:host-gateway"
     command: >
       sh -c "alembic upgrade head && python -m arkhe.seed_demo &&
              uvicorn arkhe.app:create_app --factory --host 0.0.0.0 --port 8000"
+
+  # **解決だけ。** 認証の設定を一切持たない——ここに置く理由が無いので置かない。
+  # Keycloak を止めて `docker compose stop keycloak` してから解決を叩くと、
+  # 採番は 401 になるのに解決は動き続けるのが見える。
+  resolver:
+    image: arkhe:local
+    depends_on:
+      arkhe: {condition: service_started}   # スキーマの適用を待つ
+      db: {condition: service_healthy}
+    environment:
+      ARKHE_RESOLVER: "1"
+      ARKHE_DATABASE_URL: postgresql+psycopg://arkhe:arkhe@db/arkhe
+      # 実運用では読み取り専用ロール（できればレプリカ）に向ける。
+      # ARKHE_READ_DATABASE_URL: postgresql+psycopg://arkhe_ro:…@replica/arkhe
+      ARKHE_GLOBAL_RESOLVER: https://n2t.net
+    ports:
+      - "127.0.0.1:8058:8000"
+    command: >
+      uvicorn arkhe.app:create_app --factory --host 0.0.0.0 --port 8000
 
 volumes:
   pgdata:

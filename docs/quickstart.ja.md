@@ -10,7 +10,15 @@ cd arkhe/compose/oidc
 docker compose up -d --build
 ```
 
-Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。
+Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。arkhe は本番と同じく
+**採番／管理と解決の 2 プロセスに分かれている**。
+
+| | URL |
+| --- | --- |
+| 管理画面・採番 API | <http://localhost:8057/admin/> |
+| 解決（**認証不要**） | <http://localhost:8058/ark:/…> |
+| API ドキュメント | <http://localhost:8057/api/docs> |
+| Keycloak 管理コンソール | <http://localhost:8080/>（`admin` / `admin`） |
 
 **<http://localhost:8057/admin/>** を開き、次のいずれかでログインする。
 
@@ -23,6 +31,34 @@ Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。
 **順に入り比べるのが、[到達範囲](concepts/delegation.md)を理解する近道**。`nibb` では
 他機関が見えず、監査ログは 403 になる。
 
+続けて、採番して解決してみる。
+
+```bash
+TOKEN=$(curl -s -X POST \
+  http://keycloak.localhost:8080/realms/arkhe/protocol/openid-connect/token \
+  -d grant_type=client_credentials -d client_id=nibb-invenio \
+  -d client_secret=nibb-invenio-secret-for-demo-only | jq -r .access_token)
+
+ARK=$(curl -s -X POST http://localhost:8057/api/mint \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"url": "https://example.org/records/1", "title": "最初の一件"}' | jq -r .ark)
+
+curl -i "http://localhost:8058/$ARK"     # 302 で元の URL へ
+curl "http://localhost:8058/$ARK??"      # 記述と、その背後の方針
+```
+
+認可サーバを止めて、もう一度両方やってみる。
+
+```bash
+docker compose stop keycloak
+# 採番は 401 になる——解決は 302 のまま
+docker compose start keycloak
+```
+
+**採番は止まるが、解決は止まらない。** 解決に認証は要らないので、resolver は
+認証の設定を一切持たない。既に配った識別子が、別のものの障害で解決できなくなる
+という事態を構造で避けている。
+
 !!! warning "この構成は見るためのもので、動かすためのものではない"
     秘密値が compose に平文で書いてあり、Keycloak は dev モードで、デモ用の
     パスワードは上に公開されている。[デプロイ](guides/deployment.md)を参照。
@@ -32,7 +68,7 @@ Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。
 ```bash
 git clone https://github.com/RCOSDP/arkhe.git && cd arkhe
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 209 tests
+python -m pytest -q          # 219 tests
 ```
 
 SQLite に最小の台帳を作る。

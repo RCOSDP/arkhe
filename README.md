@@ -26,6 +26,25 @@ live in the JC2 working repository (`ark_design_policy.md`,
 `ark_acceptance_criteria.md`, `ark_implementation_plan.md`,
 `ark_conformance_jc2ark.md`, and others).
 
+## Try it
+
+Keycloak, PostgreSQL and arkhe — minter/admin and resolver as separate processes,
+with a ledger already populated:
+
+```bash
+cd compose/oidc && docker compose up -d --build
+```
+
+| | |
+| --- | --- |
+| Admin UI and minting API | <http://localhost:8057/admin/> |
+| Resolution (**no authentication**) | <http://localhost:8058/ark:/…> |
+| API reference | <http://localhost:8057/api/docs> |
+
+Sign in as `ops`, `naan-admin` or `nibb` (all `arkhe-demo-2026`) to see the same
+ledger from three different reaches. Stopping Keycloak makes minting return 401
+while resolution keeps answering — see [Quickstart](https://rcosdp.github.io/arkhe/quickstart/).
+
 ## Layout
 
 | | |

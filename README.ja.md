@@ -20,6 +20,25 @@ FastAPI ＋ SQLAlchemy 2.0。`src/arkhe/arkspec/`（ARK 仕様の純関数層）
 （`ark_design_policy.md` / `ark_acceptance_criteria.md` / `ark_implementation_plan.md` /
 `ark_conformance_jc2ark.md` ほか）。
 
+## 動かしてみる
+
+Keycloak・PostgreSQL・arkhe（採番／管理と解決の 2 プロセス）が、台帳の入った
+状態で立ち上がる。
+
+```bash
+cd compose/oidc && docker compose up -d --build
+```
+
+| | |
+| --- | --- |
+| 管理画面・採番 API | <http://localhost:8057/admin/> |
+| 解決（**認証不要**） | <http://localhost:8058/ark:/…> |
+| API ドキュメント | <http://localhost:8057/api/docs> |
+
+`ops` / `naan-admin` / `nibb`（いずれもパスワードは `arkhe-demo-2026`）で入り比べると、
+同じ台帳が到達範囲ごとにどう見えるかが分かる。Keycloak を止めると採番は 401 に
+なるが解決は答え続ける——[クイックスタート](https://rcosdp.github.io/arkhe/ja/quickstart/)。
+
 ## 構成
 
 | | |

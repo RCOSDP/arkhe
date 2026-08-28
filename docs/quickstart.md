@@ -11,7 +11,15 @@ cd arkhe/compose/oidc
 docker compose up -d --build
 ```
 
-That brings up Keycloak, PostgreSQL and arkhe, with a ledger already populated.
+That brings up Keycloak, PostgreSQL and arkhe — split into a minter/admin process and
+a resolver process, the same way it runs in production — with a ledger already populated.
+
+| | URL |
+| --- | --- |
+| Admin UI and minting API | <http://localhost:8057/admin/> |
+| Resolution (**no authentication**) | <http://localhost:8058/ark:/…> |
+| API reference | <http://localhost:8057/api/docs> |
+| Keycloak console | <http://localhost:8080/> (`admin` / `admin`) |
 
 Open **<http://localhost:8057/admin/>** and sign in as one of:
 
@@ -25,6 +33,34 @@ Signing in as each in turn is the quickest way to understand what
 [reach](concepts/delegation.md) means: `nibb` cannot see the other institutions, and
 the audit log answers 403.
 
+Then mint one and resolve it:
+
+```bash
+TOKEN=$(curl -s -X POST \
+  http://keycloak.localhost:8080/realms/arkhe/protocol/openid-connect/token \
+  -d grant_type=client_credentials -d client_id=nibb-invenio \
+  -d client_secret=nibb-invenio-secret-for-demo-only | jq -r .access_token)
+
+ARK=$(curl -s -X POST http://localhost:8057/api/mint \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"url": "https://example.org/records/1", "title": "First object"}' | jq -r .ark)
+
+curl -i "http://localhost:8058/$ARK"     # 302 to the URL
+curl "http://localhost:8058/$ARK??"      # the record and the policy behind it
+```
+
+Stop the authorization server and try both again:
+
+```bash
+docker compose stop keycloak
+# minting is now 401 — resolution still answers 302
+docker compose start keycloak
+```
+
+**Minting stops; resolution does not.** Resolution needs no authentication, so the
+resolver holds no authentication configuration at all. Identifiers you have already
+handed out do not become unresolvable because something else broke.
+
 !!! warning "This stack is for looking at, not for running"
     The secrets are in the compose file in the clear, Keycloak runs in dev mode, and
     the demo passwords are published above. See [Deployment](guides/deployment.md).
@@ -34,7 +70,7 @@ the audit log answers 403.
 ```bash
 git clone https://github.com/RCOSDP/arkhe.git && cd arkhe
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 209 tests
+python -m pytest -q          # 219 tests
 ```
 
 Stand up a minimal ledger against SQLite:
