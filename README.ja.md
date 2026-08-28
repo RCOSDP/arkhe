@@ -75,4 +75,4 @@ uvicorn arkhe.app:create_app --factory
 
 `src/arkhe/arkspec/` の一部は Internet Archive の
 [arklet](https://github.com/internetarchive/arklet)（MIT）から派生している。
-該当箇所には出典を記し、`LICENSE` に著作権表示と許諾文を含めている。
+該当箇所には出典を記し、[`NOTICE`](NOTICE) に著作権表示と許諾文を含めている。

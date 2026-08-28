@@ -1,6 +1,16 @@
+# 第三者の著作物 / Third-party notices
+
+本ソフトウェアは以下を含みます。
+This software includes the following.
+
+
+Parts of `src/arkhe/arkspec/` are derived from the Internet Archive's arklet
+(https://github.com/internetarchive/arklet), used under the MIT License.
+Derived functions are marked in the source with a "Derived from arklet" note.
+
 MIT License
 
-Copyright (c) 2026 National Institute of Informatics
+Copyright (c) 2021, 2025 Internet Archive
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

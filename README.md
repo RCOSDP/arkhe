@@ -103,8 +103,8 @@ The admin interface is at `/admin/` (Japanese and English). API documentation is
 
 Part of `src/arkhe/arkspec/` is derived from the Internet Archive's
 [arklet](https://github.com/internetarchive/arklet) (MIT). The derived passages
-carry an attribution in place, and [LICENSE](LICENSE) reproduces the copyright
-notice and permission text.
+carry an attribution in place, and [NOTICE](NOTICE) reproduces the copyright notice
+and permission text.
 
 ## License
 
