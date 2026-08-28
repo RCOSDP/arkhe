@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from arkhe.auth import apikey, oauth2
@@ -32,6 +33,21 @@ def oidc_verifier(settings: Settings) -> OidcVerifier:
             settings.oidc_issuer, settings.oidc_audience, settings.oidc_jwks_url
         )
     return _oidc_verifier
+
+
+#: **抽出と文書化を兼ねる。** これを依存に置くことで OpenAPI に
+#: `securitySchemes` が載り、Swagger UI に Authorize ボタンが出る。
+#: `auto_error=False` なのは、公開情報の読取を未認証で通すため——ここで 403 を
+#: 返してしまうと、その方針が壊れる。
+bearer_scheme = HTTPBearer(
+    scheme_name="bearer",
+    description=(
+        "API キー（apikey モード）、arkhe が発行したトークン（oauth2 モード）、"
+        "外部の認可サーバが発行した JWT（oidc モード）のいずれか。"
+        "有効な機構は ARKHE_AUTH で決まる。"
+    ),
+    auto_error=False,
+)
 
 
 def bearer(request: Request) -> str:
@@ -80,7 +96,10 @@ def current_principal(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     settings: Annotated[Settings, Depends(get_settings)],
+    _cred: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
 ) -> Principal:
+    # トークンは `bearer()` で取る。`_cred` は OpenAPI に載せるためだけの依存で、
+    # **値は使わない**——`ark:/…` のようにヘッダ以外から来る経路と扱いを揃えるため。
     return authenticate(bearer(request), session, settings)
 
 

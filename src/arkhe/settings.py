@@ -21,6 +21,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 Mechanism = Literal["apikey", "oauth2", "oidc"]
+AdminLogin = Literal["bearer", "oidc", "proxy"]
 
 
 class Settings(BaseSettings):
@@ -56,6 +57,29 @@ class Settings(BaseSettings):
     oidc_audience: str = ""
     #: JWKS の取得先。未設定なら issuer の discovery から引く。
     oidc_jwks_url: str = ""
+
+    # ------------------------------------------------------- 管理画面への入口
+    #: **ブラウザは Authorization ヘッダを付けられない。** API は Bearer で足りるが、
+    #: 人が管理画面に入る経路は別に要る。
+    #:
+    #:   bearer  既定。ログイン画面を持たない（自動化・curl 専用）
+    #:   oidc    arkhe が OIDC のクライアントとして認可コードフローを回す
+    #:   proxy   前段の認証プロキシが済ませた前提で、そのヘッダを信じる
+    admin_login: AdminLogin = "bearer"
+
+    #: セッション Cookie の署名鍵と寿命。**既定値は持たない。**
+    session_secret: str = ""
+    session_ttl: int = 28800  # 8 時間。断続的に 1 日使う想定
+    #: Cookie に Secure を付けるか。HTTPS で出すなら true のままにする。
+    session_secure: bool = True
+
+    #: `admin_login=oidc` のときの、arkhe 自身のクライアント登録。
+    admin_client_id: str = ""
+    admin_client_secret: str = ""
+    admin_scope: str = "openid profile email"
+
+    #: `admin_login=proxy` のときに身元を読むヘッダ。
+    proxy_user_header: str = "X-Forwarded-User"
 
     # ---------------------------------------------------------------- 解決
     #: D2: 未知 NAAN の取次先。
@@ -94,6 +118,21 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "ARKHE_TOKEN_SECRET が短すぎます（32 バイト以上。RFC 7518 §3.2）。"
                     "例: python -c \"import secrets;print(secrets.token_urlsafe(48))\""
+                )
+        if self.admin_login != "bearer" and not self.session_secret:
+            raise ValueError(
+                f"ARKHE_ADMIN_LOGIN={self.admin_login} には ARKHE_SESSION_SECRET が要ります"
+                "（セッション Cookie の署名鍵。既定値は持ちません）"
+            )
+        if self.admin_login != "bearer" and len(self.session_secret.encode()) < 32:
+            raise ValueError("ARKHE_SESSION_SECRET が短すぎます（32 バイト以上）")
+        if self.admin_login == "oidc":
+            if not self.oidc_issuer:
+                raise ValueError("ARKHE_ADMIN_LOGIN=oidc には ARKHE_OIDC_ISSUER が要ります")
+            if not self.admin_client_id:
+                raise ValueError(
+                    "ARKHE_ADMIN_LOGIN=oidc には ARKHE_ADMIN_CLIENT_ID が要ります"
+                    "（認可サーバに登録した arkhe 自身のクライアント）"
                 )
         if "oidc" in self.auth and not self.oidc_issuer:
             raise ValueError(

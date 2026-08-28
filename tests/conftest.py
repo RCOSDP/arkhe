@@ -123,7 +123,11 @@ def as_principal(app):
     """**認証だけを差し替える。認可は本物を通す。**"""
 
     def use(principal: Principal) -> TestClient:
+        # API と管理画面で主体の解決経路が違う（管理画面はセッションや前段ヘッダも
+        # 見る）。**どちらも差し替える**——テストで見たいのは認可であって、
+        # 「どうやって認証したか」ではない。
         app.dependency_overrides[deps.current_principal] = lambda: principal
+        app.dependency_overrides[admin_router.admin_principal] = lambda: principal
         return TestClient(app, follow_redirects=False)
 
     return use

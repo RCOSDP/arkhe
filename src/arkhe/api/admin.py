@@ -14,20 +14,23 @@ import json
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from arkhe.api import i18n
-from arkhe.auth.deps import CurrentPrincipal, Db
-from arkhe.auth.errors import Forbidden
+from arkhe.auth import login as login_flow
+from arkhe.auth import session as sess
+from arkhe.auth.deps import Config, Db, authenticate, bearer
+from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import Ark, AuditEvent, Client, Manager, Naan, Shoulder
 from arkhe.domain import authz, minting
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+# 管理画面は HTML であって API ではない。**OpenAPI には載せない。**
+router = APIRouter(prefix="/admin", tags=["admin"], include_in_schema=False)
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 
@@ -78,6 +81,51 @@ def _visible_shoulders(session: Session, p: Principal) -> list[Shoulder]:
     return list(session.scalars(stmt))
 
 
+class NeedsLogin(Exception):
+    """ログインへ送る。**401 を返さない**——ブラウザにヘッダは付けられないので、
+    401 を見せても人には何もできない。"""
+
+    def __init__(self, next_url: str = "/admin/"):
+        self.next_url = next_url
+
+
+def admin_principal(request: Request, session: Db, cfg: Config) -> Principal:
+    """管理画面の主体。**入口は設定で選ぶ**（`ARKHE_ADMIN_LOGIN`）。
+
+    どの入口でも、行き着く先は API と同じ `Principal`。到達範囲の判定も同じ。
+    違うのは「誰であるかをどう確かめたか」だけ。
+    """
+    # 1) セッション Cookie（oidc / proxy でログイン済み）
+    if cfg.admin_login != "bearer":
+        raw = request.cookies.get(sess.COOKIE, "")
+        claims = sess.read(raw, secret=cfg.session_secret) if raw else None
+        if claims:
+            try:
+                return login_flow.by_subject(
+                    session, claims["sub"], mechanism=claims.get("via", "")
+                )
+            except AuthError:
+                pass  # 登録が消えた・無効化された。ログインし直させる
+
+    # 2) 前段の認証プロキシ
+    if cfg.admin_login == "proxy":
+        try:
+            return login_flow.from_proxy(session, cfg, request.headers)
+        except AuthError as exc:
+            raise NeedsLogin() from exc
+
+    # 3) Bearer（自動化・curl。bearer モードではこれだけ）
+    try:
+        return authenticate(bearer(request), session, cfg)
+    except AuthError:
+        if cfg.admin_login == "oidc":
+            raise NeedsLogin(str(request.url.path)) from None
+        raise
+
+
+AdminPrincipal = Annotated[Principal, Depends(admin_principal)]
+
+
 class _ShoulderChoice:
     """採番フォームの選択肢。テンプレートに ORM を直接渡さないための薄い型。"""
 
@@ -95,7 +143,7 @@ def _mintable(session: Session, p: Principal) -> list[_ShoulderChoice]:
 
 
 @router.get("/", response_class=HTMLResponse)
-def overview(request: Request, principal: CurrentPrincipal, session: Db):
+def overview(request: Request, principal: AdminPrincipal, session: Db):
     naans = _visible_naans(session, principal)
     for n in naans:
         # **リレーション名（`n.managers`）には代入しない。** 代入すると SQLAlchemy は
@@ -140,7 +188,7 @@ def overview(request: Request, principal: CurrentPrincipal, session: Db):
 
 
 @router.get("/mint", response_class=HTMLResponse)
-def mint_form(request: Request, principal: CurrentPrincipal, session: Db):
+def mint_form(request: Request, principal: AdminPrincipal, session: Db):
     authz.require_scope(principal, "ark:mint")
     return _remember_lang(
         request,
@@ -163,7 +211,7 @@ def mint_form(request: Request, principal: CurrentPrincipal, session: Db):
 @router.post("/mint", response_class=HTMLResponse)
 def mint_submit(
     request: Request,
-    principal: CurrentPrincipal,
+    principal: AdminPrincipal,
     session: Db,
     shoulder: Annotated[str, Form()] = "",
     url: Annotated[str, Form()] = "",
@@ -213,7 +261,7 @@ def mint_submit(
 
 
 @router.get("/clients", response_class=HTMLResponse)
-def clients(request: Request, principal: CurrentPrincipal, session: Db):
+def clients(request: Request, principal: AdminPrincipal, session: Db):
     stmt = select(Client).options(
         selectinload(Client.credentials),
         selectinload(Client.manager),
@@ -246,7 +294,7 @@ def clients(request: Request, principal: CurrentPrincipal, session: Db):
 
 
 @router.get("/audit", response_class=HTMLResponse)
-def audit(request: Request, principal: CurrentPrincipal, session: Db):
+def audit(request: Request, principal: AdminPrincipal, session: Db):
     """**監査ログは NAAN 単位以上にしか見せない。**
 
     誰がいつ何をしたかは、その名前空間を預かる側の情報。機関の担当者に他機関の
@@ -264,3 +312,75 @@ def audit(request: Request, principal: CurrentPrincipal, session: Db):
             request,
             "audit.html", _ctx(request, principal, "audit", events=events)),
     )
+
+
+# ------------------------------------------------------------------ ログイン
+#
+# **ここで arkhe がやるのは「クライアント（RP）になる」こと。** 認可サーバになる
+# こと——トークンを発行し、同意を預かる役目——とは別で、そちらは持たない。
+
+
+def _redirect_uri(request: Request) -> str:
+    return str(request.url_for("admin_callback"))
+
+
+@router.get("/login", name="admin_login")
+def login(request: Request, cfg: Config):
+    if cfg.admin_login != "oidc":
+        return PlainTextResponse(
+            "この構成にログイン画面はありません（ARKHE_ADMIN_LOGIN を確認してください）",
+            status_code=404,
+        )
+    next_url = request.query_params.get("next", "/admin/")
+    url, payload = login_flow.start(cfg, redirect_uri=_redirect_uri(request), next_url=next_url)
+    r = RedirectResponse(url, status_code=302)
+    # state と PKCE の検証子は**署名して預ける**。往復のあいだだけ持てばよい。
+    r.set_cookie(
+        login_flow.FLOW_COOKIE,
+        sess.issue("flow", secret=cfg.session_secret, ttl=login_flow.FLOW_TTL,
+                   extra={"flow": payload}),
+        max_age=login_flow.FLOW_TTL, httponly=True, samesite="lax",
+        secure=cfg.session_secure, path="/admin",
+    )
+    return r
+
+
+@router.get("/callback", name="admin_callback")
+def callback(request: Request, session: Db, cfg: Config):
+    import json
+
+    raw = request.cookies.get(login_flow.FLOW_COOKIE, "")
+    claims = sess.read(raw, secret=cfg.session_secret) if raw else None
+    if not claims:
+        return PlainTextResponse(
+            "ログインの往復が失効しました。やり直してください", status_code=400
+        )
+    flow = json.loads(claims["flow"])
+    # RFC 6749: **state を突き合わせる**（別の要求への応答を受け取らないため）。
+    if request.query_params.get("state") != flow["state"]:
+        return PlainTextResponse("state が一致しません", status_code=400)
+    if err := request.query_params.get("error"):
+        return PlainTextResponse(f"認可サーバが拒否しました: {err}", status_code=403)
+
+    principal = login_flow.finish(
+        session, cfg,
+        code=request.query_params.get("code", ""),
+        verifier=flow["verifier"],
+        redirect_uri=_redirect_uri(request),
+    )
+    r = RedirectResponse(flow.get("next") or "/admin/", status_code=302)
+    sess.set_cookie(
+        r,
+        sess.issue(principal.client_id, secret=cfg.session_secret, ttl=cfg.session_ttl,
+                   extra={"via": "oidc-login"}),
+        ttl=cfg.session_ttl, secure=cfg.session_secure,
+    )
+    r.delete_cookie(login_flow.FLOW_COOKIE, path="/admin")
+    return r
+
+
+@router.get("/logout", name="admin_logout")
+def logout(cfg: Config):
+    r = RedirectResponse("/admin/", status_code=302)
+    sess.clear_cookie(r)
+    return r

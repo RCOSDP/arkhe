@@ -79,6 +79,29 @@ Succession and departure are built on the same commitment: however the custodian
 changes, the identifier survives. What changes is who mints next and where the
 target points.
 
+## Getting into the admin interface
+
+**A browser cannot set an Authorization header.** A bearer token is enough for the
+API, but a person needs a different way in. Choose it with `ARKHE_ADMIN_LOGIN`.
+
+| | |
+| --- | --- |
+| `bearer` | Default. No login screen — for callers that can set a header (curl, automation) |
+| `oidc` | arkhe acts as an **OIDC client (relying party)**, runs the authorization code flow with PKCE, and turns the result into a session cookie |
+| `proxy` | Trusts a header set by an authenticating proxy in front (oauth2-proxy, nginx with OIDC, …) |
+
+**Being a client is not the same as being an authorization server.** arkhe never
+becomes the latter: it issues no tokens and holds no consent. What `oidc` does is
+send a person to the authorization server and check the JWT that comes back — work
+that stays on the resource side.
+
+⚠️ If you choose `proxy`, **close off any path that reaches arkhe directly.** If one
+remains, anyone can forge the header (use a NetworkPolicy on Kubernetes, or listen
+only on 127.0.0.1 when running standalone).
+
+Whichever way in, the result is the same `Principal` the API produces, and reach is
+judged the same way.
+
 ## Getting started
 
 ```bash

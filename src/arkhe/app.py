@@ -12,11 +12,53 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.domain.authz import Invalid, NotFound, ShoulderDelegated, Throttled
 from arkhe.settings import Settings, get_settings
+
+#: Swagger UI の冒頭に出る説明。**仕様上の要点を、試す前に読めるところに置く。**
+API_DESCRIPTION = """\
+ARK 識別子の採番と解決。
+
+**ARK は再割当てしない（NR）。** この一点が API の形をほぼ決めている。
+
+* **採番した ARK は取り消せない。** 削除の口は無く、対象が失われたときは
+  `tombstone`（記述は残り、到達性だけが落ちる）。
+* **再送で番号を増やさない。** `request_id` を付けて送れば、同じ値の再送には
+  前回と同じ ARK が返る。万オーダーの投入は途中で切れる方が普通なので、
+  切れた塊はそのまま再送してよい。
+* **shoulder はリクエストで指定しても広がらない。** 到達範囲は資格情報の
+  登録属性で決まる。省略すれば機関の既定が使われる。
+* **子リソースは採番しない。** `ark:/99999/x9abc/page/3` のような深い参照は
+  suffix passthrough が賄うので、1 レコード 1 採番で足りる。
+
+### 認証
+
+`Authorize` から Bearer トークンを入れる。受け付ける資格情報は起動時の
+`ARKHE_AUTH` で決まり、API キー・arkhe が発行したトークン・外部の認可サーバが
+発行した JWT のいずれか（併用可）。
+
+**公開情報の読取に認証は要らない。** リポジトリは公開レコードを誰にでも見せる
+ものだから。
+"""
+
+TAGS = [
+    {
+        "name": "ark",
+        "description": "採番と更新。**書き込みは到達範囲の内側にしか届かない。**",
+    },
+    {
+        "name": "resolve",
+        "description": (
+            "解決。`?`（簡潔な記述）・`??`（永続性宣言）・`?info`（人間向け）・"
+            "`?json`（機械可読）の inflection を持つ。"
+            "**対象に到達できなくても記述は答えられる**（FAIR A2）。"
+            "`ARKHE_RESOLVER=1` で起動したときだけ現れる。"
+        ),
+    },
+]
 
 
 def _install_handlers(app: FastAPI) -> None:
@@ -36,6 +78,16 @@ def _install_handlers(app: FastAPI) -> None:
             return JSONResponse(exc.detail, status_code=307, headers={"Location": exc.minter})
         return JSONResponse(exc.detail, status_code=403)
 
+    from arkhe.api.admin import NeedsLogin
+
+    @app.exception_handler(NeedsLogin)
+    async def _needs_login(request: Request, exc: NeedsLogin):  # noqa: ARG001
+        # **401 を返さない。** ブラウザに Authorization ヘッダは付けられないので、
+        # 401 を見せても人には何もできない。ログイン画面へ送る。
+        from urllib.parse import quote
+
+        return RedirectResponse(f"/admin/login?next={quote(exc.next_url)}", status_code=302)
+
     for exc_type, code in ((Forbidden, 403), (NotFound, 404), (Invalid, 400), (Throttled, 429)):
 
         @app.exception_handler(exc_type)
@@ -51,8 +103,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="arkhe",
         summary="ARK identifier infrastructure — minter and resolver as separate services",
+        description=API_DESCRIPTION,
         version="0.2.0",
+        license_info={"name": "MIT", "identifier": "MIT"},
+        openapi_tags=TAGS,
         docs_url="/api/docs",
+        redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
     )
     _install_handlers(app)

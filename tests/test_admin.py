@@ -162,3 +162,113 @@ def test_言語切替のUIが常に出る(db, world, principal_of, as_principal)
     for code, label in i18n.LANGS.items():
         assert f'href="?lang={code}"' in body and label in body
     assert 'class="menu-i on"' in body
+
+
+# ------------------------------------------------------- 管理画面への入口
+#
+# **ブラウザは Authorization ヘッダを付けられない。** API は Bearer で足りるが、
+# 人が管理画面に入る経路は別に要る。3 つの入口を設定で選ぶ。
+
+
+@pytest.fixture
+def raw_app(factory):
+    """認証を差し替えない素のアプリ。**入口そのものを試す。**"""
+    from fastapi import FastAPI
+
+    from arkhe.api import admin as admin_router
+    from arkhe.app import _install_handlers
+    from arkhe.db import session as session_mod
+    from arkhe.settings import get_settings
+
+    def build(settings):
+        a = FastAPI()
+        _install_handlers(a)
+        a.include_router(admin_router.router)
+
+        def one_session():
+            s = factory()
+            try:
+                yield s
+            finally:
+                s.close()
+
+        a.dependency_overrides[session_mod.get_session] = one_session
+        a.dependency_overrides[get_settings] = lambda: settings
+        return a
+
+    return build
+
+
+def _settings(**kw):
+    import secrets
+
+    from arkhe.settings import Settings
+
+    return Settings(
+        auth=["apikey"], database_url="sqlite://",
+        session_secret=secrets.token_urlsafe(48), session_secure=False, **kw
+    )
+
+
+def test_bearer_モードにログイン画面は無い(db, world, raw_app):
+    """自動化・curl 専用の構成。**401 を返す**（ブラウザ向けの導線は持たない）。"""
+    from fastapi.testclient import TestClient
+
+    c = TestClient(raw_app(_settings(admin_login="bearer")), follow_redirects=False)
+    assert c.get("/admin/").status_code == 401
+    assert c.get("/admin/login").status_code == 404
+
+
+def test_oidc_モードは未ログインならログインへ送る(db, world, raw_app):
+    """**401 を返さない。** ブラウザにヘッダは付けられないので、401 を見せても
+    人には何もできない。"""
+    from fastapi.testclient import TestClient
+
+    cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
+                    admin_client_id="arkhe-admin")
+    c = TestClient(raw_app(cfg), follow_redirects=False)
+    r = c.get("/admin/")
+    assert r.status_code == 302 and r.headers["location"].startswith("/admin/login")
+
+
+def test_proxy_モードは前段のヘッダを信じる(db, world, root, raw_app):
+    from fastapi.testclient import TestClient
+
+    ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    cli = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False)
+    # ヘッダが無ければログインへ（この構成に画面は無いので 404 になる）
+    assert cli.get("/admin/").status_code == 302
+    r = cli.get("/admin/", headers={"X-Forwarded-User": "alice@example.ac.jp"})
+    assert r.status_code == 200 and "A機関" in r.text
+
+
+def test_proxy_モードでも台帳に無い身元は通さない(db, world, raw_app):
+    """認可サーバで認証できることと、この名前空間を触ってよいことは別。"""
+    from fastapi.testclient import TestClient
+
+    cli = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False)
+    r = cli.get("/admin/", headers={"X-Forwarded-User": "stranger@example.com"})
+    assert r.status_code == 302  # ログインへ送られる（＝入れない）
+
+
+def test_セッションは署名され改竄できない(db, world, root, raw_app):
+    from fastapi.testclient import TestClient
+
+    from arkhe.auth import session as sess
+
+    ops.register_client(db, root, client_id="bob", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    cfg = _settings(admin_login="proxy")
+    cli = TestClient(raw_app(cfg), follow_redirects=False)
+
+    good = sess.issue("bob", secret=cfg.session_secret, ttl=600)
+    cli.cookies.set(sess.COOKIE, good)
+    assert cli.get("/admin/").status_code == 200
+
+    # 別の鍵で署名したものは通らない
+    forged = sess.issue("bob", secret="x" * 48, ttl=600)
+    cli.cookies.set(sess.COOKIE, forged)
+    assert cli.get("/admin/").status_code == 302
