@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from arkhe.db.models import Authority
 
 
@@ -123,3 +125,24 @@ def test_well_known_ark(world, principal_of, as_principal):
     r = c.get("/.well-known/ark")
     assert r.status_code == 200
     assert {n["naan"] for n in r.json()["naans"]} == {"99999", "88888"}
+
+
+@pytest.mark.parametrize("resolver", [False, True], ids=["minter", "resolver"])
+def test_healthzはどのモードでも応える(factory, resolver):
+    """**probe の口はモードによらず要る。**
+
+    以前は resolve ルータにしか載っておらず、minter と admin は liveness probe に
+    404 を返し続けて kubelet に殺されていた。
+    """
+    from fastapi.testclient import TestClient
+
+    from arkhe.app import create_app
+    from arkhe.settings import Settings
+
+    app = create_app(
+        Settings(
+            resolver=resolver, database_url="sqlite://", auth=["apikey"],
+            admin_login="bearer",
+        )
+    )
+    assert TestClient(app).get("/healthz").json() == {"ok": True}

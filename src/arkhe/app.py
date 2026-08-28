@@ -114,6 +114,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     _install_handlers(app)
 
+    # **どのモードでも生存確認の口は要る。** 以前は resolve ルータにしか無く、
+    # minter と admin は probe に 404 を返し続けて kubelet に殺されていた。
+    # 認証も DB も通さない——落ちているのがアプリ自身かどうかだけを見る。
+    @app.get("/healthz", include_in_schema=False)
+    def healthz():
+        return {"ok": True}
+
     if s.resolver:
         from arkhe.api import resolve
 

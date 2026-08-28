@@ -233,7 +233,3 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
 
     return templates.TemplateResponse(request, "info.html", {"erc": erc, "res": res})
 
-
-@router.get("/healthz", include_in_schema=False)
-def healthz():
-    return {"ok": True}
