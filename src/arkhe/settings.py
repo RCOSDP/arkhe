@@ -110,7 +110,14 @@ class Settings(BaseSettings):
         return v
 
     def check(self) -> None:
-        """**設定し忘れをその場で止める。** 既定の秘密値は持たない。"""
+        """**設定し忘れをその場で止める。** 既定の秘密値は持たない。
+
+        resolver は例外。解決に認証は要らず、管理画面も載らないので、
+        **認証まわりの設定は一切要求しない**——要求すると、使いもしない
+        セッション鍵を解決系の全ノードに配ることになる。
+        """
+        if self.resolver:
+            return
         if not self.auth:
             raise ValueError("ARKHE_AUTH が空です。apikey / oauth2 / oidc から選んでください")
         if "oauth2" in self.auth:

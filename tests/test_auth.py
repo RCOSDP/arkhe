@@ -112,6 +112,23 @@ def test_設定の抜けは起動時に落とす(kw, why):
         Settings(**kw).check()
 
 
+def test_resolverは認証設定を要求されない():
+    """解決に認証は要らず管理画面も載らない。
+
+    使いもしないセッション鍵を、解決系の全ノードに配らせないため。
+    """
+    Settings(resolver=True, auth=[], admin_login="oidc", session_secret="").check()
+
+
+def test_同じ設定でもminterなら止まる():
+    """resolver だけの例外であること（無条件に緩めていないことの確認）。"""
+    with pytest.raises(ValueError, match="ARKHE_SESSION_SECRET"):
+        Settings(
+            resolver=False, auth=["oidc"], oidc_issuer="https://kc/realms/x",
+            admin_login="oidc", session_secret="",
+        ).check()
+
+
 def test_break_glassには期限が要る(db, world, root):
     """恒久的な万能鍵を作らせない。"""
     from arkhe.domain.authz import Invalid
