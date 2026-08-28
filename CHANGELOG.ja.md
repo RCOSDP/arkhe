@@ -8,6 +8,40 @@
 
 ## [未リリース]
 
+## [0.0.2] — 2026-08-28
+
+すべて、0.0.1 を Kubernetes と compose に実際に載せて出たもの。テストでは 1 つも
+出ていない——4 件とも「コードが正しい」と「デプロイできる」の間に落ちていた。
+
+### 修正
+
+- `/healthz` をどのモードでも載せた。resolve ルータにしか無かったので、minter と
+  admin は liveness probe に 404 を返し続け、繰り返し殺されていた。
+- resolver に認証設定を要求しないようにした。認証を通す口も管理画面も無いのに、
+  起動時に `ARKHE_SESSION_SECRET` と OIDC の設定を求めていた——使いもしない
+  セッション署名鍵を、解決系の全ノードに配らせていたことになる。
+- shoulder を指定した主体が機関を継ぐようにした。`--shoulder` だけ渡すと
+  manager が空のまま作られ、認可の入口で必ず弾かれていた。しかも「shoulder は
+  合っているのに通らない」という追いにくい形で。shoulder と食い違う `manager` を
+  明示した場合は、黙ってどちらかを優先せず拒む。
+- ラベルの一意性は、ラベルがあるときだけにした。`(manager_id, label)` の一意制約に
+  空文字が含まれていたため、1 機関にラベル無しの主体を 1 つしか置けなかった。
+  プロセスごとに鍵を分ける普通の構成（`web-api` / `web-ui` / `worker`）が通らず、
+  鍵を共有させる圧力になっていた。移行は `56e5e54db345`。
+- compose のブラウザログインが `invalid_scope: openid profile email` で落ちていた。
+  realm の import で `clientScopes` を宣言すると Keycloak 組み込みの一式は追加では
+  なく置き換えになるため、`profile` と `email` が realm に存在していなかった。
+
+### 変更
+
+- デモ realm の `defaultDefaultClientScopes` から `arkhe-api` を外した。realm の
+  既定に入れていたので、**後から作ったどんなクライアントでも** arkhe 宛だと名乗れる
+  トークンを取れた。audience は「このトークンがどの API 向けか」の宣言であって、
+  既定で配るものではない。
+- compose の resolver を独立したサービス（`:8058`）にした。デプロイ時と同じ形に
+  なるうえ、Keycloak を止めると採番が 401 になり解決は 302 のままであることが、
+  そのまま見える。
+
 ## [0.0.1] — 2026-08-28
 
 最初のタグ。プレリリースであり、**版が `0` で始まる間は MINOR が破壊的変更を運ぶ。**
@@ -33,5 +67,6 @@
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.1...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.2
 [0.0.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.1

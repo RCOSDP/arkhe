@@ -9,6 +9,46 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.2] — 2026-08-28
+
+Everything here was found by putting 0.0.1 on Kubernetes and in the compose stack.
+None of it showed up in the test suite, because all four defects live in the gap
+between *the code is correct* and *the code can be deployed*.
+
+### Fixed
+
+- `/healthz` is now served in every mode. It only existed on the resolve router, so a
+  minter or an admin process answered 404 to its liveness probe and was killed and
+  restarted forever.
+- A resolver no longer demands authentication settings. It serves no authenticated
+  route and mounts no admin interface, yet startup required `ARKHE_SESSION_SECRET`
+  and the OIDC configuration — which meant handing a session signing key to every
+  resolver node that would never use it.
+- A subject pinned to a shoulder now inherits that shoulder's institution. Passing
+  `--shoulder` without `--manager` produced a subject that was rejected at the
+  authorization gate every time, in the confusing shape of *the shoulder is right but
+  it still will not go through*. A `manager` that contradicts the shoulder is
+  refused rather than silently overridden.
+- Labels are unique only when there is a label. The `(manager_id, label)` unique
+  index covered the empty string, so one institution could hold only one unlabelled
+  subject — which made the ordinary arrangement of one credential per process
+  (`web-api`, `web-ui`, `worker`) impossible and pushed towards sharing one key.
+  Migration `56e5e54db345`.
+- The compose quickstart's browser login failed with
+  `invalid_scope: openid profile email`. Declaring `clientScopes` in a realm import
+  replaces Keycloak's built-in set rather than adding to it, so `profile` and `email`
+  did not exist in the realm at all.
+
+### Changed
+
+- The demo realm no longer puts `arkhe-api` in `defaultDefaultClientScopes`. As a
+  realm default, **any** client created there later could obtain a token that claims
+  to be for arkhe. An audience is a statement about which API a token is for; it is
+  not something to hand out by default.
+- The compose stack runs the resolver as its own service on `:8058`, matching how it
+  is deployed. Stopping Keycloak now visibly leaves minting at 401 while resolution
+  keeps answering 302.
+
 ## [0.0.1] — 2026-08-28
 
 First tagged version. Pre-release: **the minor number carries breaking changes while
@@ -36,5 +76,6 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.2
 [0.0.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.1
