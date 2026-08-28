@@ -419,3 +419,30 @@ def test_外部URLへのリダイレクトに使えない(db, world, with_passwo
                                        "password": "correct-horse-battery",
                                        "next": "https://evil.example.com/"})
     assert r.headers["location"] == "/admin/"
+
+
+def test_shoulder固定の主体は機関を継ぐ(db, world, root):
+    """**shoulder は既に機関を決めている。**
+
+    別々に渡させると、manager を書き忘れた主体ができ、認可の入口で必ず弾かれる
+    ——しかも「shoulder は合っているのに通らない」という分かりにくい形で。
+    """
+    sh = world["a"].default_shoulder
+    c = ops.register_client(
+        db, root, client_id="pinned", naan=sh.naan, shoulder_id=sh.id,
+        scopes="ark:mint",
+    )
+    db.commit()
+    assert c.manager_id == sh.manager_id
+
+
+def test_shoulderと機関の食い違いは拒む(db, world, root):
+    """黙って片方を優先しない。どちらが正しいかは呼び出し側しか知らない。"""
+    from arkhe.domain.authz import Invalid
+
+    sh = world["a"].default_shoulder
+    with pytest.raises(Invalid):
+        ops.register_client(
+            db, root, client_id="mismatch", naan=sh.naan, shoulder_id=sh.id,
+            manager_id=world["b"].id, scopes="ark:mint",
+        )

@@ -317,6 +317,17 @@ def register_client(
     `client_id` には、person なら認可サーバが返す識別子（メールや eppn）を入れる。
     """
     _require_naan(p, naan)
+    if shoulder_id is not None:
+        # **shoulder は既に機関を決めている。** 別々に渡させると、片方だけ書いた
+        # 主体ができて認可の入口（manager が active か）で必ず弾かれる——
+        # しかも「shoulder は合っているのに通らない」という分かりにくい形で。
+        sh = session.get(Shoulder, shoulder_id)
+        if sh is None or sh.naan != naan:
+            raise Invalid({"shoulder_id": f"shoulder {shoulder_id} は NAAN {naan} のものでない"})
+        if manager_id is None:
+            manager_id = sh.manager_id
+        elif manager_id != sh.manager_id:
+            raise Invalid({"shoulder_id": "shoulder の所属機関と manager が食い違う"})
     target = Authority(authority)
     if target is Authority.SYSTEM:
         _require_system(p)
