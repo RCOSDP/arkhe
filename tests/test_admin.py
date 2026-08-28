@@ -234,8 +234,9 @@ def test_oidc_モードは未ログインならログインへ送る(db, world, 
 def test_proxy_モードは前段のヘッダを信じる(db, world, root, raw_app):
     from fastapi.testclient import TestClient
 
+    # **人の主体として登録する。** 機械用の主体は外部ログインでは名乗れない。
     ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
-                            manager_id=world["a"].id, scopes="ark:mint")
+                        manager_id=world["a"].id, scopes="ark:mint", subject_type="person")
     db.commit()
     cli = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False)
     # ヘッダが無ければログインへ（この構成に画面は無いので 404 になる）
@@ -259,7 +260,7 @@ def test_セッションは署名され改竄できない(db, world, root, raw_a
     from arkhe.auth import session as sess
 
     ops.register_client(db, root, client_id="bob", naan="99999",
-                        manager_id=world["a"].id, scopes="ark:mint")
+                        manager_id=world["a"].id, scopes="ark:mint", subject_type="person")
     db.commit()
     cfg = _settings(admin_login="proxy")
     cli = TestClient(raw_app(cfg), follow_redirects=False)
@@ -272,3 +273,45 @@ def test_セッションは署名され改竄できない(db, world, root, raw_a
     forged = sess.issue("bob", secret="x" * 48, ttl=600)
     cli.cookies.set(sess.COOKIE, forged)
     assert cli.get("/admin/").status_code == 302
+
+
+def test_機械の主体は外部ログインで名乗れない(db, world, root, raw_app):
+    """**前段の設定が緩んでヘッダが外から通っても、一括投入バッチには化けられない。**
+
+    プロキシを正しく置けば防げる話だが、設定 1 つの誤りが「全件書き換え」に化ける
+    のは脆い。人と機械を型で分けて、経路そのものを塞ぐ。
+    """
+    from fastapi.testclient import TestClient
+
+    ops.register_client(db, root, client_id="batch", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")  # 既定は machine
+    db.commit()
+    cli = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False)
+    assert cli.get("/admin/", headers={"X-Forwarded-User": "batch"}).status_code == 302
+
+
+def test_人の主体は資格情報を持てない(db, world, root):
+    """身元は外部が保証する。arkhe に鍵を持たせると、外部で失効させても入れてしまう。"""
+    c = ops.register_client(db, root, client_id="carol@example.ac.jp", naan="99999",
+                            manager_id=world["a"].id, subject_type="person")
+    db.commit()
+    with pytest.raises(Invalid):
+        ops.issue_credential(db, root, client_pk=c.id)
+
+
+def test_人の主体はAPIキーで認証できない(db, world, root):
+    """逆向きも塞ぐ。鍵が何らかの経路で作られても、認証は通さない。"""
+    from arkhe.auth import apikey
+    from arkhe.db.models import Credential, CredentialKind
+
+    c = ops.register_client(db, root, client_id="dave@example.ac.jp", naan="99999",
+                            manager_id=world["a"].id, subject_type="person")
+    db.flush()
+    raw, prefix, hashed = apikey.generate_key()
+    db.add(Credential(client_pk=c.id, kind=CredentialKind.API_KEY.value,
+                      prefix=prefix, hashed=hashed))
+    db.commit()
+    from arkhe.auth.errors import AuthError
+
+    with pytest.raises(AuthError):
+        apikey.authenticate(db, raw)

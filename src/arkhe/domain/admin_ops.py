@@ -35,6 +35,7 @@ from arkhe.db.models import (
     Naan,
     Shoulder,
     ShoulderStatus,
+    Subject,
 )
 from arkhe.domain.authz import Invalid, NotFound, audit
 
@@ -302,8 +303,18 @@ def register_client(
     scopes: str = "ark:mint",
     label: str = "",
     expires_at: datetime | None = None,
+    subject_type: str = Subject.MACHINE.value,
 ) -> Client:
-    """採番する主体を登録する。**自分より広い到達範囲は与えられない。**"""
+    """主体を登録する。**自分より広い到達範囲は与えられない。**
+
+    `subject_type` で名乗れる経路が決まる:
+
+      machine  資格情報（API キー / client_secret）で名乗る。外部ログインでは名乗れない
+      person   外部の認可サーバやプロキシが身元を保証する。資格情報を持てない
+
+    分けているのは、前段のヘッダで**機械用の主体を名乗られないようにする**ため。
+    `client_id` には、person なら認可サーバが返す識別子（メールや eppn）を入れる。
+    """
     _require_naan(p, naan)
     target = Authority(authority)
     if target is Authority.SYSTEM:
@@ -320,6 +331,7 @@ def register_client(
 
     client = Client(
         client_id=client_id,
+        subject_type=Subject(subject_type).value,
         naan=naan,
         manager_id=manager_id,
         authority=target.value,
@@ -330,7 +342,10 @@ def register_client(
     )
     session.add(client)
     session.flush()
-    audit(session, p, "register_client", client_id, authority=target.value)
+    audit(
+        session, p, "register_client", client_id,
+        authority=target.value, subject_type=subject_type,
+    )
     return client
 
 
@@ -350,6 +365,12 @@ def issue_credential(
     _require_naan(p, client.naan)
     if not p.is_naan_wide and client.manager_id != p.manager_id:
         raise Forbidden("この主体はこの管理者の範囲外")
+    if client.subject_type != Subject.MACHINE:
+        # 人の身元は外部が保証する。arkhe に鍵を持たせると、外部で失効させても
+        # その鍵で入れてしまう。
+        raise Invalid(
+            {"subject_type": "人の主体には資格情報を発行しない（身元は外部が保証する）"}
+        )
 
     gen = apikey.generate_key if kind == CredentialKind.API_KEY else oauth2.generate_secret
     raw, prefix, hashed = gen()

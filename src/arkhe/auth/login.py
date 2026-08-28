@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session, selectinload
 from arkhe.auth.apikey import _expired, _to_principal
 from arkhe.auth.errors import AuthError
 from arkhe.auth.principal import Principal
-from arkhe.db.models import Client
+from arkhe.db.models import Client, Subject
 from arkhe.settings import Settings
 
 #: 認可サーバへ送り出すときに、戻り先と PKCE の検証子を預けておく Cookie。
@@ -129,6 +129,10 @@ def by_subject(session: Session, subject: str, *, mechanism: str) -> Principal:
     )
     if client is None or _expired(client.expires_at):
         raise AuthError(f"{subject} はこのリゾルバに登録されていません")
+    # **機械用の主体を外部ログインで名乗らせない。** 前段の設定が緩んで
+    # ヘッダが外から通っても、一括投入バッチや採番クライアントには化けられない。
+    if client.subject_type != Subject.PERSON:
+        raise AuthError(f"{subject} は人の主体ではありません（ログインには使えません）")
     return _to_principal(client, mechanism=mechanism)
 
 

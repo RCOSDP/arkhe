@@ -285,8 +285,23 @@ class Ark(Base):
     __table_args__ = (Index("ix_ark_shoulder_created", "shoulder_id", "created_at"),)
 
 
+class Subject(StrEnum):
+    """主体の種別。**人と機械を分ける。**
+
+    分けないと、前段の認証プロキシが立てるヘッダ（`X-Forwarded-User`）で
+    **機械用のクライアントを名乗れてしまう**。プロキシを正しく置けば防げるが、
+    設定 1 つの誤りが「一括投入バッチとして全件書き換え」に化けるのは脆い。
+
+      machine  資格情報（API キー / client_secret）で名乗る。**外部ログインでは名乗れない**
+      person   外部の認可サーバやプロキシが身元を保証する。**資格情報を持てない**
+    """
+
+    MACHINE = "machine"
+    PERSON = "person"
+
+
 class Client(Base):
-    """採番する主体。**API キー・自前トークン・OIDC のどれで認証しても、行き着く先はここ。**
+    """主体。**API キー・自前トークン・OIDC のどれで認証しても、行き着く先はここ。**
 
     到達範囲（NAAN / manager / shoulder / scope）を**クライアント登録の属性として**
     持つのが要点で、トークン要求やリクエスト本文で指定させない（権限昇格を防ぐ）。
@@ -302,6 +317,9 @@ class Client(Base):
     manager_id: Mapped[int | None] = mapped_column(
         ForeignKey("manager.id", ondelete="CASCADE"), nullable=True, index=True
     )
+
+    #: 人か機械か。**この 1 列が、名乗れる経路を分ける**（`Subject` を見よ）。
+    subject_type: Mapped[str] = mapped_column(String(16), default=Subject.MACHINE.value)
 
     #: **到達範囲はクライアント登録の属性。トークン要求で指定させない。**
     authority: Mapped[str] = mapped_column(String(16), default=Authority.MANAGER.value)

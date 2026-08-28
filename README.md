@@ -102,6 +102,31 @@ only on 127.0.0.1 when running standalone).
 Whichever way in, the result is the same `Principal` the API produces, and reach is
 judged the same way.
 
+### Adding people
+
+Anyone who signs in to the admin interface through `proxy` or `oidc` is registered as
+a **person** subject.
+
+```bash
+arkhe client add alice@example.ac.jp 99999 --manager 1 --person \
+  --scopes "ark:mint ark:read"
+```
+
+Put whatever identifier the authorization server or proxy hands back (an email, an
+eppn) in `client_id`. The asserted identity is matched against that value, and an
+identity that does not match does not get in.
+
+**No credential is issued.** A person's identity is vouched for elsewhere, so arkhe
+holds no key for them — holding one would let that key work after the external
+account had been revoked.
+
+> **People and machines are separated by type.** A machine subject — one that
+> authenticates with an API key — **cannot be named through the proxy header**. A
+> correctly placed proxy would prevent this anyway, but one misconfiguration turning
+> into "act as the bulk-import client and rewrite everything" is too sharp an edge,
+> so the path itself is closed. The reverse holds too: a person subject cannot
+> authenticate with an API key.
+
 ## Getting started
 
 ```bash

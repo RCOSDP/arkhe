@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from arkhe.auth.errors import AuthError
 from arkhe.auth.principal import Principal
-from arkhe.db.models import Client, Credential, CredentialKind
+from arkhe.db.models import Client, Credential, CredentialKind, Subject
 
 _ph = PasswordHasher()
 
@@ -78,6 +78,10 @@ def authenticate(session: Session, raw: str) -> Principal:
             continue
         client = cred.client
         if client is None or not client.active or _expired(client.expires_at):
+            continue
+        # **人の主体は資格情報で名乗れない。** 身元は外部が保証するものなので、
+        # arkhe に鍵を持たせない（持たせると、外部で失効させても入れてしまう）。
+        if client.subject_type != Subject.MACHINE:
             continue
         cred.last_used_at = datetime.now(UTC)
         return _to_principal(client, mechanism="apikey")

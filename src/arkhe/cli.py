@@ -137,14 +137,30 @@ def client_add(
     shoulder: int = typer.Option(None, help="この shoulder に固定する"),
     scopes: str = typer.Option("ark:mint", help="空白区切り"),
     label: str = typer.Option(""),
+    person: bool = typer.Option(
+        False, help="人の主体として登録する（外部ログイン専用。資格情報を持てない）"
+    ),
+    authority: str = typer.Option("manager", help="manager / naan / system"),
 ):
+    """主体を登録する。
+
+    既定は機械（API キーで名乗る）。**管理画面に人としてログインさせるなら
+    `--person`** を付け、client_id には認可サーバが返す識別子（メールや eppn）を入れる。
+    """
+    from datetime import UTC, datetime, timedelta
+
     with _session() as s:
         c = ops.register_client(
             s, _root(), client_id=client_id, naan=naan, manager_id=manager,
-            shoulder_id=shoulder, scopes=scopes, label=label,
+            shoulder_id=shoulder, scopes=scopes, label=label, authority=authority,
+            subject_type="person" if person else "machine",
+            expires_at=(datetime.now(UTC) + timedelta(days=365)) if authority == "naan" else None,
         )
         s.commit()
-        typer.echo(f"主体 {c.client_id} を登録しました（scope: {c.allowed_scopes}）")
+        kind = "人" if person else "機械"
+        typer.echo(f"{kind}の主体 {c.client_id} を登録しました（scope: {c.allowed_scopes}）")
+        if person:
+            typer.echo("外部ログイン専用です。資格情報は発行しません。", err=True)
 
 
 @client_app.command("key")
