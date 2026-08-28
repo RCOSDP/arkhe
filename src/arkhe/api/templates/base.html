@@ -94,14 +94,40 @@ aside a.nav[aria-current] { background: var(--accent-soft); color: var(--accent)
 aside a.nav svg { width: 16px; height: 16px; flex: none; stroke-width: 1.8; }
 
 .rail-foot { margin-top: auto; border-top: 1px solid var(--line); padding: 14px 10px 4px; }
-/* 言語切替。**ヘッダーに置く**——サイドバーの底だとウィンドウが低いとき見切れる。 */
-.langs { display: flex; gap: 2px; padding: 2px; background: var(--line-2);
-         border-radius: var(--r-sm); }
-.langs .lang { font-size: 12px; line-height: 1.5; padding: 3px 10px; border-radius: 5px;
-               color: var(--ink-3); transition: all .12s ease; white-space: nowrap; }
-.langs .lang:hover { color: var(--ink); }
-.langs .lang.on { background: var(--panel); color: var(--ink); font-weight: 600;
-                  box-shadow: var(--shadow); }
+/* 言語切替。**ヘッダーに置く**——サイドバーの底だとウィンドウが低いとき見切れる。
+ * 横並びのセグメントにしないのは、言語が増えると横に伸びて破綻するため。
+ * 開閉は Popover API に任せる（外側クリックと Esc で閉じるのが標準で効くので JS が要らない）。 */
+.icon-btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12px;
+            font-weight: 600; padding: 5px 9px; border-radius: var(--r-sm);
+            border: 1px solid var(--line); background: var(--panel); color: var(--ink-2);
+            cursor: pointer; transition: all .12s ease; anchor-name: --lang; }
+.icon-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+.icon-btn svg { width: 15px; height: 15px; stroke-width: 1.7; }
+.icon-btn .cur { letter-spacing: .04em; }
+
+.menu { position: fixed; inset: auto; top: 50px; right: 24px; margin: 0;
+        min-width: 190px; max-height: 60vh; overflow-y: auto;
+        padding: 6px; border: 1px solid var(--line); border-radius: var(--r);
+        background: var(--panel); color: var(--ink); box-shadow: var(--shadow-lg); }
+.menu:popover-open { animation: pop .12s ease; }
+@keyframes pop { from { opacity: 0; transform: translateY(-4px); } }
+.menu::backdrop { background: transparent; }
+.menu-h { margin: 4px 10px 6px; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase;
+          color: var(--ink-3); font-weight: 650; }
+.menu-i { display: flex; align-items: center; gap: 9px; padding: 7px 10px;
+          border-radius: var(--r-sm); color: var(--ink-2); font-size: 13.5px;
+          transition: background .12s ease, color .12s ease; }
+.menu-i:hover { background: var(--line-2); color: var(--ink); }
+.menu-i.on { color: var(--ink); font-weight: 600; }
+.menu-i .tick { width: 12px; flex: none; color: var(--accent); font-size: 12px; }
+.menu-i .label { flex: 1; }
+.menu-i .code { font-size: 11px; color: var(--ink-3); letter-spacing: .04em; }
+
+/* 位置合わせに対応している環境ではボタンの真下に付ける（未対応でも上の固定値で成立する）。 */
+@supports (position-anchor: --lang) {
+  .menu { position-anchor: --lang; top: anchor(bottom); right: anchor(right);
+          margin-top: 6px; }
+}
 .chip { display: flex; align-items: center; gap: 9px; }
 .chip .av { width: 28px; height: 28px; border-radius: 50%; flex: none;
             background: var(--accent-soft); color: var(--accent);
@@ -227,6 +253,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
           border-right: 0; border-bottom: 1px solid var(--line); }
   .rail-h, .rail-foot { display: none; }
   main, header.bar { padding-left: 18px; padding-right: 18px; }
+  .menu { right: 18px; }
   .grid2 { grid-template-columns: 1fr; }
 }
 </style>
@@ -270,10 +297,22 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   <header class="bar">
     <div class="crumb">arkhe <span>/</span> <b>{% block crumb %}{% endblock %}</b></div>
     <div class="right">
-      <div class="langs" role="group" aria-label="{{ t('lang.label') }}">
+      <button class="icon-btn" popovertarget="lang-menu"
+              aria-label="{{ t('lang.label') }}" title="{{ t('lang.label') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/>
+        </svg>
+        <span class="cur">{{ lang|upper }}</span>
+      </button>
+      <div id="lang-menu" popover class="menu">
+        <p class="menu-h">{{ t('lang.label') }}</p>
         {% for code, label in langs.items() %}
-          <a href="?lang={{ code }}" class="lang{% if code == lang %} on{% endif %}"
-             hreflang="{{ code }}" lang="{{ code }}">{{ label }}</a>
+          <a href="?lang={{ code }}" class="menu-i{% if code == lang %} on{% endif %}"
+             hreflang="{{ code }}" lang="{{ code }}">
+            <span class="tick" aria-hidden="true">{% if code == lang %}✓{% endif %}</span>
+            <span class="label">{{ label }}</span>
+            <span class="code">{{ code|upper }}</span>
+          </a>
         {% endfor %}
       </div>
       <span class="pill {{ principal.authority }}">{{ t("au." ~ principal.authority) }}</span>

@@ -146,3 +146,19 @@ def test_予約枠は採番できるようにできる(db, world, root):
     db.commit()
     ops.set_shoulder_status(db, root, shoulder_id=sh.id, status="active")
     assert sh.status == ShoulderStatus.ACTIVE
+
+
+def test_言語切替のUIが常に出る(db, world, principal_of, as_principal):
+    """**横並びのセグメントにしない。** 言語が増えると横に伸びて破綻するため、
+    アイコンから開く一覧にしてある。開閉は Popover API に任せる（外側クリックと
+    Esc が標準で効くので JS が要らない）。"""
+    c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
+    body = c.get("/admin/").text
+    assert 'popovertarget="lang-menu"' in body
+    assert 'id="lang-menu" popover' in body
+    # 選べる言語がすべて並び、現在の言語に印が付く
+    from arkhe.api import i18n
+
+    for code, label in i18n.LANGS.items():
+        assert f'href="?lang={code}"' in body and label in body
+    assert 'class="menu-i on"' in body
