@@ -18,6 +18,44 @@ docker compose up -d --build
 
 Keycloak の管理コンソールは http://localhost:8080/（`admin` / `admin`）。
 
+## API も同じ Keycloak で叩く
+
+この構成は `ARKHE_AUTH=apikey,oidc` で動いている。**機構は排他ではない**ので、
+API キーと Keycloak のトークンを同時に受け付ける（移行期に両方要るのが普通）。
+
+```bash
+# 1. Keycloak からトークンを取る（client_credentials。人もブラウザも登場しない）
+TOKEN=$(curl -s -X POST \
+  http://keycloak.localhost:8080/realms/arkhe/protocol/openid-connect/token \
+  -d grant_type=client_credentials \
+  -d client_id=nibb-invenio \
+  -d client_secret=nibb-invenio-secret-for-demo-only | jq -r .access_token)
+
+# 2. arkhe の API を叩く
+curl -X POST http://localhost:8057/api/mint \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"url":"https://repo.nibb.ac.jp/records/999","title":"Keycloak 経由で採番"}'
+```
+
+到達範囲は**トークンではなく arkhe の台帳が決める**。`nibb-invenio` は基礎生物学
+研究所の主体として登録してあるので、こうなる:
+
+```
+採番                    → ark:/99999/x9…       通る
+tombstone               → insufficient_scope   登録に無い操作
+shoulder=/y2 を指定     → この主体の範囲外     他機関の名前空間
+```
+
+### scope は認可サーバが配る
+
+realm に `ark:mint` / `ark:update` / `ark:read` / `ark:tombstone` を client scope として
+定義し、クライアントに割り当ててある。トークンには割り当てたものだけが載り、
+arkhe はそれと**登録済みの範囲との積**を採る（トークンで範囲は広がらない）。
+
+認可サーバが arkhe の語彙を持たない場合は、登録済みの範囲をそのまま使う。素通しに
+しても危なくないのは `aud` の検証が先に効いているからで、逆に無関係な語彙
+（`profile` など）と積を採ると必ず空集合になり、分かりにくい 403 を生むだけになる。
+
 ## issuer の文字列を揃えるのが要点
 
 認可サーバの issuer は、**ブラウザから見た URL と arkhe（コンテナ）から見た URL が

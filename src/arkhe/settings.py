@@ -52,7 +52,10 @@ class Settings(BaseSettings):
     token_ttl: int = 3600
     token_issuer: str = ""
 
-    #: `oidc`（委譲）用。発行者と、受け入れる audience。
+    #: `oidc`（委譲）用。発行者と、**API のアクセストークン**に求める audience。
+    #:
+    #: 管理画面のログインで検証する ID トークンの `aud` は必ず `admin_client_id`
+    #: なので、ここの値は使わない（混ぜると片方が必ず落ちる）。
     oidc_issuer: str = ""
     oidc_audience: str = ""
     #: JWKS の取得先。未設定なら issuer の discovery から引く。

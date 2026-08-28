@@ -27,6 +27,25 @@
       "attributes": {
         "post.logout.redirect.uris": "+"
       }
+    },
+    {
+      "clientId": "nibb-invenio",
+      "name": "基礎生物学研究所の InvenioRDM",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "nibb-invenio-secret-for-demo-only",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "defaultClientScopes": [
+        "arkhe-api",
+        "ark:mint",
+        "ark:update",
+        "roles",
+        "profile",
+        "email"
+      ]
     }
   ],
   "users": [
@@ -75,5 +94,71 @@
         }
       ]
     }
+  ],
+  "clientScopes": [
+    {
+      "name": "arkhe-api",
+      "description": "arkhe の API を叩くための audience",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-arkhe-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "arkhe-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ark:mint",
+      "description": "ARK を採番する",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "ARK を採番する"
+      }
+    },
+    {
+      "name": "ark:update",
+      "description": "既存 ARK を更新する",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "既存 ARK を更新する"
+      }
+    },
+    {
+      "name": "ark:read",
+      "description": "ARK を読む",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "ARK を読む"
+      }
+    },
+    {
+      "name": "ark:tombstone",
+      "description": "対象が失われたと宣言する",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "対象が失われたと宣言する"
+      }
+    }
+  ],
+  "defaultDefaultClientScopes": [
+    "arkhe-api"
   ]
 }

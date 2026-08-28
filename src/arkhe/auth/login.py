@@ -107,9 +107,11 @@ def finish(
 
     from arkhe.auth.oidc import OidcVerifier
 
+    # **ID トークンの aud は必ずこのクライアント自身**（OIDC Core §2）。
+    # API 用の `oidc_audience` を流用してはいけない——API のアクセストークンと
+    # ID トークンは別の宛先を持つので、混ぜると片方が必ず落ちる。
     verifier_obj = OidcVerifier(
-        settings.oidc_issuer, settings.oidc_audience or settings.admin_client_id,
-        settings.oidc_jwks_url,
+        settings.oidc_issuer, settings.admin_client_id, settings.oidc_jwks_url
     )
     claims = verifier_obj.decode(tok.get("id_token") or tok["access_token"])
     subject = claims.get("preferred_username") or claims.get("email") or claims["sub"]

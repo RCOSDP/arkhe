@@ -77,8 +77,13 @@ services:
       # 体験用の値。**本番では必ず差し替える。**
       ARKHE_SESSION_SECRET: demo-only-session-secret-change-me-0123456789
       ARKHE_SESSION_SECURE: "false"   # http で動かすため。HTTPS なら外す
-      # API 側は API キーで受ける（OIDC のトークンを API に使うなら oidc を足す）。
-      ARKHE_AUTH: apikey
+      # **API も同じ Keycloak で受ける。** apikey と併用できる（機構は排他ではない）。
+      # 移行期に「API キーと OIDC の両方を受ける」が普通に要るのでこの形にしてある。
+      ARKHE_AUTH: apikey,oidc
+      # API のアクセストークンに求める audience。realm の client scope
+      # `arkhe-api` が audience mapper でこれを立てる。
+      # （管理画面の ID トークンの aud は arkhe-admin。別物なので混ぜない）
+      ARKHE_OIDC_AUDIENCE: arkhe-api
     ports:
       - "127.0.0.1:8057:8000"
     # ブラウザが使う `localhost:8055` を、コンテナからも同じ名前で引けるようにする

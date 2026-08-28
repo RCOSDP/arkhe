@@ -109,10 +109,20 @@ class OidcVerifier:
             raise AuthError(f"subject {subject} is not registered with this resolver")
 
         principal = _to_principal(client, mechanism="oidc")
-        scope_claim = claims.get("scope") or " ".join(claims.get("scp") or [])
-        granted = (
-            frozenset(scope_claim.split()) & principal.scopes
-            if scope_claim
-            else principal.scopes
-        )
-        return Principal(**{**principal.__dict__, "scopes": granted})
+        return Principal(**{**principal.__dict__, "scopes": _granted(claims, principal)})
+
+
+def _granted(claims: dict, principal: Principal) -> frozenset[str]:
+    """トークンの scope で**絞る**（広げはしない）。
+
+    認可サーバが arkhe の語彙（`ark:*`）を持っているなら、それが権限の表明なので
+    登録済みの範囲との積を採る。**持っていないなら登録済みの範囲をそのまま使う。**
+
+    後者を素通しにしても危なくないのは、`aud` の検証が先に効いているから——
+    このリゾルバ宛でないトークンはここに届かない。逆に、無関係な語彙
+    （`profile` `email` など）と積を採ると必ず空集合になり、「認証は通ったのに
+    何もできない」という分かりにくい 403 を生むだけになる。
+    """
+    raw = claims.get("scope") or " ".join(claims.get("scp") or [])
+    asked = {s for s in raw.split() if s.startswith("ark:")}
+    return frozenset(asked & principal.scopes) if asked else principal.scopes
