@@ -80,8 +80,21 @@ class ShoulderStatus(StrEnum):
 
 
 class Authority(StrEnum):
+    """到達範囲。**上の段は下の段を含む。**
+
+    ARK は「中央の権威が保証する」体系ではなく、**名前空間を委譲し、各機関が
+    自分の約束を自己申告する**体系。この 3 段はその委譲構造をそのまま写している。
+
+      SYSTEM   RA の運用者。全 NAAN に届く。名前空間を配る側
+      NAAN     1 つの NAAN の配下すべて。その NAAN を預かる機関の管理者
+      MANAGER  1 機関ぶん。`shoulder_id` を併せて指定すれば 1 shoulder に固定できる
+
+    **配られた側が、配った側より広く届くことはない。** 判定は `reaches()` 1 か所。
+    """
+
+    SYSTEM = "system"  # 全 NAAN（RA 運用者）
+    NAAN = "naan"  # NAAN 配下の全 shoulder
     MANAGER = "manager"  # その機関の shoulder のみ
-    NAAN = "naan"  # NAAN 配下の全 shoulder（break-glass）
 
 
 class Naan(Base):

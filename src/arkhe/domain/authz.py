@@ -74,19 +74,29 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
     指定された場合は**その主体の到達範囲に含まれるかを検証する**だけで、範囲を
     広げる手段にはしない。
     """
-    if principal.is_break_glass:
-        # break-glass。NAAN 配下ならどれでも使えるが、**明示が必須**
-        # （既定を持たないので、誤って他機関の shoulder に打つ事故を防ぐ）。
+    if principal.is_naan_wide:
+        # NAAN 配下（system は全 NAAN）ならどれでも使えるが、**明示が必須**
+        # ——既定を持たないので、誤って他機関の shoulder に打つ事故を防ぐ。
         if not requested:
-            raise Invalid({"shoulder": "authority=naan の主体は shoulder を明示すること"})
-        found = session.scalar(
-            select(Shoulder).where(
-                Shoulder.naan == principal.naan, Shoulder.shoulder == requested
+            raise Invalid(
+                {"shoulder": f"authority={principal.authority} の主体は shoulder を明示すること"}
             )
-        )
-        if found is None:
+        stmt = select(Shoulder).where(Shoulder.shoulder == requested)
+        if not principal.is_system:
+            stmt = stmt.where(Shoulder.naan == principal.naan)
+        found = session.scalars(stmt).all()
+        if not found:
             raise Invalid({"shoulder": f"shoulder {requested} は存在しない"})
-        return found
+        if len(found) > 1:
+            # system は全 NAAN に届くので、同じ shoulder 文字列が複数 NAAN に
+            # ありうる。**どれか 1 つを勝手に選ばない。**
+            raise Invalid(
+                {
+                    "shoulder": f"shoulder {requested} が複数の NAAN にある。naan も指定すること",
+                    "naans": sorted(x.naan for x in found),
+                }
+            )
+        return found[0]
 
     if principal.manager_id is None:
         raise Forbidden("主体に有効な機関が紐づいていない")
@@ -142,9 +152,9 @@ def assert_may_touch(session: Session, principal: Principal, ark: Ark) -> None:
     M3: **arklet の `update` は shoulder を参照すらしていなかった**ため、同一 NAAN
     内の任意の ARK の解決先を書き換えられた。採番より重い——**永続識別子の乗っ取り**。
     """
-    if ark.naan != principal.naan:
+    if not principal.reaches_naan(ark.naan):
         raise Forbidden("ARK が別の NAAN に属している")
-    if principal.is_break_glass:
+    if principal.is_naan_wide:
         return
     shoulder = ark.shoulder or session.get(Shoulder, ark.shoulder_id)
     if principal.manager_id is None or shoulder.manager_id != principal.manager_id:
@@ -153,12 +163,10 @@ def assert_may_touch(session: Session, principal: Principal, ark: Ark) -> None:
 
 def visible_arks(session: Session, principal: Principal, keys: list[str]):
     """M4: 読み取りも到達範囲に絞る。"""
-    stmt = (
-        select(Ark)
-        .where(Ark.ark.in_(keys), Ark.naan == principal.naan)
-        .options(selectinload(Ark.shoulder))
-    )
-    if not principal.is_break_glass:
+    stmt = select(Ark).where(Ark.ark.in_(keys)).options(selectinload(Ark.shoulder))
+    if not principal.is_system:
+        stmt = stmt.where(Ark.naan == principal.naan)
+    if not principal.is_naan_wide:
         stmt = stmt.join(Shoulder, Ark.shoulder_id == Shoulder.id).where(
             Shoulder.manager_id == principal.manager_id
         )
@@ -206,8 +214,12 @@ def assert_within_quota(session: Session, principal: Principal, count: int = 1) 
 
 
 def audit(session: Session, principal: Principal, action: str, target: str = "", **detail) -> None:
-    """R2: **`authority=naan` の操作は全件記録する。**"""
-    if not principal.is_break_glass:
+    """R2: **NAAN 以上に届く操作は全件記録する。**
+
+    届く範囲が広いほど、後から「誰が何をしたか」を辿れる必要が高い。
+    system は全 NAAN に届くので当然含める。
+    """
+    if not principal.is_naan_wide:
         return
     session.add(
         AuditEvent(

@@ -32,8 +32,23 @@ class Principal:
     mechanism: str = ""
 
     @property
+    def is_system(self) -> bool:
+        """RA の運用者。**全 NAAN に届く。**"""
+        return self.authority == Authority.SYSTEM
+
+    @property
+    def is_naan_wide(self) -> bool:
+        """NAAN 配下すべてに届く（system を含む）。"""
+        return self.authority in (Authority.SYSTEM, Authority.NAAN)
+
+    #: 後方互換。`authority=naan` は break-glass としても使われる。
+    @property
     def is_break_glass(self) -> bool:
-        return self.authority == Authority.NAAN.value
+        return self.is_naan_wide
+
+    def reaches_naan(self, naan: str) -> bool:
+        """その NAAN に届くか。**判定はここ 1 か所**（機構によらない）。"""
+        return self.is_system or self.naan == naan
 
     def has(self, scope: str) -> bool:
         return scope in self.scopes
