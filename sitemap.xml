@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/quickstart/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/quickstart/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/quickstart/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/concepts/ark/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/concepts/ark/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/concepts/ark/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/concepts/delegation/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/concepts/delegation/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/concepts/delegation/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/concepts/invariants/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/concepts/invariants/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/concepts/invariants/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/guides/admin/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/admin/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/admin/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/guides/authentication/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/authentication/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/authentication/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/guides/deployment/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/deployment/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/deployment/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/guides/succession/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/succession/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/succession/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/project/changelog/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/project/changelog/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/project/changelog/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/project/contributing/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/project/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/project/contributing/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/project/versioning/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/project/versioning/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/project/versioning/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/reference/api/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/api/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/api/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/reference/cli/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/cli/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/cli/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/reference/configuration/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/configuration/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/configuration/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/reference/data-model/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/data-model/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/data-model/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/quickstart/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/quickstart/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/quickstart/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/concepts/ark/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/concepts/ark/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/concepts/ark/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/concepts/delegation/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/concepts/delegation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/concepts/delegation/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/concepts/invariants/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/concepts/invariants/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/concepts/invariants/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/guides/admin/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/admin/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/admin/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/guides/authentication/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/authentication/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/authentication/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/guides/deployment/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/deployment/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/deployment/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/guides/succession/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/succession/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/succession/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/project/changelog/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/project/changelog/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/project/changelog/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/project/contributing/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/project/contributing/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/project/contributing/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/project/versioning/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/project/versioning/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/project/versioning/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/reference/api/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/api/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/api/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/reference/cli/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/cli/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/cli/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/reference/configuration/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/configuration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/configuration/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/reference/data-model/</loc>
+        <lastmod>2026-08-28</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/reference/data-model/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/reference/data-model/"/>
+    </url>
+</urlset>
