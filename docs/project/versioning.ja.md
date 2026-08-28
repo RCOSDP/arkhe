@@ -62,7 +62,7 @@ PostgreSQL が弾くスキーマを通してしまうため。
 
 ```bash
 # 1. 版と変更履歴を更新
-vim pyproject.toml docs/project/changelog.md
+vim pyproject.toml CHANGELOG.md CHANGELOG.ja.md
 # 2. タグを打つ
 git tag -a v0.0.2 -m "v0.0.2" && git push origin v0.0.2
 ```

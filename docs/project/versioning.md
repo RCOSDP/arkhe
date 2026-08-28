@@ -62,7 +62,7 @@ Until then, pin an exact version.
 
 ```bash
 # 1. Update the version and the changelog
-vim pyproject.toml docs/project/changelog.md
+vim pyproject.toml CHANGELOG.md CHANGELOG.ja.md
 # 2. Tag
 git tag -a v0.0.2 -m "v0.0.2" && git push origin v0.0.2
 ```

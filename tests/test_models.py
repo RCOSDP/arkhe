@@ -143,10 +143,41 @@ def test_版は一か所からしか来ない():
     declared = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
     assert arkhe.__version__ == declared
 
-    # ソースに版の文字列を直書きしていないこと
+    # **版を代入している箇所がほかに無いこと。**
+    # 素の文字列検索だと `127.0.0.1` の中の `0.0.1` に当たるので、
+    # 「version= に版のリテラルを渡している」形だけを見る。
+    import re
+
+    pattern = re.compile(rf'version\s*=\s*["\']{re.escape(declared)}["\']')
     hits = [
-        f"{p.relative_to(root)}"
-        for p in (root / "src").rglob("*.py")
-        if declared in p.read_text(encoding="utf-8")
+        str(f.relative_to(root))
+        for f in (root / "src").rglob("*.py")
+        if pattern.search(f.read_text(encoding="utf-8"))
     ]
     assert not hits, f"版が直書きされている: {hits}"
+
+
+def test_変更履歴が日英で揃っている():
+    """**片方だけ更新するのを防ぐ。**
+
+    版の見出しが両方に同じだけあることを見る。文面の一致までは求めない
+    （訳は訳であって写しではない）。
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+
+    def versions(name: str) -> list[str]:
+        text = (root / name).read_text(encoding="utf-8")
+        return re.findall(r"^## \[([^\]]+)\]", text, re.M)
+
+    en, ja = versions("CHANGELOG.md"), versions("CHANGELOG.ja.md")
+    # 「未リリース」の見出しだけ語が違うので、そこを揃えてから比べる
+    norm = {"Unreleased": "-", "未リリース": "-"}
+    assert [norm.get(v, v) for v in en] == [norm.get(v, v) for v in ja], (en, ja)
+
+    import tomllib
+
+    declared = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
+    assert declared in en, f"{declared} の項が変更履歴に無い"

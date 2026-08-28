@@ -1,3 +1,3 @@
 # Changelog
 
---8<-- "CHANGELOG.md:3"
+--8<-- "CHANGELOG.md:5"

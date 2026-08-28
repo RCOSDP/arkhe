@@ -1,5 +1,7 @@
 # Changelog
 
+*[日本語](CHANGELOG.ja.md)*
+
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [SemVer](https://semver.org/) — see
 [the policy](https://rcosdp.github.io/arkhe/project/versioning/) for what counts as
