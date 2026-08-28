@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ t('cl.title') }} — arkhe{% endblock %}
+{% block crumb %}{{ t('cl.title') }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ t('cl.title') }}</h1>
+  <p class="lede">{{ t('cl.lede')|safe }}</p>
+</div>
+
+{% if issued %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('cl.issued') }}</span></div>
+  <div class="card-b">
+    <div class="secret">{{ issued }}</div>
+    <div class="note stop"><span>{{ t('cl.issued_warn')|safe }}</span></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-h">
+    <span class="t">{{ t('cl.principals') }}</span><span class="sub">{{ clients|length }}</span>
+    {% if can_manage %}<span class="right"><a class="btn sm" href="/admin/client/new">{{ t('cl.add') }}</a></span>{% endif %}
+  </div>
+  <table>
+    <thead><tr>
+      <th>client_id</th><th>{{ t('cl.reach') }}</th><th>{{ t('cl.scope') }}</th>
+      <th>{{ t('cl.creds') }}</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for c in clients %}
+      <tr>
+        <td class="mono">{{ c.client_id }}{% if not c.active %} <span class="pill retired">{{ t('cl.disabled') }}</span>{% endif %}</td>
+        <td>
+          <span class="pill {{ c.authority }}">{{ t('au.' ~ c.authority) }}</span>
+          <span class="dim">{{ c.scope_label }}</span>
+        </td>
+        <td class="mono dim">{{ c.allowed_scopes }}</td>
+        <td class="dim">{{ c.live_credentials }} {{ t('cl.live') }}{% if c.dead_credentials %} / {{ c.dead_credentials }} {{ t('cl.dead') }}{% endif %}</td>
+        <td style="text-align:right">
+          {% if can_manage %}<a class="btn sm" href="/admin/client/{{ c.id }}">{{ t('cl.open') }}</a>{% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty">{{ t('cl.empty') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

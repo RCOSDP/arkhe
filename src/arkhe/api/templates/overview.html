@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ t('ov.title') }} — arkhe{% endblock %}
+{% block crumb %}{{ t('ov.title') }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ t('ov.title') }}</h1>
+  <p class="lede">{{ t('ov.lede')|safe }}</p>
+</div>
+
+<div class="card">
+  <div class="card-h">
+    <span class="t">{{ t('ov.tree') }}</span>
+    <span class="sub">{{ naans|length }} {{ t('ov.naans') }}</span>
+    {% if principal.is_system %}
+    <span class="right"><a class="btn sm" href="/admin/naan/new">{{ t('ov.add_naan') }}</a></span>
+    {% endif %}
+  </div>
+  <div class="tree">
+    {% for n in naans %}
+      <div class="node">
+        <span class="tick">◆</span>
+        <span class="name">{{ n.naan }}</span>
+        <span class="label">{{ n.name }}</span>
+        <span class="meta">
+          {% if n.is_authoritative %}<span class="pill active">{{ t('ov.authoritative') }}</span>
+          {% else %}<span class="pill delegated">{{ t('ov.delegated_to') }} {{ n.redirect }}</span>{% endif %}
+          {% if n.na_policy %}<span class="dim mono">{{ n.na_policy }}</span>{% endif %}
+        </span>
+      </div>
+      {% for m in n.visible_managers %}
+        <div class="node d1">
+          <span class="tick">└</span>
+          <span class="label">{{ m.name }}</span>
+          <span class="meta">
+            <span class="dim">{{ m.commitment_level }}</span>
+            {% if m.quota_per_day %}<span class="dim">{{ t('ov.quota') }} {{ m.quota_per_day }}{{ t('ov.per_day') }}</span>{% endif %}
+            {% if m.succeeded_by_id %}<span class="pill retired">{{ t('ov.succeeded') }}</span>{% endif %}
+            {% if not m.active %}<span class="pill retired">{{ t('ov.inactive') }}</span>{% endif %}
+          </span>
+        </div>
+        {% for sh in m.shoulders %}
+          <div class="node d2">
+            <span class="tick">·</span>
+            <span class="name">{{ sh.naan }}{{ sh.shoulder }}</span>
+            <span class="meta">
+              <span class="dim num">{{ counts.get(sh.id, 0) }} {{ t('ov.records') }}</span>
+              <span class="pill {{ sh.status }}">{{ t('st.' ~ sh.status) }}</span>
+              {% if can_manage %}<a class="btn sm" href="/admin/shoulder/{{ sh.id }}">{{ t('ov.manage') }}</a>{% endif %}
+            </span>
+          </div>
+        {% endfor %}
+      {% endfor %}
+      {% for sh in n.visible_orphans %}
+        <div class="node d1">
+          <span class="tick">└</span>
+          <span class="name">{{ sh.naan }}{{ sh.shoulder }}</span>
+          <span class="label dim">{{ t('ov.no_manager') }}</span>
+          <span class="meta">
+            <span class="pill {{ sh.status }}">{{ t('st.' ~ sh.status) }}</span>
+            {% if can_manage %}<a class="btn sm" href="/admin/shoulder/{{ sh.id }}">{{ t('ov.manage') }}</a>{% endif %}
+          </span>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">{{ t('ov.empty') }}</div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if can_manage %}
+<div class="actions" style="margin-top:16px">
+  <a class="btn" href="/admin/manager/new">{{ t('ov.onboard') }}</a>
+  <a class="btn" href="/admin/shoulder/new">{{ t('ov.add_shoulder') }}</a>
+</div>
+{% endif %}
+{% endblock %}

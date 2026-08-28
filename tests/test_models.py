@@ -1,261 +1,101 @@
-"""モデルの単体テスト（P2）。
-
-**出口条件は「オンボーディングを 1 通り通せること」**——`test_onboarding_walkthrough`
-がそれを担う。
-"""
+"""モデルの不変条件。**規約を人に守らせるのではなく、構造で不可能にする。**"""
 
 from __future__ import annotations
 
 import pytest
-from django.core.exceptions import ValidationError
-from django.db import IntegrityError, transaction
-from django.utils import timezone
+from sqlalchemy.exc import IntegrityError
 
-from jc2ark.ark.models import Ark, Client, CommitmentLevel, Manager, Naan, Shoulder
-from jc2ark.arkspec.betanumeric import verify_ark_check_digit
-from jc2ark.arkspec.shoulder import generate_shoulder, split_shoulder
-
-pytestmark = pytest.mark.django_db
+from arkhe.db.models import Ark, Naan, NotDeletable
+from arkhe.domain import minting
 
 
-@pytest.fixture
-def naan():
-    return Naan.objects.create(naan="99999", name="JC2 PoC", is_authoritative=True)
+def test_NR_ARKは削除できない(db, world):
+    """行を消すと解決が止まる＝**識別子が壊れる**。tombstone に付け替えるか
+    url を空にする。"""
+    ark, _ = minting.mint(db, shoulder=world["sh_a"], created_by="t")
+    db.commit()
+    with pytest.raises(NotDeletable):
+        db.delete(ark)
+        db.flush()
 
 
-@pytest.fixture
-def manager(naan):
-    return Manager.objects.create(naan=naan, name="機関A")
+def test_NR_shoulderは削除できない(db, world):
+    """乱数割当が同じ文字列を再び当てうる＝**NR 違反の芽**。"""
+    with pytest.raises(NotDeletable):
+        db.delete(world["sh_a"])
+        db.flush()
 
 
-@pytest.fixture
-def shoulder(naan, manager):
-    s = Shoulder.objects.create(shoulder="/kb1", naan=naan, manager=manager)
-    manager.default_shoulder = s
-    manager.save()
-    return s
-
-
-# --------------------------------------------------------------------------
-# N2  NAAN は文字列
-# --------------------------------------------------------------------------
-
-
-def test_n2_leading_zero_naans_coexist():
-    """`099999` と `99999` は**別の行**として共存できる。"""
-    Naan.objects.create(naan="99999", name="A")
-    Naan.objects.create(naan="099999", name="B")
-    assert Naan.objects.count() == 2
-    assert Naan.objects.get(pk="99999").name == "A"
-
-
-# --------------------------------------------------------------------------
-# D3  権威と転送先は排他
-# --------------------------------------------------------------------------
-
-
-def test_d3_authoritative_naan_cannot_have_a_redirect():
-    with pytest.raises(IntegrityError):
-        Naan.objects.create(naan="12345", name="X", is_authoritative=True, redirect="https://x/")
-
-
-def test_d3_non_authoritative_naan_requires_a_redirect():
-    with pytest.raises(IntegrityError):
-        Naan.objects.create(naan="12345", name="X", is_authoritative=False, redirect="")
-
-
-def test_d3_delegated_naan_is_allowed(naan):
-    other = Naan.objects.create(
-        naan="12345", name="他所", is_authoritative=False, redirect="https://other.example/"
-    )
-    assert not other.is_authoritative
-
-
-# --------------------------------------------------------------------------
-# B2  shoulder の規約
-# --------------------------------------------------------------------------
-
-
-def test_b2_shoulder_validator_rejects_multi_segment(naan):
-    s = Shoulder(shoulder="/kb1/x2", naan=naan)
-    with pytest.raises(ValidationError):
-        s.full_clean()
-
-
-def test_b2_shoulder_is_unique_per_naan(naan, manager):
-    Shoulder.objects.create(shoulder="/kb1", naan=naan, manager=manager)
-    with pytest.raises(IntegrityError):
-        Shoulder.objects.create(shoulder="/kb1", naan=naan, manager=manager)
-
-
-# --------------------------------------------------------------------------
-# E1 / I6  既存 ARK を黙って上書きしない
-# --------------------------------------------------------------------------
-
-
-def test_e1_bare_save_cannot_create_an_ark(shoulder, naan):
-    """**arklet で最重大だった欠陥を、モデル側で不可能にする。**"""
-    a = Ark(ark="99999/kb1aaaaaaaa", naan=naan, shoulder=shoulder, assigned_name="kb1aaaaaaaa")
-    with pytest.raises(RuntimeError, match="force_insert"):
-        a.save()
-
-
-def test_e1_existing_ark_is_not_overwritten(shoulder):
-    ark, _ = Ark.objects.mint(shoulder=shoulder, url="https://a.example/")
-    with pytest.raises(IntegrityError), transaction.atomic():
-        Ark.objects.create(
-            ark=ark.ark, naan=shoulder.naan, shoulder=shoulder, assigned_name=ark.assigned_name
+def test_E1_同じARKを二度作れない(db, world):
+    """**arklet で最重大の欠陥**——主キー衝突が UPDATE に化け、既存 ARK の
+    向き先を黙って書き換えていた。"""
+    ark, _ = minting.mint(db, shoulder=world["sh_a"], created_by="t")
+    db.commit()
+    db.add(
+        Ark(
+            ark=ark.ark, naan="99999", shoulder_id=world["sh_a"].id,
+            assigned_name=ark.assigned_name,
         )
-
-
-def test_updating_an_existing_ark_still_works(shoulder):
-    ark, _ = Ark.objects.mint(shoulder=shoulder, url="https://a.example/")
-    ark.url = "https://b.example/"
-    ark.save()  # 既存行の更新は通る
-    assert Ark.objects.get(pk=ark.ark).url == "https://b.example/"
-
-
-# --------------------------------------------------------------------------
-# 採番
-# --------------------------------------------------------------------------
-
-
-def test_mint_produces_a_verifiable_ark(shoulder):
-    ark, collisions = Ark.objects.mint(shoulder=shoulder, url="https://x.example/", title="t")
-    assert collisions == 0
-    naan, _, name = ark.ark.partition("/")
-    assert naan == "99999"
-    assert name.startswith("kb1")
-    assert split_shoulder(name)[0] == "kb1"
-    assert verify_ark_check_digit(naan, name), "検査桁が合わない"
-    assert str(ark) == f"ark:/{ark.ark}"
-
-
-def test_mint_records_who(shoulder):
-    ark, _ = Ark.objects.mint(shoulder=shoulder, created_by="client-abc")
-    assert ark.created_by == "client-abc"
-    assert ark.updated_by == "client-abc"
-    assert ark.created_at is not None
-
-
-def test_mint_is_unique_across_many(shoulder):
-    made = {Ark.objects.mint(shoulder=shoulder)[0].ark for _ in range(50)}
-    assert len(made) == 50
-
-
-# --------------------------------------------------------------------------
-# I5  条件つき unique 制約でローテーションを表現する
-# --------------------------------------------------------------------------
-
-
-def _client(manager, naan, label, active=True, **kw):
-    return Client.objects.create(
-        name=label,
-        label=label,
-        manager=manager,
-        naan=naan,
-        active=active,
-        client_type=Client.CLIENT_CONFIDENTIAL,
-        authorization_grant_type=Client.GRANT_CLIENT_CREDENTIALS,
-        **kw,
     )
-
-
-def test_i5_two_active_clients_cannot_share_a_label(manager, naan):
-    _client(manager, naan, "ingest")
     with pytest.raises(IntegrityError):
-        _client(manager, naan, "ingest")
+        db.commit()
+    db.rollback()
 
 
-def test_i5_rotation_deactivate_then_reissue(manager, naan):
-    """旧を無効化すれば同じ label で新規発行できる＝ローテーションが型で表現される。"""
-    old = _client(manager, naan, "ingest")
-    old.active = False
-    old.save()
-    new = _client(manager, naan, "ingest")
-    assert new.pk != old.pk
-    assert Client.objects.filter(label="ingest", active=True).count() == 1
+def test_D3_権威を持つなら転送先を持てない(db):
+    db.add(Naan(naan="70000", name="bad", is_authoritative=True, redirect="https://x"))
+    with pytest.raises(IntegrityError):
+        db.commit()
+    db.rollback()
 
 
-def test_break_glass_client_carries_expiry(manager, naan):
-    c = _client(
-        manager,
-        naan,
-        "incident-2026-08",
-        authority=Client.Authority.NAAN,
-        expires_at=timezone.now() + timezone.timedelta(hours=72),
-    )
-    assert c.authority == "naan"
-    assert c.expires_at is not None
+def test_D3_権威を持たないなら転送先が要る(db):
+    db.add(Naan(naan="70001", name="bad", is_authoritative=False, redirect=""))
+    with pytest.raises(IntegrityError):
+        db.commit()
+    db.rollback()
 
 
-# --------------------------------------------------------------------------
-# P2 の出口条件: オンボーディングを 1 通り通せる
-# --------------------------------------------------------------------------
+def test_N2_NAANは文字列として扱う(db, root):
+    """`099999` と `99999` は**別の NAAN**。整数化してはならない。"""
+    from arkhe.domain import admin_ops as ops
+
+    ops.create_naan(db, root, naan="99999", name="a")
+    ops.create_naan(db, root, naan="099999", name="b")
+    db.commit()
+    assert db.get(Naan, "99999").name == "a"
+    assert db.get(Naan, "099999").name == "b"
 
 
-def test_onboarding_walkthrough():
-    """判定 → Manager → shoulder → default → Client → 採番 まで通す。
-
-    `design_ark_multitenant_authz.md` §2.4。**全 NAAN で shoulder を使う**ので、
-    個別 NAAN の機関でも手順は同じになる。
-    """
-    # 1. 判定: 個別 NAAN を渡す機関（岡崎3研究所を想定）
-    n = Naan.objects.create(
-        naan="12345",
-        name="基礎生物学研究所",
-        is_authoritative=True,
-        na_policy="NP | NR, OP, CC | 2026 |",
-    )
-    # 2. Manager
-    m = Manager.objects.create(
-        naan=n, name="NIBB", commitment_level=CommitmentLevel.PERMANENT_STABLE
-    )
-    # 3. shoulder（3 文字・乱数・不透明）
-    s = Shoulder.objects.create(shoulder=generate_shoulder(), naan=n, manager=m)
-    s.full_clean()
-    # 4. default_shoulder を必ず設定する
-    m.default_shoulder = s
-    m.save()
-    # 5. Client
-    c = _client(m, n, "nibb-ingest", allowed_scopes="ark:mint")
-    # 6. 採番
-    ark, _ = Ark.objects.mint(
-        shoulder=m.default_shoulder, url="https://nibb.example/r/1", created_by=c.client_id
-    )
-    naan_part, _, name = ark.ark.partition("/")
-    assert naan_part == "12345"
-    assert verify_ark_check_digit(naan_part, name)
-    assert ark.shoulder.manager == m
-    assert m.commitment_level == "permanent-stable"
+def test_採番は衝突しても採り直す(db, world):
+    """衝突回数を返すのは、名前空間の枯渇が静かに進むのを検知できるようにするため。"""
+    arks = [minting.mint(db, shoulder=world["sh_a"], created_by="t") for _ in range(20)]
+    db.commit()
+    assert len({a.ark for a, _ in arks}) == 20
+    assert all(c == 0 for _, c in arks)  # 8 桁なら 20 本で衝突しない
 
 
-def test_e1_a_mint_collision_is_retried_not_crashed(db):
-    """**衝突の except 節そのものが壊れていないこと。**
+def test_B4_修飾子はbaseの名前空間の内側にしか生えない(db, world):
+    base, _ = minting.mint(db, shoulder=world["sh_a"], created_by="t")
+    db.commit()
+    child = minting.register_qualified(db, base=base, qualifier="/page/1", created_by="t")
+    db.commit()
+    assert child.shoulder_id == base.shoulder_id
+    assert child.assigned_name.startswith(base.assigned_name)
 
-    `models.utils.IntegrityError` は存在しない属性で、衝突した瞬間に
-    `AttributeError` になっていた。「実質発生しない」ので誰も踏まないが、
-    **踏んだときに一番困る経路**（採番の最中）だった。
-    """
-    from unittest.mock import patch
 
-    from jc2ark.ark.models import Ark, Manager, Naan, Shoulder
+def test_B4_既に在る修飾子は上書きしない(db, world):
+    base, _ = minting.mint(db, shoulder=world["sh_a"], created_by="t")
+    db.commit()
+    minting.register_qualified(db, base=base, qualifier="/p", created_by="t")
+    db.commit()
+    with pytest.raises(minting.AlreadyRegistered):
+        minting.register_qualified(db, base=base, qualifier="/p", created_by="t")
 
-    n = Naan.objects.create(naan="99999", name="JC2")
-    m = Manager.objects.create(naan=n, name="機関A")
-    s = Shoulder.objects.create(shoulder="/kb1", naan=n, manager=m)
-    first, _ = Ark.objects.mint(shoulder=s, url="https://x.example/")
-    # 1 回目だけ衝突させる
-    real = Ark.objects.create
-    calls = {"n": 0}
 
-    def flaky(**kw):
-        calls["n"] += 1
-        if calls["n"] == 1:
-            raise IntegrityError("duplicate key")
-        return real(**kw)
-
-    with patch.object(Ark.objects, "create", side_effect=flaky):
-        ark, collisions = Ark.objects.mint(shoulder=s, url="https://y.example/")
-    assert collisions == 1
-    assert ark.pk != first.pk
+@pytest.mark.parametrize("bad", ["page", "-x", ""])
+def test_B4_修飾子は区切り文字で始める(db, world, bad):
+    base, _ = minting.mint(db, shoulder=world["sh_a"], created_by="t")
+    db.commit()
+    with pytest.raises(ValueError):
+        minting.register_qualified(db, base=base, qualifier=bad, created_by="t")

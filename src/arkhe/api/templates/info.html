@@ -1,0 +1,39 @@
+{% extends "base_public.html" %}
+{% block title %}{{ erc.ark }}{% endblock %}
+{% block body %}
+<div class="doc">
+  <p class="kicker">ARK</p>
+  <h1>{{ erc.what or erc.ark }}</h1>
+  <p class="ark mono">{{ erc.ark }}</p>
+
+  {% if res.inherited_from %}
+  <p class="note">この記述は <span class="mono">{{ erc.inherited_from }}</span> から継承しています
+    （要求された名前は登録されていませんが、最も近い祖先の記述を返しています）。</p>
+  {% endif %}
+
+  <dl>
+    {% if erc.who %}<dt>who</dt><dd>{{ erc.who }}</dd>{% endif %}
+    {% if erc.what %}<dt>what</dt><dd>{{ erc.what }}</dd>{% endif %}
+    {% if erc.when %}<dt>when</dt><dd>{{ erc.when }}</dd>{% endif %}
+    <dt>where</dt>
+    <dd>{% if erc.where %}<a href="{{ erc.where }}">{{ erc.where }}</a>
+        {% else %}<span class="dim">この ARK に転送先はありません（記述のみ）</span>{% endif %}</dd>
+    {% for f in ('type','identifier','format','relation','source') %}
+      {% if erc[f] %}<dt>{{ f }}</dt><dd>{{ erc[f] }}</dd>{% endif %}
+    {% endfor %}
+  </dl>
+
+  <h2>永続性について</h2>
+  <dl>
+    {% if erc.commitment_level %}
+    <dt>この対象への約束</dt><dd>{{ erc.commitment_label or erc.commitment_level }}</dd>{% endif %}
+    {% if erc.na_policy %}<dt>名前空間の方針</dt><dd class="mono">{{ erc.na_policy }}</dd>{% endif %}
+  </dl>
+  <p class="fine">ARK では、永続性は識別子の性質ではなく<b>提供者が続けるサービス</b>です。
+    ここに書かれているのは、その提供者が自ら宣言した約束の水準です。</p>
+
+  <p class="fine dim">
+    <a href="?">?</a> · <a href="??">??</a> · <a href="?json">?json</a>
+  </p>
+</div>
+{% endblock %}

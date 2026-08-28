@@ -1,27 +1,45 @@
 [project]
-name = "jc2-ark"
-version = "0.1.0"
-description = "JC2 の ARK 識別子基盤（採番・解決・RA 機能）"
+name = "arkhe"
+version = "0.2.0"
+description = "ARK identifier infrastructure — minter and resolver as separate services"
 requires-python = ">=3.12"
 license = "MIT"
+# 依存なしで import できる層（arkspec / domain.resolution）を持つため、
+# 本体の依存は optional に置く。仕様の検証だけしたい利用者は何も入れずに済む。
 dependencies = []
 
 [project.optional-dependencies]
-app = ["Django>=5.2,<6.0", "django-oauth-toolkit>=3.4,<4.0",
-       "djangorestframework>=3.18", "drf-spectacular>=0.30", "psycopg[binary]>=3.2", "whitenoise>=6.6"]
-dev = ["pytest>=8", "pytest-django", "pytest-cov", "ruff"]
+app = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "sqlalchemy>=2.0",
+  "alembic>=1.14",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "psycopg[binary]>=3.2",
+  "argon2-cffi>=23.1",      # API キーのハッシュ
+  "pyjwt[crypto]>=2.9",     # 自前発行トークンと OIDC の検証
+  "httpx>=0.27",            # JWKS の取得
+  "typer>=0.15",            # 運用コマンド
+  "jinja2>=3.1",            # 管理画面のテンプレート
+  "python-multipart>=0.0.12",  # 管理画面のフォーム
+]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "pytest-cov", "ruff", "httpx>=0.27"]
+
+[project.scripts]
+arkhe = "arkhe.cli:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/jc2ark"]
+packages = ["src/arkhe"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-DJANGO_SETTINGS_MODULE = "jc2ark.entrypoints.settings"
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100
@@ -29,6 +47,3 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-# 日本語の散文行は文字数と表示幅がずれるので E501 は使わない。
-# コード行の折り返しは `ruff format` に任せる。
-ignore = ["E501"]
