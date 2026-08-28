@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ t('mint.title') }} — arkhe{% endblock %}
+{% block crumb %}{{ t('mint.title') }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ t('mint.title') }}</h1>
+  <p class="lede">{{ t('mint.lede')|safe }}</p>
+</div>
+
+{% if minted %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('mint.done') }}</span></div>
+  <div class="card-b">
+    <div class="secret">ark:/{{ minted.ark }}</div>
+    <div class="note info"><span>{{ t('mint.irreversible')|safe }}</span></div>
+    {% if minted.url %}<p class="dim">{{ t('mint.target') }} <span class="mono">{{ minted.url }}</span></p>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-h"><span class="t">{{ t('mint.form') }}</span></div>
+  <div class="card-b">
+    <form method="post" action="/admin/mint">
+      <div class="field">
+        <label for="shoulder">{{ t('mint.shoulder') }}
+          {% if not needs_shoulder %}<span class="opt">— {{ t('mint.shoulder_opt') }}</span>{% endif %}</label>
+        <select id="shoulder" name="shoulder" {% if needs_shoulder %}required{% endif %}>
+          {% if not needs_shoulder %}<option value="">{{ t('mint.shoulder_default') }}</option>{% endif %}
+          {% for sh in shoulders %}
+            <option value="{{ sh.shoulder }}">{{ sh.naan }}{{ sh.shoulder }}{% if sh.manager_name %} — {{ sh.manager_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+        {% if needs_shoulder %}<p class="hint">{{ t('mint.shoulder_required')|safe }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label for="url">{{ t('mint.url') }} <span class="opt">— {{ t('mint.url_opt') }}</span></label>
+        <input id="url" name="url" placeholder="https://repository.example.org/records/1234">
+        <p class="hint">{{ t('mint.url_hint') }}</p>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="title">{{ t('mint.title_field') }}</label><input id="title" name="title"></div>
+        <div class="field"><label for="type">{{ t('mint.type') }}</label><input id="type" name="type" placeholder="Dataset"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="who">who <span class="opt">— ERC</span></label><input id="who" name="who"></div>
+        <div class="field"><label for="when">when <span class="opt">— ERC</span></label><input id="when" name="when"></div>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">{{ t('mint.submit') }}</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
