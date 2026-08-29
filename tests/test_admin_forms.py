@@ -928,3 +928,22 @@ def test_ページ送りができる(db, world, root, principal_of, as_principal
     assert first.count("ark:/") >= PAGE
     assert "page=2" in first                       # 次があると分かる
     assert c.get("/admin/arks?page=2").status_code == 200
+
+
+def test_他組織のarkの履歴は見られない(db, world, minted, principal_of, as_principal):
+    """**一覧に出ないものが URL 直打ちで見えてはいけない。**
+
+    到達範囲の判定を一覧と共有していることの確認。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    assert c.get(f"/admin/arks/{minted['a'].ark}").status_code == 200
+    assert c.get(f"/admin/arks/{minted['b'].ark}").status_code == 403
+    assert c.get(f"/admin/arks/{minted['c'].ark}").status_code == 403
+
+
+def test_履歴が画面から辿れる(db, world, principal_of, as_principal):
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://one.example/1"}).json()["ark"]
+    c.put("/api/update", json={"ark": key, "url": "https://two.example/2"})
+    page = c.get("/admin/arks/" + key.removeprefix("ark:/")).text
+    assert "https://one.example/1" in page and "https://two.example/2" in page

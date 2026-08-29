@@ -170,3 +170,67 @@ def test_公開ページに保護ヘッダが付く(world, principal_of, as_prin
     docs = c.get("/api/docs").headers["content-security-policy"]
     assert "script-src 'none'" not in docs
     assert "cdn.jsdelivr.net" in docs
+
+
+# ------------------------------------------- 行き先が変わった記録
+
+
+def test_付け替えは組織が行っても残る(db, world, principal_of, as_principal):
+    """**監査は NAAN 単位以上しか残さない。**
+
+    採番も付け替えも組織が行うので、監査だけでは肝心の変更が落ちる。
+    """
+    from arkhe.db.models import ArkChange
+
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://before.example/1"}).json()["ark"]
+    c.put("/api/update", json={"ark": key, "url": "https://after.example/2"})
+
+    rows = db.scalars(db.query(ArkChange).statement).all()
+    assert len(rows) == 1
+    assert rows[0].before_url == "https://before.example/1"
+    assert rows[0].after_url == "https://after.example/2"
+    assert rows[0].action == "update"
+
+
+def test_行き先が変わらなければ残さない(db, world, principal_of, as_principal):
+    """題名だけ直したときにまで履歴を積まない（読めなくなる）。"""
+    from arkhe.db.models import ArkChange
+
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://same.example/1"}).json()["ark"]
+    c.put("/api/update", json={"ark": key, "url": "https://same.example/1", "title": "改題"})
+    assert db.scalars(db.query(ArkChange).statement).all() == []
+
+
+def test_墓碑化も残る(db, world, principal_of, as_principal):
+    """**転送先の付け替えとは意味が違う**ので、action で区別して残す。"""
+    from arkhe.db.models import ArkChange
+
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://gone.example/1"}).json()["ark"]
+    c.put("/api/tombstone", json={"ark": key, "commitment": "取り下げ"})
+    rows = db.scalars(db.query(ArkChange).statement).all()
+    assert [r.action for r in rows] == ["tombstone"]
+    assert rows[0].before_url == "https://gone.example/1"
+
+
+def test_一括の付け替えも一件ずつ残る(db, world, principal_of, as_principal):
+    from arkhe.db.models import ArkChange
+
+    c = as_principal(principal_of(manager=world["a"]))
+    keys = [c.post("/api/mint", json={"url": f"https://b.example/{i}"}).json()["ark"]
+            for i in range(3)]
+    c.put("/api/update/bulk",
+          json={"data": [{"ark": k, "url": f"https://a.example/{i}"}
+                         for i, k in enumerate(keys)]})
+    assert len(db.scalars(db.query(ArkChange).statement).all()) == 3
+
+
+def test_誰が変えたかが残る(db, world, principal_of, as_principal):
+    from arkhe.db.models import ArkChange
+
+    c = as_principal(principal_of(manager=world["a"], client_id="repo-1"))
+    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"]
+    c.put("/api/update", json={"ark": key, "url": "https://x/2"})
+    assert db.scalars(db.query(ArkChange).statement).all()[0].by == "repo-1"

@@ -21,6 +21,7 @@ erDiagram
 
     CLIENT ||--o{ CREDENTIAL : "holds"
     ARK ||--o{ MINT_RECEIPT : "receipt for"
+    ARK ||--o{ ARK_CHANGE : "where it used to point"
 
     NAAN {
         string naan PK "N2: a string. 099999 is not 99999"
@@ -99,6 +100,17 @@ erDiagram
         string ark FK
     }
 
+    ARK_CHANGE {
+        int    id PK
+        string ark FK
+        date   at
+        string action "update / tombstone"
+        string before_url "**what you want back**"
+        string after_url
+        string by
+        string ip
+    }
+
     AUDIT_EVENT {
         int    id PK
         date   at
@@ -109,6 +121,13 @@ erDiagram
         json   detail
     }
 ```
+
+`ARK_CHANGE` records **where an ARK used to point**, separately from the audit log.
+The audit log keeps only what reaches NAAN scope or wider, but **minting and
+repointing are done by organisations**, so the audit log alone loses exactly the
+changes that matter. Declaring `NR` and saying the identifier does not change means
+being able to show what changed, when and by whom — otherwise the promise cannot be
+checked from outside.
 
 `AUDIT_EVENT` has no foreign keys into the rest. **A record should outlive what it
 describes**, and referential integrity would push the other way: it makes deleting the

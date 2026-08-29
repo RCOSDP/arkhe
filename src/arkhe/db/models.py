@@ -483,6 +483,43 @@ class MintReceipt(Base):
     )
 
 
+class ArkChange(Base):
+    """ARK の**行き先が変わった記録**。
+
+    ここが無いと、**以前どこを指していたかを復元できない。** `NR`（振り直さない）
+    を宣言する体系で「この識別子は変わらない」と言うなら、変えたのは何であって
+    いつ誰が変えたのかを示せなければならない——さもないと、**約束を検証する手段が
+    利用者の側に無い。**
+
+    監査ログとは別に持つ理由が 2 つある:
+
+      監査は NAAN 単位以上の操作だけを残す。**採番も付け替えも組織が行う**ので、
+      監査だけでは肝心の変更が落ちる（`authz.audit` の R2）。
+
+      監査は運用者のためのもので、これは**識別子そのものの履歴**。保存期間も
+      切り出し方も違う（監査は間引けるが、こちらは間引けない）。
+
+    行は**足すだけ**。消さない——消せる履歴は履歴ではない。
+    """
+
+    __tablename__ = "ark_change"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ark: Mapped[str] = mapped_column(ForeignKey("ark.ark"), index=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+    #: `update` か `tombstone`。**意味が違うので分けて残す**
+    #: （転送先の付け替えと「対象が失われた」の宣言は別のこと）。
+    action: Mapped[str] = mapped_column(String(16))
+
+    #: 変える前の行き先。**これが復元したいもの。**
+    before_url: Mapped[str] = mapped_column(String(2000), default="")
+    after_url: Mapped[str] = mapped_column(String(2000), default="")
+
+    by: Mapped[str] = mapped_column(String(255), default="", index=True)
+    ip: Mapped[str] = mapped_column(String(45), default="")
+
+
 class AuditEvent(Base):
     """R2: 誰がいつ何をしたか。**`authority=naan` の操作は全件記録する。**"""
 

@@ -21,6 +21,7 @@ erDiagram
 
     CLIENT ||--o{ CREDENTIAL : "持つ"
     ARK ||--o{ MINT_RECEIPT : "控え"
+    ARK ||--o{ ARK_CHANGE : "行き先が変わった記録"
 
     NAAN {
         string naan PK "N2: 文字列。099999 と 99999 は別の NAAN"
@@ -99,6 +100,17 @@ erDiagram
         string ark FK
     }
 
+    ARK_CHANGE {
+        int    id PK
+        string ark FK
+        date   at
+        string action "update / tombstone"
+        string before_url "**復元したいのはこれ**"
+        string after_url
+        string by
+        string ip
+    }
+
     AUDIT_EVENT {
         int    id PK
         date   at
@@ -109,6 +121,12 @@ erDiagram
         json   detail
     }
 ```
+
+`ARK_CHANGE` は **ARK の行き先が変わった記録**で、監査ログとは別に持つ。監査は
+NAAN 単位以上の操作しか残さないが、**採番も付け替えも組織が行う**ので、監査だけ
+では肝心の変更が落ちる。`NR` を宣言する体系で「この識別子は変わらない」と言う
+なら、変えたのは何でいつ誰が変えたのかを示せなければならない——さもないと、
+**約束を検証する手段が利用者の側に無い。**
 
 `AUDIT_EVENT` は他の表と外部キーで結ばない。**記録は対象が消えても残るべき**もので、
 参照整合性で縛ると「消せないから記録も消す」という逆の力が働く。

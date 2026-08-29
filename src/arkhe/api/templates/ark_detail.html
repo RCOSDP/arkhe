@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}ark:/{{ ark.ark }} — arkhe{% endblock %}
+{% block crumb %}{{ t('ak.detail') }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1 class="mono">ark:/{{ ark.ark }}</h1>
+  <p class="lede">{{ ark.title }}</p>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-b">
+    <div class="kv">
+      <span class="k">{{ t('ak.target') }}</span>
+      <span class="v mono">{{ ark.url or t('ak.none_target') }}</span>
+      <span class="k">{{ t('ak.when') }}</span>
+      <span class="v mono dim">{{ ark.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+      <span class="k">{{ t('ak.by') }}</span>
+      <span class="v mono dim">{{ ark.created_by }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h">
+    <span class="t">{{ t('ak.history') }}</span><span class="sub">{{ changes|length }}</span>
+  </div>
+  <div class="card-b" style="padding-bottom:0">
+    <p class="hint" style="margin-top:0">{{ t('ak.hist_lede')|safe }}</p>
+  </div>
+  {% if changes %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>{{ t('ak.hist_when') }}</th><th>{{ t('ak.hist_what') }}</th>
+      <th>{{ t('ak.hist_from') }}</th><th>{{ t('ak.hist_to') }}</th>
+      <th>{{ t('ak.hist_by') }}</th><th>{{ t('ak.hist_ip') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for ch in changes %}
+      <tr>
+        <td class="mono dim" data-label="{{ t('ak.hist_when') }}">
+          {{ ch.at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td data-label="{{ t('ak.hist_what') }}">
+          <span class="pill {{ 'retired' if ch.action == 'tombstone' else 'reserved' }}">
+            {{ t('ak.act.' ~ ch.action) }}</span></td>
+        <td class="mono dim" data-label="{{ t('ak.hist_from') }}">
+          {{ ch.before_url or t('ak.gone') }}</td>
+        <td class="mono dim" data-label="{{ t('ak.hist_to') }}">
+          {{ ch.after_url or t('ak.gone') }}</td>
+        <td class="mono dim" data-label="{{ t('ak.hist_by') }}">{{ ch.by }}</td>
+        <td class="mono dim" data-label="{{ t('ak.hist_ip') }}">{{ ch.ip or '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="card-b"><p class="dim">{{ t('ak.hist_none') }}</p></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -188,7 +188,10 @@ def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
     authz.require_scope(principal, "ark:update")
     ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
     authz.assert_may_touch(session, principal, ark)
+    before = ark.url
     _apply(ark, body.model_dump(), principal)
+    # **行き先の履歴は誰が行っても残す**（監査は NAAN 単位以上しか残さない）。
+    authz.record_change(session, principal, ark, action="update", before_url=before)
     authz.audit(session, principal, "update", ark.ark)
     session.commit()
     return ArkOut.of(ark)
@@ -206,7 +209,9 @@ def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cf
     for key, row in zip(keys, rows, strict=True):
         ark = found[key]
         authz.assert_may_touch(session, principal, ark)
+        before = ark.url
         _apply(ark, row.model_dump(), principal)
+        authz.record_change(session, principal, ark, action="update", before_url=before)
     authz.audit(session, principal, "bulk_update", count=len(rows))
     session.commit()
     return BulkUpdateOut(updated=len(rows))
@@ -226,11 +231,13 @@ def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
     authz.require_scope(principal, "ark:tombstone")
     ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
     authz.assert_may_touch(session, principal, ark)
+    before = ark.url
     # url が空なら、リゾルバが記述そのものを返す（D6 と同じ経路）。
     ark.url = body.url
     if body.commitment:
         ark.commitment = body.commitment
     ark.updated_by = principal.client_id
+    authz.record_change(session, principal, ark, action="tombstone", before_url=before)
     authz.audit(session, principal, "tombstone", ark.ark)
     session.commit()
     return ArkOut.of(ark)

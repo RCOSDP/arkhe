@@ -28,6 +28,7 @@ from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import (
     Ark,
+    ArkChange,
     AuditEvent,
     Client,
     CommitmentLevel,
@@ -863,6 +864,25 @@ def arks(
         request, principal, "arks.html", "arks",
         arks=rows[:PAGE], q=term, page_no=page, more=more,
     )
+
+
+@router.get("/arks/{ark:path}", response_class=HTMLResponse)
+def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: str):
+    """1 本の ARK と、**その行き先が変わった記録**。
+
+    到達範囲の判定は一覧と同じ式を使う（`_visible_arks`）——別に書くと、
+    一覧に出ないものが URL 直打ちで見える。
+    """
+    key = ark.removeprefix("ark:/").removeprefix("ark:")
+    row = session.scalar(_visible_arks(session, principal).where(Ark.ark == key))
+    if row is None:
+        raise Forbidden("この ARK はこの主体の範囲外")
+    changes = list(
+        session.scalars(
+            select(ArkChange).where(ArkChange.ark == key).order_by(ArkChange.at.desc())
+        )
+    )
+    return _page(request, principal, "ark_detail.html", "arks", ark=row, changes=changes)
 
 
 # ------------------------------------------------------------------ 監査

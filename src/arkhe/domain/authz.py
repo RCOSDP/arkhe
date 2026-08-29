@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from arkhe.auth.errors import Forbidden, InsufficientScope
 from arkhe.auth.principal import Principal
-from arkhe.db.models import Ark, AuditEvent, Manager, Shoulder, ShoulderStatus
+from arkhe.db.models import Ark, ArkChange, AuditEvent, Manager, Shoulder, ShoulderStatus
 
 
 class NotFound(Exception):
@@ -217,6 +217,29 @@ def assert_within_quota(session: Session, principal: Principal, count: int = 1) 
         raise Throttled(
             {"quota_per_day": manager.quota_per_day, "used_last_24h": used, "requested": count}
         )
+
+
+def record_change(
+    session: Session, principal: Principal, ark: Ark, *, action: str, before_url: str
+) -> None:
+    """ARK の行き先が変わったことを残す。**誰が行っても残す。**
+
+    `audit()` と違って到達範囲で間引かない——採番も付け替えも組織が行うので、
+    間引くと**肝心の変更が落ちる**。`NR` を宣言する体系で「この識別子は変わらない」
+    と言うなら、変えたのは何でいつ誰がやったのかを示せなければならない。
+    """
+    if before_url == ark.url and action == "update":
+        return  # 行き先が変わっていないなら、履歴に残すことは無い
+    session.add(
+        ArkChange(
+            ark=ark.ark,
+            action=action,
+            before_url=before_url,
+            after_url=ark.url,
+            by=principal.client_id,
+            ip=principal.ip,
+        )
+    )
 
 
 def audit(session: Session, principal: Principal, action: str, target: str = "", **detail) -> None:

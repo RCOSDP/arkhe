@@ -11,6 +11,13 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **Where an ARK used to point is now recorded** (`ark_change`). Without it the
+  previous target could not be recovered, so a system declaring `NR` gave its users no
+  way to check that claim. It is kept separately from the audit log, which only keeps
+  what reaches NAAN scope — and **minting and repointing are done by organisations**,
+  so the audit log alone lost exactly the changes that matter. Each ARK's history is
+  reachable from the admin list. **Existing ARKs have no history**: what was not
+  recorded at the time cannot be conjured up afterwards.
 - **A list of the ARKs issued.** It is filtered by reach, nothing more: a system
   administrator sees them all, NAAN scope sees that NAAN, an organisation sees what
   was minted in its own shoulders. **Search and paging are there from the start**,

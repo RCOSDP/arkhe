@@ -26,7 +26,8 @@
     <tbody>
     {% for a in arks %}
       <tr>
-        <td class="mono" data-label="{{ t('ak.ark') }}">ark:/{{ a.ark }}</td>
+        <td class="mono" data-label="{{ t('ak.ark') }}">
+          <a href="/admin/arks/{{ a.ark }}">ark:/{{ a.ark }}</a></td>
         <td class="mono dim" data-label="{{ t('ak.target') }}">
           {{ a.url or t('ak.none_target') }}</td>
         <td data-label="{{ t('ak.title_col') }}">{{ a.title }}</td>
