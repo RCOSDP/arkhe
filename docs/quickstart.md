@@ -94,7 +94,7 @@ published above. Putting it on a network is a deliberate act.
 ```bash
 git clone https://github.com/RCOSDP/arkhe.git && cd arkhe
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 219 tests
+python -m pytest -q
 ```
 
 Stand up a minimal ledger against SQLite:

@@ -9,6 +9,18 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- Anchors for Japanese headings were `_1`, `_2`, … The default slugify drops
+  non-ASCII, so **deep links into Japanese pages did not work**, and adding one
+  heading shifted the numbers so existing links silently pointed elsewhere. The
+  slugify now keeps Unicode.
+- Writing a changelog entry did not update the published site: the `docs` workflow's
+  path filter did not include `CHANGELOG*.md`, which the pages pull in with `--8<--`.
+- The versioning page hard-coded the current version and had gone stale at 0.0.1.
+  **Anything that goes stale at every release does not belong in the prose** — the
+  changelog has it. The test count in the quickstart went for the same reason.
+
 ## [0.0.3] — 2026-08-29
 
 The admin interface went from a page that only mints to one that **builds the

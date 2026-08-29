@@ -3,7 +3,8 @@
 arkhe は [Semantic Versioning 2.0.0](https://semver.org/lang/ja/) に従う。
 `MAJOR.MINOR.PATCH`。
 
-現在: **0.0.1** — [1.0 まで](#10)を参照。
+版はまだ `0.x`——[1.0 まで](#10-まで)を参照。**いま出ている版は文書に書かない**
+（リリースのたびに古くなるため）。[変更履歴](changelog.md)を見ること。
 
 ## 版が何を約束するか
 

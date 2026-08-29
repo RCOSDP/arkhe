@@ -2,7 +2,9 @@
 
 arkhe follows [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MINOR.PATCH`.
 
-Current version: **0.0.1** — see [Before 1.0](#before-10).
+The version is still `0.x` — see [Before 1.0](#before-10). **The current release is
+not written here**, because it would go stale at every release; it is in the
+[changelog](changelog.md).
 
 ## What the version covers
 

@@ -87,7 +87,13 @@ markdown_extensions:
   - footnotes
   - md_in_html
   - tables
-  - toc: {permalink: true, toc_depth: 3}
+  - toc:
+      permalink: true
+      toc_depth: 3
+      # **既定の slugify は非 ASCII を落とす。** 日本語見出しのアンカーが
+      # `_1` `_2` … になり、深いリンクが使えないうえ、見出しを 1 つ足すと
+      # 番号がずれて既存のリンクが黙って別の場所を指す。
+      slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
   - pymdownx.details
   - pymdownx.highlight: {anchor_linenums: true}
   - pymdownx.inlinehilite

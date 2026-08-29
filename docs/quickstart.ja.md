@@ -92,7 +92,7 @@ LAN に出すのは明示的な操作にしてある。
 ```bash
 git clone https://github.com/RCOSDP/arkhe.git && cd arkhe
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 219 tests
+python -m pytest -q
 ```
 
 SQLite に最小の台帳を作る。

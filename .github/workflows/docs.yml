@@ -3,9 +3,18 @@ name: docs
 on:
   push:
     branches: [main]
-    paths: ["docs/**", "mkdocs.yml", "src/**", "scripts/export_openapi.py", ".github/workflows/docs.yml"]
+    # CHANGELOG は docs/project/changelog*.md から取り込んでいる（`--8<--`）。
+    # ここに入れておかないと、変更履歴を書いても公開が追随しない。
+    paths:
+      - "docs/**"
+      - "CHANGELOG.md"
+      - "CHANGELOG.ja.md"
+      - "mkdocs.yml"
+      - "src/**"
+      - "scripts/export_openapi.py"
+      - ".github/workflows/docs.yml"
   pull_request:
-    paths: ["docs/**", "mkdocs.yml"]
+    paths: ["docs/**", "CHANGELOG.md", "CHANGELOG.ja.md", "mkdocs.yml"]
   # 手で起動できるようにしておく（課金の停止などで自動実行が落ちたときに要る）
   workflow_dispatch:
 
