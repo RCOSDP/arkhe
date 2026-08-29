@@ -323,13 +323,19 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"/></svg>
     {{ t("nav.clients") }}</a>
 
-  <div class="rail-h">{{ t("nav.actions") }}</div>
+  {# **押しても断られるだけの項目は出さない。** 採番は scope、監査ログは
+     到達範囲で決まる。判定は `_ctx` が持っていて、ルートと同じ式を使う。 #}
+  {% if can_mint or can_audit %}<div class="rail-h">{{ t("nav.actions") }}</div>{% endif %}
+  {% if can_mint %}
   <a class="nav" href="/admin/mint" {% if page=='mint' %}aria-current="page"{% endif %}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4v16M4 12h16"/></svg>
     {{ t("nav.mint") }}</a>
+  {% endif %}
+  {% if can_audit %}
   <a class="nav" href="/admin/audit" {% if page=='audit' %}aria-current="page"{% endif %}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
     {{ t("nav.audit") }}</a>
+  {% endif %}
 
   <div class="rail-foot">
     <div class="chip">

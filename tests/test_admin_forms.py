@@ -247,3 +247,74 @@ def test_組織管理者は他組織を選べない(db, world, principal_of, as_
     assert r.status_code == 303
     made = db.scalar(db.query(Client).filter_by(client_id="sneaky").statement)
     assert made.manager_id == world["a"].id
+
+
+# ------------------------------------------- 押せないものは出さない
+
+
+def test_組織管理者に監査ログを見せない(world, principal_of, as_principal):
+    """**押しても断られるだけの導線は出さない。**
+
+    監査ログは NAAN 単位以上にしか見せないので、組織単位の管理者には
+    リンクごと出さない（出すと、押して 403 を見るまで分からない）。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    home = c.get("/admin/").text
+    assert "/admin/audit" not in home
+    assert c.get("/admin/audit").status_code == 403   # 直接叩けば当然断る
+
+
+def test_NAAN管理者には監査ログを見せる(world, principal_of, as_principal):
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    assert "/admin/audit" in c.get("/admin/").text
+    assert c.get("/admin/audit").status_code == 200
+
+
+def test_採番できない主体には採番の導線を出さない(world, principal_of, as_principal):
+    """scope で決まる。**出し分けとルートの判定は同じもの。**"""
+    c = as_principal(principal_of(manager=world["a"], scopes=["ark:read"]))
+    assert "/admin/mint" not in c.get("/admin/").text
+    assert c.get("/admin/mint").status_code == 403
+
+
+def test_採番できる主体には出す(world, principal_of, as_principal):
+    c = as_principal(principal_of(manager=world["a"], scopes=["ark:mint"]))
+    assert "/admin/mint" in c.get("/admin/").text
+    assert c.get("/admin/mint").status_code == 200
+
+
+def test_所属の無い主体には利用者の登録を出さない(world, principal_of, as_principal):
+    """自組織が無ければ誰の利用者も作れない。"""
+    c = as_principal(principal_of(manager=None))
+    assert "/admin/client/new" not in c.get("/admin/clients").text
+    assert c.get("/admin/client/new").status_code == 403
+
+
+def test_組織管理者には利用者の登録を出す(world, principal_of, as_principal):
+    c = as_principal(principal_of(manager=world["a"]))
+    assert "/admin/client/new" in c.get("/admin/clients").text
+    assert c.get("/admin/client/new").status_code == 200
+
+
+def test_出ている導線は全て開ける(world, principal_of, as_principal):
+    """**出し分けと認可がずれていないこと**の総当たり確認。
+
+    画面に出ているリンクを片端から開き、1 つでも断られたら出し分けが間違っている。
+    """
+    import re
+
+    for p in (principal_of(authority=Authority.SYSTEM),
+              principal_of(authority=Authority.NAAN),
+              principal_of(manager=world["a"])):
+        c = as_principal(p)
+        seen, todo = set(), ["/admin/", "/admin/clients"]
+        while todo:
+            path = todo.pop()
+            if path in seen:
+                continue
+            seen.add(path)
+            r = c.get(path)
+            assert r.status_code == 200, f"{p.authority} に出ている {path} が {r.status_code}"
+            for href in re.findall(r'href="(/admin/[^"?#]*)"', r.text):
+                if href not in seen and not href.endswith(("logout", "login")):
+                    todo.append(href)

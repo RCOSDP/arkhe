@@ -11,6 +11,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **Buttons and links that would only be refused are no longer shown.** An
+  organisation's administrator was shown the audit log link, which answered 403 when
+  pressed, and the minting link appeared for principals without `ark:mint`. The
+  visibility test is the same expression the route uses — written separately, it turns
+  into the opposite hole, where the button is hidden but the URL still works. A test
+  walks every link shown to each kind of principal and asserts none is refused.
 - When a sign-in round trip expired, the response was bare text with **no way back —
   the user had to edit the URL by hand**. It is now a page sharing the sign-in layout,
   with a "Sign in again" button (the same for a refusal from the authentication server,

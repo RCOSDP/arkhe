@@ -44,6 +44,11 @@ router = APIRouter(prefix="/admin", tags=["admin"], include_in_schema=False)
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 
+def _can_add_client(p: Principal) -> bool:
+    """利用者を作れるか。組織単位でも自組織なら作れる（`register_client` の判定）。"""
+    return p.is_naan_wide or p.manager_id is not None
+
+
 def _ctx(request: Request, principal: Principal, page: str, **extra) -> dict:
     lang = i18n.pick(request)
     return {
@@ -55,7 +60,12 @@ def _ctx(request: Request, principal: Principal, page: str, **extra) -> dict:
         "t": i18n.translator(lang),
         # **画面の出し分けと実際の認可は同じ判定を使う。**
         # 別々にすると「ボタンは出ないが URL を直接叩けば通る」穴ができる。
+        # 逆に、**押しても断られるだけのボタンも出さない**——押せるものだけを
+        # 見せるのが、到達範囲を画面で表すということ。
         "can_manage": principal.is_naan_wide,
+        "can_audit": principal.is_naan_wide,
+        "can_mint": principal.has("ark:mint"),
+        "can_add_client": _can_add_client(principal),
         **extra,
     }
 
@@ -556,9 +566,9 @@ def _client_page(request: Request, principal: Principal, session: Db, c: Client 
 
 @router.get("/client/new", response_class=HTMLResponse)
 def client_new(request: Request, principal: AdminPrincipal, session: Db):
-    # **ここで独自の判定を書かない。** 組織単位の管理者も自組織の利用者は
-    # 作れる（`register_client` がそう決めている）。画面だけ厳しくすると、
-    # 出せるはずのものが出せなくなる。
+    # 出し分けと同じ述語で閉じる（`_ctx` の `can_add_client` と同じもの）。
+    if not _can_add_client(principal):
+        raise Forbidden("この主体は利用者を登録できない")
     return _client_page(request, principal, session, None)
 
 

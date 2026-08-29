@@ -20,7 +20,7 @@
 <div class="card">
   <div class="card-h">
     <span class="t">{{ t('cl.principals') }}</span><span class="sub">{{ clients|length }}</span>
-    <span class="right"><a class="btn sm" href="/admin/client/new">{{ t('cl.add') }}</a></span>
+    {% if can_add_client %}<span class="right"><a class="btn sm" href="/admin/client/new">{{ t('cl.add') }}</a></span>{% endif %}
   </div>
   <div class="table-wrap">
   <table>
