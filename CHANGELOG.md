@@ -11,6 +11,10 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- The entry route claimed "the authorization server" outright. **arkhe never queries
+  it**, so it cannot know whether the subject exists there — the demo ledger had two
+  subjects registered in arkhe with no Keycloak client, and they looked ready. It now
+  says the decision is *delegated* to it, and points at where to check.
 - **A correctly configured user looked unconfigured** where authentication is
   delegated: the list said "0 credentials active", which is exactly what a machine
   holding no key looks like under `oidc`. The column now says **how it gets in** — a

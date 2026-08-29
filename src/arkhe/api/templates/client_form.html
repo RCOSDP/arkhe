@@ -113,6 +113,10 @@
     </div>
     {% if entry == 'none' %}
     <div class="note stop"><span>{{ t('en.none_hint')|safe }}</span></div>
+    {% elif entry == 'idp' %}
+    {# **arkhe には確かめようがない。** 認可サーバに問い合わせないので、
+       「入れる」と断言せず「委ねている」と述べる。 #}
+    <div class="note info"><span>{{ t('en.idp_hint')|safe }}</span></div>
     {% endif %}
     {# **認可サーバに寄せた構成では、ここが arkhe 側の唯一の止め方。** #}
     <div class="note info" style="margin-bottom:0">

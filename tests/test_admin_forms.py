@@ -603,3 +603,18 @@ def test_機構が無効な鍵は入り方に数えない(db, world, root, with_
     # 文言ではなく印で見る（「鍵」は見出しにも出るので誤検出する）
     assert 'data-entry="idp"' in page
     assert 'data-entry="key"' not in page
+
+
+def test_認可サーバ側の実在は断言しない(db, world, root, with_auth):
+    """**arkhe は認可サーバに問い合わせない。**
+
+    「入れる」と断言すると、向こうにクライアントが無い主体まで設定済みに
+    見える。委ねていることを述べ、確かめる先を示すに留める。
+    """
+
+    c = ops.register_client(db, root, client_id="not-in-kc", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    page = with_auth(["oidc"]).get(f"/admin/client/{c.id}").text
+    assert 'data-entry="idp"' in page
+    assert "arkhe からは分かりません" in page or "not something arkhe" in page

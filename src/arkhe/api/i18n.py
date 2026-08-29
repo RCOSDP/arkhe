@@ -304,11 +304,12 @@ JA: dict[str, str] = {
     # 入り方（どの経路で入ってくるか）
     "cl.entry": "入り方",
     "en.key": "鍵",
-    "en.idp": "認可サーバ",
+    "en.idp": "認可サーバに委ねる",
     "en.person": "外部ログイン",
     "en.none": "未設定",
-    "en.idp_hint": "この構成では、認可サーバが出したトークンで入ります。"
-                   "arkhe 側に鍵はありません。",
+    "en.idp_hint": "この構成では、認可サーバがこの識別子を保証するトークンを出せば入れます。"
+                   "arkhe 側に鍵はありません。<b>その主体が認可サーバに実在するかどうかは、"
+                   "arkhe からは分かりません</b>——確かめるには認可サーバ側を見てください。",
     "en.none_hint": "<b>まだ入れません。</b>鍵を発行するか、"
                     "<code>ARKHE_AUTH</code> に <code>oidc</code> を足して"
                     "認可サーバに任せてください。",
@@ -601,11 +602,13 @@ EN: dict[str, str] = {
                        "<code>ARKHE_AUTH</code> — a key issued without it goes nowhere.",
     "cl.entry": "Gets in by",
     "en.key": "a key",
-    "en.idp": "the authorization server",
+    "en.idp": "delegated to the IdP",
     "en.person": "an external login",
     "en.none": "nothing yet",
-    "en.idp_hint": "In this deployment it gets in with a token from the authorization "
-                   "server. There is no key on arkhe's side.",
+    "en.idp_hint": "In this deployment it gets in if the authorization server issues a "
+                   "token vouching for this identifier. There is no key on arkhe's side. "
+                   "<b>Whether the subject actually exists there is not something arkhe "
+                   "can see</b> — check at the authorization server.",
     "en.none_hint": "<b>It cannot get in yet.</b> Either issue a key, or add "
                     "<code>oidc</code> to <code>ARKHE_AUTH</code> and let the "
                     "authorization server vouch for it.",
