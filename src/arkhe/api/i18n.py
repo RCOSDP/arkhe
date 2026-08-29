@@ -284,6 +284,16 @@ JA: dict[str, str] = {
                            "<code>preferred_username</code>（無ければ "
                            "<code>email</code>、それも無ければ <code>sub</code>）。"
                            "1 文字でも違うと照合できません。",
+    "cu.state": "状態",
+    "cu.state.on": "有効",
+    "cu.state.off": "停止中",
+    "cu.disable": "この利用者を止める",
+    "cu.enable": "戻す",
+    "cu.disable_note": "<b>認可サーバに寄せた構成では、これが arkhe 側の唯一の止め方です。</b>"
+                       "鍵を持っていないので、失効させるものがありません。"
+                       "止めると、認可サーバが出したトークンでもこの名前空間には入れなくなります"
+                       "（他の資源には影響しません）。",
+    "cu.enable_note": "止まっています。戻すと、また入れるようになります。",
     "login.title": "管理画面にログイン",
     "login.id": "ID",
     "login.id_ph": "メールアドレスなど",
@@ -554,6 +564,17 @@ EN: dict[str, str] = {
                            "for a person <code>preferred_username</code> (failing that "
                            "<code>email</code>, then <code>sub</code>). One character "
                            "out and it will not match.",
+    "cu.state": "State",
+    "cu.state.on": "active",
+    "cu.state.off": "stopped",
+    "cu.disable": "Stop this user",
+    "cu.enable": "Restore",
+    "cu.disable_note": "<b>Where authentication is delegated, this is the only way to "
+                       "stop a user from arkhe's side.</b> It holds no key, so there is "
+                       "nothing to revoke. Stopped, a token from the authorization "
+                       "server no longer gets into this namespace — other resources are "
+                       "unaffected.",
+    "cu.enable_note": "Stopped. Restoring lets it in again.",
     "login.title": "Sign in to the admin interface",
     "login.id": "ID",
     "login.id_ph": "your email address, for example",

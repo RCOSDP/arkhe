@@ -681,6 +681,25 @@ def client_revoke_key(
     return _redirect(f"/admin/client/{client_id}?saved=1")
 
 
+@router.post("/client/{client_id}/active")
+def client_toggle_active(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    client_id: int,
+    active: Annotated[str, Form()] = "",
+):
+    """主体を止める／戻す。
+
+    **認可サーバに寄せた構成では、これが arkhe 側の唯一の止め方。** 資格情報を
+    arkhe が持たないので、失効させるものが無い。
+    """
+    c = _reachable_client(session, principal, client_id)
+    ops.set_client_active(session, principal, client_pk=c.id, active=bool(active))
+    session.commit()
+    return _redirect(f"/admin/client/{client_id}?saved=1")
+
+
 @router.post("/client/{client_id}/password")
 def client_set_password(
     request: Request,

@@ -167,12 +167,55 @@ The identifier has to be **the string the authorization server sends**, verbatim
 | Machine | `azp` → `client_id` → `sub` |
 | Person | `preferred_username` → `email` → `sub` |
 
+#### How to create one
+
+**1. Create the client at the authorization server** — the secret is born there.
+
+In Keycloak: `Clients` → `Create client`.
+
+| | |
+| --- | --- |
+| Client ID | `jc2-web-api` — **register this same string in arkhe** |
+| Client authentication | on (confidential; it needs a secret) |
+| Service accounts roles | on — **so a token can be had without a person** |
+| Standard flow | off — nobody signs in through a browser as this |
+
+The secret appears under `Credentials`. **arkhe never receives it** — it has no need
+for it, and what it does not hold it cannot leak.
+
+Through the API (what `setup-arkhe-realm.py` does in JC2):
+
+```bash
+curl -X POST "$KC/admin/realms/$REALM/clients" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"clientId":"jc2-web-api","publicClient":false,
+       "serviceAccountsEnabled":true,"standardFlowEnabled":false}'
+```
+
+**2. Register the same identifier in arkhe** — the reach is decided here.
+
 ```bash
 arkhe client add jc2-web-api 99999 --shoulder 1 --scopes "ark:mint ark:update"
 ```
 
-**No key is issued.** There is no need to run `arkhe client key`, and a key issued
-anyway will not authenticate unless `apikey` or `oauth2` is in `ARKHE_AUTH`.
+**Do not run `arkhe client key`.** A key issued anyway will not authenticate unless
+`apikey` or `oauth2` is in `ARKHE_AUTH`.
+
+#### Rotating and stopping
+
+| To | Where |
+| --- | --- |
+| Rotate the secret | The authorization server; arkhe needs no change |
+| Stop tokens being issued | The authorization server — **affects every resource at once** |
+| Stop only this namespace | `arkhe client disable jc2-web-api` |
+
+**Having two places to stop it is the point.** The authorization server reaches every
+resource; arkhe reaches only this namespace. "Remove this organisation from ARK but
+leave its other integrations alone" is possible without touching their configuration.
+
+Under `oidc`, **`arkhe client disable` is the only way to stop one from arkhe's
+side** — it holds no credential, so there is nothing to revoke. The same control is on
+the user's page in the admin interface.
 
 ## 8. From then on
 

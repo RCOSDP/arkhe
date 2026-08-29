@@ -158,12 +158,56 @@ arkhe check
 | 機械 | `azp` → `client_id` → `sub` |
 | 人 | `preferred_username` → `email` → `sub` |
 
+#### 作り方
+
+**① 認可サーバでクライアントを作る**（秘密はここで生まれる）
+
+Keycloak なら、管理コンソールで `Clients` → `Create client`。
+
+| | |
+| --- | --- |
+| Client ID | `jc2-web-api`（**この文字列を arkhe にも登録する**） |
+| Client authentication | 有効（＝ confidential。秘密が要る） |
+| Service accounts roles | 有効（**人を介さずトークンを取るため**） |
+| Standard flow | 無効（ブラウザで人が入る用途ではない） |
+
+秘密は `Credentials` タブに出る。**arkhe はこれを受け取らない**——受け取る必要が
+無いし、持たなければ漏らしようもない。
+
+API からやるなら（[`setup-arkhe-realm.py`](https://github.com/RCOSDP/arkhe) が
+JC2 でやっているのと同じこと）:
+
+```bash
+curl -X POST "$KC/admin/realms/$REALM/clients" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"clientId":"jc2-web-api","publicClient":false,
+       "serviceAccountsEnabled":true,"standardFlowEnabled":false}'
+```
+
+**② arkhe に同じ識別子で登録する**（到達範囲はここで決まる）
+
 ```bash
 arkhe client add jc2-web-api 99999 --shoulder 1 --scopes "ark:mint ark:update"
 ```
 
-**鍵は発行しない。** `arkhe client key` を叩く必要はなく、叩いても
-`ARKHE_AUTH` に `apikey` / `oauth2` が無ければその鍵は通らない。
+**`arkhe client key` は叩かない。** 叩いても `ARKHE_AUTH` に `apikey` /
+`oauth2` が無ければその鍵は通らない。
+
+#### 入れ替えと停止
+
+| したいこと | どこで |
+| --- | --- |
+| 秘密を入れ替える | 認可サーバ（arkhe は何も変えなくてよい） |
+| トークンを出さなくする | 認可サーバ。**他の資源にも一斉に効く** |
+| この名前空間だけ止める | `arkhe client disable jc2-web-api` |
+
+**止める側が 2 つあるのは利点である。** 認可サーバ側は全資源に効き、arkhe 側は
+この名前空間にだけ効く。「この組織を ARK からは外すが、他の連携は残す」が、
+相手の設定を触らずにできる。
+
+`oidc` の構成では、**`arkhe client disable` が arkhe 側の唯一の止め方**になる
+——資格情報を持たないので、失効させるものが無い。管理画面の利用者ページからも
+できる。
 
 ## ⑧ 以後の運用
 

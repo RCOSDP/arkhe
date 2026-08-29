@@ -11,6 +11,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **Where authentication is delegated, there was no way to stop a user from arkhe's
+  side.** Under `oidc` arkhe holds no credential, so `revoke` has nothing to act on,
+  and nothing anywhere cleared `Client.active` — a token the authorization server kept
+  issuing kept working. `arkhe client disable` / `enable` and the same control in the
+  admin interface close that. **A principal of an organisation that has left cannot be
+  restored**, so an individual restore cannot undo a departure.
 - Where authentication is delegated, the "Register a user" page did not say **what
   the operation is for.** No key is issued, so it looks as though nothing happens —
   but **this registration is what ties a subject at the authorization server to a

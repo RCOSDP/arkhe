@@ -518,6 +518,40 @@ def set_password(session: Session, p: Principal, *, client_pk: int, password: st
     return cred
 
 
+def set_client_active(
+    session: Session, p: Principal, *, client_pk: int, active: bool
+) -> Client:
+    """主体を止める／戻す。**行は消さない。**
+
+    **認可サーバに寄せた構成では、これが arkhe 側の唯一の止め方になる。**
+    `oidc` では資格情報を arkhe が持たないので `revoke_credential` は効かず、
+    ここを落とさない限り、認可サーバが出し続けるトークンで通ってしまう。
+
+    止める側が 2 つあるのは弱点ではなく利点である:
+
+      認可サーバ  トークンを出さなくする（他の資源にも一斉に効く）
+      arkhe       この名前空間に入れなくする（他の資源には影響しない）
+
+    **戻せるのは、その組織が生きている間だけ。** 離脱・統合で止まった主体を
+    個別に戻せると、「新規採番は止める」という宣言が骨抜きになる。
+    """
+    client = session.get(Client, client_pk)
+    if client is None:
+        raise NotFound({"client": client_pk})
+    _require_naan(p, client.naan)
+    if not p.is_naan_wide and client.manager_id != p.manager_id:
+        raise Forbidden("この主体はこの管理者の範囲外")
+    if active and client.manager_id is not None:
+        manager = session.get(Manager, client.manager_id)
+        if manager is not None and not manager.active:
+            raise Invalid(
+                {"active": "去った組織の主体は戻せない（組織の承継・離脱を先に解く）"}
+            )
+    client.active = active
+    audit(session, p, "enable_client" if active else "disable_client", client.client_id)
+    return client
+
+
 def revoke_credential(session: Session, p: Principal, *, credential_id: int) -> Credential:
     """失効させる。**行は消さない**（いつ失効したかを残す）。"""
     cred = session.get(Credential, credential_id)

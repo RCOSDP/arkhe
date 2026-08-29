@@ -422,3 +422,70 @@ def test_認可サーバの場所を画面に出す(db, world, root, app, settin
         f"/admin/client/{c.id}"
     ).text
     assert "https://kc.example.org/realms/arkhe" in page
+
+
+# ------------------------------ 認可サーバ構成での止め方（唯一の止め方）
+
+
+def test_oidcでは止める手段が要る(db, world, root):
+    """**鍵が無いので `revoke_credential` は効かない。**
+
+    ここを落とさない限り、認可サーバが出し続けるトークンで通ってしまう。
+    """
+    from arkhe.auth.errors import AuthError
+    from arkhe.auth.oidc import OidcVerifier
+
+    c = ops.register_client(db, root, client_id="kc-stop", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    v = OidcVerifier.__new__(OidcVerifier)
+    v.decode = lambda _t: {"azp": "kc-stop", "scope": "ark:mint"}
+    assert v.authenticate(db, "t").client_id == "kc-stop"
+
+    ops.set_client_active(db, root, client_pk=c.id, active=False)
+    db.commit()
+    with pytest.raises(AuthError, match="not registered"):
+        v.authenticate(db, "t")
+
+
+def test_止めても戻せる(db, world, root):
+    c = ops.register_client(db, root, client_id="back", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    ops.set_client_active(db, root, client_pk=c.id, active=False)
+    ops.set_client_active(db, root, client_pk=c.id, active=True)
+    db.commit()
+    assert c.active
+
+
+def test_去った組織の主体は戻せない(db, world, root):
+    """**「新規採番は止める」という宣言を、個別の復帰で骨抜きにしない。**"""
+    from arkhe.domain.authz import Invalid
+
+    c = ops.register_client(db, root, client_id="gone", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    ops.depart(db, root, manager_id=world["a"].id)
+    db.commit()
+    assert not c.active
+    with pytest.raises(Invalid):
+        ops.set_client_active(db, root, client_pk=c.id, active=True)
+
+
+def test_画面から止められる(db, world, root, principal_of, as_principal):
+    c = ops.register_client(db, root, client_id="ui-stop", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    cli = as_principal(principal_of(manager=world["a"]))
+    assert cli.post(f"/admin/client/{c.id}/active", data={"active": ""}).status_code == 303
+    db.expire_all()
+    assert not db.get(Client, c.id).active
+
+
+def test_他組織の主体は止められない(db, world, root, principal_of, as_principal):
+    c = ops.register_client(db, root, client_id="other-stop", naan="99999",
+                            manager_id=world["b"].id, scopes="ark:mint")
+    db.commit()
+    cli = as_principal(principal_of(manager=world["a"]))
+    assert cli.post(f"/admin/client/{c.id}/active", data={"active": ""}).status_code == 403
+    db.expire_all()
+    assert db.get(Client, c.id).active

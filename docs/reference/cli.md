@@ -22,6 +22,8 @@ audit log the same way.
 | `arkhe client breakglass` | Create a temporary principal reaching everything under a NAAN. **Time-boxed.** |
 | `arkhe client passwd` | Set a password on a person (for local sign-in to the admin interface). |
 | `arkhe client revoke` | Revoke. **The row is not deleted** — when it stopped remains. |
+| `arkhe client disable` | Stop a principal. **The only way where authentication is delegated.** |
+| `arkhe client enable` | Restore one (not if its organisation has left). |
 
 `--help` on any command gives its arguments.
 

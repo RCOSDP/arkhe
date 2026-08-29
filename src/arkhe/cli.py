@@ -260,6 +260,27 @@ def client_passwd(
         typer.echo(t("client.passwd.done", client_id=client_id))
 
 
+@client_app.command("disable", help=t("client.disable.help"))
+def client_disable(client_id: str):
+    _set_active(client_id, False)
+
+
+@client_app.command("enable", help=t("client.enable.help"))
+def client_enable(client_id: str):
+    _set_active(client_id, True)
+
+
+def _set_active(client_id: str, active: bool) -> None:
+    with _session() as s:
+        c = s.scalar(select(Client).where(Client.client_id == client_id))
+        if c is None:
+            typer.echo(t("client.not_found", client_id=client_id), err=True)
+            raise typer.Exit(1)
+        ops.set_client_active(s, _root(), client_pk=c.id, active=active)
+        s.commit()
+        typer.echo(t("client.enabled" if active else "client.disabled", client_id=client_id))
+
+
 @client_app.command("revoke", help=t("client.revoke.help"))
 def client_revoke(credential_id: int):
     with _session() as s:

@@ -98,7 +98,23 @@
         {% if client.manager %}<span class="dim">{{ client.manager.name }}</span>{% endif %}</span>
       <span class="k">{{ t('cu.scopes') }}</span>
       <span class="v mono dim">{{ client.allowed_scopes }}</span>
+      <span class="k">{{ t('cu.state') }}</span>
+      <span class="v">
+        {% if client.active %}<span class="pill active">{{ t('cu.state.on') }}</span>
+        {% else %}<span class="pill retired">{{ t('cu.state.off') }}</span>{% endif %}
+      </span>
     </div>
+    {# **認可サーバに寄せた構成では、ここが arkhe 側の唯一の止め方。** #}
+    <div class="note info" style="margin-bottom:0">
+      <span>{{ t('cu.disable_note' if client.active else 'cu.enable_note')|safe }}</span>
+    </div>
+    <form method="post" action="/admin/client/{{ client.id }}/active" class="actions">
+      {% if client.active %}
+        <button class="btn danger" type="submit" name="active" value="">{{ t('cu.disable') }}</button>
+      {% else %}
+        <button class="btn" type="submit" name="active" value="1">{{ t('cu.enable') }}</button>
+      {% endif %}
+    </form>
   </div>
 </div>
 

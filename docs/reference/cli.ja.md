@@ -21,6 +21,8 @@
 | `arkhe client breakglass` | NAAN 配下すべてに届く一時的な主体を作る。**期限つき。** |
 | `arkhe client passwd` | 人の主体にパスワードを設定する（管理画面へのローカルログイン用）。 |
 | `arkhe client revoke` | 失効させる。**行は消さない**（いつ失効したかを残す）。 |
+| `arkhe client disable` | 主体を止める。**認可サーバに寄せた構成ではこれが唯一の止め方。** |
+| `arkhe client enable` | 止めた主体を戻す（去った組織の主体は戻せない）。 |
 
 `--help` に各コマンドの引数がある。
 

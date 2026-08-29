@@ -123,6 +123,11 @@ JA: dict[str, str] = {
     "client.passwd.password": "12 文字以上。入力は画面に出ない",
     "client.passwd.done": "{client_id} のパスワードを設定しました",
     "client.revoke.help": "失効させる。**行は消さない**（いつ失効したかを残す）。",
+    "client.disable.help": "主体を止める。**認可サーバに寄せた構成ではこれが唯一の止め方**"
+                           "——資格情報を arkhe が持たないので revoke は効かない。",
+    "client.enable.help": "止めた主体を戻す。**去った組織の主体は戻せない。**",
+    "client.disabled": "{client_id} を止めました",
+    "client.enabled": "{client_id} を戻しました",
     "client.revoke.done": "資格情報 {id} を失効させました",
     # succeed / depart
     "succeed.help": "統廃合。**識別子は壊さない**（名前空間ごと承継先に移す）。",
@@ -228,6 +233,13 @@ EN: dict[str, str] = {
     "client.passwd.password": "12 characters or more; input is not echoed",
     "client.passwd.done": "Set the password for {client_id}",
     "client.revoke.help": "Revoke. **The row is not deleted** — when it stopped remains.",
+    "client.disable.help": "Stop a principal. **Where authentication is delegated this is "
+                           "the only way to stop one** — arkhe holds no credential, so "
+                           "revoke has nothing to act on.",
+    "client.enable.help": "Restore a stopped principal. **One belonging to an "
+                          "organisation that has left cannot be restored.**",
+    "client.disabled": "Stopped {client_id}",
+    "client.enabled": "Restored {client_id}",
     "client.revoke.done": "Revoked credential {id}",
     "succeed.help": "A merger. **Identifiers are not broken** — the namespace moves with them.",
     "succeed.predecessor": "id of the organisation being succeeded",
