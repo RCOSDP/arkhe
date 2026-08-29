@@ -28,12 +28,22 @@ breaking in a system whose identifiers cannot be reissued.
 - `set_quota`, so a minting limit can be changed after onboarding rather than only at
   it. An institution cannot change its own: a limit the receiving side can lift is not
   a limit.
+- `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
+  Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
+  to be the URL the browser actually types, so they are parameterised by
+  `ARKHE_DEMO_HOST` and the redirect is registered at startup rather than baked into
+  the realm JSON. The default binding stays on `127.0.0.1` — this stack carries its
+  secrets in the clear.
 - A guide for setting up from scratch, covering the steps that happen **outside**
   arkhe as well — requesting a NAAN, and registering your resolver's URL in the NAAN
   registry. Miss the latter and `n2t.net/ark:/99999/…` never reaches you.
 
 ### Fixed
 
+- The NAAN settings page could be opened by an institution's administrator, who was
+  then refused on save. A form that looks editable but is not is the same defect as a
+  hidden button whose URL still works; the condition to open it now matches the
+  condition to save it.
 - The NAA policy could be rewritten by an institution's administrator. It is the
   declaration of the side handing namespaces out and covers **every institution under
   the NAAN**, so one of them must not be able to restate it for the others. It now

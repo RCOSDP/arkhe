@@ -247,7 +247,10 @@ def naan_create(
 @router.get("/naan/{naan}", response_class=HTMLResponse)
 def naan_edit(request: Request, principal: AdminPrincipal, session: Db, naan: str):
     obj = session.get(Naan, naan)
-    if obj is None or not principal.reaches_naan(naan):
+    # **開ける条件と保存できる条件を揃える。** `reaches_naan` だけだと機関管理者にも
+    # 開けてしまい、編集できるように見えるフォームが保存で 403 になる。
+    # 出し分けと認可がずれているのと同じことなので、ここで揃える。
+    if obj is None or not principal.is_naan_wide or not principal.reaches_naan(naan):
         raise Forbidden(f"NAAN {naan} はこの主体の範囲外")
     return _page(request, principal, "naan_form.html", "overview", naan=obj)
 

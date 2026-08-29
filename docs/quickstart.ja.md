@@ -59,6 +59,30 @@ docker compose start keycloak
 認証の設定を一切持たない。既に配った識別子が、別のものの障害で解決できなくなる
 という事態を構造で避けている。
 
+## LAN の別の端末から見る
+
+```bash
+ARKHE_DEMO_HOST=192.168.1.20 docker compose -f docker-compose.yml -f lan.yml up -d
+```
+
+**公開先を `0.0.0.0` にするだけでは足りない。** issuer と redirect_uri は
+**ブラウザが実際に打つ URL** でなければならないので、具体的なアドレスが要る
+（`0.0.0.0` は「未指定のアドレス」で宛先には使えず、ブラウザはこれを localhost と
+解釈するため、別の端末から開くとその端末自身に接続しに行く）。
+
+| | |
+| --- | --- |
+| 待ち受け | `0.0.0.0` — どの NIC でも受ける |
+| issuer | `${ARKHE_DEMO_HOST}:8080` — ブラウザが打つ URL |
+| redirect_uri | `${ARKHE_DEMO_HOST}:8057` — Keycloak が照合する文字列 |
+
+redirect_uri は `lan-redirect` が起動時に足す。**realm JSON には焼き込まない**——
+公開されるファイルに特定の LAN アドレスを書くことになるため。
+
+既定（`lan.yml` なし）が `127.0.0.1` なのは、この一式が**デモ用の秘密値を平文で
+持ち、Keycloak が dev モード**で、利用者のパスワードを上に公開しているから。
+LAN に出すのは明示的な操作にしてある。
+
 !!! warning "この構成は見るためのもので、動かすためのものではない"
     秘密値が compose に平文で書いてあり、Keycloak は dev モードで、デモ用の
     パスワードは上に公開されている。[デプロイ](guides/deployment.md)を参照。

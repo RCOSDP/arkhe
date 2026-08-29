@@ -84,6 +84,16 @@ def test_NAANの登録はシステム管理者だけ(db, principal_of, as_princi
 # ------------------------------------------------------------ 画面が届く範囲
 
 
+def test_NAANの設定画面は機関管理者には開けない(world, principal_of, as_principal):
+    """**開ける条件と保存できる条件を揃える。**
+
+    開けてしまうと、編集できるように見えるフォームが保存で 403 になる。
+    出し分けと認可がずれているのと同じ。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    assert c.get("/admin/naan/99999").status_code == 403
+
+
 def test_他機関の設定画面は開けない(world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     assert c.get(f"/admin/manager/{world['b'].id}").status_code == 403

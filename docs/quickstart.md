@@ -61,6 +61,30 @@ docker compose start keycloak
 resolver holds no authentication configuration at all. Identifiers you have already
 handed out do not become unresolvable because something else broke.
 
+## Viewing it from another machine on the LAN
+
+```bash
+ARKHE_DEMO_HOST=192.168.1.20 docker compose -f docker-compose.yml -f lan.yml up -d
+```
+
+**Publishing on `0.0.0.0` is not enough on its own.** The issuer and the redirect_uri
+have to be **the URL the browser actually types**, so they need a concrete address
+(`0.0.0.0` is the unspecified address, unusable as a destination; browsers read it as
+localhost, so a remote browser would connect to itself).
+
+| | |
+| --- | --- |
+| Listening on | `0.0.0.0` — accept on any interface |
+| issuer | `${ARKHE_DEMO_HOST}:8080` — the URL the browser types |
+| redirect_uri | `${ARKHE_DEMO_HOST}:8057` — the string Keycloak matches against |
+
+The redirect_uri is added at startup by `lan-redirect`. **It is not baked into the
+realm JSON** — that would put one particular LAN address into a published file.
+
+The default (without `lan.yml`) is `127.0.0.1` because this stack **carries its
+secrets in the clear and runs Keycloak in dev mode**, with the users' passwords
+published above. Putting it on a network is a deliberate act.
+
 !!! warning "This stack is for looking at, not for running"
     The secrets are in the compose file in the clear, Keycloak runs in dev mode, and
     the demo passwords are published above. See [Deployment](guides/deployment.md).

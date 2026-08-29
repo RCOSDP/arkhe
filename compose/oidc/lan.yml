@@ -1,0 +1,55 @@
+# LAN の別の端末から見るための上書き。
+#
+#   ARKHE_DEMO_HOST=192.168.1.20 docker compose -f docker-compose.yml -f lan.yml up -d
+#
+# ## 待ち受けアドレスと issuer は別物
+#
+# 公開先を `0.0.0.0` にするだけでは足りない。**issuer と redirect_uri は
+# ブラウザが実際に打つ URL** でなければならないので、具体的なアドレスが要る。
+# `0.0.0.0` は「未指定のアドレス」で宛先には使えず、ブラウザはこれを localhost と
+# 解釈するため、別の端末から開くとその端末自身に接続しに行く。
+#
+#   待ち受け        0.0.0.0                    どの NIC でも受ける
+#   issuer          ${ARKHE_DEMO_HOST}:8080    ブラウザが打つ URL
+#   redirect_uri    ${ARKHE_DEMO_HOST}:8057    Keycloak が照合する文字列
+#
+# ## 既定を 127.0.0.1 のままにしてある理由
+#
+# この一式は**デモ用の秘密値が平文**で、Keycloak は dev モード、利用者の
+# パスワードは README に公開してある。既定で LAN に出るべきものではないので、
+# 出すのは明示的な操作にしてある。
+#
+# arkhe から Keycloak へも同じアドレスで出る（ホストの公開ポートを経由して
+# 戻ってくる）。issuer の文字列を 1 つに揃えるためで、遠回りだが確実。
+
+services:
+  keycloak:
+    environment:
+      # `KC_HOSTNAME` を変えないと、issuer は要求の Host から組み立てられ、
+      # 経路によって食い違う。
+      KC_HOSTNAME: http://${ARKHE_DEMO_HOST:?ARKHE_DEMO_HOST に LAN のアドレスを入れてください（例 192.168.1.20）}:8080
+    ports: !override
+      - "0.0.0.0:8080:8080"
+
+  arkhe:
+    environment:
+      ARKHE_OIDC_ISSUER: http://${ARKHE_DEMO_HOST}:8080/realms/arkhe
+    ports: !override
+      - "0.0.0.0:8057:8000"
+
+  resolver:
+    # 解決に認証は要らないので、ここは公開先を変えるだけ。
+    ports: !override
+      - "0.0.0.0:8058:8000"
+
+  # **realm JSON に特定のアドレスは焼き込まない。** 起動のたびにここで足す。
+  lan-redirect:
+    image: arkhe:local
+    depends_on:
+      keycloak: {condition: service_healthy}
+    environment:
+      ARKHE_DEMO_HOST: ${ARKHE_DEMO_HOST}
+    volumes:
+      - ./lan-redirect.py:/lan-redirect.py:ro
+    command: ["python", "/lan-redirect.py"]
+    restart: "no"
