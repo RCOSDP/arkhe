@@ -210,3 +210,23 @@ def test_同じラベルは有効なうちは一つだけ(db, world, root):
             db, root, client_id="l2", naan=sh.naan, shoulder_id=sh.id, label="bot"
         )
     db.rollback()
+
+
+def test_lockが宣言とずれていない():
+    """**ずれたまま緑になるほうが困る。**
+
+    `pyproject.toml` に依存を足して `uv lock` を忘れると、CI と本番で
+    別のものが入る。`uv sync --frozen` が落とすのと同じことを、ここでも見る。
+    """
+    import pathlib
+    import re
+    import tomllib
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    lock = (root / "uv.lock").read_text()
+    declared = tomllib.loads((root / "pyproject.toml").read_text())["project"]
+    names = []
+    for group in declared.get("optional-dependencies", {}).values():
+        names += [re.split(r"[<>=\[]", x)[0].strip() for x in group]
+    missing = [n for n in set(names) if f'name = "{n.lower()}"' not in lock.lower()]
+    assert not missing, f"uv.lock に無い: {missing}（`uv lock` を実行すること）"

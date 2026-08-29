@@ -21,14 +21,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - run: pip install -e '.[app,dev]'
-      - run: ruff check src tests
-      - run: pytest -q
+      - uses: astral-sh/setup-uv@v5
+        with: {enable-cache: true}
+      # **lock どおりに入れる**（`--frozen`）。lock と pyproject がずれていたら
+      # ここで落ちる——ずれたまま緑になるほうが困る。
+      - run: uv sync --frozen --extra app --extra dev
+      - run: uv run ruff check src tests
+      - run: uv run pytest -q
       - name: migrations on postgresql
         env:
           ARKHE_DATABASE_URL: postgresql+psycopg://arkhe:arkhe@localhost/arkhe
           ARKHE_AUTH: apikey
         run: |
-          alembic upgrade head
-          alembic downgrade base
-          alembic upgrade head
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+          uv run alembic check

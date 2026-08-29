@@ -1,0 +1,26 @@
+# 依存の更新を受け取る。**lock があるだけでは古びていくのを止められない。**
+#
+# 固定は「今日と同じものが明日も入る」ための仕組みであって、「新しいものを
+# 見なくてよい」という意味ではない。放っておくと、直っている脆弱性を抱えたまま
+# 動き続けることになる——**まとめて上げるほうが、1 つずつより難しい。**
+#
+# 毎週。1 つずつ PR が来ると読む気が失せるので、まとめて 1 本にする。
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule: {interval: weekly, day: monday}
+    open-pull-requests-limit: 3
+    groups:
+      python:
+        patterns: ["*"]
+    commit-message: {prefix: "chore(deps)"}
+
+  # ワークフローの action も同じ理由で古びる。
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: monthly}
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message: {prefix: "chore(ci)"}

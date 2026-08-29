@@ -9,6 +9,16 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Changed
+
+- **Dependencies are pinned in `uv.lock`.** The declarations carry only lower bounds,
+  so without it **the same commit builds into something different** each time — the
+  image changes under a rebuild and "when did this break" becomes unanswerable. CI and
+  the image build use `uv sync --frozen`, which fails if the lock and `pyproject.toml`
+  disagree. **No upper bounds**: with a lock they are unnecessary, and they make the
+  package harder to live with as a dependency. Dependabot proposes grouped updates
+  weekly — **pinning is not permission to stop looking**.
+
 ## [0.0.5] — 2026-08-29
 
 **One vulnerability on the public surface closed, and the `NR` claim made checkable.**

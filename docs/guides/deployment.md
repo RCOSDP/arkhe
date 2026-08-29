@@ -52,3 +52,27 @@ that a heavy read load never threatens the primary.
 Set `ARKHE_RAW_URI_HEADER` if the front end can pass the raw request URI. Without it a
 bare `?` — the brief-metadata inflection — cannot be distinguished from no query
 string at all. That is a protocol-level limitation, not an implementation one.
+
+## Pinned dependencies
+
+`uv.lock` records **the versions actually installed**. The declarations in
+`pyproject.toml` carry only lower bounds, so without the lock **the same commit builds
+into something different** each time — the image changes under a rebuild, and "when did
+this break" becomes unanswerable.
+
+```bash
+uv sync --frozen --extra app --extra dev   # install exactly what the lock says
+uv lock                                    # update it, deliberately
+```
+
+`--frozen` **fails if the lock and `pyproject.toml` disagree**, which is what you want:
+passing while they disagree is worse. CI and the image build both use it.
+
+**No upper bounds.** With a lock they are unnecessary, and they make the package harder
+to live with as a dependency. The declaration answers "what range does this work
+with"; the lock answers "what is it running on now" — different questions, so both are
+kept.
+
+Dependabot proposes updates weekly, grouped. **Pinning is not permission to stop
+looking**: left alone, a pinned tree keeps running with vulnerabilities that have
+already been fixed elsewhere.
