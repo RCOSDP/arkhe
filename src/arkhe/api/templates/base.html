@@ -136,10 +136,9 @@ aside a.nav svg { width: 16px; height: 16px; flex: none; stroke-width: 1.8; }
 .chip .id b { display: block; font-size: 13px; font-weight: 600;
               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip .id span { font-size: 11.5px; color: var(--ink-3); }
-.chip .out { margin-left: auto; flex: none; color: var(--ink-3); padding: 4px;
-             border-radius: 5px; transition: all .12s ease; }
-.chip .out:hover { color: var(--ink); background: var(--line-2); }
-.chip .out svg { width: 15px; height: 15px; stroke-width: 1.7; display: block; }
+.icon-btn.out { text-decoration: none; }
+.icon-btn.out svg { width: 15px; height: 15px; stroke-width: 1.7; }
+.icon-btn.out .lbl { font-size: 12px; }
 
 /* ── 本体 ─────────────────────────────────────────────── */
 .body { min-width: 0; display: flex; flex-direction: column; }
@@ -198,6 +197,9 @@ h2 { font-size: 13px; font-weight: 650; letter-spacing: .06em; text-transform: u
 .pill.manager   { color: var(--ink-2);background: var(--line-2); }
 
 /* ── 表 ───────────────────────────────────────────────── */
+/* **はみ出しはカードの中で受け止める。** ページ全体が横に伸びると、
+ * 本文まで一緒にずれて読めなくなる。 */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; }
 thead th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
            color: var(--ink-3); font-weight: 650; padding: 12px 18px;
@@ -259,6 +261,40 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   main, header.bar { padding-left: 18px; padding-right: 18px; }
   .menu { right: 18px; }
   .grid2 { grid-template-columns: 1fr; }
+  /* ツリーの meta（件数・状態・操作）は行の右端に寄せてあるが、狭いと
+   * 押し出されてはみ出す。折り返して次の行に置く。 */
+  .node { flex-wrap: wrap; row-gap: 6px; }
+  .node .meta { margin-left: 0; flex-wrap: wrap; width: 100%; padding-left: 30px; }
+  .node.d1 { padding-left: 24px; }
+  .node.d2 { padding-left: 38px; }
+  .card > .card-h { flex-wrap: wrap; row-gap: 8px; }
+  .card-h .right { margin-left: auto; }
+}
+
+/* ── 手のひらの幅 ─────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* **5 列の表は横スクロールでも読めない。1 行を 1 枚に畳む。**
+   * 見出しは各セルの前に `data-label` として出す——どの値が何なのかが
+   * 分からなくなるのが、畳んだ表のいちばんの失敗。 */
+  .table-wrap { overflow-x: visible; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  thead { display: none; }
+  tbody tr { padding: 12px 18px; border-top: 1px solid var(--line-2); }
+  tbody tr:first-child { border-top: 0; }
+  tbody tr:hover { background: transparent; }
+  tbody td { border-top: 0; padding: 3px 0; display: flex; gap: 10px;
+             align-items: baseline; overflow-wrap: anywhere; text-align: left; }
+  tbody td::before { content: attr(data-label); flex: none; min-width: 7.5em;
+                     font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+                     color: var(--ink-3); font-weight: 650; }
+  tbody td[data-label=""]::before, tbody td:not([data-label])::before { display: none; }
+  tbody td:empty { display: none; }
+  td.empty { display: block; padding: 32px 0; }
+  /* ヘッダーは名前を落としてアイコンだけにする（幅を食うため） */
+  header.bar .crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis;
+                      white-space: nowrap; }
+  .icon-btn.out .lbl { position: absolute; width: 1px; height: 1px;
+                       overflow: hidden; clip-path: inset(50%); }
 }
 </style>
 </head>
@@ -293,12 +329,6 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
         <b>{{ principal.client_id }}</b>
         <span>{{ t("au." ~ principal.authority) }}{% if not principal.is_system %} · {{ principal.naan }}{% endif %}</span>
       </span>
-      {% if principal.mechanism in ("password", "oidc-login", "proxy") %}
-      <a class="out" href="/admin/logout" title="{{ t('login.logout') }}"
-         aria-label="{{ t('login.logout') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 17l5-5-5-5M20 12H9M12 3H5v18h7"/></svg>
-      </a>
-      {% endif %}
     </div>
   </div>
 </aside>
@@ -326,6 +356,17 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
         {% endfor %}
       </div>
       <span class="pill {{ principal.authority }}">{{ t("au." ~ principal.authority) }}</span>
+      {# **ログアウトはヘッダーに置く。** サイドバーの底に置くと (1) 名前の無い
+         アイコンなので気づかれず (2) 幅の狭い画面ではサイドバーごと畳まれて
+         押す手段が無くなる。ここなら幅によらず同じ場所にある。 #}
+      {% if principal.mechanism in ("password", "oidc-login", "proxy") %}
+      <a class="icon-btn out" href="/admin/logout" title="{{ t('login.logout') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M15 17l5-5-5-5M20 12H9M12 3H5v18h7"/>
+        </svg>
+        <span class="lbl">{{ t('login.logout') }}</span>
+      </a>
+      {% endif %}
     </div>
   </header>
   <main>

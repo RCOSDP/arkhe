@@ -9,6 +9,7 @@
 
 <div class="card">
   <div class="card-h"><span class="t">{{ t('au.recent') }}</span><span class="sub">{{ events|length }} {{ t('au.count') }}</span></div>
+  <div class="table-wrap">
   <table>
     <thead><tr>
       <th>{{ t('au.at') }}</th><th>{{ t('au.who') }}</th><th>{{ t('au.action') }}</th>
@@ -17,16 +18,17 @@
     <tbody>
     {% for e in events %}
       <tr>
-        <td class="mono dim">{{ e.at.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td class="mono">{{ e.client_id }} <span class="pill {{ e.authority }}">{{ t('au.' ~ e.authority) }}</span></td>
-        <td>{{ e.action }}</td>
-        <td class="mono dim">{{ e.target }}</td>
-        <td class="dim mono">{{ e.detail_text }}</td>
+        <td class="mono dim" data-label="{{ t('au.at') }}">{{ e.at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td class="mono" data-label="{{ t('au.who') }}">{{ e.client_id }} <span class="pill {{ e.authority }}">{{ t('au.' ~ e.authority) }}</span></td>
+        <td data-label="{{ t('au.action') }}">{{ e.action }}</td>
+        <td class="mono dim" data-label="{{ t('au.target') }}">{{ e.target }}</td>
+        <td class="dim mono" data-label="{{ t('au.detail') }}">{{ e.detail_text }}</td>
       </tr>
     {% else %}
       <tr><td colspan="5" class="empty">{{ t('au.empty') }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endblock %}

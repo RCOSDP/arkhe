@@ -11,6 +11,16 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- On a phone the **tables overflowed and the right-hand columns could not be read**.
+  The card's `overflow: hidden` meant the page did not widen; the content was simply
+  **cut off** — the credentials and actions columns, and the audit log's target and
+  detail. Below 640px each row is now folded into a card with a label before every
+  value. The organisation list wrapped for the same reason: its right-aligned status
+  and actions were being pushed out of view.
+- **Logging out was impossible on a narrow screen.** The control was an unlabelled
+  icon at the foot of the sidebar, and the sidebar itself is folded away below 860px.
+  It has moved into the header and been given a label, so it sits in the same place at
+  every width.
 - Anchors for Japanese headings were `_1`, `_2`, … The default slugify drops
   non-ASCII, so **deep links into Japanese pages did not work**, and adding one
   heading shifted the numbers so existing links silently pointed elsewhere. The
