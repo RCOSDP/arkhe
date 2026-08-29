@@ -20,9 +20,9 @@ docker compose up -d --build
 | --- | --- | --- |
 | `ops` | `arkhe-demo-2026` | システム管理者（全 NAAN） |
 | `naan-admin` | `arkhe-demo-2026` | NAAN 管理者（99999 配下） |
-| `nibb` | `arkhe-demo-2026` | 組織管理者（基礎生物学研究所のみ） |
+| `org-admin` | `arkhe-demo-2026` | 組織管理者（例示大学のみ） |
 
-同じ台帳を 3 つの立場で見比べられる。`nibb` では他組織が見えず、監査ログは 403 になる。
+同じ台帳を 3 つの立場で見比べられる。`org-admin` では他組織が見えず、監査ログは 403 になる。
 
 ## 採番して、解決する
 
@@ -31,13 +31,13 @@ docker compose up -d --build
 TOKEN=$(curl -s -X POST \
   http://keycloak.localhost:8080/realms/arkhe/protocol/openid-connect/token \
   -d grant_type=client_credentials \
-  -d client_id=nibb-invenio \
-  -d client_secret=nibb-invenio-secret-for-demo-only | jq -r .access_token)
+  -d client_id=example-invenio \
+  -d client_secret=example-invenio-secret-for-demo-only | jq -r .access_token)
 
 # 2. 採番する（8057 = minter）
 ARK=$(curl -s -X POST http://localhost:8057/api/mint \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"url":"https://repo.nibb.ac.jp/records/999","title":"最初の一件"}' | jq -r .ark)
+  -d '{"url":"https://repo.example.ac.jp/records/999","title":"最初の一件"}' | jq -r .ark)
 
 # 3. 解決する（8058 = resolver。**Authorization ヘッダを付けない**）
 curl -i "http://localhost:8058/$ARK"        # 302 → 元の URL
@@ -102,7 +102,7 @@ docker compose start keycloak
 **その構成で通らない種別は出さない**ので、`ARKHE_AUTH` から機構を外すと
 選択肢からも消える。
 
-到達範囲は**トークンではなく arkhe の台帳が決める**。`nibb-invenio` は基礎生物学
+到達範囲は**トークンではなく arkhe の台帳が決める**。`example-invenio` は例示
 研究所の主体として登録してあるので、こうなる:
 
 ```

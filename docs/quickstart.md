@@ -27,10 +27,10 @@ Open **<http://localhost:8057/admin/>** and sign in as one of:
 | --- | --- | --- |
 | `ops` | `arkhe-demo-2026` | system administrator, every NAAN |
 | `naan-admin` | `arkhe-demo-2026` | NAAN administrator, everything under 99999 |
-| `nibb` | `arkhe-demo-2026` | organisation administrator, one organisation |
+| `org-admin` | `arkhe-demo-2026` | organisation administrator, one organisation |
 
 Signing in as each in turn is the quickest way to understand what
-[reach](concepts/delegation.md) means: `nibb` cannot see the other organisations, and
+[reach](concepts/delegation.md) means: `org-admin` cannot see the other organisations, and
 the audit log answers 403.
 
 Then mint one and resolve it:
@@ -38,8 +38,8 @@ Then mint one and resolve it:
 ```bash
 TOKEN=$(curl -s -X POST \
   http://keycloak.localhost:8080/realms/arkhe/protocol/openid-connect/token \
-  -d grant_type=client_credentials -d client_id=nibb-invenio \
-  -d client_secret=nibb-invenio-secret-for-demo-only | jq -r .access_token)
+  -d grant_type=client_credentials -d client_id=example-invenio \
+  -d client_secret=example-invenio-secret-for-demo-only | jq -r .access_token)
 
 ARK=$(curl -s -X POST http://localhost:8057/api/mint \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \

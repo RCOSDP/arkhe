@@ -9,7 +9,23 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **Subjects that arrived from the authorization server with no registration are now
+  shown.** One wrong character in a `client_id` produces a 401, silently — the most
+  common way to get stuck in this configuration. **At the moment of rejection arkhe
+  already holds the right string** (`azp` has passed signature verification), so it is
+  kept, listed, and can be registered from there without retyping. No credentials for
+  the authorization server are involved. **Disabled subjects are not mixed in**: listing
+  a deliberately stopped principal as "not registered" would mean registering it again
+  to clear the list.
+
 ### Changed
+
+- **Real institution names and NAANs are out of the demo ledger** (`seed_demo.py`,
+  `realm-arkhe.json`). Real names read as if those institutions were users. The sign-ins
+  are `ops` / `naan-admin` / `org-admin`, the organisations are illustrative, and the
+  NAANs are `99999` (reserved for testing by the specification) plus `12345` / `54321`.
 
 - **The admin interface's strings are split by screen** (`api/i18n/`). 288 entries in
   one file meant reading the whole file to find one word. **Split by screen, not by

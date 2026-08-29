@@ -22,7 +22,7 @@
 #   → http://localhost:8057/admin/   管理画面と採番 API
 #   → http://localhost:8058/ark:/…   解決（認証不要）
 #
-# 利用者は ops / naan-admin / nibb、いずれもパスワードは arkhe-demo-2026。
+# 利用者は ops / naan-admin / org-admin、いずれもパスワードは arkhe-demo-2026。
 name: arkhe-oidc
 
 services:

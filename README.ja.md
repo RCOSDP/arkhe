@@ -35,7 +35,7 @@ cd compose/oidc && docker compose up -d --build
 | 解決（**認証不要**） | <http://localhost:8058/ark:/…> |
 | API ドキュメント | <http://localhost:8057/api/docs> |
 
-`ops` / `naan-admin` / `nibb`（いずれもパスワードは `arkhe-demo-2026`）で入り比べると、
+`ops` / `naan-admin` / `org-admin`（いずれもパスワードは `arkhe-demo-2026`）で入り比べると、
 同じ台帳が到達範囲ごとにどう見えるかが分かる。Keycloak を止めると採番は 401 に
 なるが解決は答え続ける——[クイックスタート](https://rcosdp.github.io/arkhe/ja/quickstart/)。
 
@@ -186,9 +186,9 @@ python -m ruff check src tests
 
 # 台帳を組み立てる
 arkhe naan add 99999 "国立情報学研究所"
-arkhe onboard 99999 "基礎生物学研究所" --shoulder /x9
-arkhe client add nibb-web 99999 --manager 1
-arkhe client key nibb-web        # 平文はこの一度しか表示されない
+arkhe onboard 99999 "例示大学" --shoulder /x9
+arkhe client add example-web 99999 --manager 1
+arkhe client key example-web        # 平文はこの一度しか表示されない
 
 # 起動
 uvicorn arkhe.app:create_app --factory

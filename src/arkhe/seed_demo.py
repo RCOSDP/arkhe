@@ -2,6 +2,15 @@
 
 `compose/oidc` の起動時に一度だけ走る。実運用では使わない——本番の台帳は
 `arkhe naan add` / `arkhe onboard` / `arkhe client add` で組む。
+
+## 実在するものを置かない
+
+機関名も NAAN も**例示用のものだけ**にしてある。本物の名前をデモの台帳に
+置くと、その機関が arkhe を使っているように読める——画面をそのまま見せる
+資料や録画に載ったときに、こちらの意図と関係なく既成事実になる。
+
+NAAN も同じで、割り当て済みの番号は使わない。`99999` は仕様が試験用に
+予約している番号で、`12345` / `54321` は例示のための値である。
 """
 
 from __future__ import annotations
@@ -21,15 +30,15 @@ from arkhe.domain import minting
 PEOPLE = [
     ("ops", Authority.SYSTEM, None, "運用者（全 NAAN）"),
     ("naan-admin", Authority.NAAN, None, "NAAN 管理者（99999 配下）"),
-    ("nibb", Authority.MANAGER, "基礎生物学研究所", "組織管理者"),
+    ("org-admin", Authority.MANAGER, "例示大学", "組織管理者"),
 ]
 
 INSTITUTIONS = [
-    ("99999", "基礎生物学研究所", "/x9", 12),
-    ("99999", "分子科学研究所", "/y2", 7),
-    ("99999", "生理学研究所", "/w4", 3),
-    ("27932", "北海道大学", "/b7", 21),
-    ("27932", "九州大学", "/k5", 5),
+    ("99999", "例示大学", "/x9", 12),
+    ("99999", "例示研究所", "/y2", 7),
+    ("99999", "例示工科大学", "/w4", 3),
+    ("12345", "例示医科大学", "/b7", 21),
+    ("12345", "例示高等専門学校", "/k5", 5),
 ]
 
 
@@ -42,12 +51,12 @@ def main() -> None:
             return
 
         ops.create_naan(
-            s, root, naan="99999", name="国立情報学研究所（試験 NAAN）",
+            s, root, naan="99999", name="例示 RA（試験用の 99999）",
             na_policy="NP | NR, OP, CC | 2026 | https://arkhe.example.org/policy",
         )
-        ops.create_naan(s, root, naan="27932", name="JAIRO Cloud")
+        ops.create_naan(s, root, naan="12345", name="別の例示 RA")
         ops.create_naan(
-            s, root, naan="12345", name="旧システム（委譲）",
+            s, root, naan="54321", name="旧システム（委譲）",
             is_authoritative=False, redirect="https://legacy.example.org",
         )
         s.flush()
@@ -74,7 +83,7 @@ def main() -> None:
             s, root, shoulder_id=d.id, status="delegated",
             minter="https://mint.partner.example.org", note="外部 minter に委譲",
         )
-        r = ops.add_shoulder(s, root, naan="27932", shoulder="/r0")
+        r = ops.add_shoulder(s, root, naan="12345", shoulder="/r0")
         s.flush()
         ops.set_shoulder_status(s, root, shoulder_id=r.id, status="retired", note="移行完了")
         ops.add_shoulder(
@@ -83,8 +92,8 @@ def main() -> None:
 
         # 機械の主体（API から採番するもの）
         for cid, naan, inst, scopes, label in [
-            ("nibb-invenio", "99999", "基礎生物学研究所", "ark:mint ark:update", "InvenioRDM"),
-            ("hokudai-weko", "27932", "北海道大学", "ark:mint ark:update", "WEKO"),
+            ("example-invenio", "99999", "例示大学", "ark:mint ark:update", "InvenioRDM"),
+            ("example-weko", "12345", "例示医科大学", "ark:mint ark:update", "WEKO"),
         ]:
             c = ops.register_client(
                 s, root, client_id=cid, naan=naan, manager_id=managers[inst],

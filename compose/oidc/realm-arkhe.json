@@ -38,12 +38,12 @@
       "optionalClientScopes": []
     },
     {
-      "clientId": "nibb-invenio",
-      "name": "基礎生物学研究所の InvenioRDM",
+      "clientId": "example-invenio",
+      "name": "例示大学の InvenioRDM",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
-      "secret": "nibb-invenio-secret-for-demo-only",
+      "secret": "example-invenio-secret-for-demo-only",
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
@@ -89,12 +89,12 @@
       ]
     },
     {
-      "username": "nibb",
+      "username": "org-admin",
       "enabled": true,
       "emailVerified": true,
-      "email": "nibb@example.ac.jp",
-      "firstName": "基礎生物",
-      "lastName": "研究所",
+      "email": "org-admin@example.ac.jp",
+      "firstName": "組織",
+      "lastName": "管理者",
       "credentials": [
         {
           "type": "password",

@@ -41,7 +41,7 @@ cd compose/oidc && docker compose up -d --build
 | Resolution (**no authentication**) | <http://localhost:8058/ark:/…> |
 | API reference | <http://localhost:8057/api/docs> |
 
-Sign in as `ops`, `naan-admin` or `nibb` (all `arkhe-demo-2026`) to see the same
+Sign in as `ops`, `naan-admin` or `org-admin` (all `arkhe-demo-2026`) to see the same
 ledger from three different reaches. Stopping Keycloak makes minting return 401
 while resolution keeps answering — see [Quickstart](https://rcosdp.github.io/arkhe/quickstart/).
 
@@ -227,8 +227,8 @@ python -m ruff check src tests
 # Build up the ledger
 arkhe naan add 99999 "National Institute of Informatics"
 arkhe onboard 99999 "National Institute for Basic Biology" --shoulder /x9
-arkhe client add nibb-web 99999 --manager 1
-arkhe client key nibb-web        # the plaintext is shown this once and never again
+arkhe client add example-web 99999 --manager 1
+arkhe client key example-web        # the plaintext is shown this once and never again
 
 # Run it
 uvicorn arkhe.app:create_app --factory
