@@ -97,6 +97,56 @@ def _install_handlers(app: FastAPI) -> None:
             return JSONResponse(detail, status_code=_code)
 
 
+#: 画面に付ける保護。**CSP が本体**で、ほかは補助。
+#:
+#: 転送先のスキームは書き込み時にも読み取り時にも絞っているが、`?info` は
+#: 認証を要さない公開ページで、そこに載る文字列を決めるのは採番した側である。
+#: **一段目が破れても実行させない**ためにインラインスクリプトを禁じる。
+#:
+#: `style-src` に `unsafe-inline` が要るのは、この画面が CSS を HTML に
+#: 埋め込んでいるため（配信物を増やさないための選択）。**スクリプトは
+#: 一切埋め込んでいない**ので、`script-src 'none'` にできる。
+SECURITY_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'none'; "
+        "script-src 'none'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'none'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    # HTTPS で出すかは前段が決めるので、ここでは HSTS を付けない
+    # （http で配っている構成に付けると、そのホストが開けなくなる）。
+}
+
+
+#: API ドキュメントだけは別扱い。**Swagger UI は CDN から script を読む**ので、
+#: `script-src 'none'` を当てると真っ白になる。読み込み先を限る形に緩める。
+DOCS_CSP = (
+    "default-src 'none'; "
+    "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+    "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+    "img-src 'self' data: https://fastapi.tiangolo.com; "
+    "connect-src 'self'; "
+    "frame-ancestors 'none'; base-uri 'none'"
+)
+DOCS_PATHS = ("/api/docs", "/api/redoc")
+
+
+def _install_security_headers(app: FastAPI) -> None:
+    @app.middleware("http")
+    async def _headers(request: Request, call_next):
+        response = await call_next(request)
+        for k, v in SECURITY_HEADERS.items():
+            response.headers.setdefault(k, v)
+        if request.url.path in DOCS_PATHS:
+            response.headers["Content-Security-Policy"] = DOCS_CSP
+        return response
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     s = settings or get_settings()
     s.check()
@@ -113,6 +163,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/api/openapi.json",
     )
     _install_handlers(app)
+    _install_security_headers(app)
 
     # **どのモードでも生存確認の口は要る。** 以前は resolve ルータにしか無く、
     # minter と admin は probe に 404 を返し続けて kubelet に殺されていた。

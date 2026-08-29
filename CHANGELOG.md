@@ -34,6 +34,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **A stored XSS on the public resolver is closed.** Targets had no scheme
+  restriction, so `javascript:` could be minted — and `?info` is a page that needs no
+  authentication, so anyone holding `ark:mint` could get a script running in the
+  resolver's origin on someone else's browser. It is closed in three places: only
+  `http`/`https` are accepted on write, the scheme is checked again on read (for rows
+  already stored), and the pages now carry a CSP. **An existing dangerous row now
+  answers 502 instead of redirecting, and `?info` renders it as text, not a link.**
+  The API documentation gets a looser CSP — Swagger UI loads script from a CDN, so a
+  bare `script-src 'none'` renders it blank (verified against the running stack).
 - The entry route claimed "the authorization server" outright. **arkhe never queries
   it**, so it cannot know whether the subject exists there — the demo ledger had two
   subjects registered in arkhe with no Keycloak client, and they looked ready. It now

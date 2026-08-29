@@ -244,3 +244,32 @@ def test_base_name_stops_at_the_first_structural_character():
 # HTTP レベル
 # ==========================================================================
 
+
+
+# --------------------------------------------- 転送先として出してよいか
+
+
+@pytest.mark.parametrize(
+    "url,ok,why",
+    [
+        ("https://example.org/1", True, "https"),
+        ("http://example.org/1", True, "http"),
+        ("", True, "空は正当（対象がオンラインに無い ARK）"),
+        ("javascript:alert(1)", False, "公開ページに載るので実行できてはいけない"),
+        ("JaVaScRiPt:alert(1)", False, "大小混在も同じ"),
+        ("  javascript:alert(1)", False, "前置きの空白で逃さない"),
+        ("data:text/html,<b>x", False, "data も同じ"),
+        ("vbscript:msgbox", False, "白名簿なので、数え上げていない綴りも落ちる"),
+        ("/relative/path", False, "相対は別のページに見せかけられる"),
+        ("//example.org/x", False, "スキーム相対も同じ"),
+    ],
+)
+def test_転送先のスキームを絞る(url, ok, why):
+    """**`?info` は認証を要さない公開ページ。**
+
+    そこに載る文字列を決めるのは採番した側なので、`javascript:` を書けると
+    リゾルバのオリジンで動くスクリプトを他人に踏ませられる。
+    """
+    from arkhe.domain.resolution import is_safe_target
+
+    assert is_safe_target(url) is ok, why

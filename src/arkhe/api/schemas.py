@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from arkhe.domain.resolution import SAFE_SCHEMES, is_safe_target
 
 #: 呼び出し側が設定できる項目。**`shoulder` はここに無い**——主体から引く。
 WRITABLE = (
@@ -24,6 +26,21 @@ WRITABLE = (
 
 class ArkFields(BaseModel):
     """ERC / Dublin Core の受け皿。すべて任意。"""
+
+    @field_validator("url")
+    @classmethod
+    def _safe_url(cls, v: str) -> str:
+        """**転送先のスキームを絞る。**
+
+        `?info` は認証を要さない公開ページなので、そこに載る URL を採番した側が
+        自由に決められると、`javascript:` を他人に踏ませられる。空は正当
+        （対象がオンラインに無い ARK は中心的な用途）。
+        """
+        if not is_safe_target(v):
+            raise ValueError(
+                f"転送先に使えるのは {'/'.join(sorted(SAFE_SCHEMES))} だけです"
+            )
+        return v
 
     url: str = ""
     title: str = ""

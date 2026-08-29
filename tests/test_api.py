@@ -116,7 +116,12 @@ def test_ark表記のゆれを吸収する(world, principal_of, as_principal):
             "/api/update", json={"ark": form, "url": "https://x/2"}
         ).status_code == 200, form
     # NAAN にハイフンを入れたものは別の NAAN。**受け付けてはいけない。**
-    bad = c.put("/api/update", json={"ark": f"{naan[:4]}-{naan[4:]}/{name}", "url": "x"})
+    # url は正しい値にする——ここで見たいのは **NAAN の綴り**であって、
+    # 転送先の検証ではない。
+    bad = c.put(
+        "/api/update",
+        json={"ark": f"{naan[:4]}-{naan[4:]}/{name}", "url": "https://x/3"},
+    )
     assert bad.status_code in (400, 404)
 
 
@@ -146,3 +151,22 @@ def test_healthzはどのモードでも応える(factory, resolver):
         )
     )
     assert TestClient(app).get("/healthz").json() == {"ok": True}
+
+
+def test_公開ページに保護ヘッダが付く(world, principal_of, as_principal):
+    """**転送先の検証が破れても、スクリプトは実行させない。**
+
+    `?info` は認証を要さない公開ページで、載る文字列を決めるのは採番した側。
+    多層で守る。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    r = c.post("/api/mint", json={"url": "https://example.org/1", "title": "x"})
+    key = r.json()["ark"].removeprefix("ark:/")
+    h = c.get(f"/{key}?info").headers
+    assert "script-src 'none'" in h["content-security-policy"]
+    assert h["x-content-type-options"] == "nosniff"
+    # **API ドキュメントだけは緩める。** Swagger UI は CDN から script を読むので、
+    # 素の CSP を当てると真っ白になる（読み込み先は限る）。
+    docs = c.get("/api/docs").headers["content-security-policy"]
+    assert "script-src 'none'" not in docs
+    assert "cdn.jsdelivr.net" in docs

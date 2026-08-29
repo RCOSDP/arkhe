@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from urllib.parse import urlsplit
 
 from arkhe.arkspec.betanumeric import verify_ark_check_digit
 from arkhe.arkspec.naming import (
@@ -31,6 +32,33 @@ from arkhe.arkspec.naming import (
 from arkhe.arkspec.shoulder import split_shoulder
 
 #: D2: 未知 NAAN の取次先。設定可能にする。
+#: 転送してよいスキーム。**`javascript:` や `data:` を弾くための白名簿。**
+#:
+#: ARK も ERC も対象の在り処を URI としか言っておらず、スキームを縛らない。
+#: しかし `?info` は**認証を要さない公開ページ**で、そこに載る文字列を決めるのは
+#: 採番した側である。`javascript:` を書けるなら、リゾルバのオリジンで動く
+#: スクリプトを他人に踏ませられる——保存型 XSS になる。
+#:
+#: 黒名簿にしないのは、`vbscript:` や大小混在（`JaVaScRiPt:`）、制御文字を挟んだ
+#: 綴りまで数え上げるのが現実的でないため。**通してよいものだけを挙げる。**
+SAFE_SCHEMES = frozenset({"http", "https"})
+
+
+def is_safe_target(url: str) -> bool:
+    """転送先・リンク先として出してよい URL か。
+
+    空は正当（**対象がオンラインに無い ARK** は arkhe の中心的な用途）。
+    相対 URL も認めない——`?info` で他のページに見せかけられるため。
+    """
+    if not url:
+        return True
+    try:
+        scheme = urlsplit(url.strip()).scheme.lower()
+    except ValueError:
+        return False
+    return scheme in SAFE_SCHEMES
+
+
 DEFAULT_GLOBAL_RESOLVER = "https://n2t.net"
 
 

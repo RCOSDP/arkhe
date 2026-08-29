@@ -17,7 +17,7 @@ from arkhe.arkspec.naming import ArkParseError, parse_ark
 from arkhe.auth.deps import Config, Db
 from arkhe.db.models import Manager, Naan, Shoulder
 from arkhe.db.repository import SqlArkRepository
-from arkhe.domain.resolution import Inflection, Outcome, resolve
+from arkhe.domain.resolution import Inflection, Outcome, is_safe_target, resolve
 
 router = APIRouter(tags=["resolve"])
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
@@ -108,6 +108,9 @@ def _erc(session, res) -> dict:
         "what": ark.title,
         "when": ark.when,
         "where": ark.url + res.suffix if ark.url else "",
+        # **リンクにしてよいかは、値と一緒に運ぶ。** テンプレートで判定させると、
+        # 別の画面を足したときに付け忘れる。
+        "where_safe": is_safe_target(ark.url),
         **{f: getattr(ark, f) for f in DC_FIELDS},
         "commitment_level": manager.commitment_level if manager else "",
         # `permanent-dynamic` だけ見せられても意味が伝わらないので、人間向けの
@@ -185,6 +188,13 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
     )
 
     if res.outcome in (Outcome.REDIRECT, Outcome.FORWARD):
+        # **読む側でも確かめる。** 書き込み時に弾いているが、それ以前に入った行や
+        # 直接 DB を触られた場合が残る。多層で守る。
+        if not is_safe_target(res.location):
+            return PlainTextResponse(
+                f"ark:/{res.requested} — 転送先のスキームが許されていません",
+                status_code=502,
+            )
         # C2: **`??` を転送先 URL に付けて渡さない。** 転送はあくまで対象への
         # 誘導で、inflection はこのリゾルバへの問い合わせだから。
         return RedirectResponse(res.location, status_code=res.status)

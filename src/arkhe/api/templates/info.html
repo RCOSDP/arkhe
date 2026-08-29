@@ -16,7 +16,11 @@
     {% if erc.what %}<dt>what</dt><dd>{{ erc.what }}</dd>{% endif %}
     {% if erc.when %}<dt>when</dt><dd>{{ erc.when }}</dd>{% endif %}
     <dt>where</dt>
-    <dd>{% if erc.where %}<a href="{{ erc.where }}">{{ erc.where }}</a>
+    {# **安全なスキームのときだけリンクにする。** そうでなければ文字として出す
+       ——踏めなければ実行されない。 #}
+    <dd>{% if erc.where and erc.where_safe %}<a href="{{ erc.where }}">{{ erc.where }}</a>
+      {% elif erc.where %}<span class="mono">{{ erc.where }}</span>
+      <span class="dim">（このスキームは開けません）</span>
         {% else %}<span class="dim">この ARK に転送先はありません（記述のみ）</span>{% endif %}</dd>
     {% for f in ('type','identifier','format','relation','source') %}
       {% if erc[f] %}<dt>{{ f }}</dt><dd>{{ erc[f] }}</dd>{% endif %}
