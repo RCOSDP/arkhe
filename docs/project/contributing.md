@@ -1,11 +1,16 @@
 # Contributing
 
+!!! tip "Changing the code?"
+    [`AGENTS.md`](https://github.com/RCOSDP/arkhe/blob/main/AGENTS.md) in the repository
+    root carries the working procedure and **the traps actually hit during development**
+    — the same document is handed to people and to coding agents.
+
 ## Getting set up
 
 ```bash
-uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q
-python -m ruff check src tests
+uv sync --frozen --all-extras   # install exactly what the lock says
+uv run pytest -q
+uv run ruff check src tests
 ```
 
 ## What the review will ask
@@ -57,8 +62,10 @@ python scripts/export_openapi.py     # regenerate the API spec from the code
 mkdocs serve
 ```
 
-The configuration and CLI pages are generated from the implementation. If you add a
-setting or a command, they follow automatically — do not transcribe them by hand.
+Only the API spec is generated. **The configuration and CLI pages are written by
+hand** — add a setting or a command and you must add its row, in both languages.
+`tests/test_docs.py` fails if you don't; this page used to claim they were generated,
+and two settings and one command went undocumented because of it.
 
 ## Commits
 

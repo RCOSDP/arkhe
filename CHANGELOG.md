@@ -11,6 +11,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **`AGENTS.md`.** The working procedure and **the traps actually hit during
+  development**. People and coding agents get the same document — a rule written for
+  only one of them is broken by the other.
+- **A check that the reference pages have not fallen behind the code**
+  (`tests/test_docs.py`). Contributing claimed the configuration and CLI pages were
+  generated; they are not, and **two settings and one command had gone undocumented**
+  because of it (`ARKHE_TRUSTED_PROXIES`, `ARKHE_LOG_LEVEL`, `arkhe manager policy`).
+  The claim is corrected, the gaps are filled, and the gap cannot reopen silently.
+
 - **`arkhe ark list`.** The admin screen listed minted ARKs; the CLI could not. Both
   now go through the same query (`domain/queries.py`) — **write reach in two places and
   the two drift**. It stops at 50 by default and says so on stderr, with the `--offset`

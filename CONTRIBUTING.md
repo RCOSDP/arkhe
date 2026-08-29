@@ -4,10 +4,14 @@ Full guide: **<https://rcosdp.github.io/arkhe/project/contributing/>**
 （日本語: <https://rcosdp.github.io/arkhe/ja/project/contributing/>）
 
 ```bash
-uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q
-python -m ruff check src tests
+uv sync --frozen --all-extras   # install exactly what the lock says
+uv run pytest -q
+uv run ruff check src tests
 ```
+
+Changing the code? [`AGENTS.md`](AGENTS.md) carries the working procedure and the traps
+actually hit during development — the same document is handed to people and to coding
+agents.
 
 Three things a review will ask:
 

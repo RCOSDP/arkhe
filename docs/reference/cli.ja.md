@@ -13,6 +13,7 @@
 | `arkhe naan list` |  |
 | `arkhe manager list` | 組織を並べる。**id は他のコマンドの入力になる。** |
 | `arkhe manager commitment` | 組織の約束の水準を言い直す。**`??` でそのまま公開される。** |
+| `arkhe manager policy` | 組織にできることを狭める（入り方・自己登録・scope の上限）。**NAAN の決まりから狭めることしかできない**——広げられない。 |
 | `arkhe shoulder add` | 名前空間を切り出す。`--reserve` で将来用に確保できる。 |
 | `arkhe shoulder status` | 状態を変える。**retired からは戻せない**（引退した名前空間の再開は NR 違反の芽）。 |
 | `arkhe shoulder list` |  |

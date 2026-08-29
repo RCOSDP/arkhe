@@ -1,11 +1,16 @@
 # 参加する
 
+!!! tip "コードを触るなら"
+    リポジトリ直下の [`AGENTS.md`](https://github.com/RCOSDP/arkhe/blob/main/AGENTS.md)
+    に手順と、**実際に踏んだ罠**がまとめてある。人にもコーディングエージェントにも
+    同じものを渡している。
+
 ## 準備
 
 ```bash
-uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q
-python -m ruff check src tests
+uv sync --frozen --all-extras   # lock どおりに入れる
+uv run pytest -q
+uv run ruff check src tests
 ```
 
 ## レビューで見ること
@@ -54,8 +59,10 @@ python scripts/export_openapi.py     # API 仕様をコードから作り直す
 mkdocs serve
 ```
 
-設定とコマンドのページは実装から生成している。項目やコマンドを足せば自動で追随するので、
-**手で書き写さないこと。**
+生成しているのは API 仕様だけ。**設定とコマンドのページは手で書く**——項目や
+コマンドを足したら、2 言語ぶん行を足すこと。忘れると `tests/test_docs.py` が落ちる。
+このページには以前「生成している」と書いてあり、そのせいで設定 2 つとコマンド 1 つが
+未記載のまま残っていた。
 
 ## コミット
 

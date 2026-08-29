@@ -71,3 +71,10 @@ See [Authentication](../guides/authentication.md) for which mechanism suits what
 | | Default | |
 | --- | --- | --- |
 | `ARKHE_BULK_LIMIT` | `1000` | Rows per bulk request. Split larger loads and use `request_id` so a broken batch can simply be resent |
+
+## Behind a proxy
+
+| | Default | |
+| --- | --- | --- |
+| `ARKHE_TRUSTED_PROXIES` | `0` | How many proxies in front to believe. **`X-Forwarded-For` is a header anyone can set**, so by default it is ignored and the peer address is recorded — recording a forged value is worse than recording a coarse one, because an audit log full of attacker-written strings is the worst outcome. With `n` proxies in front, set `n`: the **n-th value from the right** is taken. Never the leftmost — that one the client wrote |
+| `ARKHE_LOG_LEVEL` | `INFO` | `DEBUG` / `INFO` / `WARNING`. Logs are JSON lines carrying the request id |

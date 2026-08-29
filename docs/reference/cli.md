@@ -14,6 +14,7 @@ audit log the same way.
 | `arkhe naan list` |  |
 | `arkhe manager list` | List organisations. **The ids are input to other commands.** |
 | `arkhe manager commitment` | Restate an organisation's commitment level. **Published verbatim by `??`.** |
+| `arkhe manager policy` | Narrow what an organisation may do — ways in, self-registration, scope ceiling. **It can only narrow what the NAAN allows**, never widen it. |
 | `arkhe shoulder add` | Carve out a namespace. `--reserve` holds one for later. |
 | `arkhe shoulder status` | Change the status. **There is no way back from retired.** |
 | `arkhe shoulder list` |  |
