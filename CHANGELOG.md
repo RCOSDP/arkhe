@@ -11,6 +11,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- The ARK list gained an **organisation filter** and an **open button**; the detail
+  page shows the whole description (ERC / Dublin Core) that `?` and `??` publish. The
+  filter cannot widen reach — only organisations within reach are offered, and the
+  reach filter is applied first regardless. An organisation's own administrator is not
+  offered the filter at all, since a one-option filter only adds a step.
+- **Signing in and out are recorded in the audit log**, without the reach filter that
+  applies to other actions: when someone got in matters as much as what they did, and
+  **a failed sign-in is the entry you want to see before the successful ones**. The
+  identifier that was typed is kept; the password is not.
 - **Prepared the lists for the scale that breaks them.** The organisations page
   aggregated the whole `ark` table on every load (a `Seq Scan`, 27.6ms at 300k rows);
   it now counts only the shoulders in view, so the index applies (300,000 rows read →

@@ -1039,3 +1039,49 @@ def test_一覧の集計は見えている範囲だけを数える(db, world, pr
     assert any("shoulder_id IN" in s or "shoulder_id in" in s for s in seen), (
         "範囲で絞られていない（全件集計している）"
     )
+
+
+def test_ark一覧を組織で絞れる(minted, world, principal_of, as_principal):
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    both = c.get("/admin/arks").text
+    assert minted["a"].ark in both and minted["b"].ark in both
+    only_a = c.get(f"/admin/arks?org={world['a'].id}").text
+    assert minted["a"].ark in only_a and minted["b"].ark not in only_a
+
+
+def test_絞り込みは到達範囲を広げない(minted, world, principal_of, as_principal):
+    """**届かない組織を指定しても、何も出ない。**"""
+    c = as_principal(principal_of(manager=world["a"]))
+    page = c.get(f"/admin/arks?org={world['b'].id}").text
+    assert minted["b"].ark not in page and minted["a"].ark not in page
+
+
+def test_組織単位の管理者に絞り込みは出さない(minted, world, principal_of, as_principal):
+    """自組織しか見えないので、選択肢 1 つの絞り込みは操作を増やすだけ。"""
+    page = as_principal(principal_of(manager=world["a"])).get("/admin/arks").text
+    assert 'name="org"' not in page
+
+
+def test_ark詳細に記述が出る(db, world, principal_of, as_principal):
+    """**`?` と `??` で公開されるのはこの内容。** 画面と公開面がずれていないか
+    を見られるようにする。"""
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={
+        "url": "https://x/1", "title": "題", "who": "山田", "when": "2026",
+        "type": "Dataset", "source": "どこか",
+    }).json()["ark"].removeprefix("ark:/")
+    page = c.get(f"/admin/arks/{key}").text
+    for v in ("題", "山田", "2026", "Dataset", "どこか"):
+        assert v in page, v
+
+
+def test_画面の文言にマークダウンを残さない():
+    """**翻訳は HTML として出す。** バッククォートやアスタリスクをそのまま
+    書くと、記号が画面に出てしまう（実際に何度か混入した）。
+    """
+    from arkhe.api import i18n
+
+    for lang, cat in i18n.CATALOGS.items():
+        for key, value in cat.items():
+            assert "`" not in value, f"{lang}/{key}: バッククォートは <code> にする"
+            assert "**" not in value, f"{lang}/{key}: 強調は <b> にする"

@@ -219,6 +219,39 @@ def assert_within_quota(session: Session, principal: Principal, count: int = 1) 
         )
 
 
+def record_sign_in(
+    session: Session,
+    *,
+    action: str,
+    client_id: str,
+    authority: str = "",
+    ip: str = "",
+    mechanism: str = "",
+    ok: bool = True,
+    **detail,
+) -> None:
+    """入退室を残す。**到達範囲で間引かない。**
+
+    `audit()` は NAAN 単位以上の操作だけを残すが、**入退室は誰のものでも残す**。
+    「誰がいつ入ったか」は、その人が何をしたかと同じくらい後から要る——
+    とくに**失敗したログイン**は、成功したものより先に見たい記録である。
+
+    主体が特定できない失敗（無い ID、間違ったパスワード）も残す。ただし
+    **打ち込まれた値をそのまま残さない**——ログが利用者名の一覧になるのは
+    避けたいので、あるのは「その ID で失敗した」という事実だけにする。
+    """
+    session.add(
+        AuditEvent(
+            client_id=client_id,
+            authority=authority,
+            action=action,
+            target="",
+            ip=ip,
+            detail={**detail, "mechanism": mechanism, "ok": ok},
+        )
+    )
+
+
 def record_change(
     session: Session, principal: Principal, ark: Ark, *, action: str, before_url: str
 ) -> None:

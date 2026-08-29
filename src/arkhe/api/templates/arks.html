@@ -11,14 +11,28 @@
   <div class="card-h">
     {# **探せることが先。** 件数は増える一方なので、並べるだけの画面は
        すぐ使えなくなる。 #}
-    {% with base='/admin/arks', placeholder=t('ak.search_ph'), label=t('ak.search') %}
-      {% include "partials/search.html" %}{% endwith %}
+    <form method="get" action="/admin/arks" class="search">
+      <input name="q" value="{{ q }}" placeholder="{{ t('ak.search_ph') }}"
+             aria-label="{{ t('ak.search') }}">
+      {# **絞り込みは到達範囲を広げない。** 届く組織しか選択肢に出ないし、
+         出ないものを指定しても `_visible_arks` が先に絞っている。 #}
+      {% if orgs %}
+      <select name="org" aria-label="{{ t('ak.org') }}">
+        <option value="">{{ t('ak.org_all') }}</option>
+        {% for m in orgs %}
+          <option value="{{ m.id }}" {% if org == m.id|string %}selected{% endif %}>
+            {{ m.naan }} · {{ m.name }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <button class="btn sm" type="submit">{{ t('ak.search') }}</button>
+    </form>
   </div>
   <div class="table-wrap">
   <table>
     <thead><tr>
       <th>{{ t('ak.ark') }}</th><th>{{ t('ak.target') }}</th><th>{{ t('ak.title_col') }}</th>
-      <th>{{ t('ak.when') }}</th><th>{{ t('ak.by') }}</th>
+      <th>{{ t('ak.when') }}</th><th>{{ t('ak.by') }}</th><th></th>
     </tr></thead>
     <tbody>
     {% for a in arks %}
@@ -31,13 +45,16 @@
         <td class="mono dim" data-label="{{ t('ak.when') }}">
           {{ a.created_at.strftime('%Y-%m-%d') }}</td>
         <td class="mono dim" data-label="{{ t('ak.by') }}">{{ a.created_by }}</td>
+        <td data-label="" style="text-align:right">
+          <a class="btn sm" href="/admin/arks/{{ a.ark }}">{{ t('cl.open') }}</a></td>
       </tr>
     {% else %}
-      <tr><td colspan="5" class="empty">{{ t('ak.empty') }}</td></tr>
+      <tr><td colspan="6" class="empty">{{ t('ak.empty') }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
-  {% with base='/admin/arks' %}{% include "partials/pager.html" %}{% endwith %}
+  {% with base='/admin/arks', extra='&org=' ~ org %}
+    {% include "partials/pager.html" %}{% endwith %}
 </div>
 {% endblock %}

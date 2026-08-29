@@ -22,6 +22,7 @@ from arkhe.auth.principal import Principal
 from arkhe.db.models import (
     Ark,
     ArkChange,
+    Manager,
     Shoulder,
 )
 
@@ -51,16 +52,39 @@ def _visible_arks(session: Session, p: Principal):
     return stmt
 
 
+def _selectable_orgs(session: Session, p: Principal) -> list[Manager]:
+    """絞り込みに出す組織。**届く範囲のものだけ。**
+
+    組織単位の管理者には出さない——自組織しか見えないので、選択肢が 1 つの
+    絞り込みは操作を増やすだけになる。
+    """
+    if not p.is_naan_wide:
+        return []
+    stmt = select(Manager).order_by(Manager.naan, Manager.name)
+    if not p.is_system:
+        stmt = stmt.where(Manager.naan == p.naan)
+    return list(session.scalars(stmt))
+
+
 @router.get("/arks", response_class=HTMLResponse)
 def arks(
     request: Request,
     principal: AdminPrincipal,
     session: Db,
     q: str = "",
+    org: str = "",
     page: int = 1,
 ):
     """発行した ARK の一覧。"""
     stmt = _visible_arks(session, principal)
+    # **組織で絞る。** 到達範囲を広げる手段ではない——`_visible_arks` で先に
+    # 絞ったうえに重ねるので、届かない組織を指定しても何も出ない。
+    if org.strip().isdigit():
+        stmt = stmt.where(
+            Ark.shoulder_id.in_(
+                select(Shoulder.id).where(Shoulder.manager_id == int(org))
+            )
+        )
     term = q.strip()
     if term:
         # **ARK そのものと、行き先と、題名で引く。** 運用で手元にあるのはどれか
@@ -79,6 +103,7 @@ def arks(
     return _page(
         request, principal, "arks.html", "arks",
         arks=rows[:PAGE], q=term, page_no=page, more=more,
+        org=org.strip(), orgs=_selectable_orgs(session, principal),
     )
 
 

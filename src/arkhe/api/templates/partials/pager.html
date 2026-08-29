@@ -3,11 +3,11 @@
 {% if page_no > 1 or more %}
 <div class="card-b pager">
   {% if page_no > 1 %}
-    <a class="btn sm" href="{{ base }}?q={{ q|urlencode }}&page={{ page_no - 1 }}">{{ t('ak.prev') }}</a>
+    <a class="btn sm" href="{{ base }}?q={{ q|urlencode }}{{ extra|default('') }}&page={{ page_no - 1 }}">{{ t('ak.prev') }}</a>
   {% endif %}
   <span class="dim">{{ t('ak.page').format(n=page_no) }}</span>
   {% if more %}
-    <a class="btn sm" href="{{ base }}?q={{ q|urlencode }}&page={{ page_no + 1 }}">{{ t('ak.next') }}</a>
+    <a class="btn sm" href="{{ base }}?q={{ q|urlencode }}{{ extra|default('') }}&page={{ page_no + 1 }}">{{ t('ak.next') }}</a>
   {% endif %}
 </div>
 {% endif %}

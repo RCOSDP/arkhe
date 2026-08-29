@@ -22,7 +22,12 @@
       <tr>
         <td class="mono dim" data-label="{{ t('au.at') }}">{{ e.at.strftime('%Y-%m-%d %H:%M') }}</td>
         <td class="mono" data-label="{{ t('au.who') }}">{{ e.client_id }} <span class="pill {{ e.authority }}">{{ t('au.' ~ e.authority) }}</span></td>
-        <td data-label="{{ t('au.action') }}">{{ e.action }}</td>
+        <td data-label="{{ t('au.action') }}">
+          {% if e.action in ('sign_in', 'sign_out') %}
+            {{ t('au.act.' ~ e.action) }}
+            {% if e.detail and e.detail.get('ok') is false %}
+              <span class="pill retired">{{ t('au.failed') }}</span>{% endif %}
+          {% else %}{{ e.action }}{% endif %}</td>
         <td class="mono dim" data-label="{{ t('au.target') }}">{{ e.target }}</td>
         <td class="mono dim" data-label="{{ t('au.ip') }}">{{ e.ip or '—' }}</td>
         <td class="dim mono" data-label="{{ t('au.detail') }}">{{ e.detail_text }}</td>

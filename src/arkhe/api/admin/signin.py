@@ -21,7 +21,9 @@ from arkhe.api.admin._common import (
 )
 from arkhe.auth import login as login_flow
 from arkhe.auth import session as sess
+from arkhe.auth.deps import client_ip
 from arkhe.auth.errors import AuthError
+from arkhe.domain import authz
 
 # ------------------------------------------------------------------ ログイン
 #
@@ -85,11 +87,22 @@ def login_submit(
         return _notice(request, cfg, "nologin", 404, retry="/admin/")
     from arkhe.auth import password as pw
 
+    ip = client_ip(request, cfg)
     try:
         principal = pw.authenticate(session, username, password)
     except AuthError as exc:
-        session.commit()  # 失敗回数と施錠を残す
+        # **失敗したログインこそ残す。** 打ち込まれた ID は残すが、パスワードは
+        # 当然残さない（`exc.detail` にも入らない）。
+        authz.record_sign_in(
+            session, action="sign_in", client_id=username[:255], ip=ip,
+            mechanism="password", ok=False, reason=str(exc.detail),
+        )
+        session.commit()  # 失敗回数と施錠、そして記録
         return _login_page(request, cfg, error=str(exc.detail), status=401)
+    authz.record_sign_in(
+        session, action="sign_in", client_id=principal.client_id,
+        authority=principal.authority, ip=ip, mechanism="password",
+    )
     session.commit()
 
     # **入れ先は自分のところに限る。** 外部 URL を next に入れられると、
@@ -137,6 +150,11 @@ def callback(request: Request, session: Db, cfg: Config):
     if request.query_params.get("state") != flow["state"]:
         return _notice(request, cfg, "state", 400)
     if err := request.query_params.get("error"):
+        authz.record_sign_in(
+            session, action="sign_in", client_id="", ip=client_ip(request, cfg),
+            mechanism="oidc-login", ok=False, reason=err[:200],
+        )
+        session.commit()
         return _notice(request, cfg, "denied", 403, err=err)
 
     principal = login_flow.finish(
@@ -145,6 +163,12 @@ def callback(request: Request, session: Db, cfg: Config):
         verifier=flow["verifier"],
         redirect_uri=_redirect_uri(request),
     )
+    authz.record_sign_in(
+        session, action="sign_in", client_id=principal.client_id,
+        authority=principal.authority, ip=client_ip(request, cfg),
+        mechanism="oidc-login",
+    )
+    session.commit()
     r = RedirectResponse(flow.get("next") or "/admin/", status_code=302)
     sess.set_cookie(
         r,
@@ -157,7 +181,7 @@ def callback(request: Request, session: Db, cfg: Config):
 
 
 @router.post("/logout", name="admin_logout")
-def logout(request: Request, cfg: Config):
+def logout(request: Request, session: Db, cfg: Config):
     """ログアウト。**外部で認証しているなら、そちらのセッションも終わらせる。**
 
     GET ではなく POST。`SameSite=Lax` は**トップレベルの GET 遷移では Cookie を
@@ -168,6 +192,13 @@ def logout(request: Request, cfg: Config):
     送られ、そちらのセッションが生きているので何も訊かれずに戻ってくる——
     利用者から見れば「ログアウトできない」。
     """
+    # **誰が出て行ったかも残す。** セッションから読める範囲で（読めなければ空）。
+    claims = sess.read(request.cookies.get(sess.COOKIE, ""), secret=cfg.session_secret)
+    authz.record_sign_in(
+        session, action="sign_out", client_id=(claims or {}).get("sub", ""),
+        ip=client_ip(request, cfg), mechanism=(claims or {}).get("via", ""),
+    )
+    session.commit()
     back = str(request.url_for("admin_overview"))
     target = "/admin/"
     if cfg.admin_login == "oidc":

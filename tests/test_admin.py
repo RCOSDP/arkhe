@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from arkhe.auth.errors import Forbidden
-from arkhe.db.models import Authority, ShoulderStatus
+from arkhe.db.models import Authority, Client, ShoulderStatus
 from arkhe.domain import admin_ops as ops
 from arkhe.domain.authz import Invalid
 
@@ -676,3 +676,62 @@ def test_要求IDが応答に返る(db, world, raw_app):
     assert r.headers["x-request-id"] == "abc123"
     # 前段が付けていなければ、こちらで作る
     assert TestClient(raw_app(_settings())).get("/healthz").headers.get("x-request-id")
+
+
+# --------------------------------------------------- 入退室の記録
+
+
+def test_ログインの成功が残る(db, world, root, raw_app):
+    """**入退室は誰のものでも残す。** 到達範囲で間引かない。"""
+    from fastapi.testclient import TestClient
+
+    from arkhe.db.models import AuditEvent
+
+    ops.register_client(db, root, client_id="alice", naan="99999",
+                        manager_id=world["a"].id, subject_type="person")
+    c = db.scalar(db.query(Client).filter_by(client_id="alice").statement)
+    ops.set_password(db, root, client_pk=c.id, password="correct-horse-battery")
+    db.commit()
+
+    cli = TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False)
+    r = cli.post("/admin/login", data={"username": "alice",
+                                       "password": "correct-horse-battery"})
+    assert r.status_code == 302
+    ev = db.scalars(db.query(AuditEvent).filter_by(action="sign_in").statement).all()
+    # 組織単位の人でも残る（`audit()` なら間引かれる）
+    assert len(ev) == 1 and ev[0].client_id == "alice" and ev[0].detail["ok"] is True
+
+
+def test_ログインの失敗こそ残す(db, world, root, raw_app):
+    """**成功したものより先に見たい記録。**
+
+    打ち込まれた ID は残すが、パスワードは当然残さない。
+    """
+    from fastapi.testclient import TestClient
+
+    from arkhe.db.models import AuditEvent
+
+    cli = TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False)
+    assert cli.post("/admin/login",
+                    data={"username": "mallory", "password": "hunter2"}).status_code == 401
+    ev = db.scalars(db.query(AuditEvent).filter_by(action="sign_in").statement).all()
+    assert len(ev) == 1
+    assert ev[0].client_id == "mallory" and ev[0].detail["ok"] is False
+    assert "hunter2" not in str(ev[0].detail), "パスワードが記録に残っている"
+
+
+def test_ログアウトも残る(db, world, root, raw_app):
+    from fastapi.testclient import TestClient
+
+    from arkhe.db.models import AuditEvent
+
+    ops.register_client(db, root, client_id="bob", naan="99999",
+                        manager_id=world["a"].id, subject_type="person")
+    c = db.scalar(db.query(Client).filter_by(client_id="bob").statement)
+    ops.set_password(db, root, client_pk=c.id, password="correct-horse-battery")
+    db.commit()
+    cli = TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False)
+    cli.post("/admin/login", data={"username": "bob", "password": "correct-horse-battery"})
+    cli.post("/admin/logout")
+    ev = db.scalars(db.query(AuditEvent).filter_by(action="sign_out").statement).all()
+    assert len(ev) == 1 and ev[0].client_id == "bob"

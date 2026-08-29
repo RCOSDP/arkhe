@@ -12,11 +12,44 @@
     <div class="kv">
       <span class="k">{{ t('ak.target') }}</span>
       <span class="v mono">{{ ark.url or t('ak.none_target') }}</span>
+      <span class="k">{{ t('ak.shoulder') }}</span>
+      <span class="v mono dim">{{ ark.naan }}{{ ark.shoulder.shoulder if ark.shoulder }}
+        {% if ark.shoulder and ark.shoulder.manager %}
+          <span class="dim">{{ ark.shoulder.manager.name }}</span>{% endif %}</span>
       <span class="k">{{ t('ak.when') }}</span>
       <span class="v mono dim">{{ ark.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
       <span class="k">{{ t('ak.by') }}</span>
       <span class="v mono dim">{{ ark.created_by }}</span>
+      <span class="k">{{ t('ak.updated') }}</span>
+      <span class="v mono dim">{{ ark.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
     </div>
+    <div class="actions" style="margin-top:14px">
+      <a class="btn sm" href="/ark:/{{ ark.ark }}??">{{ t('ak.resolve') }}</a>
+    </div>
+  </div>
+</div>
+
+{# **`?` と `??` で公開されるのはこの内容。** 画面と公開面がずれていないかを
+   ここで見られるようにする。空は出さない——ERC は「無い」ことを書かない書式。 #}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('ak.meta') }}</span></div>
+  <div class="card-b">
+    <p class="hint" style="margin-top:0">{{ t('ak.meta_lede')|safe }}</p>
+    {% set fields = [('title', ark.title), ('who', ark.who), ('when', ark.when),
+                     ('type', ark.type), ('identifier', ark.identifier),
+                     ('format', ark.format), ('relation', ark.relation),
+                     ('source', ark.source), ('commitment', ark.commitment),
+                     ('metadata', ark.metadata_)] %}
+    {% if fields | selectattr(1) | list %}
+    <div class="kv">
+      {% for name, value in fields %}{% if value %}
+      <span class="k">{{ t('ak.f.' ~ name) }}</span>
+      <span class="v">{{ value }}</span>
+      {% endif %}{% endfor %}
+    </div>
+    {% else %}
+    <p class="dim">{{ t('ak.meta_empty') }}</p>
+    {% endif %}
   </div>
 </div>
 
