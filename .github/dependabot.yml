@@ -11,6 +11,16 @@ updates:
     directory: /
     schedule: {interval: weekly, day: monday}
     open-pull-requests-limit: 3
+    # **lock だけ動かす。宣言は触らせない。**
+    #
+    # 既定の Dependabot は、更新を「効かせる」ために `pyproject.toml` の下限を
+    # 入れた版まで引き上げてくる。だがそれは「古い版では動かない」と言うのと
+    # 同じで、確かめずにそう言うことになる——arkhe をライブラリとして使う側は、
+    # 理由の無い下限のぶんだけ他と共存しにくくなる。
+    #
+    # 「どの範囲なら動くか」は宣言が、「今どれで動かしているか」は lock が持つ。
+    # 更新で動くのは後者だけでよい。
+    versioning-strategy: lockfile-only
     groups:
       python:
         patterns: ["*"]
