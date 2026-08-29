@@ -594,3 +594,35 @@ def test_ログイン画面の無い構成でも案内を出す(db, world, raw_a
         "/admin/login"
     )
     assert r.status_code == 404 and 'href="/admin/"' in r.text
+
+
+def test_接続元を刻んでから渡す(db, world, root, raw_app):
+    """**要求の層でしか分からないものを、そこで刻む。**
+
+    ここが抜けると監査には空の接続元が並ぶ（画面は動くので気づきにくい）。
+    前段 1 段の構成に長い `X-Forwarded-For` を投げ、**client の書いた左端では
+    なく右端**が残ることまで見る。
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from fastapi.testclient import TestClient
+
+    from arkhe.db.models import AuditEvent
+
+    # 監査は NAAN 単位以上の操作だけ残すので、その範囲の人として入る。
+    ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
+                        scopes="ark:mint", subject_type="person",
+                        authority="naan",
+                        expires_at=datetime.now(UTC) + timedelta(days=1))
+    db.commit()
+    cli = TestClient(raw_app(_settings(admin_login="proxy", trusted_proxies=1)),
+                     follow_redirects=False)
+    r = cli.post(
+        f"/admin/manager/{world['a'].id}",
+        data={"commitment": "permanent-stable"},
+        headers={"X-Forwarded-User": "alice@example.ac.jp",
+                 "X-Forwarded-For": "203.0.113.9, 10.0.0.9"},
+    )
+    assert r.status_code == 303, r.text[:200]
+    ev = db.scalars(db.query(AuditEvent).filter_by(action="set_commitment").statement).all()
+    assert ev and ev[-1].ip == "10.0.0.9"

@@ -10,6 +10,7 @@ OIDC の JWT として解釈する。**失敗の理由は返さない**——ど
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -92,6 +93,28 @@ def authenticate(
     raise AuthError("invalid credentials", challenge=challenge_for(settings))
 
 
+def client_ip(request: Request, settings: Settings) -> str:
+    """接続元のアドレス。**前段を信じる段数を設定で決める。**
+
+    `X-Forwarded-For` は誰でも付けられるヘッダである。無条件に左端を採ると、
+    **監査ログに攻撃者の書いた文字列が並ぶ**——直接の接続元を記録するより悪い。
+
+    だから既定（`trusted_proxies=0`）では見ない。前段が n 段あるなら、
+    **右から n 番目**を採る。右端は自分の直前の前段が書いた値で、そこは信じられる。
+    ヘッダが短ければ、詐称の疑いがあるので直接の接続元に落とす。
+    """
+    peer = request.client.host if request.client else ""
+    n = settings.trusted_proxies
+    if n <= 0:
+        return peer
+    raw = request.headers.get("x-forwarded-for", "")
+    chain = [x.strip() for x in raw.split(",") if x.strip()]
+    if len(chain) < n:
+        # 前段より短い＝経路が想定と違う。**足りない分を client の申告で埋めない。**
+        return peer
+    return chain[-n]
+
+
 def current_principal(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
@@ -100,7 +123,9 @@ def current_principal(
 ) -> Principal:
     # トークンは `bearer()` で取る。`_cred` は OpenAPI に載せるためだけの依存で、
     # **値は使わない**——`ark:/…` のようにヘッダ以外から来る経路と扱いを揃えるため。
-    return authenticate(bearer(request), session, settings)
+    p = authenticate(bearer(request), session, settings)
+    # **接続元は要求の層でだけ分かる。** 監査に残すために運ぶ。
+    return replace(p, ip=client_ip(request, settings))
 
 
 CurrentPrincipal = Annotated[Principal, Depends(current_principal)]

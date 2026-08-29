@@ -177,6 +177,32 @@ class Manager(Base):
         String(32), default=CommitmentLevel.PERMANENT_DYNAMIC.value
     )
     quota_per_day: Mapped[int | None] = mapped_column(Integer, nullable=True)  # null は無制限
+
+    #: **この組織に許す認証の機構。** 空白区切り。空なら構成の既定（`ARKHE_AUTH`）。
+    #:
+    #: 名前空間を配る側が、配られた側の**入り方まで決められる**ようにするもの。
+    #: 「うちの NAAN では機関は認可サーバ経由でしか入れない」を、機関ごとの設定
+    #: ではなく**配る側の宣言**として持てる。組織自身では変えられない
+    #: （課された制限を課された側が外せては意味がない——`quota_per_day` と同じ）。
+    #:
+    #: **発行時だけでなく認証時にも効く。** 発行を止めるだけだと、制限を掛ける前に
+    #: 出した鍵が生き残り、「制限した」と思っているのに通り続ける。
+    allowed_auth: Mapped[str] = mapped_column(String(100), default="")
+
+    #: **組織の管理者が自分で利用者を登録してよいか。**
+    #:
+    #: 名前空間を配る側が、配られた側にどこまで任せるかを決める。任せない運用では
+    #: 「利用者を増やしたい」を配る側に依頼させる——小さな NAAN では現実的で、
+    #: 誰が入れるかを一手に把握できる。
+    may_self_register: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    #: **この組織の利用者に与えられる scope の上限。** 空白区切り。空なら制限なし。
+    #:
+    #: 上限であって既定ではない。`ark:tombstone` を配る側だけの操作にしておく、
+    #: といった使い方をする。**組織自身では上げられない**（上げられる上限は上限
+    #: ではない）。誰が作った利用者かによらず効く——例外を作るなら上限のほうを
+    #: 動かす。宣言と実態がずれないようにするため。
+    max_scopes: Mapped[str] = mapped_column(String(200), default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     #: **統廃合の承継先。** 管理主体が変わっても**識別子は壊さない**（`NR` を宣言して
@@ -469,6 +495,10 @@ class AuditEvent(Base):
     action: Mapped[str] = mapped_column(String(32))
     target: Mapped[str] = mapped_column(String(200), default="")
     detail: Mapped[dict] = mapped_column(JSONType, default=dict)
+
+    #: 接続元のアドレス。**前段を信じた結果**であって、証拠ではない
+    #: （`ARKHE_TRUSTED_PROXIES` を 0 にしていれば、直接の接続元そのもの）。
+    ip: Mapped[str] = mapped_column(String(45), default="", index=True)
 
     __table_args__ = (Index("ix_audit_authority_at", "authority", "at"),)
 

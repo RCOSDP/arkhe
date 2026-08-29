@@ -19,7 +19,7 @@ import jwt
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from arkhe.auth.apikey import _expired, _to_principal
+from arkhe.auth.apikey import _expired, _mechanism_allowed, _to_principal
 from arkhe.auth.errors import AuthError
 from arkhe.auth.principal import Principal
 from arkhe.db.models import Client
@@ -107,6 +107,9 @@ class OidcVerifier:
         )
         if client is None or _expired(client.expires_at):
             raise AuthError(f"subject {subject} is not registered with this resolver")
+        # **組織に許されていない機構では通さない**（apikey / oauth2 と同じ）。
+        if not _mechanism_allowed(client, "oidc"):
+            raise AuthError("this mechanism is not allowed for the organisation")
 
         principal = _to_principal(client, mechanism="oidc")
         return Principal(**{**principal.__dict__, "scopes": _granted(claims, principal)})

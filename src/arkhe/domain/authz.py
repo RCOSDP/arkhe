@@ -62,6 +62,12 @@ class ShoulderDelegated(Forbidden):
         )
 
 
+#: arkhe が実際に検査する scope。**ここが語彙の全体。**
+#: 画面の選択肢も認可サーバに登録する client scope も、これに揃える——
+#: 散らばると「登録できるのに検査されない scope」が生まれる。
+SCOPES = ("ark:mint", "ark:update", "ark:read", "ark:tombstone")
+
+
 def require_scope(principal: Principal, scope: str) -> None:
     if not principal.has(scope):
         raise InsufficientScope(scope)
@@ -227,6 +233,7 @@ def audit(session: Session, principal: Principal, action: str, target: str = "",
             authority=principal.authority,
             action=action,
             target=target,
+            ip=principal.ip,
             detail={**detail, "mechanism": principal.mechanism},
         )
     )

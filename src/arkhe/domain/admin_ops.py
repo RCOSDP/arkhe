@@ -149,6 +149,75 @@ def set_commitment(session: Session, p: Principal, *, manager_id: int, level: st
     return manager
 
 
+#: 認証の機構。`settings.ARKHE_AUTH` と同じ語彙を使う（別に持つとずれる）。
+MECHANISMS = ("apikey", "oauth2", "oidc")
+
+
+def allowed_auth_for(manager: Manager | None, enabled: tuple[str, ...] | list[str]) -> list[str]:
+    """この組織が実際に使える機構。**構成で有効なものとの積。**
+
+    組織の設定が空なら制限なし——構成で有効な機構がそのまま使える。
+    """
+    if manager is None or not manager.allowed_auth:
+        return list(enabled)
+    allowed = set(manager.allowed_auth.split())
+    return [m for m in enabled if m in allowed]
+
+
+def set_org_policy(
+    session: Session,
+    p: Principal,
+    *,
+    manager_id: int,
+    mechanisms: list[str] | None = None,
+    may_self_register: bool | None = None,
+    max_scopes: list[str] | None = None,
+) -> Manager:
+    """組織に何を任せ、何を制限するかを決める。**組織自身では変えられない。**
+
+    課された制限を課された側が外せては意味がない（`set_quota` と同じ理由）。
+    `None` の項目は触らない。空リストを渡すと「制限なし」になる。
+
+      mechanisms         入り方（apikey / oauth2 / oidc）
+      may_self_register  組織の管理者が自分で利用者を登録してよいか
+      max_scopes         その組織の利用者に与えられる scope の上限
+    """
+    from arkhe.domain.authz import SCOPES
+
+    manager = session.get(Manager, manager_id)
+    if manager is None:
+        raise NotFound({"manager": manager_id})
+    _require_naan(p, manager.naan)
+    if not p.is_naan_wide:
+        raise Forbidden("組織の制限を変えるには NAAN 単位以上の権限が要る")
+
+    before = {
+        "allowed_auth": manager.allowed_auth,
+        "may_self_register": manager.may_self_register,
+        "max_scopes": manager.max_scopes,
+    }
+    if mechanisms is not None:
+        unknown = [m for m in mechanisms if m not in MECHANISMS]
+        if unknown:
+            raise Invalid({"mechanisms": f"未知の機構: {', '.join(unknown)}",
+                           "choices": list(MECHANISMS)})
+        manager.allowed_auth = " ".join(m for m in MECHANISMS if m in mechanisms)
+    if may_self_register is not None:
+        manager.may_self_register = may_self_register
+    if max_scopes is not None:
+        unknown = [x for x in max_scopes if x not in SCOPES]
+        if unknown:
+            raise Invalid({"max_scopes": f"未知の scope: {', '.join(unknown)}",
+                           "choices": list(SCOPES)})
+        manager.max_scopes = " ".join(x for x in SCOPES if x in max_scopes)
+
+    audit(session, p, "set_org_policy", str(manager_id), before=before,
+          after={"allowed_auth": manager.allowed_auth,
+                 "may_self_register": manager.may_self_register,
+                 "max_scopes": manager.max_scopes})
+    return manager
+
+
 def set_quota(
     session: Session, p: Principal, *, manager_id: int, quota_per_day: int | None
 ) -> Manager:
@@ -412,6 +481,20 @@ def register_client(
         raise Forbidden("authority=naan の主体を作るには NAAN 単位以上の権限が要る")
     if not p.is_naan_wide and manager_id != p.manager_id:
         raise Forbidden("自組織以外の主体は作れない")
+    org = session.get(Manager, manager_id) if manager_id else None
+    if org is not None:
+        # **任せていない組織では、配る側を通す。** 自分で増やせるかは配る側が決める。
+        if not p.is_naan_wide and not org.may_self_register:
+            raise Forbidden("この組織では利用者の登録が許されていない（NAAN 管理者に依頼する）")
+        # **上限は誰が作るかによらず効く。** 例外を作るなら上限のほうを動かす
+        # ——さもないと、宣言した上限を超える主体が台帳に並ぶ。
+        if org.max_scopes:
+            over = set(scopes.split()) - set(org.max_scopes.split())
+            if over:
+                raise Invalid(
+                    {"scopes": f"この組織の上限を超えている: {' '.join(sorted(over))}",
+                     "max_scopes": org.max_scopes}
+                )
     if session.scalar(select(Client).where(Client.client_id == client_id)):
         raise Invalid({"client_id": f"{client_id} は登録済み"})
     if target is Authority.NAAN and expires_at is None:
@@ -460,6 +543,14 @@ def issue_credential(
         raise Invalid(
             {"subject_type": "人の主体には資格情報を発行しない（身元は外部が保証する）"}
         )
+    # **組織に許された機構の鍵しか出さない。** 出せてしまうと、制限が宣言だけになる。
+    manager = session.get(Manager, client.manager_id) if client.manager_id else None
+    if manager is not None and manager.allowed_auth:
+        need = "apikey" if kind == CredentialKind.API_KEY else "oauth2"
+        if need not in manager.allowed_auth.split():
+            raise Invalid(
+                {"kind": f"この組織には {need} を許していない（許可: {manager.allowed_auth}）"}
+            )
 
     gen = apikey.generate_key if kind == CredentialKind.API_KEY else oauth2.generate_secret
     raw, prefix, hashed = gen()

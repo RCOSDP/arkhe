@@ -25,7 +25,7 @@ from argon2.exceptions import VerifyMismatchError
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from arkhe.auth.apikey import _expired, _to_principal
+from arkhe.auth.apikey import _expired, _mechanism_allowed, _to_principal
 from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import Client, CredentialKind
@@ -136,6 +136,9 @@ def authenticate(session: Session, token: str, *, secret_key: str, issuer: str =
     )
     if client is None or _expired(client.expires_at):
         raise AuthError("client is no longer active")
+    # **組織に許されていない機構では通さない**（apikey と同じ）。
+    if not _mechanism_allowed(client, "oauth2"):
+        raise AuthError("this mechanism is not allowed for the organisation")
 
     principal = _to_principal(client, mechanism="oauth2")
     # トークンに載った scope で**絞る**（広げはしない）。

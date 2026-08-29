@@ -9,6 +9,21 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **The side handing a namespace out can now decide what an organisation is trusted
+  with** (`arkhe manager policy` and the organisation's settings page): the ways in
+  (apikey / oauth2 / oidc), whether it may register its own users, and a ceiling on
+  the scopes its users may hold. **The organisation cannot change these** — a limit
+  the limited party can lift is not a limit. The restriction on ways in **bites at
+  authentication, not only at issuance**.
+- The audit log records **where the request came from**. `X-Forwarded-For` can be set
+  by anyone, so it is ignored by default; with `ARKHE_TRUSTED_PROXIES=n` the **n-th
+  entry from the right** is used — never the leftmost, which the client wrote. A
+  header shorter than expected falls back to the peer.
+- Scopes are chosen with **checkboxes**, from the single vocabulary in `authz.SCOPES`
+  (free text let you register spellings that are never checked).
+
 ### Fixed
 
 - The entry route claimed "the authorization server" outright. **arkhe never queries

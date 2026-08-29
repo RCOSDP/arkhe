@@ -118,6 +118,11 @@ JA: dict[str, str] = {
     "au.who": "主体",
     "au.action": "操作",
     "au.target": "対象",
+    "au.ip": "接続元",
+    "au.ip_hint": "<b>前段を信じた結果であって、証拠ではありません。</b>"
+                  "<code>ARKHE_TRUSTED_PROXIES</code> が 0 なら直接の接続元、"
+                  "n なら <code>X-Forwarded-For</code> の右から n 番目です"
+                  "——このヘッダは誰でも付けられるので、左端は採りません。",
     "au.detail": "詳細",
     "au.count": "件",
     "au.empty": "記録がありません。",
@@ -313,6 +318,38 @@ JA: dict[str, str] = {
     "en.none_hint": "<b>まだ入れません。</b>鍵を発行するか、"
                     "<code>ARKHE_AUTH</code> に <code>oidc</code> を足して"
                     "認可サーバに任せてください。",
+    # scope（できること）
+    "sc.ark:mint": "採番する",
+    "sc.ark:mint.d": "新しい ARK を発行する。<b>取り消せない。</b>",
+    "sc.ark:update": "転送先を変える",
+    "sc.ark:update.d": "既存の ARK の解決先や記述を書き換える。",
+    "sc.ark:read": "読む",
+    "sc.ark:read.d": "台帳を API から読む（解決そのものは誰でもできる）。",
+    "sc.ark:tombstone": "失われたと宣言する",
+    "sc.ark:tombstone.d": "対象が失われたことを述べる。<b>転送先の付け替えとは意味が違う</b>"
+                          "ので、権限も分けてある。",
+    "cu.f.scopes_hint": "<b>ここが上限です。</b>認可サーバのトークンに載っている scope との"
+                        "積が、実際にできることになります——トークンで広がることはありません。",
+    # 組織に何を任せ、何を制限するか
+    "op.title": "この組織に任せること",
+    "op.lede": "<b>名前空間を配る側が決めます。</b>組織自身では変えられません"
+               "——課された制限を課された側が外せては意味がないからです。",
+    "op.auth": "許す入り方",
+    "op.auth_hint": "何も選ばなければ制限なし（構成の既定に従う）。"
+                    "<b>発行時だけでなく認証時にも効きます</b>——"
+                    "制限を掛ける前に出した鍵も、以後は通りません。",
+    "op.self": "自分で利用者を登録してよい",
+    "op.self_hint": "許さない場合、この組織の利用者は NAAN 管理者が登録します。"
+                    "誰が入れるかを一手に把握したいときに使います。",
+    "op.max": "与えられる scope の上限",
+    "op.max_hint": "何も選ばなければ制限なし。<b>上限であって既定ではありません。</b>"
+                   "誰が作った利用者かによらず効きます——例外を作るなら、"
+                   "この上限のほうを動かしてください。",
+    "au.mech.apikey": "API キー",
+    "au.mech.oauth2": "arkhe のトークン",
+    "au.mech.oidc": "認可サーバ",
+    "op.restricted": "制限あり",
+    "op.no_self": "自己登録なし",
     "login.title": "管理画面にログイン",
     "login.id": "ID",
     "login.id_ph": "メールアドレスなど",
@@ -415,6 +452,12 @@ EN: dict[str, str] = {
     "au.who": "Principal",
     "au.action": "Action",
     "au.target": "Target",
+    "au.ip": "From",
+    "au.ip_hint": "<b>This is what the hop in front reported, not proof.</b> With "
+                  "<code>ARKHE_TRUSTED_PROXIES</code> at 0 it is the peer that "
+                  "connected; at n it is the n-th entry from the right of "
+                  "<code>X-Forwarded-For</code> — anyone can set that header, so the "
+                  "leftmost entry is never used.",
     "au.detail": "Detail",
     "au.count": "entries",
     "au.empty": "Nothing recorded.",
@@ -612,6 +655,37 @@ EN: dict[str, str] = {
     "en.none_hint": "<b>It cannot get in yet.</b> Either issue a key, or add "
                     "<code>oidc</code> to <code>ARKHE_AUTH</code> and let the "
                     "authorization server vouch for it.",
+    "sc.ark:mint": "Mint",
+    "sc.ark:mint.d": "Issue new ARKs. <b>This cannot be taken back.</b>",
+    "sc.ark:update": "Change where it points",
+    "sc.ark:update.d": "Rewrite an existing ARK's target or description.",
+    "sc.ark:read": "Read",
+    "sc.ark:read.d": "Read the ledger through the API (resolution itself is open to all).",
+    "sc.ark:tombstone": "Declare it lost",
+    "sc.ark:tombstone.d": "State that the object is gone. <b>That means something other "
+                          "than repointing</b>, so the permission is separate.",
+    "cu.f.scopes_hint": "<b>This is the ceiling.</b> What it may actually do is the "
+                        "intersection with the scopes in the token — a token cannot widen "
+                        "it.",
+    "op.title": "What this organisation is trusted with",
+    "op.lede": "<b>Decided by the side handing the namespace out.</b> The organisation "
+               "cannot change it — a limit the limited party can lift is not a limit.",
+    "op.auth": "Permitted ways in",
+    "op.auth_hint": "Select none for no restriction (the deployment's default applies). "
+                    "<b>It bites at authentication, not only at issuance</b> — a key "
+                    "issued before the restriction stops working too.",
+    "op.self": "May register its own users",
+    "op.self_hint": "If not, a NAAN administrator registers this organisation's users. "
+                    "Useful when you want one place that knows who can get in.",
+    "op.max": "Ceiling on scopes",
+    "op.max_hint": "Select none for no ceiling. <b>It is a ceiling, not a default.</b> "
+                   "It applies whoever creates the user — to make an exception, move the "
+                   "ceiling.",
+    "au.mech.apikey": "API key",
+    "au.mech.oauth2": "arkhe's own token",
+    "au.mech.oidc": "authorization server",
+    "op.restricted": "restricted",
+    "op.no_self": "no self-registration",
     "login.title": "Sign in to the admin interface",
     "login.id": "ID",
     "login.id_ph": "your email address, for example",

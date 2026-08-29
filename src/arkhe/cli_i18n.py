@@ -92,6 +92,18 @@ JA: dict[str, str] = {
                                "入れること——既定値を宣言として出すのは、何も出さないより悪い。\n\n"
                                "水準を**下げる**のも正当な操作である。守れない約束を掲げ続ける"
                                "より、実態に合わせて言い直すほうが誠実で、尋ねる意味も保たれる。",
+    "manager.policy.help": "組織に何を任せ、何を制限するかを決める。"
+                           "**組織自身では変えられない**（課された制限を課された側が"
+                           "外せては意味がない）。省略した項目は触らない。",
+    "manager.policy.auth": "許す入り方。空白区切り（apikey / oauth2 / oidc）。空で制限なし",
+    "manager.policy.self_register": "組織の管理者が自分で利用者を登録してよいか",
+    "manager.policy.max_scopes": "与えられる scope の上限。空白区切り。空で制限なし",
+    "manager.policy.auth_now": "入り方  : {v}",
+    "manager.policy.self_now": "自己登録: {v}",
+    "manager.policy.scopes_now": "scope 上限: {v}",
+    "word.unrestricted": "制限なし",
+    "word.yes": "許す",
+    "word.no": "許さない",
     "manager.commitment.level": "約束の水準",
     "manager.commitment.list": "選べる水準を並べて終わる",
     "manager.commitment.need_args": "組織 id と水準が要ります（--list で一覧）",
@@ -201,6 +213,21 @@ EN: dict[str, str] = {
                                "**Lowering** it is a legitimate operation. Saying it plainly is "
                                "more honest than holding up a promise you cannot keep, and it "
                                "is what keeps asking worth doing.",
+    "manager.policy.help": "Decide what an organisation is trusted with and what it is "
+                           "restricted to. **The organisation cannot change this** — a "
+                           "limit the limited party can lift is not a limit. Omitted "
+                           "options are left alone.",
+    "manager.policy.auth": "Permitted ways in, space separated (apikey / oauth2 / oidc); "
+                           "empty for no restriction",
+    "manager.policy.self_register": "whether its administrator may register users",
+    "manager.policy.max_scopes": "ceiling on the scopes its users may hold, space "
+                                 "separated; empty for no ceiling",
+    "manager.policy.auth_now": "Ways in    : {v}",
+    "manager.policy.self_now": "Self-register: {v}",
+    "manager.policy.scopes_now": "Scope ceiling: {v}",
+    "word.unrestricted": "unrestricted",
+    "word.yes": "yes",
+    "word.no": "no",
     "manager.commitment.level": "the commitment level",
     "manager.commitment.list": "list the available levels and stop",
     "manager.commitment.need_args": "an organisation id and a level are required "

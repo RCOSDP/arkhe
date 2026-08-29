@@ -91,8 +91,22 @@ def _entry_route(client: Client, cfg) -> str:
 
 
 def _can_add_client(p: Principal) -> bool:
-    """利用者を作れるか。組織単位でも自組織なら作れる（`register_client` の判定）。"""
+    """届く範囲として利用者を作れるか。組織単位でも自組織なら作れる。"""
     return p.is_naan_wide or p.manager_id is not None
+
+
+def _may_register(session: Session, p: Principal) -> bool:
+    """実際に登録できるか。**配る側が自己登録を止めていればできない。**
+
+    `_ctx` の既定は到達範囲だけを見るので、組織の設定はここで重ねる
+    （`register_client` が拒む条件と同じものを、画面の出し分けにも使う）。
+    """
+    if not _can_add_client(p):
+        return False
+    if p.is_naan_wide:
+        return True
+    m = session.get(Manager, p.manager_id) if p.manager_id else None
+    return m is None or m.may_self_register
 
 
 def _ctx(request: Request, principal: Principal, page: str, **extra) -> dict:
@@ -155,6 +169,15 @@ class NeedsLogin(Exception):
         self.next_url = next_url
 
 
+def _with_ip(request: Request, cfg: Config, p: Principal) -> Principal:
+    """接続元を刻む。**API と同じ判定**（`deps.client_ip`）を使う。"""
+    from dataclasses import replace
+
+    from arkhe.auth.deps import client_ip
+
+    return replace(p, ip=client_ip(request, cfg))
+
+
 def admin_principal(request: Request, session: Db, cfg: Config) -> Principal:
     """管理画面の主体。**入口は設定で選ぶ**（`ARKHE_ADMIN_LOGIN`）。
 
@@ -167,22 +190,22 @@ def admin_principal(request: Request, session: Db, cfg: Config) -> Principal:
         claims = sess.read(raw, secret=cfg.session_secret) if raw else None
         if claims:
             try:
-                return login_flow.by_subject(
+                return _with_ip(request, cfg, login_flow.by_subject(
                     session, claims["sub"], mechanism=claims.get("via", "")
-                )
+                ))
             except AuthError:
                 pass  # 登録が消えた・無効化された。ログインし直させる
 
     # 2) 前段の認証プロキシ
     if cfg.admin_login == "proxy":
         try:
-            return login_flow.from_proxy(session, cfg, request.headers)
+            return _with_ip(request, cfg, login_flow.from_proxy(session, cfg, request.headers))
         except AuthError as exc:
             raise NeedsLogin() from exc
 
     # 3) Bearer（自動化・curl。bearer モードではこれだけ）
     try:
-        return authenticate(bearer(request), session, cfg)
+        return _with_ip(request, cfg, authenticate(bearer(request), session, cfg))
     except AuthError:
         if cfg.admin_login in ("oidc", "password"):
             raise NeedsLogin(str(request.url.path)) from None
@@ -352,6 +375,7 @@ def manager_new(request: Request, principal: AdminPrincipal, session: Db):
     return _page(
         request, principal, "manager_form.html", "overview",
         manager=None, naans=_visible_naans(session, principal), levels=list(CommitmentLevel),
+        mechanisms=ops.MECHANISMS, scopes=authz.SCOPES,
     )
 
 
@@ -384,6 +408,7 @@ def manager_edit(request: Request, principal: AdminPrincipal, session: Db, manag
     return _page(
         request, principal, "manager_form.html", "overview",
         manager=m, naans=[], levels=list(CommitmentLevel),
+        mechanisms=ops.MECHANISMS, scopes=authz.SCOPES,
     )
 
 
@@ -395,6 +420,10 @@ def manager_save(
     manager_id: int,
     commitment: Annotated[str, Form()] = "",
     quota: Annotated[str, Form()] = "",
+    allowed_auth: Annotated[list[str], Form()] = None,
+    self_register: Annotated[str, Form()] = "",
+    max_scopes: Annotated[list[str], Form()] = None,
+    policy: Annotated[str, Form()] = "",
 ):
     """**約束は組織自身のもの**なので、組織管理者も自組織の水準を変えられる。
 
@@ -407,6 +436,15 @@ def manager_save(
             session, principal, manager_id=manager_id,
             quota_per_day=int(quota) if quota.strip() else None,
         )
+        # `policy` はこのフォームが制限欄を出したという印。**出していない画面から
+        # 送られた空値で、既存の制限を消さないため。**
+        if policy:
+            ops.set_org_policy(
+                session, principal, manager_id=manager_id,
+                mechanisms=list(allowed_auth or []),
+                may_self_register=bool(self_register),
+                max_scopes=list(max_scopes or []),
+            )
     session.commit()
     return _redirect(f"/admin/manager/{manager_id}?saved=1")
 
@@ -585,7 +623,9 @@ def clients(request: Request, principal: AdminPrincipal, session: Db, cfg: Confi
         request,
         templates.TemplateResponse(
             request,
-            "clients.html", _ctx(request, principal, "clients", clients=rows, issued=None)
+            "clients.html",
+            _ctx(request, principal, "clients", clients=rows, issued=None,
+                 can_add_client=_may_register(session, principal)),
         ),
     )
 
@@ -623,6 +663,7 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
         request, principal, "client_form.html", "clients",
         client=c, managers=managers, shoulders=shoulders,
         creds=sorted(c.credentials, key=lambda x: x.id, reverse=True) if c else [],
+        scopes=authz.SCOPES,
         kinds=_issuable_kinds(cfg), uses_oidc="oidc" in cfg.auth,
         entry=_entry_route(c, cfg) if c else "",
         # 選べないなら**なぜ選べないか**まで出す（空欄を見せて終わらせない）。
@@ -637,8 +678,8 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
 
 @router.get("/client/new", response_class=HTMLResponse)
 def client_new(request: Request, principal: AdminPrincipal, session: Db, cfg: Config):
-    # 出し分けと同じ述語で閉じる（`_ctx` の `can_add_client` と同じもの）。
-    if not _can_add_client(principal):
+    # 出し分けと同じ述語で閉じる。
+    if not _may_register(session, principal):
         raise Forbidden("この主体は利用者を登録できない")
     return _client_page(request, principal, session, cfg, None)
 
@@ -652,7 +693,7 @@ def client_create(
     naan: Annotated[str, Form()] = "",
     manager_id: Annotated[str, Form()] = "",
     shoulder_id: Annotated[str, Form()] = "",
-    scopes: Annotated[str, Form()] = "ark:mint",
+    scopes: Annotated[list[str], Form()] = None,
     label: Annotated[str, Form()] = "",
     person: Annotated[str, Form()] = "",
 ):
@@ -670,7 +711,9 @@ def client_create(
             else principal.manager_id
         ),
         shoulder_id=int(shoulder_id) if shoulder_id.strip() else None,
-        scopes=scopes.strip() or "ark:mint", label=label.strip(),
+        # **語彙の外は捨てる。** 画面に出していない値が送られてきても使わない。
+        scopes=" ".join(x for x in (scopes or []) if x in authz.SCOPES) or "ark:mint",
+        label=label.strip(),
         subject_type="person" if person else "machine",
     )
     session.commit()

@@ -60,6 +60,51 @@
         </div>
       {% endif %}
 
+      {# **配る側の宣言。** 組織自身には出さない——見せて押せないより、
+         そもそも自分の裁量ではないことが分かるほうがよい。 #}
+      {% if can_manage and manager %}
+      <input type="hidden" name="policy" value="1">
+      <h2 style="margin-top:28px">{{ t('op.title') }}</h2>
+      <p class="hint" style="margin:0 0 14px">{{ t('op.lede')|safe }}</p>
+
+      <div class="field">
+        <label>{{ t('op.auth') }}</label>
+        <div class="checks">
+          {% for mech in mechanisms %}
+          <label class="check">
+            <input type="checkbox" name="allowed_auth" value="{{ mech }}"
+                   {% if mech in manager.allowed_auth.split() %}checked{% endif %}>
+            <span><b>{{ t('au.mech.' ~ mech) }}</b> <code>{{ mech }}</code></span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="hint">{{ t('op.auth_hint')|safe }}</p>
+      </div>
+
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="self_register" value="1"
+                 {% if manager.may_self_register %}checked{% endif %}>
+          <span><b>{{ t('op.self') }}</b></span>
+        </label>
+        <p class="hint">{{ t('op.self_hint') }}</p>
+      </div>
+
+      <div class="field">
+        <label>{{ t('op.max') }}</label>
+        <div class="checks">
+          {% for sc in scopes %}
+          <label class="check">
+            <input type="checkbox" name="max_scopes" value="{{ sc }}"
+                   {% if sc in manager.max_scopes.split() %}checked{% endif %}>
+            <span><b>{{ t('sc.' ~ sc) }}</b> <code>{{ sc }}</code></span>
+          </label>
+          {% endfor %}
+        </div>
+        <p class="hint">{{ t('op.max_hint')|safe }}</p>
+      </div>
+      {% endif %}
+
       <div class="actions">
         <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
         <button class="btn primary" type="submit">{{ t('f.save') if manager else t('f.create') }}</button>

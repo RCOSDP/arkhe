@@ -65,9 +65,21 @@
         </div>
       </div>
       <div class="grid2">
+        {# **語彙は 1 か所（`authz.SCOPES`）から出す。** 自由入力だと、
+           検査されない綴りを登録できてしまう。 #}
         <div class="field">
-          <label for="scopes">{{ t('cu.f.scopes') }}</label>
-          <input id="scopes" name="scopes" value="ark:mint ark:update">
+          <label>{{ t('cu.f.scopes') }}</label>
+          <div class="checks">
+            {% for sc in scopes %}
+            <label class="check">
+              <input type="checkbox" name="scopes" value="{{ sc }}"
+                     {% if sc in ('ark:mint', 'ark:update') %}checked{% endif %}>
+              <span><b>{{ t('sc.' ~ sc) }}</b> <code>{{ sc }}</code>
+                <span class="hint">{{ t('sc.' ~ sc ~ '.d')|safe }}</span></span>
+            </label>
+            {% endfor %}
+          </div>
+          <p class="hint">{{ t('cu.f.scopes_hint')|safe }}</p>
         </div>
         <div class="field">
           <label for="label">{{ t('cu.f.label') }} <span class="opt">— {{ t('f.optional') }}</span></label>

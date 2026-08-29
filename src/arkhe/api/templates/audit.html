@@ -5,6 +5,7 @@
 <div class="head">
   <h1>{{ t('au.title') }}</h1>
   <p class="lede">{{ t('au.lede')|safe }}</p>
+  <p class="hint">{{ t('au.ip_hint')|safe }}</p>
 </div>
 
 <div class="card">
@@ -13,7 +14,7 @@
   <table>
     <thead><tr>
       <th>{{ t('au.at') }}</th><th>{{ t('au.who') }}</th><th>{{ t('au.action') }}</th>
-      <th>{{ t('au.target') }}</th><th>{{ t('au.detail') }}</th>
+      <th>{{ t('au.target') }}</th><th>{{ t('au.ip') }}</th><th>{{ t('au.detail') }}</th>
     </tr></thead>
     <tbody>
     {% for e in events %}
@@ -22,10 +23,11 @@
         <td class="mono" data-label="{{ t('au.who') }}">{{ e.client_id }} <span class="pill {{ e.authority }}">{{ t('au.' ~ e.authority) }}</span></td>
         <td data-label="{{ t('au.action') }}">{{ e.action }}</td>
         <td class="mono dim" data-label="{{ t('au.target') }}">{{ e.target }}</td>
+        <td class="mono dim" data-label="{{ t('au.ip') }}">{{ e.ip or '—' }}</td>
         <td class="dim mono" data-label="{{ t('au.detail') }}">{{ e.detail_text }}</td>
       </tr>
     {% else %}
-      <tr><td colspan="5" class="empty">{{ t('au.empty') }}</td></tr>
+      <tr><td colspan="6" class="empty">{{ t('au.empty') }}</td></tr>
     {% endfor %}
     </tbody>
   </table>

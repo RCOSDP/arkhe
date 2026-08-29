@@ -83,12 +83,26 @@ def authenticate(session: Session, raw: str) -> Principal:
         # arkhe に鍵を持たせない（持たせると、外部で失効させても入れてしまう）。
         if client.subject_type != Subject.MACHINE:
             continue
+        # **組織に許されていない機構では通さない。** 発行を止めるだけだと、
+        # 制限を掛ける前に出した鍵が生き残り、制限したつもりで通り続ける。
+        if not _mechanism_allowed(client, "apikey"):
+            continue
         cred.last_used_at = datetime.now(UTC)
         return _to_principal(client, mechanism="apikey")
 
     # 一致が無いときも、照合と同程度の時間を使う（存在の有無を時間差で漏らさない）。
     hmac.compare_digest(raw, raw)
     raise AuthError("invalid api key")
+
+
+def _mechanism_allowed(client: Client, mechanism: str) -> bool:
+    """この主体の組織が、その機構での入場を許しているか。
+
+    組織の設定が空なら制限なし。**名前空間を配る側の宣言**なので、配られた側の
+    設定ではなく `Manager` に持たせてある。
+    """
+    m = client.manager
+    return not (m is not None and m.allowed_auth) or mechanism in m.allowed_auth.split()
 
 
 def _to_principal(client: Client, *, mechanism: str) -> Principal:

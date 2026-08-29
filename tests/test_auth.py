@@ -227,3 +227,48 @@ def test_oauth2を使わない構成に発行の口は無い(db, world, app):
 
     c = TestClient(app, follow_redirects=False)
     assert c.post("/oauth/token", data={"grant_type": "client_credentials"}).status_code == 404
+
+
+# ------------------------------------------------------- 接続元の記録
+
+
+@pytest.mark.parametrize(
+    "trusted,xff,peer,want,why",
+    [
+        (0, "1.2.3.4", "10.0.0.1", "10.0.0.1", "既定は前段を見ない"),
+        (0, "", "10.0.0.1", "10.0.0.1", "ヘッダが無ければ直接の接続元"),
+        (1, "1.2.3.4, 10.0.0.9", "10.0.0.1", "10.0.0.9", "1 段なら右端"),
+        (2, "1.2.3.4, 10.0.0.9, 10.0.0.8", "10.0.0.1", "10.0.0.9", "2 段なら右から 2 番目"),
+        # **足りない分を client の申告で埋めない。**
+        (2, "1.2.3.4", "10.0.0.1", "10.0.0.1", "前段より短ければ詐称を疑って落とす"),
+        (1, "", "10.0.0.1", "10.0.0.1", "ヘッダが無ければ落とす"),
+    ],
+)
+def test_接続元は前段を信じる段数で決まる(trusted, xff, peer, want, why):
+    """**`X-Forwarded-For` は誰でも付けられる。**
+
+    無条件に左端を採ると、監査ログに攻撃者の書いた文字列が並ぶ——直接の
+    接続元を記録するより悪い。
+    """
+    from types import SimpleNamespace
+
+    from arkhe.auth.deps import client_ip
+
+    req = SimpleNamespace(
+        client=SimpleNamespace(host=peer),
+        headers={"x-forwarded-for": xff} if xff else {},
+    )
+    assert client_ip(req, Settings(trusted_proxies=trusted)) == want, why
+
+
+def test_詐称された左端は採らない():
+    """1 段構成に長い XFF を投げても、client の書いた左端は使わない。"""
+    from types import SimpleNamespace
+
+    from arkhe.auth.deps import client_ip
+
+    req = SimpleNamespace(
+        client=SimpleNamespace(host="10.0.0.1"),
+        headers={"x-forwarded-for": "203.0.113.9, 198.51.100.7, 10.0.0.9"},
+    )
+    assert client_ip(req, Settings(trusted_proxies=1)) == "10.0.0.9"

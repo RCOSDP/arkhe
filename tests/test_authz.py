@@ -233,3 +233,21 @@ def test_R2_NAAN以上の操作は記録される(db, world, principal_of):
     # **組織単位（manager）の操作は記録しない。** 届く範囲が狭いほど、
     # 全件記録の必要は下がる。
     assert [r.target for r in added] == ["99999/x"]
+
+
+def test_scopeの語彙が実装と一致する():
+    """**語彙が散らばると、登録できるのに検査されない scope が生まれる。**
+
+    画面の選択肢はこの定数から作る。実際に `require_scope` に渡している
+    ものと突き合わせて、片方だけ増えていないかを見る。
+    """
+    import pathlib
+    import re
+
+    from arkhe.domain.authz import SCOPES
+
+    api = pathlib.Path("src/arkhe/api")
+    used = set()
+    for f in api.rglob("*.py"):
+        used |= set(re.findall(r'require_scope\(\s*principal,\s*"(ark:[a-z]+)"', f.read_text()))
+    assert used == set(SCOPES), f"実装と語彙がずれている: {used ^ set(SCOPES)}"

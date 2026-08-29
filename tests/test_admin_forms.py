@@ -618,3 +618,238 @@ def test_認可サーバ側の実在は断言しない(db, world, root, with_aut
     page = with_auth(["oidc"]).get(f"/admin/client/{c.id}").text
     assert 'data-entry="idp"' in page
     assert "arkhe からは分かりません" in page or "not something arkhe" in page
+
+
+# ------------------------------------------------ できること（scope）の選択
+
+
+def test_scopeはチェックボックスで選ぶ(world, principal_of, as_principal):
+    """**自由入力だと、検査されない綴りを登録できてしまう。**"""
+    from arkhe.domain.authz import SCOPES
+
+    page = as_principal(principal_of(manager=world["a"])).get("/admin/client/new").text
+    for sc in SCOPES:
+        assert f'value="{sc}"' in page
+    assert '<input id="scopes"' not in page      # 自由入力は残っていない
+
+
+def test_選んだscopeだけが入る(db, world, principal_of, as_principal):
+    c = as_principal(principal_of(manager=world["a"]))
+    c.post("/admin/client/new", data={
+        "client_id": "picked", "scopes": ["ark:mint", "ark:tombstone"]})
+    made = db.scalar(db.query(Client).filter_by(client_id="picked").statement)
+    assert set(made.allowed_scopes.split()) == {"ark:mint", "ark:tombstone"}
+
+
+def test_語彙の外は捨てる(db, world, principal_of, as_principal):
+    """画面に出していない値が送られてきても使わない。"""
+    c = as_principal(principal_of(manager=world["a"]))
+    c.post("/admin/client/new", data={
+        "client_id": "sneaky-scope", "scopes": ["ark:mint", "ark:everything"]})
+    made = db.scalar(db.query(Client).filter_by(client_id="sneaky-scope").statement)
+    assert made.allowed_scopes == "ark:mint"
+
+
+def test_ひとつも選ばなければ最小になる(db, world, principal_of, as_principal):
+    """空で登録して**何もできない主体**を作らない（採番だけは残す）。"""
+    c = as_principal(principal_of(manager=world["a"]))
+    c.post("/admin/client/new", data={"client_id": "nothing-picked"})
+    made = db.scalar(db.query(Client).filter_by(client_id="nothing-picked").statement)
+    assert made.allowed_scopes == "ark:mint"
+
+
+# ------------------------- 組織管理者が作る利用者は自組織から出られない
+
+
+def test_他組織のshoulderに固定できない(db, world, principal_of, as_principal):
+    """**画面に出していない shoulder_id を送っても通らない。**"""
+    c = as_principal(principal_of(manager=world["a"]))
+    r = c.post("/admin/client/new", data={
+        "client_id": "cross-shoulder", "shoulder_id": str(world["sh_b"].id),
+        "scopes": ["ark:mint"]})
+    assert r.status_code in (400, 403)
+    assert db.scalar(db.query(Client).filter_by(client_id="cross-shoulder").statement) is None
+
+
+def test_他組織を所属先にできない(db, world, principal_of, as_principal):
+    c = as_principal(principal_of(manager=world["a"]))
+    c.post("/admin/client/new", data={
+        "client_id": "cross-org", "manager_id": str(world["b"].id), "scopes": ["ark:mint"]})
+    made = db.scalar(db.query(Client).filter_by(client_id="cross-org").statement)
+    assert made.manager_id == world["a"].id      # 自組織に落ちる
+
+
+def test_他NAANには作れない(db, world, principal_of, as_principal):
+    c = as_principal(principal_of(manager=world["a"]))
+    r = c.post("/admin/client/new", data={
+        "client_id": "cross-naan", "naan": "88888", "scopes": ["ark:mint"]})
+    assert r.status_code == 403
+    assert db.scalar(db.query(Client).filter_by(client_id="cross-naan").statement) is None
+
+
+def test_より広い権限の主体は作れない(db, world, principal_of, as_principal):
+    """`authority=naan` や `system` を送っても、自分より広くはならない。
+
+    **ルートがこの欄を受け取らない**ので、送られても捨てられる。拒むより、
+    そもそも入口を持たないほうが確実。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    for auth in ("naan", "system"):
+        c.post("/admin/client/new", data={
+            "client_id": f"climb-{auth}", "authority": auth, "scopes": ["ark:mint"]})
+        made = db.scalar(db.query(Client).filter_by(client_id=f"climb-{auth}").statement)
+        assert made is not None and made.authority == "manager", auth
+
+
+def test_作られた利用者は自組織にしか打てない(
+    db, world, root, principal_of, as_principal
+):
+    """**登録の範囲だけでなく、採番の範囲も自組織に閉じている。**"""
+    from arkhe.auth.errors import Forbidden
+    from arkhe.domain import authz
+
+    cli = as_principal(principal_of(manager=world["a"]))
+    cli.post("/admin/client/new", data={"client_id": "org-repo", "scopes": ["ark:mint"]})
+    made = db.scalar(db.query(Client).filter_by(client_id="org-repo").statement)
+
+    p = principal_of(manager=world["a"], client_id="org-repo")
+    # 省略すれば自組織の既定
+    assert authz.shoulder_for(db, p, None).manager_id == world["a"].id
+    # 他組織の shoulder を名指ししても通らない
+    with pytest.raises(Forbidden):
+        authz.shoulder_for(db, p, world["sh_b"].shoulder)
+    assert made.manager_id == world["a"].id
+
+
+# ------------------------------- 組織に何を任せ、何を制限するか
+
+
+def test_許していない機構では通らない(db, world, root):
+    """**発行を止めるだけでは足りない。**
+
+    制限を掛ける前に出した鍵が生き残り、「制限した」と思っているのに
+    通り続けてしまう。認証時にも効かせる。
+    """
+    from arkhe.auth import apikey
+    from arkhe.auth.errors import AuthError
+
+    c = ops.register_client(db, root, client_id="pre-key", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    issued = ops.issue_credential(db, root, client_pk=c.id)
+    db.commit()
+    assert apikey.authenticate(db, issued.secret).client_id == "pre-key"
+
+    ops.set_org_policy(db, root, manager_id=world["a"].id, mechanisms=["oidc"])
+    db.commit()
+    with pytest.raises(AuthError):
+        apikey.authenticate(db, issued.secret)
+
+
+def test_許していない機構の鍵は発行できない(db, world, root):
+    from arkhe.domain.authz import Invalid
+
+    c = ops.register_client(db, root, client_id="no-key", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    ops.set_org_policy(db, root, manager_id=world["a"].id, mechanisms=["oidc"])
+    db.commit()
+    with pytest.raises(Invalid):
+        ops.issue_credential(db, root, client_pk=c.id)
+
+
+def test_自己登録を止められる(db, world, root, principal_of, as_principal):
+    from arkhe.auth.errors import Forbidden
+
+    ops.set_org_policy(db, root, manager_id=world["a"].id, may_self_register=False)
+    db.commit()
+    with pytest.raises(Forbidden):
+        ops.register_client(db, principal_of(manager=world["a"]), client_id="blocked",
+                            naan="99999", manager_id=world["a"].id, scopes="ark:mint")
+    # 配る側は作れる
+    ops.register_client(db, root, client_id="by-naan", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+
+    # 画面にも導線を出さない
+    cli = as_principal(principal_of(manager=world["a"]))
+    assert "/admin/client/new" not in cli.get("/admin/clients").text
+
+
+def test_scopeの上限を超えられない(db, world, root, principal_of):
+    """**誰が作るかによらず効く。** 例外を作るなら上限のほうを動かす。"""
+    from arkhe.domain.authz import Invalid
+
+    ops.set_org_policy(db, root, manager_id=world["a"].id,
+                       max_scopes=["ark:mint", "ark:update"])
+    db.commit()
+    with pytest.raises(Invalid):
+        ops.register_client(db, principal_of(manager=world["a"]), client_id="over",
+                            naan="99999", manager_id=world["a"].id,
+                            scopes="ark:mint ark:tombstone")
+    # 配る側でも同じ（宣言した上限を超える主体を台帳に並べない）
+    with pytest.raises(Invalid):
+        ops.register_client(db, root, client_id="over2", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:tombstone")
+
+
+def test_組織は自分の制限を外せない(db, world, root, principal_of):
+    from arkhe.auth.errors import Forbidden
+
+    ops.set_org_policy(db, root, manager_id=world["a"].id, mechanisms=["oidc"],
+                       may_self_register=False, max_scopes=["ark:mint"])
+    db.commit()
+    p = principal_of(manager=world["a"])
+    for kw in ({"mechanisms": []}, {"may_self_register": True}, {"max_scopes": []}):
+        with pytest.raises(Forbidden):
+            ops.set_org_policy(db, p, manager_id=world["a"].id, **kw)
+
+
+def test_制限は画面から掛けられる(db, world, principal_of, as_principal):
+    from arkhe.db.models import Manager
+
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    r = c.post(f"/admin/manager/{world['a'].id}", data={
+        "commitment": "", "quota": "", "policy": "1",
+        "allowed_auth": ["oidc"], "self_register": "", "max_scopes": ["ark:mint"]})
+    assert r.status_code == 303
+    db.expire_all()
+    m = db.get(Manager, world["a"].id)
+    assert m.allowed_auth == "oidc" and not m.may_self_register and m.max_scopes == "ark:mint"
+
+
+def test_制限欄を出していない画面からは消えない(db, world, root, principal_of, as_principal):
+    """**組織管理者の保存で、配る側が掛けた制限が消えてはいけない。**"""
+    from arkhe.db.models import Manager
+
+    ops.set_org_policy(db, root, manager_id=world["a"].id, mechanisms=["oidc"])
+    db.commit()
+    c = as_principal(principal_of(manager=world["a"]))
+    c.post(f"/admin/manager/{world['a'].id}", data={"commitment": "permanent-stable"})
+    db.expire_all()
+    assert db.get(Manager, world["a"].id).allowed_auth == "oidc"
+
+
+def test_監査に接続元が残る(db, world, principal_of, as_principal):
+    """主体が運んできた接続元が、監査の行に落ちること。
+
+    刻む側（要求の層）は `test_admin.py` で別に見る——ここは
+    認証を差し替えているので、刻印そのものは通らない。
+    """
+    from dataclasses import replace
+
+    from arkhe.db.models import AuditEvent
+
+    p = replace(principal_of(authority=Authority.NAAN), ip="198.51.100.7")
+    as_principal(p).post(f"/admin/manager/{world['a'].id}",
+                         data={"commitment": "permanent-stable"})
+    ev = db.scalars(db.query(AuditEvent).filter_by(action="set_commitment").statement).all()
+    assert ev and ev[-1].ip == "198.51.100.7"
+
+
+def test_監査ログの画面に接続元が出る(world, principal_of, as_principal):
+    from arkhe.api import i18n
+
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    c.post(f"/admin/manager/{world['a'].id}", data={"commitment": "permanent-stable"})
+    page = c.get("/admin/audit").text
+    assert i18n.JA["au.ip"] in page
+    assert "X-Forwarded-For" in page or "x-forwarded-for" in page.lower()

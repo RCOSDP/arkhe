@@ -178,6 +178,27 @@ def manager_commitment(
         typer.echo(f"{m.name}: {m.commitment_level}")
 
 
+@manager_app.command("policy", help=t("manager.policy.help"))
+def manager_policy(
+    manager_id: int,
+    auth: str = typer.Option(None, help=t("manager.policy.auth")),
+    self_register: bool = typer.Option(None, help=t("manager.policy.self_register")),
+    max_scopes: str = typer.Option(None, help=t("manager.policy.max_scopes")),
+):
+    with _session() as s:
+        m = ops.set_org_policy(
+            s, _root(), manager_id=manager_id,
+            mechanisms=auth.split() if auth is not None else None,
+            may_self_register=self_register,
+            max_scopes=max_scopes.split() if max_scopes is not None else None,
+        )
+        s.commit()
+        typer.echo(t("manager.policy.auth_now", v=m.allowed_auth or t("word.unrestricted")))
+        typer.echo(t("manager.policy.self_now",
+                     v=t("word.yes" if m.may_self_register else "word.no")))
+        typer.echo(t("manager.policy.scopes_now", v=m.max_scopes or t("word.unrestricted")))
+
+
 @client_app.command("add", help=t("client.add.help"))
 def client_add(
     client_id: str,
