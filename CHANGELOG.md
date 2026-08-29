@@ -61,9 +61,13 @@ breaking in a system whose identifiers cannot be reissued.
 - **A stored XSS on the public resolver is closed.** Targets had no scheme
   restriction, so `javascript:` could be minted — and `?info` is a page that needs no
   authentication, so anyone holding `ark:mint` could get a script running in the
-  resolver's origin on someone else's browser. It is closed in three places: only
-  `http`/`https` are accepted on write, the scheme is checked again on read (for rows
-  already stored), and the pages now carry a CSP. **An existing dangerous row now
+  resolver's origin on someone else's browser. It is closed in three places: schemes that execute in a
+  browser (`javascript:`, `data:`) are refused on write, the target is checked again
+  on read for whether a browser may be sent there, and the pages carry a CSP.
+  **Registration itself is not narrowed** — an ARK can name a physical object or
+  another identifier, so `urn:`, `doi:` and `ark:` must be allowed. A target a
+  browser cannot open is described rather than redirected to, which is what `?info`
+  was always for. **An existing dangerous row now
   answers 502 instead of redirecting, and `?info` renders it as text, not a link.**
   The API documentation gets a looser CSP — Swagger UI loads script from a CDN, so a
   bare `script-src 'none'` renders it blank (verified against the running stack).
