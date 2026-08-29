@@ -23,6 +23,9 @@ if not HOST:
 KC = f"http://{HOST}:8080"
 REALM = "arkhe"
 WANT = f"http://{HOST}:8057/admin/callback"
+#: ログアウト後の戻り先。**redirectUris とは別に登録が要る**
+#: （`+` は redirectUris と同じ意味で、そこに /admin/ は入っていない）。
+WANT_LOGOUT = f"http://{HOST}:8057/admin/"
 
 
 def call(method: str, path: str, body=None, form=None, token: str = ""):
@@ -58,11 +61,21 @@ if not found:
     sys.exit(f"realm {REALM} に arkhe-admin がありません")
 
 client = found[0]
-if WANT in client["redirectUris"]:
-    print(f"redirect_uri は登録済み: {WANT}")
-else:
+attrs = client.setdefault("attributes", {})
+logouts = [u for u in attrs.get("post.logout.redirect.uris", "").split("##") if u]
+
+changed = False
+if WANT not in client["redirectUris"]:
     client["redirectUris"] = sorted({*client["redirectUris"], WANT})
+    changed = True
+if WANT_LOGOUT not in logouts:
+    attrs["post.logout.redirect.uris"] = "##".join(sorted({*logouts, WANT_LOGOUT}))
+    changed = True
+
+if changed:
     call("PUT", f"/admin/realms/{REALM}/clients/{client['id']}", body=client, token=token)
-    print(f"redirect_uri を足しました: {WANT}")
+    print(f"登録しました: {WANT} / {WANT_LOGOUT}")
+else:
+    print("登録済みです")
 
 print(f"→ http://{HOST}:8057/admin/  を開いてください")

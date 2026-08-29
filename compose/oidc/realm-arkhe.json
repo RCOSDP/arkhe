@@ -25,7 +25,7 @@
         "+"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "+"
+        "post.logout.redirect.uris": "http://localhost:8057/admin/##http://127.0.0.1:8057/admin/##http://arkhe.localhost:8057/admin/"
       },
       "defaultClientScopes": [
         "acr",

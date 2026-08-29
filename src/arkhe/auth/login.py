@@ -86,6 +86,35 @@ def _endpoint(settings: Settings, name: str) -> str:
     return _discovery[name]
 
 
+def end_session_url(settings: Settings, *, post_logout_redirect: str) -> str:
+    """認可サーバ側のセッションも終わらせる URL（OIDC RP-Initiated Logout 1.0）。
+
+    **こちらの Cookie を消すだけでは、ログアウトしたことにならない。** 次に
+    `/admin/` を開くと認可サーバへ送られ、そちらのセッションが生きているので
+    何も訊かれずに戻ってくる——利用者から見れば「ログアウトできない」。
+
+    `id_token_hint` は**渡さない**。渡すには ID トークンをセッション Cookie に
+    抱えることになるが、所属や権限の claim が多い環境では Cookie が 4 KB を
+    超え、**ブラウザが黙って捨てて今度はログインできなくなる**。代わりに
+    `client_id` を渡す形にしてある（認可サーバは確認画面を挟むが、これは
+    ログアウトの CSRF に対する歯止めにもなる）。
+
+    メタデータに `end_session_endpoint` が無ければ空文字を返す——その認可サーバは
+    RP からのログアウトに対応していないので、こちら側だけで終える。
+    """
+    try:
+        endpoint = _endpoint(settings, "end_session_endpoint")
+    except RuntimeError:
+        return ""
+    query = urlencode(
+        {
+            "client_id": settings.admin_client_id,
+            "post_logout_redirect_uri": post_logout_redirect,
+        }
+    )
+    return f"{endpoint}?{query}"
+
+
 def finish(
     session: Session, settings: Settings, *, code: str, verifier: str, redirect_uri: str
 ) -> Principal:

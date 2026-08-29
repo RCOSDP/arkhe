@@ -24,7 +24,7 @@ JA: dict[str, str] = {
     "nav.ledger": "台帳",
     "nav.actions": "操作",
     "nav.overview": "機関管理",
-    "nav.clients": "主体と資格情報",
+    "nav.clients": "利用者と鍵",
     "nav.mint": "ARK を採番",
     "nav.audit": "監査ログ",
     "lang.label": "言語",
@@ -48,7 +48,7 @@ JA: dict[str, str] = {
                "機関はその中で識別子を発行します。<b>発行した識別子をどこまで維持するかも、"
                "機関ごとに決めて公開します</b>——各行に出ている「約束の水準"
                "（commitment level）」がそれです。",
-    "ov.naans": "番号（NAAN）",
+    "ov.naans": "機関番号（NAAN）",
     "ov.authoritative": "自組織で管理（権威あり）",
     "ov.delegated_to": "委譲先",
     "ov.no_manager": "機関に未割当",
@@ -72,9 +72,9 @@ JA: dict[str, str] = {
                          "宣言しているため、不要になっても削除ではなく tombstone にします。",
     "mint.target": "解決先",
     "mint.form": "新規採番",
-    "mint.shoulder": "shoulder",
+    "mint.shoulder": "採番する名前空間",
     "mint.shoulder_opt": "省略すると機関の既定",
-    "mint.shoulder_default": "（既定の shoulder）",
+    "mint.shoulder_default": "（機関の既定）",
     "mint.shoulder_required": "NAAN 単位以上の権限では<b>明示が必須</b>です"
                               "（誤って他機関の名前空間に打つのを防ぐため）。",
     "mint.url": "解決先 URL",
@@ -86,23 +86,26 @@ JA: dict[str, str] = {
     "mint.submit": "採番する",
     "mint.flash": "を採番しました",
     # 主体
-    "cl.title": "主体と資格情報",
-    "cl.lede": "採番する主体と、その鍵。<b>到達範囲は主体の登録属性</b>で、"
-               "リクエストやトークン要求では広げられません。",
+    "cl.title": "利用者と鍵",
+    "cl.lede": "<b>ARK を発行できる利用者と、その鍵の一覧です。</b>"
+               "利用者は 2 種類——機関のシステム（API キーで名乗る）と、"
+               "この画面に入る人（外部のログインで名乗る）。"
+               "<b>どこまで届くかは登録したときに決まり</b>、"
+               "リクエストやトークンの要求では広げられません。",
     "cl.issued": "資格情報を発行しました",
     "cl.issued_warn": "<b>この値はもう二度と表示されません。</b>いま控えてください。"
                       "保存しているのはハッシュだけです。",
-    "cl.principals": "主体",
+    "cl.principals": "利用者",
     "cl.reach": "到達範囲",
     "cl.scope": "scope",
     "cl.creds": "資格情報",
     "cl.live": "有効",
     "cl.dead": "失効",
     "cl.open": "開く",
-    "cl.add": "主体を登録",
+    "cl.add": "利用者を登録",
     "cl.disabled": "無効",
     "cl.all_naans": "全 NAAN",
-    "cl.empty": "主体がまだ登録されていません。",
+    "cl.empty": "利用者がまだ登録されていません。",
     # 監査
     "au.title": "監査ログ",
     "au.lede": "<b>NAAN 以上に届く操作は全件記録します。</b>"
@@ -131,9 +134,9 @@ JA: dict[str, str] = {
     "naan.lede": "<b>NAA ポリシーは名前空間を配る側の宣言</b>です。"
                  "この NAAN の配下すべてにかかるので、機関単位では変えられません"
                  "（機関が自分について述べるのは<b>約束の水準</b>のほう）。",
-    "naan.f.naan": "NAAN",
+    "naan.f.naan": "機関番号（NAAN）",
     "naan.f.naan_hint": "ARK Alliance から交付された番号。<b>後から変えられません。</b>",
-    "naan.f.name": "組織名",
+    "naan.f.name": "機関名",
     "naan.f.description": "説明",
     "naan.f.policy": "NAA ポリシー",
     "naan.f.policy_hint": "<code>NP | NR, OP, CC | 2026 | &lt;URL&gt;</code> の形。"
@@ -156,7 +159,7 @@ JA: dict[str, str] = {
     "manager.lede": "<b>約束の水準は機関自身の宣言</b>です。"
                     "だから機関管理者も自分の分は変えられます——"
                     "採番上限はそうではありません（配った側が課すもの）。",
-    "manager.f.naan": "NAAN",
+    "manager.f.naan": "機関番号（NAAN）",
     "manager.f.name": "機関名",
     "manager.f.name_hint": "<b>内部専用です。</b>公開しません"
                            "（shoulder から機関が読めてはいけないため）。",
@@ -180,7 +183,7 @@ JA: dict[str, str] = {
     "shoulder.lede": "<b>一度配った名前空間は取り戻せません。</b>"
                      "<code>NR</code> を宣言している以上、既存の ARK は解決し続けます。"
                      "使わなくなったものは消すのではなく <b>retired</b> にします。",
-    "shoulder.f.naan": "NAAN",
+    "shoulder.f.naan": "機関番号（NAAN）",
     "shoulder.f.shoulder": "shoulder",
     "shoulder.f.shoulder_hint": "<code>/x9</code> のように <code>/</code> で始めます。",
     "shoulder.f.manager": "機関",
@@ -207,7 +210,7 @@ EN: dict[str, str] = {
     "nav.ledger": "Ledger",
     "nav.actions": "Actions",
     "nav.overview": "Institutions",
-    "nav.clients": "Principals & credentials",
+    "nav.clients": "Users & keys",
     "nav.mint": "Mint an ARK",
     "nav.audit": "Audit log",
     "lang.label": "Language",
@@ -226,7 +229,7 @@ EN: dict[str, str] = {
                "issues identifiers within it. <b>How far each institution undertakes to "
                "keep those identifiers working is also its own to state</b>: that is the "
                "commitment level shown on each row.",
-    "ov.naans": "Numbers (NAAN)",
+    "ov.naans": "Authority numbers (NAAN)",
     "ov.authoritative": "run here (authoritative)",
     "ov.delegated_to": "delegated to",
     "ov.no_manager": "not assigned",
@@ -250,9 +253,9 @@ EN: dict[str, str] = {
                          "not deleted.",
     "mint.target": "Resolves to",
     "mint.form": "New ARK",
-    "mint.shoulder": "Shoulder",
+    "mint.shoulder": "Namespace to mint in",
     "mint.shoulder_opt": "omit to use the institution's default",
-    "mint.shoulder_default": "(default shoulder)",
+    "mint.shoulder_default": "(the institution's default)",
     "mint.shoulder_required": "At NAAN level and above the shoulder <b>must be explicit</b>, "
                               "so you cannot mint into another institution's namespace by mistake.",
     "mint.url": "Target URL",
@@ -263,23 +266,26 @@ EN: dict[str, str] = {
     "mint.type": "Type",
     "mint.submit": "Mint",
     "mint.flash": "minted",
-    "cl.title": "Principals & credentials",
-    "cl.lede": "Who may mint, and with which key. <b>Reach is an attribute of the "
-               "registration</b> — it cannot be widened by a request or a token grant.",
+    "cl.title": "Users & keys",
+    "cl.lede": "<b>Who may issue ARKs, and with which key.</b> There are two kinds: "
+               "an institution's systems, which identify themselves with an API key, and "
+               "people who sign in here, who identify themselves through an external "
+               "login. <b>How far each one reaches is fixed when it is registered</b> — "
+               "it cannot be widened by a request or a token grant.",
     "cl.issued": "Credential issued",
     "cl.issued_warn": "<b>This value will never be shown again.</b> Copy it now. "
                       "Only its hash is stored.",
-    "cl.principals": "Principals",
+    "cl.principals": "Users",
     "cl.reach": "Reach",
     "cl.scope": "Scopes",
     "cl.creds": "Credentials",
     "cl.live": "active",
     "cl.dead": "revoked",
     "cl.open": "Open",
-    "cl.add": "Register a principal",
+    "cl.add": "Register a user",
     "cl.disabled": "disabled",
     "cl.all_naans": "all NAANs",
-    "cl.empty": "No principal registered yet.",
+    "cl.empty": "No user registered yet.",
     "au.title": "Audit log",
     "au.lede": "<b>Every action that reaches NAAN scope or wider is recorded.</b> "
                "The wider the reach, the more it matters that you can trace who did what.",
@@ -305,10 +311,10 @@ EN: dict[str, str] = {
                  "out.</b> It covers everything under this NAAN, so an institution "
                  "cannot change it — what an institution states about itself is its "
                  "<b>commitment level</b>.",
-    "naan.f.naan": "NAAN",
+    "naan.f.naan": "Authority number (NAAN)",
     "naan.f.naan_hint": "The number issued by the ARK Alliance. <b>It cannot be changed "
                         "later.</b>",
-    "naan.f.name": "Organisation",
+    "naan.f.name": "Institution",
     "naan.f.description": "Description",
     "naan.f.policy": "NAA policy",
     "naan.f.policy_hint": "In the form <code>NP | NR, OP, CC | 2026 | &lt;URL&gt;</code>. "
@@ -332,7 +338,7 @@ EN: dict[str, str] = {
                     "which is why an institutional administrator may change their own. "
                     "The minting limit is not — that is imposed by the side handing the "
                     "namespace out.",
-    "manager.f.naan": "NAAN",
+    "manager.f.naan": "Authority number (NAAN)",
     "manager.f.name": "Institution",
     "manager.f.name_hint": "<b>Internal only.</b> Never published — a shoulder must not "
                            "reveal which institution holds it.",
@@ -358,7 +364,7 @@ EN: dict[str, str] = {
     "shoulder.lede": "<b>A namespace once handed out cannot be taken back.</b> Having "
                      "declared <code>NR</code>, existing ARKs go on resolving. One you "
                      "stop using is <b>retired</b>, not deleted.",
-    "shoulder.f.naan": "NAAN",
+    "shoulder.f.naan": "Authority number (NAAN)",
     "shoulder.f.shoulder": "Shoulder",
     "shoulder.f.shoulder_hint": "Begins with <code>/</code>, as in <code>/x9</code>.",
     "shoulder.f.manager": "Institution",

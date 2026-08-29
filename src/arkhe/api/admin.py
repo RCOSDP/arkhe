@@ -152,7 +152,7 @@ def _mintable(session: Session, p: Principal) -> list[_ShoulderChoice]:
 # ------------------------------------------------------------------ 委譲の構造
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse, name="admin_overview")
 def overview(request: Request, principal: AdminPrincipal, session: Db):
     naans = _visible_naans(session, principal)
     for n in naans:
@@ -665,7 +665,17 @@ def callback(request: Request, session: Db, cfg: Config):
 
 
 @router.get("/logout", name="admin_logout")
-def logout(cfg: Config):
-    r = RedirectResponse("/admin/", status_code=302)
+def logout(request: Request, cfg: Config):
+    """ログアウト。**外部で認証しているなら、そちらのセッションも終わらせる。**
+
+    こちらの Cookie を消すだけでは足りない。次に `/admin/` を開くと認可サーバへ
+    送られ、そちらのセッションが生きているので何も訊かれずに戻ってくる——
+    利用者から見れば「ログアウトできない」。
+    """
+    back = str(request.url_for("admin_overview"))
+    target = "/admin/"
+    if cfg.admin_login == "oidc":
+        target = login_flow.end_session_url(cfg, post_logout_redirect=back) or "/admin/"
+    r = RedirectResponse(target, status_code=302)
     sess.clear_cookie(r)
     return r

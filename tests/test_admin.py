@@ -494,3 +494,59 @@ def test_onboard時に水準を述べられる(db, world, root):
     )
     db.commit()
     assert m.commitment_level == "permanent-stable"
+
+
+# ----------------------------------------------------------------- ログアウト
+
+
+def test_oidcのログアウトは認可サーバのセッションも終わらせる(db, world, raw_app, monkeypatch):
+    """**こちらの Cookie を消すだけでは、ログアウトしたことにならない。**
+
+    次に `/admin/` を開くと認可サーバへ送られ、そちらのセッションが生きていれば
+    何も訊かれずに戻ってくる——利用者から見れば「ログアウトできない」。
+    """
+    from fastapi.testclient import TestClient
+
+    from arkhe.auth import login as login_flow
+
+    monkeypatch.setattr(
+        login_flow, "_discovery",
+        {"end_session_endpoint": "https://kc.example.org/realms/arkhe/logout"},
+    )
+    cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
+                    admin_client_id="arkhe-admin")
+    r = TestClient(raw_app(cfg), follow_redirects=False).get("/admin/logout")
+    assert r.status_code == 302
+    loc = r.headers["location"]
+    assert loc.startswith("https://kc.example.org/realms/arkhe/logout")
+    assert "client_id=arkhe-admin" in loc
+    # **戻り先も渡す。** 渡さないと認可サーバの画面で行き止まりになる。
+    assert "post_logout_redirect_uri=" in loc
+    # **ID トークンは渡さない**——渡すには Cookie に抱えることになり、claim の多い
+    # 環境で 4 KB を超えてブラウザに黙って捨てられる。
+    assert "id_token_hint" not in loc
+
+
+def test_end_sessionが無い認可サーバならこちらだけで終える(db, world, raw_app, monkeypatch):
+    """RP からのログアウトに対応していない認可サーバもある。**落とさない。**"""
+    from fastapi.testclient import TestClient
+
+    from arkhe.auth import login as login_flow
+
+    monkeypatch.setattr(login_flow, "_discovery", {"token_endpoint": "https://kc/token"})
+    cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
+                    admin_client_id="arkhe-admin")
+    r = TestClient(raw_app(cfg), follow_redirects=False).get("/admin/logout")
+    assert r.status_code == 302 and r.headers["location"] == "/admin/"
+
+
+def test_パスワードのログアウトは外に出ない(db, world, raw_app):
+    """外部の認可サーバを使っていないので、終わらせるセッションはこちらだけ。"""
+    from fastapi.testclient import TestClient
+
+    r = TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False).get(
+        "/admin/logout"
+    )
+    assert r.status_code == 302 and r.headers["location"] == "/admin/"
+    assert 'arkhe_session=""' in r.headers.get("set-cookie", "") or \
+           "Max-Age=0" in r.headers.get("set-cookie", "")

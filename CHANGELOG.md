@@ -37,7 +37,10 @@ breaking in a system whose identifiers cannot be reissued.
   institution"; "Add a namespace", not "Carve out a shoulder". The form for adding an
   institution now says up front that it hands over a namespace at the same time.
   (Registering a NAAN keeps its own name: there is no plainer word for it than the
-  term itself.)
+  term itself.) "Principals & credentials" is now "Users & keys" — what is listed
+  there is not the institutions themselves but their systems and their people — and
+  the minting form asks for a *namespace to mint in*, since what is chosen there is a
+  NAAN and a shoulder together, not a shoulder alone.
 - `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
   Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
   to be the URL the browser actually types, so they are parameterised by
@@ -50,6 +53,13 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- Logging out did not log you out. The session cookie was cleared, but **the
+  authorization server's session was left standing**, so opening the interface again
+  signed you straight back in without asking. Under OIDC the logout now ends that
+  session too (RP-Initiated Logout). No `id_token_hint` is sent: carrying the ID token
+  in the cookie would push it past 4 KB where claims are numerous, and **the browser
+  would silently drop it, breaking sign-in instead**. Authorization servers with no
+  `end_session_endpoint` fall back to a local logout.
 - The NAAN settings page could be opened by an institution's administrator, who was
   then refused on save. A form that looks editable but is not is the same defect as a
   hidden button whose URL still works; the condition to open it now matches the
