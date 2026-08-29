@@ -84,6 +84,9 @@ none of them showed up in the test suite.
 
 ### Changed
 
+- The language switcher on the sign-in and notice pages is now **the same icon control
+  as the admin interface**. A row of segments breaks as soon as a third language is
+  added.
 - **The interface is written for someone opening the ledger for the first time.** The
   overview is called **Organisations** rather than "Delegation". Buttons say what they
   do: "Add an organisation", not "Onboard an organisation"; "Add a namespace", not

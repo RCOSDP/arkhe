@@ -36,10 +36,10 @@ transition:border-color .12s,box-shadow .12s}
 input:focus{outline:none;border-color:var(--accent);
 box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
 .field{margin-bottom:16px}
-button{width:100%;font:inherit;font-size:14px;font-weight:600;padding:10px;border:0;
+form button{width:100%;font:inherit;font-size:14px;font-weight:600;padding:10px;border:0;
 border-radius:var(--r-sm);background:var(--accent);color:var(--accent-ink);cursor:pointer;
 transition:filter .12s}
-button:hover{filter:brightness(1.07)}
+form button:hover{filter:brightness(1.07)}
 .err{background:var(--stop-soft);color:var(--stop);border-radius:var(--r-sm);
 padding:10px 13px;margin-bottom:18px;font-size:13px}
 .msg{color:var(--ink2);margin:0 0 20px;font-size:13.5px}
@@ -47,11 +47,37 @@ padding:10px 13px;margin-bottom:18px;font-size:13px}
 padding:11px;border:0;border-radius:var(--r-sm);background:var(--accent);
 color:var(--accent-ink);text-decoration:none;transition:filter .12s}
 .again:hover{filter:brightness(1.07)}
-.foot{display:flex;justify-content:center;gap:2px;margin-top:18px;padding:2px;
-background:var(--line2);border-radius:var(--r-sm);width:fit-content;margin-inline:auto}
-.foot a{font-size:12px;padding:3px 11px;border-radius:5px;color:var(--ink3);
-text-decoration:none;transition:.12s}
-.foot a.on{background:var(--panel);color:var(--ink);font-weight:600}
+/* 言語切替は**管理画面と同じ形**にする（アイコンを押すと選べる）。
+ * 横並びのセグメントは、言語が増えると横に伸びて破綻する。
+ * 開閉は Popover API に任せる（外側クリックと Esc が標準で効くので JS が要らない）。 */
+.foot{display:flex;justify-content:center;margin-top:18px}
+.icon-btn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12px;
+font-weight:600;padding:5px 9px;border-radius:var(--r-sm);border:1px solid var(--line);
+background:var(--panel);color:var(--ink2);cursor:pointer;transition:all .12s ease;
+anchor-name:--lang}
+.icon-btn:hover{color:var(--ink);border-color:var(--ink3)}
+.icon-btn svg{width:15px;height:15px;stroke-width:1.7}
+.icon-btn .cur{letter-spacing:.04em}
+.menu{position:fixed;inset:auto;margin:0;min-width:190px;max-height:60vh;overflow-y:auto;
+padding:6px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+color:var(--ink);box-shadow:var(--shadow)}
+.menu:popover-open{animation:pop .12s ease}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}}
+.menu::backdrop{background:transparent}
+.menu-h{margin:4px 10px 6px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+color:var(--ink3);font-weight:650}
+.menu-i{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--r-sm);
+color:var(--ink2);font-size:13.5px;text-decoration:none;transition:.12s}
+.menu-i:hover{background:var(--line2);color:var(--ink)}
+.menu-i.on{color:var(--ink);font-weight:600}
+.menu-i .tick{width:12px;flex:none;color:var(--accent);font-size:12px}
+.menu-i .label{flex:1}
+.menu-i .code{font-size:11px;color:var(--ink3);letter-spacing:.04em}
+/* 位置合わせに対応していれば真下に付ける。未対応なら中央に出す。 */
+.menu{left:50%;top:auto;bottom:24px;transform:translateX(-50%)}
+@supports (position-anchor: --lang){
+.menu{position-anchor:--lang;top:anchor(bottom);left:anchor(center);bottom:auto;
+transform:translateX(-50%);margin-top:6px}}
 </style>
 </head>
 <body>
@@ -63,10 +89,25 @@ text-decoration:none;transition:.12s}
   <div class="card">
 {% block card %}{% endblock %}  </div>
   <div class="foot">
-    {% for code, label in langs.items() %}
-      <a href="?lang={{ code }}{% if next_url %}&next={{ next_url }}{% endif %}"
-         class="{% if code == lang %}on{% endif %}" lang="{{ code }}">{{ label }}</a>
-    {% endfor %}
+    <button class="icon-btn" popovertarget="lang-menu"
+            aria-label="{{ t('lang.label') }}" title="{{ t('lang.label') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/>
+      </svg>
+      <span class="cur">{{ lang|upper }}</span>
+    </button>
+    <div id="lang-menu" popover class="menu">
+      <p class="menu-h">{{ t('lang.label') }}</p>
+      {% for code, label in langs.items() %}
+        <a href="?lang={{ code }}{% if next_url %}&next={{ next_url }}{% endif %}"
+           class="menu-i{% if code == lang %} on{% endif %}"
+           hreflang="{{ code }}" lang="{{ code }}">
+          <span class="tick" aria-hidden="true">{% if code == lang %}✓{% endif %}</span>
+          <span class="label">{{ label }}</span>
+          <span class="code">{{ code|upper }}</span>
+        </a>
+      {% endfor %}
+    </div>
   </div>
 </div>
 </body>
