@@ -9,56 +9,76 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.4] — 2026-08-29
+
+Only what came out of actually using the admin interface. **Buttons that do nothing
+when pressed**, and **a principal that could not be stopped** — both cases of the
+interface saying one thing while the implementation did another.
+
+### Added
+
+- **Users can be registered and keys issued and revoked from the interface.** The
+  "Open" and "Register a user" buttons pointed at routes that did not exist and
+  returned 404. The plaintext appears only in the response to the issuing request
+  (a redirect would lose it). **People are offered no key**: one would outlive the
+  person's departure from the organisation. An organisation's own administrator can
+  manage its users.
+- `arkhe client disable` / `enable`, and the same control in the interface.
+
+### Changed
+
+- The user page under a delegated authentication setup shows **where that
+  authorization server is** (the issuer). Saying the secret is created at the
+  authorization server is no help if the page does not say which one.
+- The language switcher on the sign-in and notice pages is now **the same icon control
+  as the admin interface**. A row of segments breaks as soon as a third language is
+  added.
+- The setup guide gained the procedure for creating a key at the authorization server
+  (the Keycloak console and its Admin API) and a table of where to rotate and where to
+  stop.
+
 ### Fixed
 
 - **Where authentication is delegated, there was no way to stop a user from arkhe's
   side.** Under `oidc` arkhe holds no credential, so `revoke` has nothing to act on,
   and nothing anywhere cleared `Client.active` — a token the authorization server kept
-  issuing kept working. `arkhe client disable` / `enable` and the same control in the
-  admin interface close that. **A principal of an organisation that has left cannot be
-  restored**, so an individual restore cannot undo a departure.
-- Where authentication is delegated, the "Register a user" page did not say **what
-  the operation is for.** No key is issued, so it looks as though nothing happens —
-  but **this registration is what ties a subject at the authorization server to a
-  reach in arkhe**, and without it even a valid token is refused. The page now says
-  which claim to enter (`azp` → `client_id` → `sub` for a machine,
-  `preferred_username` → `email` → `sub` for a person). The setup guide gained a
-  section on it.
-- **Keys could be issued that the deployment would never accept.** `authenticate`
-  only tries the mechanisms listed in `ARKHE_AUTH`, so a `client_secret` issued where
+  issuing kept working. Having said that authenticating and being allowed into the
+  namespace are different questions, arkhe could not take back its answer to the
+  second. **A principal of an organisation that has left cannot be restored**, so an
+  individual restore cannot undo a departure.
+- Under a delegated setup, "Register a user" did not say **what the operation is
+  for.** No key is issued, so it looks as though nothing happens — but **this
+  registration is what ties a subject at the authorization server to a reach in
+  arkhe**, and without it even a valid token is refused. The page now says which claim
+  to enter (`azp` → `client_id` → `sub` for a machine, `preferred_username` → `email`
+  → `sub` for a person).
+- **Keys could be issued that the deployment would never accept.** `authenticate` only
+  tries the mechanisms listed in `ARKHE_AUTH`, so a `client_secret` issued where
   `oauth2` is not enabled goes nowhere — which was the case in the compose demo. The
-  kinds on offer are now derived from the enabled mechanisms. Where authentication is
-  delegated to an authorization server, the page explains that **arkhe holds only the
-  mapping from identifier to reach; the secret lives at the authorization server**.
+  kinds on offer are now derived from the enabled mechanisms.
 - **Buttons and links that would only be refused are no longer shown.** An
   organisation's administrator was shown the audit log link, which answered 403 when
   pressed, and the minting link appeared for principals without `ark:mint`. The
   visibility test is the same expression the route uses — written separately, it turns
-  into the opposite hole, where the button is hidden but the URL still works. A test
-  walks every link shown to each kind of principal and asserts none is refused.
+  into the opposite hole. A test walks every link shown to each kind of principal and
+  asserts none is refused.
 - When a sign-in round trip expired, the response was bare text with **no way back —
   the user had to edit the URL by hand**. It is now a page sharing the sign-in layout,
-  with a "Sign in again" button (the same for a refusal from the authentication server,
-  a state mismatch, and deployments with no sign-in page).
+  with a "Sign in again" button.
 - On a phone the **tables overflowed and the right-hand columns could not be read**.
   The card's `overflow: hidden` meant the page did not widen; the content was simply
-  **cut off** — the credentials and actions columns, and the audit log's target and
-  detail. Below 640px each row is now folded into a card with a label before every
-  value. The organisation list wrapped for the same reason: its right-aligned status
-  and actions were being pushed out of view.
+  **cut off**. Below 640px each row is folded into a card with a label before every
+  value.
 - **Logging out was impossible on a narrow screen.** The control was an unlabelled
-  icon at the foot of the sidebar, and the sidebar itself is folded away below 860px.
-  It has moved into the header and been given a label, so it sits in the same place at
-  every width.
+  icon at the foot of the sidebar, and the sidebar is folded away below 860px. It has
+  moved into the header.
 - Anchors for Japanese headings were `_1`, `_2`, … The default slugify drops
   non-ASCII, so **deep links into Japanese pages did not work**, and adding one
-  heading shifted the numbers so existing links silently pointed elsewhere. The
-  slugify now keeps Unicode.
+  heading shifted the numbers so existing links silently pointed elsewhere.
 - Writing a changelog entry did not update the published site: the `docs` workflow's
   path filter did not include `CHANGELOG*.md`, which the pages pull in with `--8<--`.
 - The versioning page hard-coded the current version and had gone stale at 0.0.1.
-  **Anything that goes stale at every release does not belong in the prose** — the
-  changelog has it. The test count in the quickstart went for the same reason.
+  **Anything that goes stale at every release does not belong in the prose.**
 
 ## [0.0.3] — 2026-08-29
 
@@ -68,12 +88,6 @@ none of them showed up in the test suite.
 
 ### Added
 
-- **Users can be registered and keys issued from the admin interface.** The "Open"
-  and "Register a user" buttons pointed at routes that did not exist and returned 404.
-  The plaintext is shown once, in the response to the issuing request (redirecting
-  would lose it), and keys can be revoked from the same page. **People are offered no
-  key**: a key would outlive the person's departure from the organisation. An
-  organisation's own administrator can manage its users.
 - **The admin interface can now build the ledger.** The four buttons on the overview
   — register a NAAN, onboard an organisation, carve out a shoulder, manage one —
   **pointed at routes that did not exist and returned 404**. They now work, and
@@ -109,12 +123,6 @@ none of them showed up in the test suite.
 
 ### Changed
 
-- The user page under a delegated authentication setup now shows **where that
-  authorization server is** (the issuer). Saying the secret is created at the
-  authorization server is no help if the page does not say which one.
-- The language switcher on the sign-in and notice pages is now **the same icon control
-  as the admin interface**. A row of segments breaks as soon as a third language is
-  added.
 - **The interface is written for someone opening the ledger for the first time.** The
   overview is called **Organisations** rather than "Delegation". Buttons say what they
   do: "Add an organisation", not "Onboard an organisation"; "Add a namespace", not
@@ -221,7 +229,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.4
 [0.0.3]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.3
 [0.0.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.2
 [0.0.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.1
