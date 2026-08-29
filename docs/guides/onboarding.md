@@ -145,6 +145,35 @@ Finally, check the configuration:
 arkhe check
 ```
 
+### Where authentication is delegated, registration is the linkage
+
+Under `ARKHE_AUTH=oidc`, arkhe **holds no key**. The secret is created and revoked at
+the authorization server — revocation taking effect in one place is the point of the
+arrangement.
+
+**The registration is still required.** Being able to authenticate is not the same as
+being allowed into this namespace, so a subject absent from the ledger is refused even
+with a valid token.
+
+| Where | What |
+| --- | --- |
+| Authorization server | The client, and issuing and revoking its secret |
+| arkhe | A user under the same identifier, with its organisation, namespace and scopes |
+
+The identifier has to be **the string the authorization server sends**, verbatim.
+
+| | Claims tried, in order |
+| --- | --- |
+| Machine | `azp` → `client_id` → `sub` |
+| Person | `preferred_username` → `email` → `sub` |
+
+```bash
+arkhe client add jc2-web-api 99999 --shoulder 1 --scopes "ark:mint ark:update"
+```
+
+**No key is issued.** There is no need to run `arkhe client key`, and a key issued
+anyway will not authenticate unless `apikey` or `oauth2` is in `ARKHE_AUTH`.
+
 ## 8. From then on
 
 Minting is not the whole of the daily work.

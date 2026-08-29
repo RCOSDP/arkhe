@@ -5,7 +5,11 @@
 {% block body %}
 <div class="head">
   <h1>{{ title }}{% if client %} <span class="mono dim">{{ client.client_id }}</span>{% endif %}</h1>
-  <p class="lede">{{ t('cu.lede' if client else 'cu.new.lede')|safe }}</p>
+  {# **この構成での「登録」が何をすることなのかを先に言う。** 認可サーバに
+     寄せた構成では、鍵を出すことではなく、向こうの主体とこちらの到達範囲を
+     結びつけることが登録の中身になる。 #}
+  <p class="lede">{{ t('cu.lede' if client
+       else ('cu.new.lede_oidc' if uses_oidc and not kinds else 'cu.new.lede'))|safe }}</p>
 </div>
 
 {% if request.query_params.get('saved') %}
@@ -30,7 +34,8 @@
       <div class="field">
         <label for="client_id">{{ t('cu.f.client_id') }}</label>
         <input id="client_id" name="client_id" required autofocus>
-        <p class="hint">{{ t('cu.f.client_id_hint')|safe }}</p>
+        <p class="hint">{{ t('cu.f.client_id_oidc' if uses_oidc
+             else 'cu.f.client_id_hint')|safe }}</p>
       </div>
       <div class="field">
         <label><input type="checkbox" name="person" value="1"> {{ t('cu.f.person') }}</label>

@@ -11,6 +11,13 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- Where authentication is delegated, the "Register a user" page did not say **what
+  the operation is for.** No key is issued, so it looks as though nothing happens —
+  but **this registration is what ties a subject at the authorization server to a
+  reach in arkhe**, and without it even a valid token is refused. The page now says
+  which claim to enter (`azp` → `client_id` → `sub` for a machine,
+  `preferred_username` → `email` → `sub` for a person). The setup guide gained a
+  section on it.
 - **Keys could be issued that the deployment would never accept.** `authenticate`
   only tries the mechanisms listed in `ARKHE_AUTH`, so a `client_secret` issued where
   `oauth2` is not enabled goes nowhere — which was the case in the compose demo. The

@@ -271,6 +271,18 @@ JA: dict[str, str] = {
                         "<code>ARKHE_ADMIN_LOGIN</code> ではなく "
                         "<code>ARKHE_AUTH</code> に <code>apikey</code> か "
                         "<code>oauth2</code> を入れると、ここから発行できるようになります。",
+    # 認可サーバに寄せた構成での「登録」の意味
+    "cu.new.lede_oidc": "<b>ここでの登録が、認可サーバの主体と arkhe の到達範囲を"
+                        "結びつけます。</b>鍵はこの構成では出しません——秘密は認可"
+                        "サーバが持っています。<b>登録が無ければ、正しいトークンを"
+                        "持っていても通りません</b>：認可サーバで認証できることと、"
+                        "この名前空間を触ってよいことは別だからです。",
+    "cu.f.client_id_oidc": "<b>認可サーバが送ってくる文字列をそのまま入れます。</b>"
+                           "機械なら <code>azp</code>（無ければ <code>client_id</code>、"
+                           "それも無ければ <code>sub</code>）、人なら "
+                           "<code>preferred_username</code>（無ければ "
+                           "<code>email</code>、それも無ければ <code>sub</code>）。"
+                           "1 文字でも違うと照合できません。",
     "login.title": "管理画面にログイン",
     "login.id": "ID",
     "login.id_ph": "メールアドレスなど",
@@ -528,6 +540,18 @@ EN: dict[str, str] = {
                         "<code>apikey</code> or <code>oauth2</code> to "
                         "<code>ARKHE_AUTH</code> (not <code>ARKHE_ADMIN_LOGIN</code>) "
                         "to issue one here.",
+    "cu.new.lede_oidc": "<b>Registering here is what ties a subject at the "
+                        "authorization server to a reach in arkhe.</b> No key is issued "
+                        "in this deployment — the secret lives at the authorization "
+                        "server. <b>Without this registration even a valid token is "
+                        "refused</b>: being able to authenticate is not the same as "
+                        "being allowed into this namespace.",
+    "cu.f.client_id_oidc": "<b>Enter the string the authorization server sends, "
+                           "verbatim.</b> For a machine that is <code>azp</code> "
+                           "(failing that <code>client_id</code>, then <code>sub</code>); "
+                           "for a person <code>preferred_username</code> (failing that "
+                           "<code>email</code>, then <code>sub</code>). One character "
+                           "out and it will not match.",
     "login.title": "Sign in to the admin interface",
     "login.id": "ID",
     "login.id_ph": "your email address, for example",

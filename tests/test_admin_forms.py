@@ -372,3 +372,37 @@ def test_どちらも受けない構成では理由を出す(db, world, root, wi
     db.commit()
     page = with_auth([]).get(f"/admin/client/{c.id}").text
     assert "ARKHE_AUTH" in page
+
+
+def test_登録が無ければ正しいトークンでも通さない(db, world, root):
+    """**紐付けが要る。** 認可サーバで認証できることと、この名前空間を
+    触ってよいことは別なので、台帳に無い主体は通さない。
+
+    照合は `azp` → `client_id` → `sub` の順（`auth/oidc.py`）。
+    """
+    from arkhe.auth.errors import AuthError
+    from arkhe.auth.oidc import OidcVerifier
+
+    v = OidcVerifier.__new__(OidcVerifier)
+    v.decode = lambda _t: {"azp": "誰でもない", "scope": "ark:mint"}
+    with pytest.raises(AuthError, match="not registered"):
+        v.authenticate(db, "dummy")
+
+
+def test_登録すれば同じトークンが通る(db, world, root):
+    """登録＝紐付け。鍵を出さずに、これだけで通るようになる。"""
+    from arkhe.auth.oidc import OidcVerifier
+
+    ops.register_client(db, root, client_id="kc-repo", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    v = OidcVerifier.__new__(OidcVerifier)
+    v.decode = lambda _t: {"azp": "kc-repo", "scope": "ark:mint"}
+    p = v.authenticate(db, "dummy")
+    assert p.client_id == "kc-repo" and p.has("ark:mint")
+
+
+def test_認可サーバ構成では登録の意味を説明する(db, world, root, with_auth):
+    """鍵を出す画面ではなく、**紐付けの画面**であることを先に言う。"""
+    page = with_auth(["oidc"]).get("/admin/client/new").text
+    assert "azp" in page and "preferred_username" in page
