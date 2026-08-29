@@ -86,9 +86,14 @@ services:
       # 体験用の値。**本番では必ず差し替える。**
       ARKHE_SESSION_SECRET: demo-only-session-secret-change-me-0123456789
       ARKHE_SESSION_SECURE: "false"   # http で動かすため。HTTPS なら外す
-      # **API も同じ Keycloak で受ける。** apikey と併用できる（機構は排他ではない）。
-      # 移行期に「API キーと OIDC の両方を受ける」が普通に要るのでこの形にしてある。
-      ARKHE_AUTH: apikey,oidc
+      # **機構は排他ではない。** 3 つとも有効にして、違いをその場で比べられるようにする
+      # ——移行期に「API キーと OIDC の両方を受ける」が普通に要る。
+      #   apikey  arkhe が出した鍵をそのまま Bearer で送る
+      #   oauth2  arkhe 自身の /oauth/token で client_secret をトークンに換える
+      #   oidc    外部の認可サーバ（この一式では Keycloak）が出したトークンを検証する
+      ARKHE_AUTH: apikey,oauth2,oidc
+      # oauth2 の署名鍵。**体験用の値。本番では必ず差し替える。**
+      ARKHE_TOKEN_SECRET: demo-only-token-secret-change-me-0123456789abcd
       # API のアクセストークンに求める audience。realm の client scope
       # `arkhe-api` が audience mapper でこれを立てる。
       # （管理画面の ID トークンの aud は arkhe-admin。別物なので混ぜない）

@@ -40,7 +40,17 @@
       </div>
       <div class="grid2">
         <div class="field"><label for="title">{{ t('mint.title_field') }}</label><input id="title" name="title"></div>
-        <div class="field"><label for="type">{{ t('mint.type') }}</label><input id="type" name="type" placeholder="Dataset"></div>
+        {# **候補は出すが、縛らない。** `datalist` なら一覧から選べて、
+           一覧に無いものはそのまま打てる（JS も要らない）。 #}
+        <div class="field">
+          <label for="type">{{ t('mint.type') }}</label>
+          <input id="type" name="type" list="resource-types" placeholder="Dataset"
+                 autocomplete="off">
+          <datalist id="resource-types">
+            {% for rt in types %}<option value="{{ rt }}">{% endfor %}
+          </datalist>
+          <p class="hint">{{ t('mint.type_hint')|safe }}</p>
+        </div>
       </div>
       <div class="grid2">
         <div class="field"><label for="who">who <span class="opt">— ERC</span></label><input id="who" name="who"></div>

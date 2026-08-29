@@ -176,6 +176,19 @@ class _ShoulderChoice:
         self.manager_name = s.manager.name if s.manager else ""
 
 
+#: 採番フォームの種別の候補。**DataCite の `resourceTypeGeneral`** を採る
+#: （この分野で通っている語彙で、自前定義しない）。**縛りではなく候補**——
+#: ERC の `what` は語彙を定めないので、一覧に無いものは直接入力できる。
+RESOURCE_TYPES = (
+    "Audiovisual", "Award", "Book", "BookChapter", "Collection",
+    "ComputationalNotebook", "ConferencePaper", "ConferenceProceeding", "DataPaper",
+    "Dataset", "Dissertation", "Event", "Image", "Instrument", "InteractiveResource",
+    "Journal", "JournalArticle", "Model", "OutputManagementPlan", "PeerReview",
+    "PhysicalObject", "Preprint", "Project", "Report", "Service", "Software", "Sound",
+    "Standard", "StudyRegistration", "Text", "Workflow", "Other",
+)
+
+
 def _mintable(session: Session, p: Principal) -> list[_ShoulderChoice]:
     return [_ShoulderChoice(s) for s in _visible_shoulders(session, p) if s.can_mint_here]
 
@@ -461,6 +474,7 @@ def mint_form(request: Request, principal: AdminPrincipal, session: Db):
                 shoulders=_mintable(session, principal),
                 # NAAN 単位以上は shoulder の明示が必須（既定を持たない）。
                 needs_shoulder=principal.is_naan_wide,
+                types=RESOURCE_TYPES,
                 minted=None,
             ),
         ),
@@ -508,6 +522,7 @@ def mint_submit(
                 "mint",
                 shoulders=_mintable(session, principal),
                 needs_shoulder=principal.is_naan_wide,
+                types=RESOURCE_TYPES,
                 minted=ark,
                 flash=f"ark:/{ark.ark} "
                 + i18n.translator(i18n.pick(request))("mint.flash"),
@@ -583,6 +598,9 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
         client=c, managers=managers, shoulders=shoulders,
         creds=sorted(c.credentials, key=lambda x: x.id, reverse=True) if c else [],
         kinds=_issuable_kinds(cfg), uses_oidc="oidc" in cfg.auth,
+        # 選べないなら**なぜ選べないか**まで出す（空欄を見せて終わらせない）。
+        missing_mech=("oauth2" if "apikey" in cfg.auth else "apikey")
+        if len(_issuable_kinds(cfg)) == 1 else "",
         # **どこへ行けばよいかまで見せる。** 「認可サーバで作れ」だけでは、
         # どの認可サーバのことか画面から分からない。
         issuer=cfg.oidc_issuer,

@@ -83,6 +83,9 @@ JA: dict[str, str] = {
                      "行き先が無い対象はこれが正しい形です。",
     "mint.title_field": "タイトル",
     "mint.type": "種別",
+    "mint.type_hint": "一覧から選べます。<b>ここにないものは直接入力してかまいません</b>"
+                      "——ERC の <code>what</code> は語彙を縛らないので、"
+                      "画面が縛ってはいけません。",
     "mint.submit": "採番する",
     "mint.flash": "を採番しました",
     # 主体
@@ -294,6 +297,10 @@ JA: dict[str, str] = {
                        "止めると、認可サーバが出したトークンでもこの名前空間には入れなくなります"
                        "（他の資源には影響しません）。",
     "cu.enable_note": "止まっています。戻すと、また入れるようになります。",
+    "cu.key.only_one": "この構成で通るのは <code>{kind}</code> だけです。"
+                       "もう一方も選べるようにするには <code>ARKHE_AUTH</code> に "
+                       "<code>{missing}</code> を足してください——足さずに出した鍵は"
+                       "どこからも通りません。",
     "login.title": "管理画面にログイン",
     "login.id": "ID",
     "login.id_ph": "メールアドレスなど",
@@ -363,6 +370,9 @@ EN: dict[str, str] = {
                      "redirect to, this is the correct shape.",
     "mint.title_field": "Title",
     "mint.type": "Type",
+    "mint.type_hint": "Pick from the list, or <b>type anything that is not in it</b> — "
+                      "ERC's <code>what</code> constrains no vocabulary, so the "
+                      "interface must not either.",
     "mint.submit": "Mint",
     "mint.flash": "minted",
     "cl.title": "Users & keys",
@@ -575,6 +585,9 @@ EN: dict[str, str] = {
                        "server no longer gets into this namespace — other resources are "
                        "unaffected.",
     "cu.enable_note": "Stopped. Restoring lets it in again.",
+    "cu.key.only_one": "Only <code>{kind}</code> authenticates in this deployment. To "
+                       "offer the other as well, add <code>{missing}</code> to "
+                       "<code>ARKHE_AUTH</code> — a key issued without it goes nowhere.",
     "login.title": "Sign in to the admin interface",
     "login.id": "ID",
     "login.id_ph": "your email address, for example",

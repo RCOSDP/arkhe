@@ -89,8 +89,18 @@ docker compose start keycloak
 
 ## API も同じ Keycloak で叩く
 
-この構成は `ARKHE_AUTH=apikey,oidc` で動いている。**機構は排他ではない**ので、
-API キーと Keycloak のトークンを同時に受け付ける（移行期に両方要るのが普通）。
+この構成は `ARKHE_AUTH=apikey,oauth2,oidc` で動いている。**機構は排他ではない**ので、
+3 つとも同時に受け付ける（移行期に両方要るのが普通）。
+
+| 機構 | 何を送るか |
+| --- | --- |
+| `apikey` | arkhe が出した鍵をそのまま `Bearer` で送る |
+| `oauth2` | arkhe 自身の `/oauth/token` で client_secret をトークンに換える |
+| `oidc` | Keycloak が出したトークンを送る（下記） |
+
+管理画面の利用者ページから、`apikey` と `oauth2` の鍵はどちらも発行できる。
+**その構成で通らない種別は出さない**ので、`ARKHE_AUTH` から機構を外すと
+選択肢からも消える。
 
 到達範囲は**トークンではなく arkhe の台帳が決める**。`nibb-invenio` は基礎生物学
 研究所の主体として登録してあるので、こうなる:

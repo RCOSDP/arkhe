@@ -489,3 +489,45 @@ def test_他組織の主体は止められない(db, world, root, principal_of, 
     assert cli.post(f"/admin/client/{c.id}/active", data={"active": ""}).status_code == 403
     db.expire_all()
     assert db.get(Client, c.id).active
+
+
+# ----------------------------------------------------- 種別を選べること
+
+
+def test_鍵の種別が構成に応じて選べる(db, world, root, with_auth):
+    """有効な機構が 2 つあれば、2 つとも選べる。"""
+    c = ops.register_client(db, root, client_id="k2", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    page = with_auth(["apikey", "oauth2"]).get(f"/admin/client/{c.id}").text
+    assert 'value="api_key"' in page and 'value="client_secret"' in page
+    # 両方選べるなら、理由の注記は出さない
+    assert "ARKHE_AUTH" not in page
+
+
+def test_片方しか選べないなら理由を出す(db, world, root, with_auth):
+    """**空欄ではなく、何を足せばよいかを出す。**"""
+    c = ops.register_client(db, root, client_id="k1", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    page = with_auth(["apikey"]).get(f"/admin/client/{c.id}").text
+    assert 'value="client_secret"' not in page
+    assert "oauth2" in page and "ARKHE_AUTH" in page
+
+
+def test_採番の種別は候補であって縛りではない(world, principal_of, as_principal):
+    """ERC の `what` は語彙を定めない。**画面が縛ってはいけない。**"""
+    c = as_principal(principal_of(manager=world["a"]))
+    page = c.get("/admin/mint").text
+    assert "<datalist" in page and 'value="Dataset"' in page
+    # select ではないので、一覧に無い値も送れる
+    assert c.post("/admin/mint", data={"url": "https://x/1", "type": "自由な値"}).status_code == 200
+
+
+def test_一覧に無い種別も保存できる(db, world, principal_of, as_principal):
+    from arkhe.db.models import Ark
+
+    c = as_principal(principal_of(manager=world["a"]))
+    c.post("/admin/mint", data={"url": "https://x/2", "type": "うちの資料区分"})
+    saved = db.scalars(db.query(Ark).filter_by(type="うちの資料区分").statement).all()
+    assert saved, "一覧に無い種別が保存されていない"

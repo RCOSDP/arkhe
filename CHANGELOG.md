@@ -9,6 +9,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- The minting form's **type can be picked from a list** (DataCite's
+  `resourceTypeGeneral`). **It is not a constraint** — ERC's `what` defines no
+  vocabulary, so anything not in the list can still be typed (a `datalist`, so no JS).
+- Where only one kind of key can be issued, the page now says **why, and what to add**.
+  The compose demo runs `ARKHE_AUTH=apikey,oauth2,oidc`, so both an API key and a
+  client_secret can be issued and compared.
+
 ## [0.0.4] — 2026-08-29
 
 Only what came out of actually using the admin interface. **Buttons that do nothing

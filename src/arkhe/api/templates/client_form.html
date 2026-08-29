@@ -170,6 +170,9 @@
             <select id="kind" name="kind">
               {% for k in kinds %}<option value="{{ k }}">{{ t('cu.key.' ~ k) }}</option>{% endfor %}
             </select>
+            {% if missing_mech %}
+            <p class="hint">{{ t('cu.key.only_one').format(kind=kinds[0], missing=missing_mech)|safe }}</p>
+            {% endif %}
           </div>
           <div class="field">
             <label for="klabel">{{ t('cu.key.label') }} <span class="opt">— {{ t('f.optional') }}</span></label>
