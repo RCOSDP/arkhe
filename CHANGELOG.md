@@ -11,6 +11,11 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- The documentation now states that "users" in the interface and "principals" in the
+  API and CLI are the same thing. **The two words stay**, because the readers differ:
+  the interface is read by whoever operates the service, the API and CLI by whoever
+  writes against them. The mapping appears in both the admin guide and the CLI
+  reference.
 - The word for the entity a namespace is delegated to is now **organisation**
   throughout the interface and the documentation, and a NAAN is an "organisation
   number (NAAN)" — it is a *Name Assigning Authority Number*, and the number belongs

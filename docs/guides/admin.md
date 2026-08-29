@@ -30,7 +30,20 @@ else.**
 **Mint an ARK** — for the times one is needed by hand: a migration edge case, a
 physical object, a smoke test. Organisations normally mint through the API.
 
-**Principals and credentials** — who may mint, with which key, reaching how far.
+**Users and keys** — who may mint, with which key, reaching how far. What is listed
+is **not the organisations themselves** but their systems and their people.
+
+!!! note ""Users" on screen is "principals" in the API and CLI"
+    **The readers differ, so the words do.** The interface is read by whoever operates
+    the service; the API and the CLI are read by whoever writes against them.
+
+    | Interface | API, CLI, data model |
+    | --- | --- |
+    | User | Principal (`Client`) |
+    | Key | Credential |
+
+    "Principal" is the access-control term, which is also where the `Subject` column
+    (machine / person) comes from.
 
 **Audit log** — restricted to NAAN scope and wider. Who did what is information
 belonging to whoever holds the namespace; an organisation's administrator has no

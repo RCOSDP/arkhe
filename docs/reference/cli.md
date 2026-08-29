@@ -25,6 +25,9 @@ audit log the same way.
 
 `--help` on any command gives its arguments.
 
+What the commands call a *principal* is called a **user** in the admin interface
+([Admin interface](../guides/admin.md)). They are the same thing.
+
 The whole sequence, including the steps that happen outside arkhe — requesting a NAAN
 and registering your resolver — is in [Setting up for the first
 time](../guides/onboarding.md).
