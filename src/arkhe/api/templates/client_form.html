@@ -98,12 +98,22 @@
         {% if client.manager %}<span class="dim">{{ client.manager.name }}</span>{% endif %}</span>
       <span class="k">{{ t('cu.scopes') }}</span>
       <span class="v mono dim">{{ client.allowed_scopes }}</span>
+      <span class="k">{{ t('cl.entry') }}</span>
+      <span class="v" data-entry="{{ entry }}">
+        {% if entry == 'key' %}<span class="dim">{{ t('en.key') }}</span>
+        {% elif entry == 'idp' %}<span class="pill naan">{{ t('en.idp') }}</span>
+        {% elif entry == 'person' %}<span class="dim">{{ t('en.person') }}</span>
+        {% else %}<span class="pill retired">{{ t('en.none') }}</span>{% endif %}
+      </span>
       <span class="k">{{ t('cu.state') }}</span>
       <span class="v">
         {% if client.active %}<span class="pill active">{{ t('cu.state.on') }}</span>
         {% else %}<span class="pill retired">{{ t('cu.state.off') }}</span>{% endif %}
       </span>
     </div>
+    {% if entry == 'none' %}
+    <div class="note stop"><span>{{ t('en.none_hint')|safe }}</span></div>
+    {% endif %}
     {# **認可サーバに寄せた構成では、ここが arkhe 側の唯一の止め方。** #}
     <div class="note info" style="margin-bottom:0">
       <span>{{ t('cu.disable_note' if client.active else 'cu.enable_note')|safe }}</span>
@@ -171,7 +181,7 @@
               {% for k in kinds %}<option value="{{ k }}">{{ t('cu.key.' ~ k) }}</option>{% endfor %}
             </select>
             {% if missing_mech %}
-            <p class="hint">{{ t('cu.key.only_one').format(kind=kinds[0], missing=missing_mech)|safe }}</p>
+            <p class="hint one-kind">{{ t('cu.key.only_one').format(kind=kinds[0], missing=missing_mech)|safe }}</p>
             {% endif %}
           </div>
           <div class="field">

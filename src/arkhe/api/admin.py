@@ -36,6 +36,7 @@ from arkhe.db.models import (
     Naan,
     Shoulder,
     ShoulderStatus,
+    Subject,
 )
 from arkhe.domain import admin_ops as ops
 from arkhe.domain import authz, minting
@@ -63,6 +64,30 @@ def _issuable_kinds(cfg) -> list[str]:
     if "oauth2" in cfg.auth:
         kinds.append(CredentialKind.CLIENT_SECRET.value)
     return kinds
+
+
+def _entry_route(client: Client, cfg) -> str:
+    """この主体が**どうやって入ってくるか**。
+
+    `oidc` だけの構成では機械も鍵を持たない。にもかかわらず「資格情報 0 有効」と
+    出していたので、**正しく設定できている主体が未設定に見えていた。**
+    ここは「鍵を何本持っているか」ではなく「入れるかどうか」を出す。
+
+    **機構は主体に結びついていない。** 有効な機構のうち、この `client_id` を
+    示せるものならどれでも通る——だから「この主体の入り方」は、持っている鍵と
+    構成の両方から決まる。台帳に別途持たせても認証には使われず、実態とずれる
+    だけなので持たせていない。
+    """
+    if client.subject_type != Subject.MACHINE:
+        return "person"                       # 外部ログイン / パスワード
+    # **機構が無効な鍵は数えない。** 持っていても通らないので、あると言うと嘘になる
+    # （`oidc` だけの構成に残っている古い API キーがまさにこれ）。
+    usable = set(_issuable_kinds(cfg))
+    if any(c.active and c.kind in usable for c in client.credentials):
+        return "key"                          # arkhe が出した鍵
+    if "oidc" in cfg.auth:
+        return "idp"                          # 認可サーバのトークン
+    return "none"                             # **本当に未設定**
 
 
 def _can_add_client(p: Principal) -> bool:
@@ -535,7 +560,7 @@ def mint_submit(
 
 
 @router.get("/clients", response_class=HTMLResponse)
-def clients(request: Request, principal: AdminPrincipal, session: Db):
+def clients(request: Request, principal: AdminPrincipal, session: Db, cfg: Config):
     stmt = select(Client).options(
         selectinload(Client.credentials),
         selectinload(Client.manager),
@@ -549,6 +574,7 @@ def clients(request: Request, principal: AdminPrincipal, session: Db):
     for c in rows:
         c.live_credentials = sum(1 for x in c.credentials if x.active)
         c.dead_credentials = sum(1 for x in c.credentials if not x.active)
+        c.entry = _entry_route(c, cfg)
         if c.shoulder is not None:
             c.scope_label = f"{c.naan}{c.shoulder.shoulder}"
         elif c.manager is not None:
@@ -598,6 +624,7 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
         client=c, managers=managers, shoulders=shoulders,
         creds=sorted(c.credentials, key=lambda x: x.id, reverse=True) if c else [],
         kinds=_issuable_kinds(cfg), uses_oidc="oidc" in cfg.auth,
+        entry=_entry_route(c, cfg) if c else "",
         # 選べないなら**なぜ選べないか**まで出す（空欄を見せて終わらせない）。
         missing_mech=("oauth2" if "apikey" in cfg.auth else "apikey")
         if len(_issuable_kinds(cfg)) == 1 else "",

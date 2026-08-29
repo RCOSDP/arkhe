@@ -26,7 +26,7 @@
   <table>
     <thead><tr>
       <th>client_id</th><th>{{ t('cl.reach') }}</th><th>{{ t('cl.scope') }}</th>
-      <th>{{ t('cl.creds') }}</th><th></th>
+      <th>{{ t('cl.entry') }}</th><th></th>
     </tr></thead>
     <tbody>
     {% for c in clients %}
@@ -37,7 +37,17 @@
           <span class="dim">{{ c.scope_label }}</span>
         </td>
         <td class="mono dim" data-label="{{ t('cl.scope') }}">{{ c.allowed_scopes }}</td>
-        <td class="dim" data-label="{{ t('cl.creds') }}">{{ c.live_credentials }} {{ t('cl.live') }}{% if c.dead_credentials %} / {{ c.dead_credentials }} {{ t('cl.dead') }}{% endif %}</td>
+        {# **「鍵を何本持っているか」ではなく「入れるかどうか」を出す。**
+           認可サーバに任せた構成では鍵を持たないので、本数を出すと
+           正しく設定できている主体が未設定に見える。 #}
+        <td data-label="{{ t('cl.entry') }}" data-entry="{{ c.entry }}">
+          {% if c.entry == 'key' %}
+            <span class="dim">{{ t('en.key') }} {{ c.live_credentials }}</span>
+            {% if c.dead_credentials %}<span class="dim">/ {{ c.dead_credentials }} {{ t('cl.dead') }}</span>{% endif %}
+          {% elif c.entry == 'idp' %}<span class="pill naan">{{ t('en.idp') }}</span>
+          {% elif c.entry == 'person' %}<span class="dim">{{ t('en.person') }}</span>
+          {% else %}<span class="pill retired">{{ t('en.none') }}</span>{% endif %}
+        </td>
         <td data-label="" style="text-align:right">
           <a class="btn sm" href="/admin/client/{{ c.id }}">{{ t('cl.open') }}</a>
         </td>

@@ -9,6 +9,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A correctly configured user looked unconfigured** where authentication is
+  delegated: the list said "0 credentials active", which is exactly what a machine
+  holding no key looks like under `oidc`. The column now says **how it gets in** — a
+  key, the authorization server, an external login, or nothing yet. **A key whose
+  mechanism is disabled does not count**: it cannot authenticate, so saying it is there
+  would be a lie. A subject that genuinely cannot get in is told what to do about it.
+
 ### Added
 
 - The minting form's **type can be picked from a list** (DataCite's

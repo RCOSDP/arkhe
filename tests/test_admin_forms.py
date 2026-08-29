@@ -501,8 +501,9 @@ def test_鍵の種別が構成に応じて選べる(db, world, root, with_auth):
     db.commit()
     page = with_auth(["apikey", "oauth2"]).get(f"/admin/client/{c.id}").text
     assert 'value="api_key"' in page and 'value="client_secret"' in page
-    # 両方選べるなら、理由の注記は出さない
-    assert "ARKHE_AUTH" not in page
+    # 両方選べるなら、片方しか無い理由の注記は出さない
+    # （`ARKHE_AUTH` は他の注記にも出るので、この注記そのものを見る）
+    assert "one-kind" not in page
 
 
 def test_片方しか選べないなら理由を出す(db, world, root, with_auth):
@@ -512,7 +513,7 @@ def test_片方しか選べないなら理由を出す(db, world, root, with_aut
     db.commit()
     page = with_auth(["apikey"]).get(f"/admin/client/{c.id}").text
     assert 'value="client_secret"' not in page
-    assert "oauth2" in page and "ARKHE_AUTH" in page
+    assert "one-kind" in page and "oauth2" in page
 
 
 def test_採番の種別は候補であって縛りではない(world, principal_of, as_principal):
@@ -531,3 +532,74 @@ def test_一覧に無い種別も保存できる(db, world, principal_of, as_pri
     c.post("/admin/mint", data={"url": "https://x/2", "type": "うちの資料区分"})
     saved = db.scalars(db.query(Ark).filter_by(type="うちの資料区分").statement).all()
     assert saved, "一覧に無い種別が保存されていない"
+
+
+# ------------------------------------------------- 入り方が画面から分かる
+
+
+def test_認可サーバ構成の機械は未設定に見えない(db, world, root, with_auth):
+    """**鍵の本数を出すと、正しく設定できている主体が未設定に見える。**
+
+    `oidc` だけの構成では機械も鍵を持たない。「資格情報 0 有効」ではなく
+    「認可サーバ」と出す。
+    """
+    from arkhe.api import i18n
+
+    ops.register_client(db, root, client_id="idp-only", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    page = with_auth(["oidc"]).get("/admin/clients").text
+    assert 'data-entry="idp"' in page
+    assert "0 " + i18n.JA["cl.live"] not in page
+
+
+def test_鍵を持つ機械は鍵と出る(db, world, root, with_auth):
+
+    c = ops.register_client(db, root, client_id="with-key", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    ops.issue_credential(db, root, client_pk=c.id)
+    db.commit()
+    assert 'data-entry="key"' in with_auth(["apikey"]).get("/admin/clients").text
+
+
+def test_本当に未設定なら未設定と出す(db, world, root, with_auth):
+    """**「認可サーバに任せてある」と「まだ入れない」を混ぜない。**"""
+
+    c = ops.register_client(db, root, client_id="nothing", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    cli = with_auth(["apikey"])          # oidc 無し・鍵無し ＝ 入れない
+    assert 'data-entry="none"' in cli.get("/admin/clients").text
+    # 詳細では、何をすればよいかまで出す
+    assert "ARKHE_AUTH" in cli.get(f"/admin/client/{c.id}").text
+
+
+def test_止めた主体は入り方によらず通らない(db, world, root):
+    """入り方の表示は説明であって、認可そのものではない。"""
+    from arkhe.auth.errors import AuthError
+    from arkhe.auth.oidc import OidcVerifier
+
+    c = ops.register_client(db, root, client_id="idp-stop", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    ops.set_client_active(db, root, client_pk=c.id, active=False)
+    db.commit()
+    v = OidcVerifier.__new__(OidcVerifier)
+    v.decode = lambda _t: {"azp": "idp-stop", "scope": "ark:mint"}
+    with pytest.raises(AuthError):
+        v.authenticate(db, "t")
+
+
+def test_機構が無効な鍵は入り方に数えない(db, world, root, with_auth):
+    """**持っていても通らない鍵を「鍵」と出すと嘘になる。**
+
+    `oidc` だけの構成に残っている古い API キーがまさにこれ。
+    """
+
+    c = ops.register_client(db, root, client_id="stale-key", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    ops.issue_credential(db, root, client_pk=c.id)   # api_key
+    db.commit()
+    page = with_auth(["oidc"]).get(f"/admin/client/{c.id}").text
+    # 文言ではなく印で見る（「鍵」は見出しにも出るので誤検出する）
+    assert 'data-entry="idp"' in page
+    assert 'data-entry="key"' not in page
