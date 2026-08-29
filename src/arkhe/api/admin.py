@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -518,6 +518,143 @@ def clients(request: Request, principal: AdminPrincipal, session: Db):
     )
 
 
+# ------------------------------------------------------- 利用者と資格情報
+#
+# **平文の資格情報はここでしか手に入らない。** 発行の直後に一度だけ返し、
+# 保存しているのはハッシュだけ。画面を再読み込みしても出てこない——だから
+# 発行は POST で受け、そのレスポンスに載せる（リダイレクトすると消える）。
+
+
+def _reachable_client(session: Session, principal: Principal, client_id: int) -> Client:
+    """届く範囲の利用者だけを返す。判定は `admin_ops` と同じものを使う。"""
+    c = session.get(Client, client_id)
+    if c is None:
+        raise Forbidden("この利用者はこの主体の範囲外")
+    if not principal.reaches_naan(c.naan):
+        raise Forbidden("この利用者はこの主体の範囲外")
+    if not principal.is_naan_wide and c.manager_id != principal.manager_id:
+        raise Forbidden("この利用者はこの主体の範囲外")
+    return c
+
+
+def _client_page(request: Request, principal: Principal, session: Db, c: Client | None, **extra):
+    managers = []
+    if principal.is_naan_wide:
+        stmt = select(Manager).where(Manager.active.is_(True)).order_by(Manager.naan, Manager.name)
+        if not principal.is_system:
+            stmt = stmt.where(Manager.naan == principal.naan)
+        managers = list(session.scalars(stmt))
+    # **`_mintable` は表示用で id を持たない。** 紐づけには実体が要る。
+    shoulders = _visible_shoulders(session, principal) if c is None else []
+    return _page(
+        request, principal, "client_form.html", "clients",
+        client=c, managers=managers, shoulders=shoulders,
+        creds=sorted(c.credentials, key=lambda x: x.id, reverse=True) if c else [],
+        **extra,
+    )
+
+
+@router.get("/client/new", response_class=HTMLResponse)
+def client_new(request: Request, principal: AdminPrincipal, session: Db):
+    # **ここで独自の判定を書かない。** 組織単位の管理者も自組織の利用者は
+    # 作れる（`register_client` がそう決めている）。画面だけ厳しくすると、
+    # 出せるはずのものが出せなくなる。
+    return _client_page(request, principal, session, None)
+
+
+@router.post("/client/new")
+def client_create(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    client_id: Annotated[str, Form()],
+    naan: Annotated[str, Form()] = "",
+    manager_id: Annotated[str, Form()] = "",
+    shoulder_id: Annotated[str, Form()] = "",
+    scopes: Annotated[str, Form()] = "ark:mint",
+    label: Annotated[str, Form()] = "",
+    person: Annotated[str, Form()] = "",
+):
+    """利用者を登録する。**資格情報はここでは出さない。**
+
+    登録と鍵の発行を分けているのは、`--person` の主体には鍵を出さないから。
+    まず何者かを決め、機械であれば次の画面で鍵を出す。
+    """
+    c = ops.register_client(
+        session, principal, client_id=client_id.strip(),
+        naan=naan or principal.naan,
+        # **自組織以外は選ばせない。** 選択肢を出していないので、値が来ても使わない。
+        manager_id=(
+            int(manager_id) if principal.is_naan_wide and manager_id.strip()
+            else principal.manager_id
+        ),
+        shoulder_id=int(shoulder_id) if shoulder_id.strip() else None,
+        scopes=scopes.strip() or "ark:mint", label=label.strip(),
+        subject_type="person" if person else "machine",
+    )
+    session.commit()
+    return _redirect(f"/admin/client/{c.id}")
+
+
+@router.get("/client/{client_id}", response_class=HTMLResponse)
+def client_detail(request: Request, principal: AdminPrincipal, session: Db, client_id: int):
+    c = _reachable_client(session, principal, client_id)
+    return _client_page(request, principal, session, c)
+
+
+@router.post("/client/{client_id}/key", response_class=HTMLResponse)
+def client_issue_key(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    client_id: int,
+    kind: Annotated[str, Form()] = "api_key",
+    label: Annotated[str, Form()] = "",
+):
+    """資格情報を発行する。**平文はこの応答にしか載らない。**
+
+    リダイレクトで一覧に戻さないのはそのため——戻した先では、もう取り出せない。
+    """
+    c = _reachable_client(session, principal, client_id)
+    issued = ops.issue_credential(
+        session, principal, client_pk=c.id, kind=kind, label=label.strip()
+    )
+    secret = issued.secret
+    session.commit()
+    session.refresh(c)
+    return _client_page(request, principal, session, c, issued=secret)
+
+
+@router.post("/client/{client_id}/revoke")
+def client_revoke_key(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    client_id: int,
+    credential_id: Annotated[int, Form()],
+):
+    """**行は消さない。** いつ失効したかが残る。"""
+    _reachable_client(session, principal, client_id)
+    ops.revoke_credential(session, principal, credential_id=credential_id)
+    session.commit()
+    return _redirect(f"/admin/client/{client_id}?saved=1")
+
+
+@router.post("/client/{client_id}/password")
+def client_set_password(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    client_id: int,
+    password: Annotated[str, Form()],
+):
+    """人の主体にパスワードを設定する（`ARKHE_ADMIN_LOGIN=password` の構成用）。"""
+    c = _reachable_client(session, principal, client_id)
+    ops.set_password(session, principal, client_pk=c.id, password=password)
+    session.commit()
+    return _redirect(f"/admin/client/{client_id}?saved=1")
+
+
 # ------------------------------------------------------------------ 監査
 
 
@@ -569,6 +706,23 @@ def _login_page(request: Request, cfg: Config, *, error: str = "", status: int =
     )
 
 
+def _notice(request: Request, cfg, key: str, status: int, retry: str = "/admin/login", **fmt):
+    """ログインに戻す画面。**行き止まりを作らない。**
+
+    ここは未ログインの人が見る画面なので、管理画面の骨組み（`base.html`）は
+    使えない（`principal` が要る）。ログイン画面と同じ外枠を共有する。
+    """
+    lang = i18n.pick(request)
+    tr = i18n.translator(lang)
+    return templates.TemplateResponse(
+        request, "notice.html",
+        {"request": request, "lang": lang, "langs": i18n.LANGS, "t": tr,
+         "heading": tr(f"notice.{key}.h"), "message": tr(f"notice.{key}.m").format(**fmt),
+         "retry_url": retry, "next_url": ""},
+        status_code=status,
+    )
+
+
 @router.post("/login", name="admin_login_submit")
 def login_submit(
     request: Request,
@@ -584,7 +738,7 @@ def login_submit(
     総当たりで作れてしまう。
     """
     if cfg.admin_login != "password":
-        return PlainTextResponse("この構成にログイン画面はありません", status_code=404)
+        return _notice(request, cfg, "nologin", 404, retry="/admin/")
     from arkhe.auth import password as pw
 
     try:
@@ -612,10 +766,7 @@ def login(request: Request, cfg: Config):
     if cfg.admin_login == "password":
         return _login_page(request, cfg)
     if cfg.admin_login != "oidc":
-        return PlainTextResponse(
-            "この構成にログイン画面はありません（ARKHE_ADMIN_LOGIN を確認してください）",
-            status_code=404,
-        )
+        return _notice(request, cfg, "nologin", 404, retry="/admin/")
     next_url = request.query_params.get("next", "/admin/")
     url, payload = login_flow.start(cfg, redirect_uri=_redirect_uri(request), next_url=next_url)
     r = RedirectResponse(url, status_code=302)
@@ -637,15 +788,13 @@ def callback(request: Request, session: Db, cfg: Config):
     raw = request.cookies.get(login_flow.FLOW_COOKIE, "")
     claims = sess.read(raw, secret=cfg.session_secret) if raw else None
     if not claims:
-        return PlainTextResponse(
-            "ログインの往復が失効しました。やり直してください", status_code=400
-        )
+        return _notice(request, cfg, "expired", 400)
     flow = json.loads(claims["flow"])
     # RFC 6749: **state を突き合わせる**（別の要求への応答を受け取らないため）。
     if request.query_params.get("state") != flow["state"]:
-        return PlainTextResponse("state が一致しません", status_code=400)
+        return _notice(request, cfg, "state", 400)
     if err := request.query_params.get("error"):
-        return PlainTextResponse(f"認可サーバが拒否しました: {err}", status_code=403)
+        return _notice(request, cfg, "denied", 403, err=err)
 
     principal = login_flow.finish(
         session, cfg,

@@ -196,6 +196,69 @@ JA: dict[str, str] = {
     "shoulder.f.redirect": "解決の委譲先",
     "shoulder.f.redirect_hint": "<code>${blade}</code> が名前に置き換わります。",
     "shoulder.f.note": "運用の記録",
+    # 利用者の登録と鍵の発行
+    "cu.new.title": "利用者を登録",
+    "cu.edit.title": "利用者",
+    "cu.new.lede": "<b>まず何者かを決めます。</b>鍵はここでは出しません——"
+                   "<b>人には鍵を出さない</b>ので、機械として登録したときだけ次の画面で"
+                   "発行できます。人の身元は外部のログインが保証します。",
+    "cu.lede": "この利用者に、どの鍵で、どこまで届く権限があるか。"
+               "<b>鍵の平文は発行の直後に一度だけ表示されます。</b>",
+    "cu.f.client_id": "識別子",
+    "cu.f.client_id_hint": "機械なら分かりやすい名前（<code>univ-repo</code> など）。"
+                           "<b>人なら、認証サーバが返す識別子</b>"
+                           "（メールアドレスや eppn）をそのまま入れます。",
+    "cu.f.person": "人として登録する",
+    "cu.f.person_hint": "外部のログイン専用になり、<b>鍵は持てません</b>。"
+                        "その人が組織を離れても鍵が生き残る、という事態を避けるためです。",
+    "cu.f.manager": "所属組織",
+    "cu.f.shoulder": "名前空間に固定する",
+    "cu.f.shoulder_hint": "固定すると、鍵が漏れても<b>他組織の名前空間には届きません</b>。",
+    "cu.f.scopes": "できること",
+    "cu.f.label": "ラベル",
+    "cu.f.label_hint": "鍵を入れ替えるときの目印。空でもかまいません。",
+    "cu.machine": "機械",
+    "cu.person": "人",
+    "cu.reach": "届く範囲",
+    "cu.scopes": "できること",
+    # 鍵
+    "cu.keys": "鍵",
+    "cu.key.issue": "鍵を発行",
+    "cu.key.kind": "種別",
+    "cu.key.api_key": "API キー（Bearer でそのまま送る）",
+    "cu.key.client_secret": "client_secret（OAuth2 でトークンに換える）",
+    "cu.key.label": "ラベル",
+    "cu.key.issued": "鍵を発行しました",
+    "cu.key.once": "<b>この値はもう二度と表示されません。</b>いま控えてください。"
+                   "保存しているのはハッシュだけです。",
+    "cu.key.none": "まだ鍵がありません。",
+    "cu.key.person": "人の主体には鍵を発行しません。身元は外部のログインが保証します。",
+    "cu.key.created": "発行",
+    "cu.key.used": "最終利用",
+    "cu.key.never": "未使用",
+    "cu.key.revoke": "失効させる",
+    "cu.key.revoked": "失効",
+    "cu.key.revoke_note": "<b>行は消しません。</b>いつ失効したかを残します。"
+                          "入れ替えるときは、新しい鍵を配ってから古い方を失効させてください。",
+    # パスワード
+    "cu.pw.title": "パスワード",
+    "cu.pw.lede": "<code>ARKHE_ADMIN_LOGIN=password</code> の構成でだけ使います。12 文字以上。",
+    "cu.pw.set": "設定する",
+    # ログインに戻す画面
+    "notice.retry": "ログインし直す",
+    "notice.expired.h": "ログインの往復が失効しました",
+    "notice.expired.m": "認証サーバへ送り出してから戻ってくるまでに時間が空きすぎました。"
+                        "もう一度ログインしてください。",
+    "notice.state.h": "この応答は受け取れません",
+    "notice.state.m": "こちらが送り出した要求と、戻ってきた応答が対応していません"
+                      "（別の要求への応答を受け取らないための確認です）。"
+                      "もう一度ログインしてください。",
+    "notice.denied.h": "認証サーバが拒否しました",
+    "notice.denied.m": "認証サーバから「{err}」と返されました。"
+                       "権限や設定について、システム管理者にお問い合わせください。",
+    "notice.nologin.h": "この構成にログイン画面はありません",
+    "notice.nologin.m": "この arkhe は、ID とパスワードで入る構成になっていません。"
+                        "入り方はシステム管理者にお問い合わせください。",
     "login.title": "管理画面にログイン",
     "login.id": "ID",
     "login.id_ph": "メールアドレスなど",
@@ -378,6 +441,69 @@ EN: dict[str, str] = {
     "shoulder.f.redirect": "Delegate resolution to",
     "shoulder.f.redirect_hint": "<code>${blade}</code> is replaced by the name.",
     "shoulder.f.note": "Operational note",
+    "cu.new.title": "Register a user",
+    "cu.edit.title": "User",
+    "cu.new.lede": "<b>First decide what it is.</b> No key is issued here — <b>people hold "
+                   "no keys</b>, so only something registered as a machine can be given "
+                   "one on the next page. A person's identity is vouched for by an "
+                   "external login.",
+    "cu.lede": "What this user may do, with which key, and how far it reaches. "
+               "<b>A key's plaintext is shown once, just after it is issued.</b>",
+    "cu.f.client_id": "Identifier",
+    "cu.f.client_id_hint": "For a machine, a name you will recognise "
+                           "(<code>univ-repo</code>). <b>For a person, whatever the "
+                           "authentication server returns</b> — an email address, an "
+                           "eppn — verbatim.",
+    "cu.f.person": "Register as a person",
+    "cu.f.person_hint": "External login only; <b>it can hold no key</b>. A key would "
+                        "outlive the person's departure from the organisation.",
+    "cu.f.manager": "Organisation",
+    "cu.f.shoulder": "Pin to a namespace",
+    "cu.f.shoulder_hint": "Pinned, a leaked key still <b>cannot reach another "
+                          "organisation's namespace</b>.",
+    "cu.f.scopes": "What it may do",
+    "cu.f.label": "Label",
+    "cu.f.label_hint": "A marker for when you rotate the key. May be left empty.",
+    "cu.machine": "machine",
+    "cu.person": "person",
+    "cu.reach": "Reaches",
+    "cu.scopes": "May do",
+    "cu.keys": "Keys",
+    "cu.key.issue": "Issue a key",
+    "cu.key.kind": "Kind",
+    "cu.key.api_key": "API key (sent as-is with Bearer)",
+    "cu.key.client_secret": "client_secret (exchanged for a token via OAuth2)",
+    "cu.key.label": "Label",
+    "cu.key.issued": "Key issued",
+    "cu.key.once": "<b>This value will never be shown again.</b> Copy it now. Only its "
+                   "hash is stored.",
+    "cu.key.none": "No key yet.",
+    "cu.key.person": "People are issued no keys. Their identity is vouched for by an "
+                     "external login.",
+    "cu.key.created": "Issued",
+    "cu.key.used": "Last used",
+    "cu.key.never": "never",
+    "cu.key.revoke": "Revoke",
+    "cu.key.revoked": "revoked",
+    "cu.key.revoke_note": "<b>The row is not deleted</b> — when it stopped remains. To "
+                          "rotate, hand out the new key first, then revoke the old one.",
+    "cu.pw.title": "Password",
+    "cu.pw.lede": "Used only where <code>ARKHE_ADMIN_LOGIN=password</code>. 12 characters or more.",
+    "cu.pw.set": "Set",
+    "notice.retry": "Sign in again",
+    "notice.expired.h": "The sign-in round trip expired",
+    "notice.expired.m": "Too much time passed between being sent to the authentication "
+                        "server and coming back. Please sign in again.",
+    "notice.state.h": "This response cannot be accepted",
+    "notice.state.m": "The response that came back does not correspond to the request "
+                      "that was sent — a check that stops a response meant for another "
+                      "request from being accepted. Please sign in again.",
+    "notice.denied.h": "The authentication server refused",
+    "notice.denied.m": "The authentication server answered \u201c{err}\u201d. Ask a "
+                       "system administrator about your access and the configuration.",
+    "notice.nologin.h": "This deployment has no sign-in page",
+    "notice.nologin.m": "This arkhe is not configured for signing in with an ID and "
+                        "password. Ask a system administrator how to get in.",
     "login.title": "Sign in to the admin interface",
     "login.id": "ID",
     "login.id_ph": "your email address, for example",

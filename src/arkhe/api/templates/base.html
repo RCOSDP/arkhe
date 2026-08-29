@@ -246,6 +246,13 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
 .note.info { background: var(--line-2); color: var(--ink-2); }
 .note.stop { background: var(--stop-soft); color: var(--stop); }
 .note b { font-weight: 650; }
+/* 見出しと値の対。狭い画面では 1 列に落とす（表と同じ考え方）。 */
+.kv { display: grid; grid-template-columns: 8.5em 1fr; gap: 10px 14px; align-items: baseline; }
+.kv .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+         color: var(--ink-3); font-weight: 650; }
+.kv .v { min-width: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap;
+         gap: 8px; align-items: baseline; }
+
 .secret { font-family: var(--mono); font-size: 13px; background: var(--accent-soft);
           color: var(--ink); border-radius: var(--r-sm); padding: 12px 14px; word-break: break-all; }
 .empty { padding: 44px 18px; text-align: center; color: var(--ink-3); }
@@ -295,6 +302,8 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
                       white-space: nowrap; }
   .icon-btn.out .lbl { position: absolute; width: 1px; height: 1px;
                        overflow: hidden; clip-path: inset(50%); }
+  .kv { grid-template-columns: 1fr; gap: 2px 0; }
+  .kv .k { margin-top: 8px; }
 }
 </style>
 </head>

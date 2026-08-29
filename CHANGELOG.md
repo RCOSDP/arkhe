@@ -11,6 +11,10 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- When a sign-in round trip expired, the response was bare text with **no way back —
+  the user had to edit the URL by hand**. It is now a page sharing the sign-in layout,
+  with a "Sign in again" button (the same for a refusal from the authentication server,
+  a state mismatch, and deployments with no sign-in page).
 - On a phone the **tables overflowed and the right-hand columns could not be read**.
   The card's `overflow: hidden` meant the page did not widen; the content was simply
   **cut off** — the credentials and actions columns, and the audit log's target and
@@ -39,6 +43,12 @@ none of them showed up in the test suite.
 
 ### Added
 
+- **Users can be registered and keys issued from the admin interface.** The "Open"
+  and "Register a user" buttons pointed at routes that did not exist and returned 404.
+  The plaintext is shown once, in the response to the issuing request (redirecting
+  would lose it), and keys can be revoked from the same page. **People are offered no
+  key**: a key would outlive the person's departure from the organisation. An
+  organisation's own administrator can manage its users.
 - **The admin interface can now build the ledger.** The four buttons on the overview
   — register a NAAN, onboard an organisation, carve out a shoulder, manage one —
   **pointed at routes that did not exist and returned 404**. They now work, and

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% set title = t('cu.edit.title') if client else t('cu.new.title') %}
+{% block title %}{{ title }} — arkhe{% endblock %}
+{% block crumb %}{{ title }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ title }}{% if client %} <span class="mono dim">{{ client.client_id }}</span>{% endif %}</h1>
+  <p class="lede">{{ t('cu.lede' if client else 'cu.new.lede')|safe }}</p>
+</div>
+
+{% if request.query_params.get('saved') %}
+<div class="note info"><span>{{ t('f.saved') }}</span></div>
+{% endif %}
+
+{# **平文はこの応答にしか載らない。** 保存しているのはハッシュだけ。 #}
+{% if issued %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('cu.key.issued') }}</span></div>
+  <div class="card-b">
+    <div class="secret">{{ issued }}</div>
+    <div class="note stop"><span>{{ t('cu.key.once')|safe }}</span></div>
+  </div>
+</div>
+{% endif %}
+
+{% if not client %}
+<div class="card">
+  <div class="card-b">
+    <form method="post" action="/admin/client/new">
+      <div class="field">
+        <label for="client_id">{{ t('cu.f.client_id') }}</label>
+        <input id="client_id" name="client_id" required autofocus>
+        <p class="hint">{{ t('cu.f.client_id_hint')|safe }}</p>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" name="person" value="1"> {{ t('cu.f.person') }}</label>
+        <p class="hint">{{ t('cu.f.person_hint')|safe }}</p>
+      </div>
+      <div class="grid2">
+        {% if can_manage %}
+        <div class="field">
+          <label for="manager_id">{{ t('cu.f.manager') }}</label>
+          <select id="manager_id" name="manager_id">
+            <option value="">—</option>
+            {% for m in managers %}
+              <option value="{{ m.id }}" data-naan="{{ m.naan }}">{{ m.naan }} · {{ m.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        <div class="field">
+          <label for="shoulder_id">{{ t('cu.f.shoulder') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <select id="shoulder_id" name="shoulder_id">
+            <option value="">—</option>
+            {% for sh in shoulders %}
+              <option value="{{ sh.id }}">{{ sh.naan }}{{ sh.shoulder }}{% if sh.manager %} — {{ sh.manager.name }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          <p class="hint">{{ t('cu.f.shoulder_hint')|safe }}</p>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label for="scopes">{{ t('cu.f.scopes') }}</label>
+          <input id="scopes" name="scopes" value="ark:mint ark:update">
+        </div>
+        <div class="field">
+          <label for="label">{{ t('cu.f.label') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="label" name="label">
+          <p class="hint">{{ t('cu.f.label_hint') }}</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn" href="/admin/clients">{{ t('f.cancel') }}</a>
+        <button class="btn primary" type="submit">{{ t('f.create') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% else %}
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-b">
+    <div class="kv">
+      <span class="k">{{ t('cu.f.client_id') }}</span>
+      <span class="v mono">{{ client.client_id }}
+        <span class="pill {{ 'manager' if client.subject_type == 'machine' else 'naan' }}">
+          {{ t('cu.machine' if client.subject_type == 'machine' else 'cu.person') }}</span></span>
+      <span class="k">{{ t('cu.reach') }}</span>
+      <span class="v"><span class="pill {{ client.authority }}">{{ t('au.' ~ client.authority) }}</span>
+        <span class="dim mono">{{ client.naan }}{% if client.shoulder %}{{ client.shoulder.shoulder }}{% endif %}</span>
+        {% if client.manager %}<span class="dim">{{ client.manager.name }}</span>{% endif %}</span>
+      <span class="k">{{ t('cu.scopes') }}</span>
+      <span class="v mono dim">{{ client.allowed_scopes }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('cu.keys') }}</span><span class="sub">{{ creds|length }}</span></div>
+  {% if creds %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>{{ t('cu.key.kind') }}</th><th>{{ t('cu.key.label') }}</th>
+      <th>{{ t('cu.key.created') }}</th><th>{{ t('cu.key.used') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for cr in creds %}
+      <tr>
+        <td class="mono" data-label="{{ t('cu.key.kind') }}">{{ cr.prefix }}…
+          <span class="dim">{{ cr.kind }}</span>
+          {% if not cr.active %}<span class="pill retired">{{ t('cu.key.revoked') }}</span>{% endif %}</td>
+        <td class="dim" data-label="{{ t('cu.key.label') }}">{{ cr.label }}</td>
+        <td class="mono dim" data-label="{{ t('cu.key.created') }}">{{ cr.created_at.strftime('%Y-%m-%d') }}</td>
+        <td class="mono dim" data-label="{{ t('cu.key.used') }}">
+          {{ cr.last_used_at.strftime('%Y-%m-%d') if cr.last_used_at else t('cu.key.never') }}</td>
+        <td data-label="" style="text-align:right">
+          {% if cr.active %}
+          <form method="post" action="/admin/client/{{ client.id }}/revoke" style="display:inline">
+            <input type="hidden" name="credential_id" value="{{ cr.id }}">
+            <button class="btn sm" type="submit">{{ t('cu.key.revoke') }}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="card-b"><p class="dim">{{ t('cu.key.none') }}</p></div>
+  {% endif %}
+
+  <div class="card-b" style="border-top:1px solid var(--line-2)">
+    {% if client.subject_type == 'machine' %}
+      <form method="post" action="/admin/client/{{ client.id }}/key">
+        <div class="grid2">
+          <div class="field">
+            <label for="kind">{{ t('cu.key.kind') }}</label>
+            <select id="kind" name="kind">
+              <option value="api_key">{{ t('cu.key.api_key') }}</option>
+              <option value="client_secret">{{ t('cu.key.client_secret') }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="klabel">{{ t('cu.key.label') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+            <input id="klabel" name="label">
+          </div>
+        </div>
+        <p class="hint">{{ t('cu.key.revoke_note')|safe }}</p>
+        <div class="actions"><button class="btn primary" type="submit">{{ t('cu.key.issue') }}</button></div>
+      </form>
+    {% else %}
+      <div class="note info"><span>{{ t('cu.key.person') }}</span></div>
+    {% endif %}
+  </div>
+</div>
+
+{% if client.subject_type == 'person' %}
+<div class="card">
+  <div class="card-h"><span class="t">{{ t('cu.pw.title') }}</span></div>
+  <div class="card-b">
+    <p class="hint" style="margin-top:0">{{ t('cu.pw.lede')|safe }}</p>
+    <form method="post" action="/admin/client/{{ client.id }}/password">
+      <div class="field">
+        <input name="password" type="password" required minlength="12" autocomplete="new-password">
+      </div>
+      <div class="actions"><button class="btn" type="submit">{{ t('cu.pw.set') }}</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="actions" style="margin-top:16px">
+  <a class="btn" href="/admin/clients">{{ t('f.cancel') }}</a>
+</div>
+{% endif %}
+{% endblock %}

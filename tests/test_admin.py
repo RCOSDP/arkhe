@@ -550,3 +550,47 @@ def test_パスワードのログアウトは外に出ない(db, world, raw_app)
     assert r.status_code == 302 and r.headers["location"] == "/admin/"
     assert 'arkhe_session=""' in r.headers.get("set-cookie", "") or \
            "Max-Age=0" in r.headers.get("set-cookie", "")
+
+
+# ------------------------------------------------- ログインに戻す画面
+
+
+def test_往復が失効したらログインへ戻れる(db, world, raw_app):
+    """**行き止まりを作らない。**
+
+    素のテキストを返していたので、利用者は URL を手で直すしかなかった。
+    """
+    from fastapi.testclient import TestClient
+
+    cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
+                    admin_client_id="arkhe-admin")
+    r = TestClient(raw_app(cfg), follow_redirects=False).get("/admin/callback?code=x&state=y")
+    assert r.status_code == 400
+    assert 'href="/admin/login"' in r.text        # 戻り道がある
+    assert "arkhe" in r.text and "<style" in r.text  # ログイン画面と同じ体裁
+
+
+def test_認可サーバの拒否も同じ画面で返す(db, world, raw_app, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from arkhe.auth import session as sess
+
+    cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
+                    admin_client_id="arkhe-admin")
+    cli = TestClient(raw_app(cfg), follow_redirects=False)
+    flow = sess.issue("flow", secret=cfg.session_secret, ttl=600,
+                      extra={"flow": '{"state": "s1", "verifier": "v", "next": "/admin/"}'})
+    cli.cookies.set("arkhe_login", flow)
+    r = cli.get("/admin/callback?state=s1&error=access_denied")
+    assert r.status_code == 403
+    assert "access_denied" in r.text and 'href="/admin/login"' in r.text
+
+
+def test_ログイン画面の無い構成でも案内を出す(db, world, raw_app):
+    """404 を素のテキストで返すと、何が起きたのか分からない。"""
+    from fastapi.testclient import TestClient
+
+    r = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False).get(
+        "/admin/login"
+    )
+    assert r.status_code == 404 and 'href="/admin/"' in r.text

@@ -1,0 +1,7 @@
+{% extends "signin_base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block card %}    <h1>{{ heading }}</h1>
+    <p class="msg">{{ message }}</p>
+    {# **必ず戻り道を置く。** 行き止まりにすると、利用者は URL を手で直すしかない。 #}
+    <a class="again" href="{{ retry_url }}">{{ t('notice.retry') }}</a>
+{% endblock %}

@@ -20,7 +20,7 @@
 <div class="card">
   <div class="card-h">
     <span class="t">{{ t('cl.principals') }}</span><span class="sub">{{ clients|length }}</span>
-    {% if can_manage %}<span class="right"><a class="btn sm" href="/admin/client/new">{{ t('cl.add') }}</a></span>{% endif %}
+    <span class="right"><a class="btn sm" href="/admin/client/new">{{ t('cl.add') }}</a></span>
   </div>
   <div class="table-wrap">
   <table>
@@ -39,7 +39,7 @@
         <td class="mono dim" data-label="{{ t('cl.scope') }}">{{ c.allowed_scopes }}</td>
         <td class="dim" data-label="{{ t('cl.creds') }}">{{ c.live_credentials }} {{ t('cl.live') }}{% if c.dead_credentials %} / {{ c.dead_credentials }} {{ t('cl.dead') }}{% endif %}</td>
         <td data-label="" style="text-align:right">
-          {% if can_manage %}<a class="btn sm" href="/admin/client/{{ c.id }}">{{ t('cl.open') }}</a>{% endif %}
+          <a class="btn sm" href="/admin/client/{{ c.id }}">{{ t('cl.open') }}</a>
         </td>
       </tr>
     {% else %}

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-from arkhe.db.models import Authority, Manager, Naan, Shoulder
+from arkhe.db.models import Authority, Client, Manager, Naan, Shoulder
+from arkhe.domain import admin_ops as ops
 
 # ------------------------------------------------ 約束の水準（組織自身の宣言）
 
@@ -158,3 +159,91 @@ def test_知らない水準は画面からも入らない(db, world, principal_o
     else:
         assert r.status_code == 400
     assert db.get(Manager, a.id).commitment_level == before
+
+
+# ------------------------------------------------------ 利用者と鍵の発行
+
+
+def test_画面から鍵を発行できる(db, world, root, principal_of, as_principal):
+    """**平文はこの応答にしか載らない。** 保存しているのはハッシュだけ。"""
+    c = ops.register_client(db, root, client_id="repo", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    cli = as_principal(principal_of(manager=world["a"]))
+    r = cli.post(f"/admin/client/{c.id}/key", data={"kind": "api_key"})
+    assert r.status_code == 200
+    db.expire_all()
+    cred = db.get(Client, c.id).credentials[0]
+    assert cred.active and cred.prefix in r.text
+    # **平文は保存していない。** 画面に出たものが DB に無いことを確かめる。
+    secret = r.text.split('class="secret">')[1].split("<")[0].strip()
+    assert secret and secret not in cred.hashed
+
+
+def test_再読み込みでは鍵は出てこない(db, world, root, principal_of, as_principal):
+    """発行のたびに一度きり。リダイレクトで戻すと消える、を型で示す。"""
+    c = ops.register_client(db, root, client_id="repo2", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    cli = as_principal(principal_of(manager=world["a"]))
+    cli.post(f"/admin/client/{c.id}/key", data={"kind": "api_key"})
+    assert 'class="secret"' not in cli.get(f"/admin/client/{c.id}").text
+
+
+def test_人には鍵を発行しない(db, world, root, principal_of, as_principal):
+    """**人に鍵を配ると、その人が組織を離れても鍵が生き残る。**"""
+    c = ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
+                            manager_id=world["a"].id, subject_type="person")
+    db.commit()
+    cli = as_principal(principal_of(manager=world["a"]))
+    assert cli.post(f"/admin/client/{c.id}/key", data={"kind": "api_key"}).status_code == 400
+    # 画面にも発行の口を出さない
+    assert "/key" not in cli.get(f"/admin/client/{c.id}").text
+
+
+def test_他組織の利用者の鍵は発行できない(db, world, root, principal_of, as_principal):
+    c = ops.register_client(db, root, client_id="other", naan="99999",
+                            manager_id=world["b"].id, scopes="ark:mint")
+    db.commit()
+    cli = as_principal(principal_of(manager=world["a"]))
+    assert cli.get(f"/admin/client/{c.id}").status_code == 403
+    assert cli.post(f"/admin/client/{c.id}/key", data={"kind": "api_key"}).status_code == 403
+
+
+def test_失効させても行は残る(db, world, root, principal_of, as_principal):
+    """**いつ失効したかを残す。** 誰の鍵だったかが辿れなくなってはいけない。"""
+    from arkhe.db.models import Credential
+
+    c = ops.register_client(db, root, client_id="rot", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    issued = ops.issue_credential(db, root, client_pk=c.id)
+    db.commit()
+    cid = issued.credential.id
+    cli = as_principal(principal_of(manager=world["a"]))
+    r = cli.post(f"/admin/client/{c.id}/revoke", data={"credential_id": cid})
+    assert r.status_code == 303
+    db.expire_all()
+    cred = db.get(Credential, cid)
+    assert cred is not None and not cred.active and cred.expires_at is not None
+
+
+def test_組織管理者は自組織の利用者を登録できる(db, world, principal_of, as_principal):
+    """画面の判定を `admin_ops` より厳しくしない（出せるはずのものが出せなくなる）。"""
+    cli = as_principal(principal_of(manager=world["a"]))
+    r = cli.post("/admin/client/new", data={
+        "client_id": "own-repo", "scopes": "ark:mint", "person": "",
+    })
+    assert r.status_code == 303
+    made = db.scalar(db.query(Client).filter_by(client_id="own-repo").statement)
+    assert made.manager_id == world["a"].id
+
+
+def test_組織管理者は他組織を選べない(db, world, principal_of, as_principal):
+    """選択肢を出していない値が送られてきても、自組織に落とす。"""
+    cli = as_principal(principal_of(manager=world["a"]))
+    r = cli.post("/admin/client/new", data={
+        "client_id": "sneaky", "manager_id": str(world["b"].id), "scopes": "ark:mint",
+    })
+    assert r.status_code == 303
+    made = db.scalar(db.query(Client).filter_by(client_id="sneaky").statement)
+    assert made.manager_id == world["a"].id
