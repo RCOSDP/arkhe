@@ -5,6 +5,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Crect%20width%3D%2224%22%20height%3D%2224%22%20rx%3D%226%22%20fill%3D%22%236d5bd0%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20transform%3D%22translate%2812%2012%29%20scale%28.72%29%20translate%28-12%20-12%29%22%3E%3Ccircle%20cx%3D%2210.3%22%20cy%3D%2213.4%22%20r%3D%224.6%22%2F%3E%3Cpath%20d%3D%22M15.1%207.4c-.9%203.2-.9%206.4.9%209.2%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <title>{% block title %}{{ t('login.title') }}{% endblock %} — arkhe</title>
 <style>
 :root{color-scheme:light dark;
@@ -23,7 +24,8 @@ color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.6;
 .brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:22px}
 .brand .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
 background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));
-color:var(--accent-ink);font-weight:700;font-size:14px;letter-spacing:-.03em}
+color:var(--accent-ink)}
+.mark-svg{width:20px;height:20px}
 .brand .t{font-weight:650;font-size:16px;letter-spacing:-.015em}
 .brand .t small{display:block;font-weight:400;font-size:11px;color:var(--ink3);letter-spacing:.04em}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
@@ -83,7 +85,7 @@ transform:translateX(-50%);margin-top:6px}}
 <body>
 <div class="wrap">
   <div class="brand">
-    <span class="mark">αρ</span>
+    <span class="mark">{% include "partials/mark.html" %}</span>
     <span class="t">arkhe<small>{{ t('app.subtitle') }}</small></span>
   </div>
   <div class="card">

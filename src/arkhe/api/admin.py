@@ -803,6 +803,68 @@ def client_set_password(
     return _redirect(f"/admin/client/{client_id}?saved=1")
 
 
+# ------------------------------------------------------------ 発行した ARK
+#
+# **到達範囲でそのまま絞る。** システム管理者は全件、NAAN 単位はその NAAN、
+# 組織単位は自組織の shoulder に限る——一覧の絞り込みと認可を別々に書かない。
+#
+# 件数は増える一方なので、**最初からページ送りと検索を入れる**。後から足すと、
+# それまでの利用者は「全部出る」前提の画面に慣れてしまう。
+
+#: 1 ページの件数。**総件数は数えない**——ARK は増える一方で、毎回の
+#: `count(*)` が効いてくる。「次があるか」は 1 件多く引いて判断する。
+PAGE = 50
+
+
+def _visible_arks(session: Session, p: Principal):
+    stmt = select(Ark).options(selectinload(Ark.shoulder))
+    if not p.is_system:
+        stmt = stmt.where(Ark.naan == p.naan)
+    if not p.is_naan_wide:
+        # 組織単位は自組織の shoulder に限る。**主体が shoulder に固定されて
+        # いればそれだけ**（採番できる範囲と同じ絞り方にする）。
+        if p.shoulder_id is not None:
+            stmt = stmt.where(Ark.shoulder_id == p.shoulder_id)
+        else:
+            stmt = stmt.where(
+                Ark.shoulder_id.in_(
+                    select(Shoulder.id).where(Shoulder.manager_id == p.manager_id)
+                )
+            )
+    return stmt
+
+
+@router.get("/arks", response_class=HTMLResponse)
+def arks(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    q: str = "",
+    page: int = 1,
+):
+    """発行した ARK の一覧。"""
+    stmt = _visible_arks(session, principal)
+    term = q.strip()
+    if term:
+        # **ARK そのものと、行き先と、題名で引く。** 運用で手元にあるのはどれか
+        # 分からないので、3 つとも見る。
+        like = f"%{term}%"
+        stmt = stmt.where(
+            Ark.ark.ilike(like) | Ark.url.ilike(like) | Ark.title.ilike(like)
+        )
+    page = max(1, page)
+    rows = list(
+        session.scalars(
+            stmt.order_by(Ark.created_at.desc()).offset((page - 1) * PAGE).limit(PAGE + 1)
+        )
+    )
+    more = len(rows) > PAGE
+    return _page(
+        request, principal, "arks.html", "arks",
+        arks=rows[:PAGE], q=term, page_no=page, more=more,
+    )
+
+
 # ------------------------------------------------------------------ 監査
 
 

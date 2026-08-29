@@ -853,3 +853,78 @@ def test_監査ログの画面に接続元が出る(world, principal_of, as_prin
     page = c.get("/admin/audit").text
     assert i18n.JA["au.ip"] in page
     assert "X-Forwarded-For" in page or "x-forwarded-for" in page.lower()
+
+
+# ------------------------------------------------- 発行した ARK の一覧
+
+
+@pytest.fixture
+def minted(db, world, root):
+    """3 つの組織で 1 本ずつ採番する。**他組織のものが見えないこと**を見るため。"""
+    from arkhe.domain import minting
+
+    made = {}
+    for key in ("a", "b", "c"):
+        sh = world[key].default_shoulder
+        ark, _ = minting.mint(db, shoulder=sh, created_by=f"{key}-repo",
+                              url=f"https://{key}.example.org/1", title=f"{key} の対象")
+        made[key] = ark
+    db.commit()
+    return made
+
+
+def test_システム管理者は全arkを見られる(minted, principal_of, as_principal):
+    page = as_principal(principal_of(authority=Authority.SYSTEM)).get("/admin/arks").text
+    for a in minted.values():
+        assert a.ark in page
+
+
+def test_NAAN管理者はそのNAANだけ(minted, world, principal_of, as_principal):
+    page = as_principal(principal_of(authority=Authority.NAAN, naan="99999")).get(
+        "/admin/arks").text
+    assert minted["a"].ark in page and minted["b"].ark in page
+    assert minted["c"].ark not in page      # 別 NAAN
+
+
+def test_組織管理者は自組織だけ(minted, world, principal_of, as_principal):
+    page = as_principal(principal_of(manager=world["a"])).get("/admin/arks").text
+    assert minted["a"].ark in page
+    assert minted["b"].ark not in page      # 同じ NAAN の別組織
+    assert minted["c"].ark not in page
+
+
+def test_shoulder固定の主体はその範囲だけ(
+    db, world, root, minted, principal_of, as_principal
+):
+    """採番できる範囲と、見える範囲を同じ絞り方にする。"""
+    from arkhe.domain import minting
+
+    other, _ = minting.mint(db, shoulder=world["sh_b"], created_by="x", url="https://x/9")
+    db.commit()
+    p = principal_of(manager=world["a"], shoulder=world["sh_a"])
+    page = as_principal(p).get("/admin/arks").text
+    assert minted["a"].ark in page and other.ark not in page
+
+
+def test_検索は範囲を広げない(minted, world, principal_of, as_principal):
+    """**絞り込みで他組織のものが出てきてはいけない。**"""
+    page = as_principal(principal_of(manager=world["a"])).get(
+        "/admin/arks?q=example.org").text
+    assert minted["a"].ark in page
+    assert minted["b"].ark not in page and minted["c"].ark not in page
+
+
+def test_ページ送りができる(db, world, root, principal_of, as_principal):
+    """**件数は増える一方。** 並べるだけの画面はすぐ使えなくなる。"""
+    from arkhe.api.admin import PAGE
+    from arkhe.domain import minting
+
+    for i in range(PAGE + 3):
+        minting.mint(db, shoulder=world["a"].default_shoulder, created_by="bulk",
+                     url=f"https://bulk.example.org/{i}")
+    db.commit()
+    c = as_principal(principal_of(manager=world["a"]))
+    first = c.get("/admin/arks").text
+    assert first.count("ark:/") >= PAGE
+    assert "page=2" in first                       # 次があると分かる
+    assert c.get("/admin/arks?page=2").status_code == 200

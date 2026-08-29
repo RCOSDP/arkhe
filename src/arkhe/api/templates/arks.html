@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ t('ak.title') }} — arkhe{% endblock %}
+{% block crumb %}{{ t('ak.title') }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ t('ak.title') }}</h1>
+  <p class="lede">{{ t('ak.lede')|safe }}</p>
+</div>
+
+<div class="card">
+  <div class="card-h">
+    {# **探せることが先。** 件数は増える一方なので、並べるだけの画面は
+       すぐ使えなくなる。 #}
+    <form method="get" action="/admin/arks" class="search">
+      <input name="q" value="{{ q }}" placeholder="{{ t('ak.search_ph') }}"
+             aria-label="{{ t('ak.search') }}">
+      <button class="btn sm" type="submit">{{ t('ak.search') }}</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>{{ t('ak.ark') }}</th><th>{{ t('ak.target') }}</th><th>{{ t('ak.title_col') }}</th>
+      <th>{{ t('ak.when') }}</th><th>{{ t('ak.by') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for a in arks %}
+      <tr>
+        <td class="mono" data-label="{{ t('ak.ark') }}">ark:/{{ a.ark }}</td>
+        <td class="mono dim" data-label="{{ t('ak.target') }}">
+          {{ a.url or t('ak.none_target') }}</td>
+        <td data-label="{{ t('ak.title_col') }}">{{ a.title }}</td>
+        <td class="mono dim" data-label="{{ t('ak.when') }}">
+          {{ a.created_at.strftime('%Y-%m-%d') }}</td>
+        <td class="mono dim" data-label="{{ t('ak.by') }}">{{ a.created_by }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty">{{ t('ak.empty') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if page_no > 1 or more %}
+  <div class="card-b pager">
+    {% if page_no > 1 %}
+      <a class="btn sm" href="/admin/arks?q={{ q|urlencode }}&page={{ page_no - 1 }}">{{ t('ak.prev') }}</a>
+    {% endif %}
+    <span class="dim">{{ t('ak.page').format(n=page_no) }}</span>
+    {% if more %}
+      <a class="btn sm" href="/admin/arks?q={{ q|urlencode }}&page={{ page_no + 1 }}">{{ t('ak.next') }}</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

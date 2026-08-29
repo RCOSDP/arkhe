@@ -11,6 +11,14 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **A list of the ARKs issued.** It is filtered by reach, nothing more: a system
+  administrator sees them all, NAAN scope sees that NAAN, an organisation sees what
+  was minted in its own shoulders. **Search and paging are there from the start**,
+  because the count only ever grows. The total is never counted — `count(*)` would
+  start to hurt — so "is there more" is answered by fetching one extra row.
+- A logo: the **α** of ἀρχή, drawn as paths. Pictograms (branching lines and the like)
+  were tried and dropped — they read as the generic "share" glyph. The same mark is
+  the favicon.
 - **The side handing a namespace out can now decide what an organisation is trusted
   with** (`arkhe manager policy` and the organisation's settings page): the ways in
   (apikey / oauth2 / oidc), whether it may register its own users, and a ceiling on
