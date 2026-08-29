@@ -341,6 +341,8 @@ JA: dict[str, str] = {
     "op.title": "この組織に任せること",
     "op.lede": "<b>名前空間を配る側が決めます。</b>組織自身では変えられません"
                "——課された制限を課された側が外せては意味がないからです。",
+    "op.at_create": "迎える時点で決められます。あとから変えられますが、"
+                    "<b>後回しにすると掛け忘れが残ります</b>。",
     "op.auth": "許す入り方",
     "op.auth_hint": "何も選ばなければ制限なし（構成の既定に従う）。"
                     "<b>発行時だけでなく認証時にも効きます</b>——"
@@ -739,6 +741,8 @@ EN: dict[str, str] = {
     "op.title": "What this organisation is trusted with",
     "op.lede": "<b>Decided by the side handing the namespace out.</b> The organisation "
                "cannot change it — a limit the limited party can lift is not a limit.",
+    "op.at_create": "These can be set as you onboard. They can be changed later, "
+                    "but <b>left for later they tend to stay unset</b>.",
     "op.auth": "Permitted ways in",
     "op.auth_hint": "Select none for no restriction (the deployment's default applies). "
                     "<b>It bites at authentication, not only at issuance</b> — a key "

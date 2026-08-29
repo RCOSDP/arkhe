@@ -60,12 +60,29 @@
         </div>
       {% endif %}
 
-      {# **配る側の宣言。** 組織自身には出さない——見せて押せないより、
-         そもそも自分の裁量ではないことが分かるほうがよい。 #}
-      {% if can_manage and manager %}
+      {% if manager %}
+      <div class="actions">
+        <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
+        <button class="btn primary" type="submit">{{ t('f.save') }}</button>
+      </div>
+      {% endif %}
+    {% if manager %}</form>{% endif %}
+  </div>
+</div>
+
+{# **配る側の宣言なので、別の紙に置く。** 約束の水準（組織自身のもの）と
+   同じカードに並べると、誰が決めることなのかが読み取れない。
+   組織自身には出さない——見せて押せないより、そもそも自分の裁量ではないことが
+   分かるほうがよい。 #}
+{% if can_manage %}
+<div class="card" style="margin-top:20px">
+  <div class="card-h"><span class="t">{{ t('op.title') }}</span></div>
+  <div class="card-b">
+    <p class="hint" style="margin-top:0">{{ t('op.lede')|safe }}</p>
+    {# 追加のときは**上の form の続き**（開いたまま）。2 つに割ると、片方だけ
+       送られて「迎えたが制限が掛かっていない組織」が残る。 #}
+    {% if manager %}<form method="post" action="/admin/manager/{{ manager.id }}">{% endif %}
       <input type="hidden" name="policy" value="1">
-      <h2 style="margin-top:28px">{{ t('op.title') }}</h2>
-      <p class="hint" style="margin:0 0 14px">{{ t('op.lede')|safe }}</p>
 
       <div class="field">
         <label>{{ t('op.auth') }}</label>
@@ -73,7 +90,7 @@
           {% for mech in mechanisms %}
           <label class="check">
             <input type="checkbox" name="allowed_auth" value="{{ mech }}"
-                   {% if mech in manager.allowed_auth.split() %}checked{% endif %}>
+                   {% if manager and mech in manager.allowed_auth.split() %}checked{% endif %}>
             <span><b>{{ t('au.mech.' ~ mech) }}</b> <code>{{ mech }}</code></span>
           </label>
           {% endfor %}
@@ -84,7 +101,7 @@
       <div class="field">
         <label class="check">
           <input type="checkbox" name="self_register" value="1"
-                 {% if manager.may_self_register %}checked{% endif %}>
+                 {% if not manager or manager.may_self_register %}checked{% endif %}>
           <span><b>{{ t('op.self') }}</b></span>
         </label>
         <p class="hint">{{ t('op.self_hint') }}</p>
@@ -96,20 +113,20 @@
           {% for sc in scopes %}
           <label class="check">
             <input type="checkbox" name="max_scopes" value="{{ sc }}"
-                   {% if sc in manager.max_scopes.split() %}checked{% endif %}>
+                   {% if manager and sc in manager.max_scopes.split() %}checked{% endif %}>
             <span><b>{{ t('sc.' ~ sc) }}</b> <code>{{ sc }}</code></span>
           </label>
           {% endfor %}
         </div>
         <p class="hint">{{ t('op.max_hint')|safe }}</p>
       </div>
-      {% endif %}
-
       <div class="actions">
         <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
-        <button class="btn primary" type="submit">{{ t('f.save') if manager else t('f.create') }}</button>
+        <button class="btn primary" type="submit">
+          {{ t('f.save') if manager else t('f.create') }}</button>
       </div>
     </form>
   </div>
 </div>
+{% endif %}
 {% endblock %}

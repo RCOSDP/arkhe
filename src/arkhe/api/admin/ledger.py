@@ -184,12 +184,26 @@ def manager_create(
     shoulder: Annotated[str, Form()],
     commitment: Annotated[str, Form()] = "",
     quota: Annotated[str, Form()] = "",
+    allowed_auth: Annotated[list[str], Form()] = None,
+    self_register: Annotated[str, Form()] = "",
+    max_scopes: Annotated[list[str], Form()] = None,
+    policy: Annotated[str, Form()] = "",
 ):
     m, _ = ops.onboard_manager(
         session, principal, naan=naan, name=name.strip(), shoulder=shoulder.strip(),
         commitment_level=commitment,
         quota_per_day=int(quota) if quota.strip() else None,
     )
+    session.flush()
+    # **迎える時点で制限を決められるようにする。** 後から掛け直す運用にすると、
+    # 必ず掛け忘れが残る。
+    if policy:
+        ops.set_org_policy(
+            session, principal, manager_id=m.id,
+            mechanisms=list(allowed_auth or []),
+            may_self_register=bool(self_register),
+            max_scopes=list(max_scopes or []),
+        )
     session.commit()
     return _redirect(f"/admin/manager/{m.id}")
 

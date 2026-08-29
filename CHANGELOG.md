@@ -65,6 +65,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- The per-organisation restrictions **looked as though they could not be applied**.
+  They worked, but they sat in the same card as the commitment level — which the
+  organisation itself declares — so **who decides what was not readable**. They are now
+  a card of their own. The page for adding an organisation also **had no restrictions
+  at all**, so they could only be applied afterwards; left for later they tend to stay
+  unset, so they can now be decided as the organisation is onboarded.
 - Logging out is a POST. `SameSite=Lax` **does send the cookie on a top-level GET
   navigation**, so as a GET it could be triggered from another site.
 - **A stored XSS on the public resolver is closed.** Targets had no scheme

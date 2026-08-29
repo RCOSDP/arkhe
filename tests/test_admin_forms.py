@@ -1085,3 +1085,32 @@ def test_画面の文言にマークダウンを残さない():
         for key, value in cat.items():
             assert "`" not in value, f"{lang}/{key}: バッククォートは <code> にする"
             assert "**" not in value, f"{lang}/{key}: 強調は <b> にする"
+
+
+def test_迎える時点で制限を掛けられる(db, world, principal_of, as_principal):
+    """**後から掛け直す運用にすると、必ず掛け忘れが残る。**"""
+    from arkhe.db.models import Manager
+
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    r = c.post("/admin/manager/new", data={
+        "naan": "99999", "name": "新設の組織", "shoulder": "/n1",
+        "commitment": "permanent-stable", "quota": "",
+        "policy": "1", "allowed_auth": ["oidc"], "self_register": "",
+        "max_scopes": ["ark:mint"],
+    })
+    assert r.status_code == 303
+    m = db.scalar(db.query(Manager).filter_by(name="新設の組織").statement)
+    assert m.allowed_auth == "oidc"
+    assert not m.may_self_register
+    assert m.max_scopes == "ark:mint"
+
+
+def test_制限の欄は組織管理者には出さない(world, principal_of, as_principal):
+    """**自分の裁量ではないことが分かるほうがよい。** 見せて押せないより。"""
+    from arkhe.api import i18n
+
+    page = as_principal(principal_of(manager=world["a"])).get(
+        f"/admin/manager/{world['a'].id}").text
+    assert i18n.JA["op.title"] not in page
+    # 約束の水準（組織自身のもの）は出る
+    assert i18n.JA["manager.f.commitment"] in page
