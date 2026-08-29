@@ -110,6 +110,74 @@ JA: dict[str, str] = {
     "au.count": "件",
     "au.empty": "記録がありません。",
     # ログイン
+    # 台帳を組む操作
+    "f.save": "保存",
+    "f.create": "登録",
+    "f.cancel": "やめる",
+    "f.saved": "保存しました。",
+    "f.optional": "任意",
+    "f.readonly_here": "この画面からは変えられません",
+    "naan.new.title": "NAAN を登録",
+    "naan.edit.title": "NAAN の設定",
+    "naan.lede": "<b>NAA ポリシーは名前空間を配る側の宣言</b>です。"
+                 "この NAAN の配下すべてにかかるので、機関単位では変えられません"
+                 "（機関が自分について述べるのは<b>約束の水準</b>のほう）。",
+    "naan.f.naan": "NAAN",
+    "naan.f.naan_hint": "ARK Alliance から交付された番号。<b>後から変えられません。</b>",
+    "naan.f.name": "組織名",
+    "naan.f.description": "説明",
+    "naan.f.policy": "NAA ポリシー",
+    "naan.f.policy_hint": "<code>NP | NR, OP, CC | 2026 | &lt;URL&gt;</code> の形。"
+                          "<b><code>?</code> と <code>??</code> でそのまま公開されます。</b>",
+    "naan.f.minter": "採番の案内先",
+    "naan.f.minter_hint": "採番を外で行っている場合の行き先。"
+                          "<code>/.well-known/ark</code> で公開されます。",
+    "naan.f.authoritative": "この NAAN の権威を持つ",
+    "naan.f.authoritative_hint": "持つなら、未知の名前に <code>404</code> と答えます"
+                                 "（＝「無い」と言える）。持たないなら委譲先が要ります。",
+    "naan.f.redirect": "委譲先",
+    "manager.new.title": "機関をオンボード",
+    "manager.edit.title": "機関の設定",
+    "manager.lede": "<b>約束の水準は機関自身の宣言</b>です。"
+                    "だから機関管理者も自分の分は変えられます——"
+                    "採番上限はそうではありません（配った側が課すもの）。",
+    "manager.f.naan": "NAAN",
+    "manager.f.name": "機関名",
+    "manager.f.name_hint": "<b>内部専用です。</b>公開しません"
+                           "（shoulder から機関が読めてはいけないため）。",
+    "manager.f.shoulder": "委譲する名前空間",
+    "manager.f.shoulder_hint": "<code>/x9</code> のように <code>/</code> で始めます。"
+                               "<b>機関の登録と名前空間の委譲は必ず対で起きます。</b>",
+    "manager.f.commitment": "約束の水準",
+    "manager.f.commitment_hint": "<b><code>?</code> と <code>??</code> でそのまま公開されます。</b>"
+                                 "機関が述べたことだけを入れてください——"
+                                 "既定値を宣言として出すのは、何も出さないより悪い。"
+                                 "<b>下げるのも正当な操作です。</b>",
+    "manager.f.quota": "1 日あたりの採番上限",
+    "manager.f.quota_hint": "空にすると無制限。",
+    "cm.not-guaranteed": "約束しない",
+    "cm.permanent-dynamic": "永続・内容は変わりうる",
+    "cm.permanent-stable": "永続・内容は実質的に変わらない",
+    "cm.permanent-unchanging": "永続・内容は変えない",
+    "cm.descriptive-only": "記述だけ（対象がオンラインに無い）",
+    "shoulder.new.title": "shoulder を切り出す",
+    "shoulder.edit.title": "shoulder の設定",
+    "shoulder.lede": "<b>一度配った名前空間は取り戻せません。</b>"
+                     "<code>NR</code> を宣言している以上、既存の ARK は解決し続けます。"
+                     "使わなくなったものは消すのではなく <b>retired</b> にします。",
+    "shoulder.f.naan": "NAAN",
+    "shoulder.f.shoulder": "shoulder",
+    "shoulder.f.shoulder_hint": "<code>/x9</code> のように <code>/</code> で始めます。",
+    "shoulder.f.manager": "機関",
+    "shoulder.f.reserve": "押さえるだけで採番させない",
+    "shoulder.f.status": "状態",
+    "shoulder.f.status_hint": "<b>retired からは戻せません</b>"
+                              "（引退した名前空間の再開は NR 違反の芽）。",
+    "shoulder.f.minter": "採番の行き先",
+    "shoulder.f.minter_hint": "<b>delegated</b> のときだけ意味を持ちます。",
+    "shoulder.f.redirect": "解決の委譲先",
+    "shoulder.f.redirect_hint": "<code>${blade}</code> が名前に置き換わります。",
+    "shoulder.f.note": "運用の記録",
     "login.title": "管理画面にログイン",
     "login.id": "ID",
     "login.id_ph": "メールアドレスなど",
@@ -205,6 +273,79 @@ EN: dict[str, str] = {
     "au.detail": "Detail",
     "au.count": "entries",
     "au.empty": "Nothing recorded.",
+    "f.save": "Save",
+    "f.create": "Create",
+    "f.cancel": "Cancel",
+    "f.saved": "Saved.",
+    "f.optional": "optional",
+    "f.readonly_here": "cannot be changed here",
+    "naan.new.title": "Register a NAAN",
+    "naan.edit.title": "NAAN settings",
+    "naan.lede": "<b>The NAA policy is the declaration of the side handing namespaces "
+                 "out.</b> It covers everything under this NAAN, so an institution "
+                 "cannot change it — what an institution states about itself is its "
+                 "<b>commitment level</b>.",
+    "naan.f.naan": "NAAN",
+    "naan.f.naan_hint": "The number issued by the ARK Alliance. <b>It cannot be changed "
+                        "later.</b>",
+    "naan.f.name": "Organisation",
+    "naan.f.description": "Description",
+    "naan.f.policy": "NAA policy",
+    "naan.f.policy_hint": "In the form <code>NP | NR, OP, CC | 2026 | &lt;URL&gt;</code>. "
+                          "<b>Published verbatim by <code>?</code> and <code>??</code>.</b>",
+    "naan.f.minter": "Where minting happens",
+    "naan.f.minter_hint": "Where to go if minting happens elsewhere. Published at "
+                          "<code>/.well-known/ark</code>.",
+    "naan.f.authoritative": "You hold authority over this NAAN",
+    "naan.f.authoritative_hint": "If you do, an unknown name is answered with "
+                                 "<code>404</code> — you can say it does not exist. "
+                                 "If you do not, a delegation target is required.",
+    "naan.f.redirect": "Delegate to",
+    "manager.new.title": "Onboard an institution",
+    "manager.edit.title": "Institution settings",
+    "manager.lede": "<b>The commitment level is the institution's own declaration</b>, "
+                    "which is why an institutional administrator may change their own. "
+                    "The minting limit is not — that is imposed by the side handing the "
+                    "namespace out.",
+    "manager.f.naan": "NAAN",
+    "manager.f.name": "Institution",
+    "manager.f.name_hint": "<b>Internal only.</b> Never published — a shoulder must not "
+                           "reveal which institution holds it.",
+    "manager.f.shoulder": "Namespace to delegate",
+    "manager.f.shoulder_hint": "Begins with <code>/</code>, as in <code>/x9</code>. "
+                               "<b>Registering the institution and delegating the "
+                               "namespace always happen together.</b>",
+    "manager.f.commitment": "Commitment level",
+    "manager.f.commitment_hint": "<b>Published verbatim by <code>?</code> and "
+                                 "<code>??</code>.</b> Put in only what the institution "
+                                 "has stated — publishing a default as a declaration is "
+                                 "worse than publishing nothing. <b>Lowering it is a "
+                                 "legitimate operation.</b>",
+    "manager.f.quota": "Minting limit per day",
+    "manager.f.quota_hint": "Leave empty for unlimited.",
+    "cm.not-guaranteed": "No commitment",
+    "cm.permanent-dynamic": "Permanent; content may change",
+    "cm.permanent-stable": "Permanent; content substantially unchanged",
+    "cm.permanent-unchanging": "Permanent; content not changed",
+    "cm.descriptive-only": "Description only (the object is not online)",
+    "shoulder.new.title": "Carve out a shoulder",
+    "shoulder.edit.title": "Shoulder settings",
+    "shoulder.lede": "<b>A namespace once handed out cannot be taken back.</b> Having "
+                     "declared <code>NR</code>, existing ARKs go on resolving. One you "
+                     "stop using is <b>retired</b>, not deleted.",
+    "shoulder.f.naan": "NAAN",
+    "shoulder.f.shoulder": "Shoulder",
+    "shoulder.f.shoulder_hint": "Begins with <code>/</code>, as in <code>/x9</code>.",
+    "shoulder.f.manager": "Institution",
+    "shoulder.f.reserve": "Hold it without allowing minting",
+    "shoulder.f.status": "Status",
+    "shoulder.f.status_hint": "<b>There is no way back from retired</b> (reopening a "
+                              "retired namespace is the seed of an NR violation).",
+    "shoulder.f.minter": "Where minting goes",
+    "shoulder.f.minter_hint": "Meaningful only when <b>delegated</b>.",
+    "shoulder.f.redirect": "Delegate resolution to",
+    "shoulder.f.redirect_hint": "<code>${blade}</code> is replaced by the name.",
+    "shoulder.f.note": "Operational note",
     "login.title": "Sign in to the admin interface",
     "login.id": "ID",
     "login.id_ph": "your email address, for example",

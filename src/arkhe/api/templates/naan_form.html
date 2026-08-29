@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% set title = t('naan.edit.title') if naan else t('naan.new.title') %}
+{% block title %}{{ title }} — arkhe{% endblock %}
+{% block crumb %}{{ title }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ title }}{% if naan %} <span class="mono dim">{{ naan.naan }}</span>{% endif %}</h1>
+  <p class="lede">{{ t('naan.lede')|safe }}</p>
+</div>
+
+{% if request.query_params.get('saved') %}
+<div class="note info"><span>{{ t('f.saved') }}</span></div>
+{% endif %}
+
+<div class="card">
+  <div class="card-b">
+    <form method="post" action="{{ '/admin/naan/' ~ naan.naan if naan else '/admin/naan/new' }}">
+      {% if naan %}
+        {# **NAAN と組織名は後から変えない。** 名前空間の同一性そのものなので、
+           変えられると既に配った ARK の帰属が動く。 #}
+        <div class="grid2">
+          <div class="field">
+            <label>{{ t('naan.f.naan') }} <span class="opt">— {{ t('f.readonly_here') }}</span></label>
+            <input value="{{ naan.naan }}" disabled>
+          </div>
+          <div class="field">
+            <label>{{ t('naan.f.name') }} <span class="opt">— {{ t('f.readonly_here') }}</span></label>
+            <input value="{{ naan.name }}" disabled>
+          </div>
+        </div>
+      {% else %}
+        <div class="grid2">
+          <div class="field">
+            <label for="naan">{{ t('naan.f.naan') }}</label>
+            <input id="naan" name="naan" required placeholder="99999">
+            <p class="hint">{{ t('naan.f.naan_hint')|safe }}</p>
+          </div>
+          <div class="field">
+            <label for="name">{{ t('naan.f.name') }}</label>
+            <input id="name" name="name" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="description">{{ t('naan.f.description') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="description" name="description">
+        </div>
+      {% endif %}
+
+      <div class="field">
+        <label for="policy">{{ t('naan.f.policy') }}</label>
+        <input id="policy" name="policy" value="{{ naan.na_policy if naan else '' }}"
+               placeholder="NP | NR, OP, CC | 2026 | https://example.ac.jp/ark-policy">
+        <p class="hint">{{ t('naan.f.policy_hint')|safe }}</p>
+      </div>
+
+      {% if naan %}
+        <div class="field">
+          <label for="minter">{{ t('naan.f.minter') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="minter" name="minter" value="{{ naan.minter }}">
+          <p class="hint">{{ t('naan.f.minter_hint')|safe }}</p>
+        </div>
+      {% else %}
+        <div class="field">
+          <label><input type="checkbox" name="authoritative" value="1" checked> {{ t('naan.f.authoritative') }}</label>
+          <p class="hint">{{ t('naan.f.authoritative_hint')|safe }}</p>
+        </div>
+        <div class="field">
+          <label for="redirect">{{ t('naan.f.redirect') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="redirect" name="redirect" placeholder="https://n2t.net">
+        </div>
+      {% endif %}
+
+      <div class="actions">
+        <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
+        <button class="btn primary" type="submit">{{ t('f.save') if naan else t('f.create') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

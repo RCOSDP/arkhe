@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% set title = t('manager.edit.title') if manager else t('manager.new.title') %}
+{% block title %}{{ title }} — arkhe{% endblock %}
+{% block crumb %}{{ title }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ title }}{% if manager %} <span class="dim">{{ manager.name }}</span>{% endif %}</h1>
+  <p class="lede">{{ t('manager.lede')|safe }}</p>
+</div>
+
+{% if request.query_params.get('saved') %}
+<div class="note info"><span>{{ t('f.saved') }}</span></div>
+{% endif %}
+
+<div class="card">
+  <div class="card-b">
+    <form method="post" action="{{ '/admin/manager/' ~ manager.id if manager else '/admin/manager/new' }}">
+      {% if not manager %}
+        <div class="grid2">
+          <div class="field">
+            <label for="naan">{{ t('manager.f.naan') }}</label>
+            <select id="naan" name="naan" required>
+              {% for n in naans %}<option value="{{ n.naan }}">{{ n.naan }} — {{ n.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="name">{{ t('manager.f.name') }}</label>
+            <input id="name" name="name" required>
+            <p class="hint">{{ t('manager.f.name_hint')|safe }}</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="shoulder">{{ t('manager.f.shoulder') }}</label>
+          <input id="shoulder" name="shoulder" required placeholder="/x9">
+          <p class="hint">{{ t('manager.f.shoulder_hint')|safe }}</p>
+        </div>
+      {% endif %}
+
+      {# **約束は機関自身のもの。** 機関管理者も自分の分は変えられる。 #}
+      <div class="field">
+        <label for="commitment">{{ t('manager.f.commitment') }}</label>
+        <select id="commitment" name="commitment">
+          {% for lv in levels %}
+            <option value="{{ lv.value }}"
+              {% if manager and manager.commitment_level == lv.value %}selected{% endif %}>
+              {{ t('cm.' ~ lv.value) }} — {{ lv.value }}
+            </option>
+          {% endfor %}
+        </select>
+        <p class="hint">{{ t('manager.f.commitment_hint')|safe }}</p>
+      </div>
+
+      {# 採番上限は配った側が課すもの。**自機関では変えられない。** #}
+      {% if can_manage %}
+        <div class="field">
+          <label for="quota">{{ t('manager.f.quota') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="quota" name="quota" type="number" min="0"
+                 value="{{ manager.quota_per_day if manager and manager.quota_per_day is not none else '' }}">
+          <p class="hint">{{ t('manager.f.quota_hint') }}</p>
+        </div>
+      {% endif %}
+
+      <div class="actions">
+        <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
+        <button class="btn primary" type="submit">{{ t('f.save') if manager else t('f.create') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

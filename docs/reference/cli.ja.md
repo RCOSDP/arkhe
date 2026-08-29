@@ -70,3 +70,19 @@ arkhe shoulder status 3 retired --note "移行完了"
 
 **`retired` からは戻せない。** 予約は作成時にしか指定できない——一度採番できる状態に
 した名前空間を、後から未使用扱いにはできないから。
+
+## コマンドの言語
+
+`arkhe` の help と出力は日本語と英語を持つ。**言語は起動時に環境から決まる**——
+Typer が help を組み立てるのが import の時点なので、`--lang` のような実行時の
+切り替えは作れない。
+
+| | |
+| --- | --- |
+| `ARKHE_LANG` | `ja` / `en`。**すべてに優先する** |
+| `LC_ALL` → `LC_MESSAGES` → `LANG` | POSIX の順で見る。`C` と `POSIX` は「言語の情報が無い」の意味なので飛ばす |
+| 既定 | `ja`（管理画面と揃えてある） |
+
+```bash
+ARKHE_LANG=en arkhe --help
+```

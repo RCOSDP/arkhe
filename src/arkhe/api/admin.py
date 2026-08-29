@@ -26,7 +26,17 @@ from arkhe.auth import session as sess
 from arkhe.auth.deps import Config, Db, authenticate, bearer
 from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.auth.principal import Principal
-from arkhe.db.models import Ark, AuditEvent, Client, Manager, Naan, Shoulder
+from arkhe.db.models import (
+    Ark,
+    AuditEvent,
+    Client,
+    CommitmentLevel,
+    Manager,
+    Naan,
+    Shoulder,
+    ShoulderStatus,
+)
+from arkhe.domain import admin_ops as ops
 from arkhe.domain import authz, minting
 
 # 管理画面は HTML であって API ではない。**OpenAPI には載せない。**
@@ -182,6 +192,221 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
             "overview.html", _ctx(request, principal, "overview", naans=naans, counts=counts)
         ),
     )
+
+
+# --------------------------------------------------------- 台帳を組む操作
+#
+# **画面から編集できるのは、宣言と運用の設定だけ。** ARK の行も shoulder の
+# 綴りも、画面からは変えられない——変えられてしまうと、`NR` を宣言している
+# はずの体系で名前が振り直せることになる。
+#
+# 誰が何を変えられるかは `domain.admin_ops` の判定をそのまま使う。ここで
+# 別の判定を書くと、ボタンは出ないが POST は通る、という穴になる。
+
+
+def _redirect(to: str) -> RedirectResponse:
+    """POST の後は 303 で GET に戻す（再読み込みで二重に実行させない）。"""
+    return RedirectResponse(to, status_code=303)
+
+
+def _page(request: Request, principal: Principal, template: str, page: str, **extra):
+    return _remember_lang(
+        request,
+        templates.TemplateResponse(request, template, _ctx(request, principal, page, **extra)),
+    )
+
+
+@router.get("/naan/new", response_class=HTMLResponse)
+def naan_new(request: Request, principal: AdminPrincipal):
+    if not principal.is_system:
+        raise Forbidden("NAAN の登録はシステム管理者のみ")
+    return _page(request, principal, "naan_form.html", "overview", naan=None)
+
+
+@router.post("/naan/new")
+def naan_create(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    naan: Annotated[str, Form()],
+    name: Annotated[str, Form()],
+    policy: Annotated[str, Form()] = "",
+    description: Annotated[str, Form()] = "",
+    authoritative: Annotated[str, Form()] = "",
+    redirect: Annotated[str, Form()] = "",
+):
+    ops.create_naan(
+        session, principal, naan=naan.strip(), name=name.strip(), na_policy=policy.strip(),
+        description=description.strip(),
+        is_authoritative=bool(authoritative), redirect=redirect.strip(),
+    )
+    session.commit()
+    return _redirect(f"/admin/naan/{naan.strip()}")
+
+
+@router.get("/naan/{naan}", response_class=HTMLResponse)
+def naan_edit(request: Request, principal: AdminPrincipal, session: Db, naan: str):
+    obj = session.get(Naan, naan)
+    if obj is None or not principal.reaches_naan(naan):
+        raise Forbidden(f"NAAN {naan} はこの主体の範囲外")
+    return _page(request, principal, "naan_form.html", "overview", naan=obj)
+
+
+@router.post("/naan/{naan}")
+def naan_save(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    naan: str,
+    policy: Annotated[str, Form()] = "",
+    minter: Annotated[str, Form()] = "",
+):
+    """**NAA ポリシーは名前空間を配る側の宣言。** NAAN 単位以上でしか変えられない。"""
+    ops.set_na_policy(session, principal, naan=naan, policy=policy.strip())
+    obj = session.get(Naan, naan)
+    if minter.strip() != obj.minter:
+        if not principal.is_system:
+            raise Forbidden("採番の案内先の変更はシステム管理者のみ")
+        obj.minter = minter.strip()
+        authz.audit(session, principal, "set_minter", naan, minter=obj.minter)
+    session.commit()
+    return _redirect(f"/admin/naan/{naan}?saved=1")
+
+
+@router.get("/manager/new", response_class=HTMLResponse)
+def manager_new(request: Request, principal: AdminPrincipal, session: Db):
+    if not principal.is_naan_wide:
+        raise Forbidden("機関のオンボードは NAAN 単位以上の権限が要る")
+    return _page(
+        request, principal, "manager_form.html", "overview",
+        manager=None, naans=_visible_naans(session, principal), levels=list(CommitmentLevel),
+    )
+
+
+@router.post("/manager/new")
+def manager_create(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    naan: Annotated[str, Form()],
+    name: Annotated[str, Form()],
+    shoulder: Annotated[str, Form()],
+    commitment: Annotated[str, Form()] = "",
+    quota: Annotated[str, Form()] = "",
+):
+    m, _ = ops.onboard_manager(
+        session, principal, naan=naan, name=name.strip(), shoulder=shoulder.strip(),
+        commitment_level=commitment,
+        quota_per_day=int(quota) if quota.strip() else None,
+    )
+    session.commit()
+    return _redirect(f"/admin/manager/{m.id}")
+
+
+@router.get("/manager/{manager_id}", response_class=HTMLResponse)
+def manager_edit(request: Request, principal: AdminPrincipal, session: Db, manager_id: int):
+    m = session.get(Manager, manager_id)
+    if m is None:
+        raise Forbidden("この機関はこの主体の範囲外")
+    ops.require_manager(session, principal, m)
+    return _page(
+        request, principal, "manager_form.html", "overview",
+        manager=m, naans=[], levels=list(CommitmentLevel),
+    )
+
+
+@router.post("/manager/{manager_id}")
+def manager_save(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    manager_id: int,
+    commitment: Annotated[str, Form()] = "",
+    quota: Annotated[str, Form()] = "",
+):
+    """**約束は機関自身のもの**なので、機関管理者も自機関の水準を変えられる。
+
+    採番上限はそうではない（配った側が課すもの）。判定は `admin_ops` 側にある。
+    """
+    if commitment:
+        ops.set_commitment(session, principal, manager_id=manager_id, level=commitment)
+    if principal.is_naan_wide:
+        ops.set_quota(
+            session, principal, manager_id=manager_id,
+            quota_per_day=int(quota) if quota.strip() else None,
+        )
+    session.commit()
+    return _redirect(f"/admin/manager/{manager_id}?saved=1")
+
+
+@router.get("/shoulder/new", response_class=HTMLResponse)
+def shoulder_new(request: Request, principal: AdminPrincipal, session: Db):
+    if not principal.is_naan_wide:
+        raise Forbidden("shoulder の切り出しは NAAN 単位以上の権限が要る")
+    return _page(
+        request, principal, "shoulder_form.html", "overview",
+        shoulder=None, naans=_visible_naans(session, principal),
+        statuses=list(ShoulderStatus),
+    )
+
+
+@router.post("/shoulder/new")
+def shoulder_create(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    naan: Annotated[str, Form()],
+    shoulder: Annotated[str, Form()],
+    manager_id: Annotated[str, Form()] = "",
+    reserve: Annotated[str, Form()] = "",
+    note: Annotated[str, Form()] = "",
+):
+    sh = ops.add_shoulder(
+        session, principal, naan=naan, shoulder=shoulder.strip(),
+        manager_id=int(manager_id) if manager_id.strip() else None,
+        status="reserved" if reserve else "active", note=note.strip(),
+    )
+    session.commit()
+    return _redirect(f"/admin/shoulder/{sh.id}")
+
+
+@router.get("/shoulder/{shoulder_id}", response_class=HTMLResponse)
+def shoulder_edit(request: Request, principal: AdminPrincipal, session: Db, shoulder_id: int):
+    sh = session.get(Shoulder, shoulder_id)
+    if sh is None or not principal.reaches_naan(sh.naan):
+        raise Forbidden("この shoulder はこの主体の範囲外")
+    return _page(
+        request, principal, "shoulder_form.html", "overview",
+        shoulder=sh, naans=[], statuses=list(ShoulderStatus),
+    )
+
+
+@router.post("/shoulder/{shoulder_id}")
+def shoulder_save(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    shoulder_id: int,
+    status: Annotated[str, Form()] = "",
+    minter: Annotated[str, Form()] = "",
+    redirect: Annotated[str, Form()] = "",
+    note: Annotated[str, Form()] = "",
+):
+    """**retired からは戻せない。** その判定は `admin_ops` 側が持っている。"""
+    sh = session.get(Shoulder, shoulder_id)
+    if sh is None:
+        raise Forbidden("この shoulder はこの主体の範囲外")
+    if status and status != sh.status:
+        ops.set_shoulder_status(
+            session, principal, shoulder_id=shoulder_id, status=status,
+            minter=minter.strip(), note=note.strip(),
+        )
+    if redirect.strip() != sh.redirect:
+        ops.set_shoulder_redirect(
+            session, principal, shoulder_id=shoulder_id, redirect=redirect.strip()
+        )
+    session.commit()
+    return _redirect(f"/admin/shoulder/{shoulder_id}?saved=1")
 
 
 # ------------------------------------------------------------------ 採番

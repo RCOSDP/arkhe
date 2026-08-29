@@ -6,25 +6,24 @@ audit log the same way.
 
 | | |
 | --- | --- |
-| `arkhe onboard` | 機関を迎え入れ、名前空間を 1 つ委譲する。**この 2 つは必ず対で起きる。** |
-| `arkhe succeed` | 統廃合。**識別子は壊さない**（名前空間ごと承継先に移す）。 |
-| `arkhe depart` | 機関の離脱。**新規採番は止め、解決は続ける。** |
-| `arkhe check` | 設定を検証する。**起動前に落としたいものをここで落とす。** |
-| `arkhe naan add` | NAAN を登録する。 |
+| `arkhe onboard` | Onboard an institution and delegate one namespace to it. **The two always happen together.** |
+| `arkhe succeed` | A merger. **Identifiers are not broken** — the namespace moves with them. |
+| `arkhe depart` | An institution leaves. **Minting stops; resolution continues.** |
+| `arkhe check` | Validate the configuration. **Fail here rather than at startup.** |
+| `arkhe naan add` | Register a NAAN. |
 | `arkhe naan list` |  |
-| `arkhe manager list` | 機関を並べる。**id は他のコマンドの入力になる。** |
-| `arkhe manager commitment` | 機関の約束の水準を言い直す。**`??` でそのまま公開される。** |
-| `arkhe shoulder add` | 名前空間を切り出す。`--reserve` で将来用に確保できる。 |
-| `arkhe shoulder status` | 状態を変える。**retired からは戻せない**（引退した名前空間の再開は NR 違反の芽）。 |
+| `arkhe manager list` | List institutions. **The ids are input to other commands.** |
+| `arkhe manager commitment` | Restate an institution's commitment level. **Published verbatim by `??`.** |
+| `arkhe shoulder add` | Carve out a namespace. `--reserve` holds one for later. |
+| `arkhe shoulder status` | Change the status. **There is no way back from retired.** |
 | `arkhe shoulder list` |  |
-| `arkhe client add` | 主体を登録する。 |
-| `arkhe client key` | 資格情報を発行する。**平文はこの一度しか表示されない。** |
-| `arkhe client breakglass` | NAAN 配下すべてに届く一時的な主体を作る。**期限つき。** |
-| `arkhe client passwd` | 人の主体にパスワードを設定する（管理画面へのローカルログイン用）。 |
-| `arkhe client revoke` | 失効させる。**行は消さない**（いつ失効したかを残す）。 |
+| `arkhe client add` | Register a principal. |
+| `arkhe client key` | Issue a credential. **The plaintext is shown this once and never again.** |
+| `arkhe client breakglass` | Create a temporary principal reaching everything under a NAAN. **Time-boxed.** |
+| `arkhe client passwd` | Set a password on a person (for local sign-in to the admin interface). |
+| `arkhe client revoke` | Revoke. **The row is not deleted** — when it stopped remains. |
 
-`--help` on any command gives its arguments. **The help text is currently Japanese
-only**, which is why the second column above is.
+`--help` on any command gives its arguments.
 
 The whole sequence, including the steps that happen outside arkhe — requesting a NAAN
 and registering your resolver — is in [Setting up for the first
@@ -74,3 +73,19 @@ arkhe shoulder status 3 retired --note "migration complete"
 
 **`retired` has no way back.** A reservation can only be set at creation: once a
 namespace has been mintable, it cannot be called unused again.
+
+## The language of the commands
+
+`arkhe`'s help and output exist in Japanese and English. **The language is decided
+from the environment at startup** — Typer assembles its help at import time, so a
+runtime switch like `--lang` cannot work.
+
+| | |
+| --- | --- |
+| `ARKHE_LANG` | `ja` / `en`. **Takes precedence over everything** |
+| `LC_ALL` → `LC_MESSAGES` → `LANG` | Read in POSIX order. `C` and `POSIX` mean "no language information" and are skipped |
+| Default | `ja`, matching the admin interface |
+
+```bash
+ARKHE_LANG=en arkhe --help
+```

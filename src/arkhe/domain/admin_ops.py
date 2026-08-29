@@ -53,8 +53,12 @@ def _require_naan(p: Principal, naan: str) -> None:
         raise Forbidden(f"NAAN {naan} はこの主体の範囲外")
 
 
-def _require_manager(session: Session, p: Principal, manager: Manager) -> None:
-    """その機関に届くか。NAAN 単位以上なら配下すべて、manager 単位なら自機関のみ。"""
+def require_manager(session: Session, p: Principal, manager: Manager) -> None:
+    """その機関に届くか。NAAN 単位以上なら配下すべて、manager 単位なら自機関のみ。
+
+    **画面からも呼ぶので公開名にしてある。** 画面が独自に判定を書くと、
+    ボタンは出ないが POST は通る、という穴になる。
+    """
     _require_naan(p, manager.naan)
     if p.is_naan_wide:
         return
@@ -81,12 +85,19 @@ def set_na_policy(session: Session, p: Principal, *, naan: str, policy: str) -> 
 
     **ARK は「永続性は約束であって性質ではない」という立場**を取る。だから
     保証を名乗るのではなく、**どの水準の約束をするかを自分で宣言する**。
-    その宣言を書き換えられるのは、その NAAN を預かる主体。
+
+    書き換えられるのは **NAAN を預かる主体だけ**。これは NAAN 配下の全機関に
+    かかる宣言なので、1 機関の管理者が他機関の分まで書き換えられてはならない。
+    機関が自分について述べるのは [`set_commitment`][] のほう——**NAA ポリシーは
+    名前空間を配る側の宣言、コミットメントは配られた側の宣言**であり、ARK の
+    委譲の構造がそのままここに出ている。
     """
     obj = session.get(Naan, naan)
     if obj is None:
         raise NotFound({"naan": naan})
     _require_naan(p, naan)
+    if not p.is_naan_wide:
+        raise Forbidden("NAA ポリシーの宣言は NAAN 単位以上の権限が要る")
     obj.na_policy = policy
     audit(session, p, "set_na_policy", naan, policy=policy)
     return obj
@@ -138,6 +149,28 @@ def set_commitment(session: Session, p: Principal, *, manager_id: int, level: st
     return manager
 
 
+def set_quota(
+    session: Session, p: Principal, *, manager_id: int, quota_per_day: int | None
+) -> Manager:
+    """1 日あたりの採番上限を変える。`None` で無制限。
+
+    **自機関では変えられない**（`set_commitment` と違うところ）。上限は配った側が
+    配られた側に課すものなので、課された側が自分で外せては意味がない。
+    """
+    manager = session.get(Manager, manager_id)
+    if manager is None:
+        raise NotFound({"manager": manager_id})
+    _require_naan(p, manager.naan)
+    if not p.is_naan_wide:
+        raise Forbidden("採番上限の変更は NAAN 単位以上の権限が要る")
+    if quota_per_day is not None and quota_per_day < 0:
+        raise Invalid({"quota_per_day": "負の上限は置けない（無制限にするなら空にする）"})
+    before = manager.quota_per_day
+    manager.quota_per_day = quota_per_day
+    audit(session, p, "set_quota", str(manager_id), before=before, after=quota_per_day)
+    return manager
+
+
 def onboard_manager(
     session: Session,
     p: Principal,
@@ -185,7 +218,7 @@ def set_succession(
     manager = session.get(Manager, manager_id)
     if manager is None:
         raise NotFound({"manager": manager_id})
-    _require_manager(session, p, manager)
+    require_manager(session, p, manager)
     if successor_id is not None:
         succ = session.get(Manager, successor_id)
         if succ is None:
@@ -528,7 +561,7 @@ def succeed(
     suc = session.get(Manager, successor_id)
     if pre is None or suc is None:
         raise NotFound({"manager": [predecessor_id, successor_id]})
-    _require_manager(session, p, pre)
+    require_manager(session, p, pre)
     _require_naan(p, suc.naan)
     if pre.id == suc.id:
         raise Invalid({"successor": "自分自身は承継先にできない"})
@@ -583,7 +616,7 @@ def depart(
     manager = session.get(Manager, manager_id)
     if manager is None:
         raise NotFound({"manager": manager_id})
-    _require_manager(session, p, manager)
+    require_manager(session, p, manager)
 
     shoulders = list(manager.shoulders)
     rewritten = 0

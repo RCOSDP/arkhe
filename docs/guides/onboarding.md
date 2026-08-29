@@ -87,6 +87,10 @@ arkhe manager list
 arkhe manager commitment 1 permanent-stable
 ```
 
+It can also be changed [from the admin interface](admin.md#changing-settings), where
+**the institution's own administrator may change it** — the commitment is the
+institution's, and a declaration nobody can make is not a declaration.
+
 Onboarding without `--commitment` leaves the default `permanent-dynamic`. **Do not
 leave it there.** The value is published verbatim by `?` and `??`, so leaving it
 means **claiming, in the institution's name, a commitment the institution never

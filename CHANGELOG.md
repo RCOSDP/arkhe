@@ -11,16 +11,35 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
-- A guide for setting up from scratch, covering the steps that happen **outside**
-  arkhe as well — requesting a NAAN, and registering your resolver's URL in the NAAN
-  registry. Miss the latter and `n2t.net/ark:/99999/…` never reaches you.
+- The CLI speaks Japanese and English. The language is decided from the environment
+  at startup — `ARKHE_LANG`, then `LC_ALL` / `LC_MESSAGES` / `LANG` in POSIX order,
+  defaulting to `ja` as the admin interface does. Typer assembles its help at import
+  time, so a runtime `--lang` cannot work.
+- The admin interface can now build the ledger, not only mint. **Four buttons on the
+  overview — register a NAAN, onboard an institution, carve out a shoulder, manage
+  one — pointed at routes that did not exist and returned 404.** They now work, and
+  NAAN and institution settings pages were added alongside them.
 - `arkhe manager list` and `arkhe manager commitment`, and `--commitment` on
   `arkhe onboard`. The commitment level was published by `?` and `??` but **could not
   be set** — every institution silently carried the default `permanent-dynamic`. That
   meant claiming, in the institution's name, a commitment it never made; publishing an
   undeclared default as a declaration is worse than publishing nothing. Onboarding
   without `--commitment` now says so on stderr. Unknown levels are refused.
+- `set_quota`, so a minting limit can be changed after onboarding rather than only at
+  it. An institution cannot change its own: a limit the receiving side can lift is not
+  a limit.
+- A guide for setting up from scratch, covering the steps that happen **outside**
+  arkhe as well — requesting a NAAN, and registering your resolver's URL in the NAAN
+  registry. Miss the latter and `n2t.net/ark:/99999/…` never reaches you.
 
+### Fixed
+
+- The NAA policy could be rewritten by an institution's administrator. It is the
+  declaration of the side handing namespaces out and covers **every institution under
+  the NAAN**, so one of them must not be able to restate it for the others. It now
+  requires NAAN scope or wider. What an institution states about itself is its
+  commitment level, which its own administrator *can* change — the split follows ARK's
+  delegation structure rather than a permissions table.
 
 ## [0.0.2] — 2026-08-28
 

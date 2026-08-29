@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% set title = t('shoulder.edit.title') if shoulder else t('shoulder.new.title') %}
+{% block title %}{{ title }} — arkhe{% endblock %}
+{% block crumb %}{{ title }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ title }}{% if shoulder %} <span class="mono dim">{{ shoulder.naan }}{{ shoulder.shoulder }}</span>{% endif %}</h1>
+  <p class="lede">{{ t('shoulder.lede')|safe }}</p>
+</div>
+
+{% if request.query_params.get('saved') %}
+<div class="note info"><span>{{ t('f.saved') }}</span></div>
+{% endif %}
+
+<div class="card">
+  <div class="card-b">
+    <form method="post" action="{{ '/admin/shoulder/' ~ shoulder.id if shoulder else '/admin/shoulder/new' }}">
+      {% if not shoulder %}
+        <div class="grid2">
+          <div class="field">
+            <label for="naan">{{ t('shoulder.f.naan') }}</label>
+            <select id="naan" name="naan" required>
+              {% for n in naans %}<option value="{{ n.naan }}">{{ n.naan }} — {{ n.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="shoulder">{{ t('shoulder.f.shoulder') }}</label>
+            <input id="shoulder" name="shoulder" required placeholder="/x9">
+            <p class="hint">{{ t('shoulder.f.shoulder_hint')|safe }}</p>
+          </div>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" name="reserve" value="1"> {{ t('shoulder.f.reserve') }}</label>
+        </div>
+        <div class="field">
+          <label for="note">{{ t('shoulder.f.note') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="note" name="note">
+        </div>
+      {% else %}
+        <div class="field">
+          <label for="status">{{ t('shoulder.f.status') }}</label>
+          <select id="status" name="status">
+            {% for st in statuses %}
+              <option value="{{ st.value }}" {% if shoulder.status == st.value %}selected{% endif %}>
+                {{ t('st.' ~ st.value) }} — {{ st.value }}
+              </option>
+            {% endfor %}
+          </select>
+          <p class="hint">{{ t('shoulder.f.status_hint')|safe }}</p>
+        </div>
+        <div class="field">
+          <label for="minter">{{ t('shoulder.f.minter') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="minter" name="minter" value="{{ shoulder.minter }}">
+          <p class="hint">{{ t('shoulder.f.minter_hint')|safe }}</p>
+        </div>
+        <div class="field">
+          <label for="redirect">{{ t('shoulder.f.redirect') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="redirect" name="redirect" value="{{ shoulder.redirect }}"
+                 placeholder="https://repo.example.ac.jp/ark/${blade}">
+          <p class="hint">{{ t('shoulder.f.redirect_hint')|safe }}</p>
+        </div>
+        <div class="field">
+          <label for="note">{{ t('shoulder.f.note') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="note" name="note" value="{{ shoulder.note }}">
+        </div>
+      {% endif %}
+
+      <div class="actions">
+        <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
+        <button class="btn primary" type="submit">{{ t('f.save') if shoulder else t('f.create') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

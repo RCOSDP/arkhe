@@ -45,6 +45,34 @@ there is no login screen at all — that is the choice "no browser access".
 Irreversible actions are marked as such in the interface, because they are: an ARK
 cannot be un-minted, and a retired namespace cannot be revived.
 
+## Changing settings
+
+**Only declarations and operational settings can be changed here.** Neither an ARK
+row nor a shoulder's spelling can be edited from the interface — if they could, names
+could be reissued in a system that declares `NR`.
+
+| What | Who |
+| --- | --- |
+| NAA policy (the NAAN's declaration) | NAAN scope or wider |
+| Where minting happens (`/.well-known/ark`) | System administrator |
+| Commitment level (the institution's declaration) | **The institution itself**, and wider |
+| Minting limit per day | NAAN scope or wider |
+| Shoulder status and delegation | NAAN scope or wider |
+
+This split is not a permissions table; it is **ARK's delegation structure showing
+through**. The NAA policy is the declaration of the side handing namespaces out and
+covers every institution beneath it, so one institution's administrator cannot change
+it. The commitment level is what the receiving side states about itself, and **a
+declaration nobody can make is not a declaration** — so an institutional administrator
+can change theirs.
+
+The minting limit is the exception an institution cannot change itself: a limit
+imposed by the side handing the namespace out means nothing if the side receiving it
+can lift it.
+
+The decisions live only in `domain.admin_ops`. The interface calls the same
+functions, so **there is no case where a button is hidden but the URL still works.**
+
 ## Internationalisation
 
 Japanese and English, switched from the globe in the header. The language is decided
