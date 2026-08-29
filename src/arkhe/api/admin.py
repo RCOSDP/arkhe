@@ -583,6 +583,9 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
         client=c, managers=managers, shoulders=shoulders,
         creds=sorted(c.credentials, key=lambda x: x.id, reverse=True) if c else [],
         kinds=_issuable_kinds(cfg), uses_oidc="oidc" in cfg.auth,
+        # **どこへ行けばよいかまで見せる。** 「認可サーバで作れ」だけでは、
+        # どの認可サーバのことか画面から分からない。
+        issuer=cfg.oidc_issuer,
         **extra,
     )
 

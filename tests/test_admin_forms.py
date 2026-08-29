@@ -406,3 +406,19 @@ def test_認可サーバ構成では登録の意味を説明する(db, world, ro
     """鍵を出す画面ではなく、**紐付けの画面**であることを先に言う。"""
     page = with_auth(["oidc"]).get("/admin/client/new").text
     assert "azp" in page and "preferred_username" in page
+
+
+def test_認可サーバの場所を画面に出す(db, world, root, app, settings, as_principal, principal_of):
+    """**「認可サーバで作れ」だけでは、どの認可サーバか分からない。**"""
+    from arkhe.settings import get_settings
+
+    c = ops.register_client(db, root, client_id="kc-m", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    app.dependency_overrides[get_settings] = lambda: settings.model_copy(
+        update={"auth": ["oidc"], "oidc_issuer": "https://kc.example.org/realms/arkhe"}
+    )
+    page = as_principal(principal_of(authority=Authority.SYSTEM)).get(
+        f"/admin/client/{c.id}"
+    ).text
+    assert "https://kc.example.org/realms/arkhe" in page

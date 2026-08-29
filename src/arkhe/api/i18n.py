@@ -264,6 +264,7 @@ JA: dict[str, str] = {
                    "arkhe が持っているのは、上の識別子と<b>どこまで届くか</b>の"
                    "対応だけです。秘密は認可サーバ側で作り、そこで失効させます——"
                    "失効が 1 か所で効くのがこの形の利点です。",
+    "cu.key.oidc_where": "秘密を作る場所: ",
     "cu.key.oidc_match": "認可サーバが出すトークンの <code>client_id</code>（Keycloak なら "
                          "<code>azp</code>）が、上の識別子と<b>同じ文字列</b>である"
                          "必要があります。",
@@ -533,6 +534,7 @@ EN: dict[str, str] = {
                    "above to <b>how far it reaches</b>. The secret is created and "
                    "revoked at the authorization server — revocation taking effect in "
                    "one place is the point of this arrangement.",
+    "cu.key.oidc_where": "Where the secret is created: ",
     "cu.key.oidc_match": "The <code>client_id</code> in the token the authorization "
                          "server issues (<code>azp</code> in Keycloak) must be the "
                          "<b>same string</b> as the identifier above.",

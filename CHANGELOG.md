@@ -103,6 +103,9 @@ none of them showed up in the test suite.
 
 ### Changed
 
+- The user page under a delegated authentication setup now shows **where that
+  authorization server is** (the issuer). Saying the secret is created at the
+  authorization server is no help if the page does not say which one.
 - The language switcher on the sign-in and notice pages is now **the same icon control
   as the admin interface**. A row of segments breaks as soon as a third language is
   added.

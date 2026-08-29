@@ -142,7 +142,9 @@
        出せる画面にしない。 #}
     {% if uses_oidc %}
       <div class="note info"><span>{{ t('cu.key.oidc')|safe }}
-        {{ t('cu.key.oidc_match')|safe }}</span></div>
+        {{ t('cu.key.oidc_match')|safe }}
+        {% if issuer %}<br>{{ t('cu.key.oidc_where') }}<span class="mono">{{ issuer }}</span>{% endif %}
+        </span></div>
     {% endif %}
     {% if client.subject_type == 'machine' and kinds %}
       <form method="post" action="/admin/client/{{ client.id }}/key">
