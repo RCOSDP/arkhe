@@ -1,6 +1,6 @@
 [project]
 name = "arkhe"
-version = "0.0.7"
+version = "0.0.8"
 description = "ARK identifier infrastructure — minter and resolver as separate services"
 requires-python = ">=3.12"
 license = "MIT"

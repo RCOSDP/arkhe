@@ -8,6 +8,13 @@
 
 ## [未リリース]
 
+## [0.0.8] — 2026-08-29
+
+**認可サーバに寄せた構成でいちばん多い詰まりどころが、目に見えるようになった版。**
+`client_id` の綴りが 1 文字ずれると黙って 401 になっていたが、弾いた文字列を台帳が
+持つようにしたので、打ち直さずに登録できる。あわせて、体験用の台帳から実在の機関名を
+外した。
+
 ### 追加
 
 - **認可サーバから来た、登録の無い主体を画面に出す。** `client_id` の綴りが 1 文字
@@ -339,7 +346,8 @@
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.7...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.8...HEAD
+[0.0.8]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.8
 [0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7
 [0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6
 [0.0.5]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.5

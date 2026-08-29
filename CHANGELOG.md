@@ -9,6 +9,13 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.8] — 2026-08-29
+
+**The most common way to get stuck in an OIDC deployment now shows itself.** A
+`client_id` off by one character produced a silent 401; the ledger now keeps what it
+rejected, so it can be registered without retyping. The demo ledger also stops carrying
+real institutions' names.
+
 ### Added
 
 - **Subjects that arrived from the authorization server with no registration are now
@@ -366,7 +373,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.8...HEAD
+[0.0.8]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.8
 [0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7
 [0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6
 [0.0.5]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.5
