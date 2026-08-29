@@ -11,6 +11,8 @@
 | `arkhe check` | 設定を検証する。**起動前に落としたいものをここで落とす。** |
 | `arkhe naan add` | NAAN を登録する。 |
 | `arkhe naan list` |  |
+| `arkhe manager list` | 機関を並べる。**id は他のコマンドの入力になる。** |
+| `arkhe manager commitment` | 機関の約束の水準を言い直す。**`??` でそのまま公開される。** |
 | `arkhe shoulder add` | 名前空間を切り出す。`--reserve` で将来用に確保できる。 |
 | `arkhe shoulder status` | 状態を変える。**retired からは戻せない**（引退した名前空間の再開は NR 違反の芽）。 |
 | `arkhe shoulder list` |  |
@@ -22,13 +24,16 @@
 
 `--help` に各コマンドの引数がある。
 
+通しの手順は[はじめて立ち上げるとき](../guides/onboarding.md)にある——**NAAN の申請と
+registry への登録という、arkhe の外で起きる手順も含めて**並べてある。
+
 ## よくある流れ
 
 ### 立ち上げ
 
 ```bash
 arkhe naan add 99999 "あなたの組織" --policy "NP | NR, OP, CC | 2026 | https://…/policy"
-arkhe onboard 99999 "例大学" --shoulder /x9
+arkhe onboard 99999 "例大学" --shoulder /x9 --commitment permanent-stable
 arkhe client add univ-repo 99999 --manager 1 --scopes "ark:mint ark:update"
 arkhe client key univ-repo
 ```

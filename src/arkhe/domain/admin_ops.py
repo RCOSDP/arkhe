@@ -30,6 +30,7 @@ from arkhe.db.models import (
     Ark,
     Authority,
     Client,
+    CommitmentLevel,
     Credential,
     CredentialKind,
     Manager,
@@ -94,6 +95,49 @@ def set_na_policy(session: Session, p: Principal, *, naan: str, policy: str) -> 
 # ------------------------------------------------------------------ Manager
 
 
+def _commitment(level: str) -> str:
+    """コミットメントの語彙を検査する。
+
+    **知らない語を通さない。** ここは `??` でそのまま公開される値なので、綴りを
+    間違えたまま通ると、機関が約束していない水準を機関の名前で名乗ることになる。
+    """
+    try:
+        return CommitmentLevel(level).value
+    except ValueError:
+        raise Invalid(
+            {
+                "commitment_level": f"{level!r} は未知の水準",
+                "choices": [c.value for c in CommitmentLevel],
+            }
+        ) from None
+
+
+def set_commitment(session: Session, p: Principal, *, manager_id: int, level: str) -> Manager:
+    """機関の約束の水準を変える。
+
+    **既定のまま放置させないための口。** これが無いと、全機関が
+    `permanent-dynamic` を名乗ったまま動き、`??` はソフトウェアの既定値を
+    機関の宣言として公開してしまう。宣言していないものを宣言として出すのは、
+    何も出さないより悪い。
+
+    水準を**下げる**のも正当な操作である。守れない約束を掲げ続けるより、
+    実態に合わせて言い直すほうが誠実で、`??` を尋ねる意味も保たれる。
+    """
+    manager = session.get(Manager, manager_id)
+    if manager is None:
+        raise NotFound({"manager": manager_id})
+    _require_naan(p, manager.naan)
+    if not p.is_naan_wide and manager.id != p.manager_id:
+        raise Forbidden("自機関以外の約束は変えられない")
+    before = manager.commitment_level
+    manager.commitment_level = _commitment(level)
+    audit(
+        session, p, "set_commitment", str(manager_id),
+        before=before, after=manager.commitment_level,
+    )
+    return manager
+
+
 def onboard_manager(
     session: Session,
     p: Principal,
@@ -119,7 +163,7 @@ def onboard_manager(
 
     manager = Manager(naan=naan, name=name)
     if commitment_level:
-        manager.commitment_level = commitment_level
+        manager.commitment_level = _commitment(commitment_level)
     manager.quota_per_day = quota_per_day
     session.add(manager)
     session.flush()

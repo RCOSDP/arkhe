@@ -12,6 +12,8 @@ audit log the same way.
 | `arkhe check` | 設定を検証する。**起動前に落としたいものをここで落とす。** |
 | `arkhe naan add` | NAAN を登録する。 |
 | `arkhe naan list` |  |
+| `arkhe manager list` | 機関を並べる。**id は他のコマンドの入力になる。** |
+| `arkhe manager commitment` | 機関の約束の水準を言い直す。**`??` でそのまま公開される。** |
 | `arkhe shoulder add` | 名前空間を切り出す。`--reserve` で将来用に確保できる。 |
 | `arkhe shoulder status` | 状態を変える。**retired からは戻せない**（引退した名前空間の再開は NR 違反の芽）。 |
 | `arkhe shoulder list` |  |
@@ -21,7 +23,12 @@ audit log the same way.
 | `arkhe client passwd` | 人の主体にパスワードを設定する（管理画面へのローカルログイン用）。 |
 | `arkhe client revoke` | 失効させる。**行は消さない**（いつ失効したかを残す）。 |
 
-`--help` on any command gives its arguments.
+`--help` on any command gives its arguments. **The help text is currently Japanese
+only**, which is why the second column above is.
+
+The whole sequence, including the steps that happen outside arkhe — requesting a NAAN
+and registering your resolver — is in [Setting up for the first
+time](../guides/onboarding.md).
 
 ## Common sequences
 
@@ -29,7 +36,7 @@ audit log the same way.
 
 ```bash
 arkhe naan add 99999 "Your organisation" --policy "NP | NR, OP, CC | 2026 | https://…/policy"
-arkhe onboard 99999 "Example University" --shoulder /x9
+arkhe onboard 99999 "Example University" --shoulder /x9 --commitment permanent-stable
 arkhe client add univ-repo 99999 --manager 1 --scopes "ark:mint ark:update"
 arkhe client key univ-repo
 ```

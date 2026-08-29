@@ -446,3 +446,51 @@ def test_shoulderと機関の食い違いは拒む(db, world, root):
             db, root, client_id="mismatch", naan=sh.naan, shoulder_id=sh.id,
             manager_id=world["b"].id, scopes="ark:mint",
         )
+
+
+def test_約束の水準は言い直せる(db, world, root):
+    """**既定のまま放置させないための口。**
+
+    これが無いと全機関が `permanent-dynamic` を名乗ったまま動き、`??` は
+    ソフトウェアの既定値を機関の宣言として公開してしまう。
+    """
+    m = world["a"]
+    ops.set_commitment(db, root, manager_id=m.id, level="permanent-unchanging")
+    db.commit()
+    assert m.commitment_level == "permanent-unchanging"
+
+
+def test_約束の水準は下げられる(db, world, root):
+    """守れない約束を掲げ続けるより、言い直せるほうが誠実。"""
+    m = world["a"]
+    ops.set_commitment(db, root, manager_id=m.id, level="not-guaranteed")
+    db.commit()
+    assert m.commitment_level == "not-guaranteed"
+
+
+def test_知らない水準は通さない(db, world, root):
+    """`??` でそのまま公開される値なので、綴り間違いを通すと、機関が述べて
+    いない水準を機関の名前で名乗ることになる。"""
+    from arkhe.domain.authz import Invalid
+
+    with pytest.raises(Invalid):
+        ops.set_commitment(db, root, manager_id=world["a"].id, level="permanent")
+
+
+def test_他機関の約束は変えられない(db, world, principal_of):
+    """約束はその機関のもの。"""
+    from arkhe.auth.errors import Forbidden
+
+    p = principal_of(manager=world["a"])
+    with pytest.raises(Forbidden):
+        ops.set_commitment(db, p, manager_id=world["b"].id, level="not-guaranteed")
+
+
+def test_onboard時に水準を述べられる(db, world, root):
+    """迎え入れる時点で確かめる——後から直す運用にすると必ず既定が残る。"""
+    m, _ = ops.onboard_manager(
+        db, root, naan="99999", name="約束を述べた機関", shoulder="/c1",
+        commitment_level="permanent-stable",
+    )
+    db.commit()
+    assert m.commitment_level == "permanent-stable"

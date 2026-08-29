@@ -9,6 +9,19 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- A guide for setting up from scratch, covering the steps that happen **outside**
+  arkhe as well — requesting a NAAN, and registering your resolver's URL in the NAAN
+  registry. Miss the latter and `n2t.net/ark:/99999/…` never reaches you.
+- `arkhe manager list` and `arkhe manager commitment`, and `--commitment` on
+  `arkhe onboard`. The commitment level was published by `?` and `??` but **could not
+  be set** — every institution silently carried the default `permanent-dynamic`. That
+  meant claiming, in the institution's name, a commitment it never made; publishing an
+  undeclared default as a declaration is worse than publishing nothing. Onboarding
+  without `--commitment` now says so on stderr. Unknown levels are refused.
+
+
 ## [0.0.2] — 2026-08-28
 
 Everything here was found by putting 0.0.1 on Kubernetes and in the compose stack.

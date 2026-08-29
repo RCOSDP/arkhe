@@ -12,7 +12,15 @@ import typer
 from sqlalchemy import select
 
 from arkhe.auth.principal import Principal
-from arkhe.db.models import Authority, Client, CredentialKind, Manager, Naan, Shoulder
+from arkhe.db.models import (
+    Authority,
+    Client,
+    CommitmentLevel,
+    CredentialKind,
+    Manager,
+    Naan,
+    Shoulder,
+)
 from arkhe.db.session import session_factory
 from arkhe.domain import admin_ops as ops
 from arkhe.settings import get_settings
@@ -20,9 +28,14 @@ from arkhe.settings import get_settings
 app = typer.Typer(help="arkhe — ARK 識別子基盤の運用コマンド", no_args_is_help=True)
 naan_app = typer.Typer(help="NAAN", no_args_is_help=True)
 shoulder_app = typer.Typer(help="shoulder", no_args_is_help=True)
+manager_app = typer.Typer(
+    help="機関。迎え入れは onboard、以後の手当てはここ",
+    no_args_is_help=True,
+)
 client_app = typer.Typer(help="主体と資格情報", no_args_is_help=True)
 app.add_typer(naan_app, name="naan")
 app.add_typer(shoulder_app, name="shoulder")
+app.add_typer(manager_app, name="manager")
 app.add_typer(client_app, name="client")
 
 
@@ -71,14 +84,29 @@ def onboard(
     name: str = typer.Argument(..., help="機関名（内部専用。公開しない）"),
     shoulder: str = typer.Option(..., "--shoulder", "-s", help="委譲する名前空間（例 /x9）"),
     quota: int = typer.Option(None, help="1 日あたりの採番上限。省略で無制限"),
+    commitment: str = typer.Option(
+        "", help="約束の水準。`arkhe manager commitment --list` で一覧"
+    ),
 ):
-    """機関を迎え入れ、名前空間を 1 つ委譲する。**この 2 つは必ず対で起きる。**"""
+    """機関を迎え入れ、名前空間を 1 つ委譲する。**この 2 つは必ず対で起きる。**
+
+    `--commitment` は迎え入れる時点で機関に確かめること。**既定のまま置くと、
+    機関が述べていない水準を機関の名前で `??` が公開する。**
+    """
     with _session() as s:
         m, sh = ops.onboard_manager(
-            s, _root(), naan=naan, name=name, shoulder=shoulder, quota_per_day=quota
+            s, _root(), naan=naan, name=name, shoulder=shoulder, quota_per_day=quota,
+            commitment_level=commitment,
         )
         s.commit()
         typer.echo(f"機関 {m.name} を迎え、{sh.naan}{sh.shoulder} を委譲しました")
+        typer.echo(f"約束の水準: {m.commitment_level}")
+        if not commitment:
+            typer.echo(
+                "↑ 既定のままです。機関に確かめて "
+                "`arkhe manager commitment` で言い直してください。",
+                err=True,
+            )
 
 
 @shoulder_app.command("add")
@@ -127,6 +155,49 @@ def shoulder_list(naan: str = typer.Option("", help="この NAAN のものだけ
                 f"{sh.id:>4}  {sh.naan}{sh.shoulder:<8} {sh.status:<10} "
                 f"{m.name if m else '(機関未割当)'}"
             )
+
+
+@manager_app.command("list")
+def manager_list(naan: str = typer.Option("", help="この NAAN のものだけ")):
+    """機関を並べる。**id は他のコマンドの入力になる。**"""
+    with _session() as s:
+        stmt = select(Manager).order_by(Manager.naan, Manager.id)
+        if naan:
+            stmt = stmt.where(Manager.naan == naan)
+        for m in s.scalars(stmt):
+            sh = s.get(Shoulder, m.default_shoulder_id) if m.default_shoulder_id else None
+            state = "active" if m.active else "inactive"
+            typer.echo(
+                f"{m.id:>4}  {m.naan}{(sh.shoulder if sh else '(既定なし)'):<8} "
+                f"{state:<9} {m.commitment_level:<22} {m.name}"
+            )
+
+
+@manager_app.command("commitment")
+def manager_commitment(
+    manager_id: int = typer.Argument(None, help="機関 id"),
+    level: str = typer.Argument(None, help="約束の水準"),
+    list_levels: bool = typer.Option(False, "--list", help="選べる水準を並べて終わる"),
+):
+    """機関の約束の水準を言い直す。
+
+    **これは `??` でそのまま公開される。** 機関が述べたことだけを入れること
+    ——既定値を宣言として出すのは、何も出さないより悪い。
+
+    水準を**下げる**のも正当な操作である。守れない約束を掲げ続けるより、
+    実態に合わせて言い直すほうが誠実で、尋ねる意味も保たれる。
+    """
+    if list_levels:
+        for c in CommitmentLevel:
+            typer.echo(c.value)
+        return
+    if manager_id is None or not level:
+        typer.echo("機関 id と水準が要ります（--list で一覧）", err=True)
+        raise typer.Exit(1)
+    with _session() as s:
+        m = ops.set_commitment(s, _root(), manager_id=manager_id, level=level)
+        s.commit()
+        typer.echo(f"{m.name}: {m.commitment_level}")
 
 
 @client_app.command("add")

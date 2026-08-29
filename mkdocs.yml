@@ -64,6 +64,7 @@ plugins:
             Delegation: 委譲の構造
             Invariants: 壊さないもの
             Guides: 手引き
+            Setting up for the first time: はじめて立ち上げるとき
             Authentication: 認証
             Admin interface: 管理画面
             Succession and departure: 承継と離脱
@@ -123,6 +124,7 @@ nav:
       - Delegation: concepts/delegation.md
       - Invariants: concepts/invariants.md
   - Guides:
+      - Setting up for the first time: guides/onboarding.md
       - Authentication: guides/authentication.md
       - Admin interface: guides/admin.md
       - Succession and departure: guides/succession.md
