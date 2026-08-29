@@ -307,6 +307,10 @@ JA: dict[str, str] = {
                        "<code>{missing}</code> を足してください——足さずに出した鍵は"
                        "どこからも通りません。",
     # 入り方（どの経路で入ってくるか）
+    "cl.search": "識別子・ラベルで探す",
+    "cl.search_ph": "repo / jc2-web-api",
+    "au.search": "主体・操作・対象で探す",
+    "au.search_ph": "ops / set_commitment / 99999",
     "cl.entry": "入り方",
     "en.key": "鍵",
     "en.idp": "認可サーバに委ねる",
@@ -676,6 +680,10 @@ EN: dict[str, str] = {
     "cu.key.only_one": "Only <code>{kind}</code> authenticates in this deployment. To "
                        "offer the other as well, add <code>{missing}</code> to "
                        "<code>ARKHE_AUTH</code> — a key issued without it goes nowhere.",
+    "cl.search": "Search by identifier or label",
+    "cl.search_ph": "repo / jc2-web-api",
+    "au.search": "Search by principal, action or target",
+    "au.search_ph": "ops / set_commitment / 99999",
     "cl.entry": "Gets in by",
     "en.key": "a key",
     "en.idp": "delegated to the IdP",

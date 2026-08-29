@@ -17,6 +17,7 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from arkhe import observability
 from arkhe.auth import apikey, oauth2
 from arkhe.auth.errors import AuthError
 from arkhe.auth.oidc import OidcVerifier
@@ -75,6 +76,7 @@ def authenticate(
     if not token:
         raise AuthError("no credentials", challenge=challenge_for(settings))
 
+    tried: list[str] = []
     for mechanism in settings.auth:
         try:
             if mechanism == "apikey":
@@ -88,8 +90,12 @@ def authenticate(
                 )
             if mechanism == "oidc":
                 return oidc_verifier(settings).authenticate(session, token)
-        except AuthError:
+        except AuthError as exc:
+            # **理由は利用者に返さないが、ここには残す。** 「鍵が期限切れ」なのか
+            # 「組織が停止中」なのかを運用者が知る手段が無いと、切り分けられない。
+            tried.append(f"{mechanism}: {exc.detail}")
             continue  # 次の機構を試す
+    observability.log("auth failed", mechanisms=tried)
     raise AuthError("invalid credentials", challenge=challenge_for(settings))
 
 

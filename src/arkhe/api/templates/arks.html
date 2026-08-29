@@ -11,11 +11,8 @@
   <div class="card-h">
     {# **探せることが先。** 件数は増える一方なので、並べるだけの画面は
        すぐ使えなくなる。 #}
-    <form method="get" action="/admin/arks" class="search">
-      <input name="q" value="{{ q }}" placeholder="{{ t('ak.search_ph') }}"
-             aria-label="{{ t('ak.search') }}">
-      <button class="btn sm" type="submit">{{ t('ak.search') }}</button>
-    </form>
+    {% with base='/admin/arks', placeholder=t('ak.search_ph'), label=t('ak.search') %}
+      {% include "partials/search.html" %}{% endwith %}
   </div>
   <div class="table-wrap">
   <table>
@@ -41,16 +38,6 @@
     </tbody>
   </table>
   </div>
-  {% if page_no > 1 or more %}
-  <div class="card-b pager">
-    {% if page_no > 1 %}
-      <a class="btn sm" href="/admin/arks?q={{ q|urlencode }}&page={{ page_no - 1 }}">{{ t('ak.prev') }}</a>
-    {% endif %}
-    <span class="dim">{{ t('ak.page').format(n=page_no) }}</span>
-    {% if more %}
-      <a class="btn sm" href="/admin/arks?q={{ q|urlencode }}&page={{ page_no + 1 }}">{{ t('ak.next') }}</a>
-    {% endif %}
-  </div>
-  {% endif %}
+  {% with base='/admin/arks' %}{% include "partials/pager.html" %}{% endwith %}
 </div>
 {% endblock %}

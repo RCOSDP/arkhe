@@ -162,7 +162,11 @@ def test_公開ページに保護ヘッダが付く(world, principal_of, as_prin
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/api/mint", json={"url": "https://example.org/1", "title": "x"})
     key = r.json()["ark"].removeprefix("ark:/")
-    h = c.get(f"/{key}?info").headers
+    # **200 を返す経路で見る。** 404 でもヘッダは付くので、それでは
+    # 「公開ページに付いている」ことの確認にならない。
+    info = c.get(f"/ark:/{key}?info")
+    assert info.status_code == 200
+    h = info.headers
     assert "script-src 'none'" in h["content-security-policy"]
     assert h["x-content-type-options"] == "nosniff"
     # **API ドキュメントだけは緩める。** Swagger UI は CDN から script を読むので、
@@ -234,3 +238,28 @@ def test_誰が変えたかが残る(db, world, principal_of, as_principal):
     key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"]
     c.put("/api/update", json={"ark": key, "url": "https://x/2"})
     assert db.scalars(db.query(ArkChange).statement).all()[0].by == "repo-1"
+
+
+def test_開けない行き先は転送せず記述を返す(world, principal_of, as_principal):
+    """**登録できることと、ブラウザを送ってよいことは別。**
+
+    `urn:` は正当な行き先だがブラウザは開けない。302 で渡すと、利用者には
+    「壊れたリンク」に見える——記述を返すほうが答えになっている。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post(
+        "/api/mint", json={"url": "urn:isbn:0451450523", "title": "紙の本"}
+    ).json()["ark"].removeprefix("ark:/")
+    r = c.get(f"/ark:/{key}")
+    assert r.status_code == 200                     # 302 ではない
+    assert "urn:isbn:0451450523" in r.text          # 行き先は見せる
+    assert '<a href="urn:' not in r.text            # ただしリンクにはしない
+
+
+def test_開ける行き先は転送する(world, principal_of, as_principal):
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post(
+        "/api/mint", json={"url": "https://ok.example/1"}
+    ).json()["ark"].removeprefix("ark:/")
+    r = c.get(f"/ark:/{key}")
+    assert r.status_code == 302 and r.headers["location"] == "https://ok.example/1"

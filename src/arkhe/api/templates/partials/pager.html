@@ -1,0 +1,13 @@
+{# ページ送り。**総件数は数えない**——増える一方の表で毎回 `count(*)` を
+   走らせないため。「次があるか」は 1 件多く引いて判断している。 #}
+{% if page_no > 1 or more %}
+<div class="card-b pager">
+  {% if page_no > 1 %}
+    <a class="btn sm" href="{{ base }}?q={{ q|urlencode }}&page={{ page_no - 1 }}">{{ t('ak.prev') }}</a>
+  {% endif %}
+  <span class="dim">{{ t('ak.page').format(n=page_no) }}</span>
+  {% if more %}
+    <a class="btn sm" href="{{ base }}?q={{ q|urlencode }}&page={{ page_no + 1 }}">{{ t('ak.next') }}</a>
+  {% endif %}
+</div>
+{% endif %}

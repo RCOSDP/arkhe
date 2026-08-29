@@ -175,6 +175,7 @@ def raw_app(factory):
     """認証を差し替えない素のアプリ。**入口そのものを試す。**"""
     from fastapi import FastAPI
 
+    from arkhe import observability
     from arkhe.api import admin as admin_router
     from arkhe.app import _install_handlers
     from arkhe.db import session as session_mod
@@ -183,6 +184,7 @@ def raw_app(factory):
     def build(settings):
         a = FastAPI()
         _install_handlers(a)
+        observability.install(a)
         a.include_router(admin_router.router)
 
         def one_session():
@@ -515,7 +517,7 @@ def test_oidcのログアウトは認可サーバのセッションも終わら�
     )
     cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
                     admin_client_id="arkhe-admin")
-    r = TestClient(raw_app(cfg), follow_redirects=False).get("/admin/logout")
+    r = TestClient(raw_app(cfg), follow_redirects=False).post("/admin/logout")
     assert r.status_code == 302
     loc = r.headers["location"]
     assert loc.startswith("https://kc.example.org/realms/arkhe/logout")
@@ -536,7 +538,7 @@ def test_end_sessionが無い認可サーバならこちらだけで終える(db
     monkeypatch.setattr(login_flow, "_discovery", {"token_endpoint": "https://kc/token"})
     cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
                     admin_client_id="arkhe-admin")
-    r = TestClient(raw_app(cfg), follow_redirects=False).get("/admin/logout")
+    r = TestClient(raw_app(cfg), follow_redirects=False).post("/admin/logout")
     assert r.status_code == 302 and r.headers["location"] == "/admin/"
 
 
@@ -544,9 +546,9 @@ def test_パスワードのログアウトは外に出ない(db, world, raw_app)
     """外部の認可サーバを使っていないので、終わらせるセッションはこちらだけ。"""
     from fastapi.testclient import TestClient
 
-    r = TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False).get(
-        "/admin/logout"
-    )
+    r = TestClient(
+        raw_app(_settings(admin_login="password")), follow_redirects=False
+    ).post("/admin/logout")
     assert r.status_code == 302 and r.headers["location"] == "/admin/"
     assert 'arkhe_session=""' in r.headers.get("set-cookie", "") or \
            "Max-Age=0" in r.headers.get("set-cookie", "")
@@ -626,3 +628,51 @@ def test_接続元を刻んでから渡す(db, world, root, raw_app):
     assert r.status_code == 303, r.text[:200]
     ev = db.scalars(db.query(AuditEvent).filter_by(action="set_commitment").statement).all()
     assert ev and ev[-1].ip == "10.0.0.9"
+
+
+def test_ログアウトはGETでは通らない(db, world, raw_app):
+    """**`SameSite=Lax` はトップレベルの GET 遷移では Cookie を送る。**
+
+    GET のままだと、外部サイトから `<img src=".../logout">` で強制ログアウト
+    させられる。
+    """
+    from fastapi.testclient import TestClient
+
+    r = TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False).get(
+        "/admin/logout"
+    )
+    assert r.status_code == 405
+
+
+def test_readyzはDBを見る(db, world, raw_app):
+    """`/healthz` と兼ねていたので、**DB が落ちても Ready のままだった。**"""
+    from fastapi.testclient import TestClient
+
+    from arkhe.app import create_app
+    from arkhe.settings import get_settings
+
+    cfg = _settings()
+    app = create_app(cfg)
+    app.dependency_overrides[get_settings] = lambda: cfg
+    c = TestClient(app, follow_redirects=False)
+    assert c.get("/healthz").status_code == 200
+
+    # 届かない DB を指した構成で見る（依存を壊すのではなく、実際の失敗の形）。
+    bad = _settings()
+    bad = bad.model_copy(update={"database_url": "postgresql+psycopg://x@127.0.0.1:1/none"})
+    gone = create_app(bad)
+    g = TestClient(gone, follow_redirects=False)
+    # **生存は変わらない**（プロセスは生きている）が、可用は落ちる。
+    assert g.get("/healthz").status_code == 200
+    assert g.get("/readyz").status_code == 503
+
+
+def test_要求IDが応答に返る(db, world, raw_app):
+    """利用者が「この ID で調べてほしい」と言えるようにする。"""
+    from fastapi.testclient import TestClient
+
+    c = TestClient(raw_app(_settings()), follow_redirects=False)
+    r = c.get("/healthz", headers={"X-Request-Id": "abc123"})
+    assert r.headers["x-request-id"] == "abc123"
+    # 前段が付けていなければ、こちらで作る
+    assert TestClient(raw_app(_settings())).get("/healthz").headers.get("x-request-id")

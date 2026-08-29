@@ -9,7 +9,8 @@
 </div>
 
 <div class="card">
-  <div class="card-h"><span class="t">{{ t('au.recent') }}</span><span class="sub">{{ events|length }} {{ t('au.count') }}</span></div>
+  <div class="card-h"><span class="t">{{ t('au.recent') }}</span>{% with base='/admin/audit', placeholder=t('au.search_ph'), label=t('au.search') %}
+      {% include "partials/search.html" %}{% endwith %}</div>
   <div class="table-wrap">
   <table>
     <thead><tr>
@@ -32,5 +33,6 @@
     </tbody>
   </table>
   </div>
+  {% with base='/admin/audit' %}{% include "partials/pager.html" %}{% endwith %}
 </div>
 {% endblock %}

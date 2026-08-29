@@ -11,6 +11,21 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **Prepared the lists for the scale that breaks them.** The organisations page
+  aggregated the whole `ark` table on every load (a `Seq Scan`, 27.6ms at 300k rows);
+  it now counts only the shoulders in view, so the index applies (300,000 rows read →
+  7,500 under the same conditions). Search and paging were added to the users list and
+  the audit log — the audit log **stopped at the most recent 200 entries**, with no way
+  to see anything older.
+- **Structured logs and a request id** (`X-Request-Id`). There were none, so the only
+  way to investigate an incident was to read the database. Authentication failures are
+  now recorded **server-side only**: the reason is still withheld from the caller (it
+  would help a brute-force), but an operator has to be able to tell "the key expired"
+  from "the organisation is stopped".
+- **`/readyz` is separate from `/healthz`.** Sharing one endpoint meant a pod **stayed
+  Ready while its database was unreachable**. Readiness consults the database;
+  liveness does not — restarting a pod does not fix a database, it just produces a
+  restart storm.
 - **Where an ARK used to point is now recorded** (`ark_change`). Without it the
   previous target could not be recovered, so a system declaring `NR` gave its users no
   way to check that claim. It is kept separately from the audit log, which only keeps
@@ -41,6 +56,8 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- Logging out is a POST. `SameSite=Lax` **does send the cookie on a top-level GET
+  navigation**, so as a GET it could be triggered from another site.
 - **A stored XSS on the public resolver is closed.** Targets had no scheme
   restriction, so `javascript:` could be minted — and `?info` is a page that needs no
   authentication, so anyone holding `ark:mint` could get a script running in the

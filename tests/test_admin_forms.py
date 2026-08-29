@@ -947,3 +947,95 @@ def test_履歴が画面から辿れる(db, world, principal_of, as_principal):
     c.put("/api/update", json={"ark": key, "url": "https://two.example/2"})
     page = c.get("/admin/arks/" + key.removeprefix("ark:/")).text
     assert "https://one.example/1" in page and "https://two.example/2" in page
+
+
+# --------------------------------- 増えても使える（検索とページ送り）
+
+
+def test_利用者一覧にページ送りがある(db, world, root, principal_of, as_principal):
+    """**全件表示のままでは、増えたときに使えなくなる。**"""
+    from arkhe.api.admin import PAGE
+
+    for i in range(PAGE + 2):
+        ops.register_client(db, root, client_id=f"bulk-{i:03}", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    c = as_principal(principal_of(manager=world["a"]))
+    first = c.get("/admin/clients").text
+    assert "page=2" in first
+    assert c.get("/admin/clients?page=2").status_code == 200
+
+
+def test_利用者を検索できる(db, world, root, principal_of, as_principal):
+    ops.register_client(db, root, client_id="findme-repo", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")
+    ops.register_client(db, root, client_id="other-repo", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    page = as_principal(principal_of(manager=world["a"])).get(
+        "/admin/clients?q=findme").text
+    assert "findme-repo" in page and "other-repo" not in page
+
+
+def test_利用者の検索は範囲を広げない(db, world, root, principal_of, as_principal):
+    """**絞り込みで他組織のものが出てきてはいけない。**"""
+    ops.register_client(db, root, client_id="b-secret", naan="99999",
+                        manager_id=world["b"].id, scopes="ark:mint")
+    db.commit()
+    page = as_principal(principal_of(manager=world["a"])).get(
+        "/admin/clients?q=secret").text
+    assert "b-secret" not in page
+
+
+def test_監査ログにページ送りがある(db, world, principal_of, as_principal):
+    """直近 200 件で頭打ちだと、**古いものを見る手段が無かった**。"""
+    from arkhe.api.admin import PAGE
+
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    for _ in range(PAGE + 2):
+        c.post(f"/admin/manager/{world['a'].id}", data={"commitment": "permanent-stable"})
+    first = c.get("/admin/audit").text
+    assert "page=2" in first
+    assert c.get("/admin/audit?page=2").status_code == 200
+
+
+def test_監査ログを検索できる(db, world, principal_of, as_principal):
+    """行そのものを見る——`set_commitment` は入力欄の例示にも出るので、
+    本文の有無で判定すると誤検出する。"""
+    import re
+
+    def rows(html):
+        return re.findall(r'data-label="[^"]*">([^<]*set_commitment[^<]*)<', html)
+
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    c.post(f"/admin/manager/{world['a'].id}", data={"commitment": "permanent-stable"})
+    assert rows(c.get("/admin/audit?q=set_commit").text)
+    assert not rows(c.get("/admin/audit?q=見つからない語").text)
+
+
+def test_一覧の集計は見えている範囲だけを数える(db, world, principal_of, as_principal):
+    """**以前は `ark` 全体を毎回集計していた。**
+
+    ARK は増える一方なので、組織管理の画面を開くたびに全表走査が走る。
+    発行するクエリを見て、範囲で絞られていることを確かめる。
+    """
+    seen = []
+
+    from sqlalchemy import event
+
+    engine = db.get_bind()
+
+    def spy(conn, cursor, statement, params, context, many):  # noqa: ARG001
+        if "count(" in statement.lower() and " ark" in statement.lower():
+            seen.append(statement)
+
+    event.listen(engine, "before_cursor_execute", spy)
+    try:
+        as_principal(principal_of(manager=world["a"])).get("/admin/")
+    finally:
+        event.remove(engine, "before_cursor_execute", spy)
+
+    assert seen, "集計クエリが見つからない"
+    assert any("shoulder_id IN" in s or "shoulder_id in" in s for s in seen), (
+        "範囲で絞られていない（全件集計している）"
+    )

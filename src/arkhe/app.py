@@ -11,11 +11,13 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
+from sqlalchemy import text
 
-from arkhe import __version__
+from arkhe import __version__, observability
 from arkhe.auth.errors import AuthError, Forbidden
+from arkhe.db.session import session_factory
 from arkhe.domain.authz import Invalid, NotFound, ShoulderDelegated, Throttled
 from arkhe.settings import Settings, get_settings
 
@@ -164,12 +166,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     _install_handlers(app)
     _install_security_headers(app)
+    observability.configure(s.log_level)
+    observability.install(app)
 
     # **どのモードでも生存確認の口は要る。** 以前は resolve ルータにしか無く、
     # minter と admin は probe に 404 を返し続けて kubelet に殺されていた。
     # 認証も DB も通さない——落ちているのがアプリ自身かどうかだけを見る。
     @app.get("/healthz", include_in_schema=False)
     def healthz():
+        """**生きているか。** 依存を見ない——落ちているのがこのプロセス自身
+        かどうかだけを見る口なので、依存を足すと probe が本来の役目を失う。"""
+        return {"ok": True}
+
+    @app.get("/readyz", include_in_schema=False)
+    def readyz(response: Response):
+        """**要求を捌けるか。** こちらは DB を見る。
+
+        両方を `/healthz` で兼ねていたので、**DB が落ちても Ready のまま
+        トラフィックを受け続けた**。生存と可用は別の問い。
+        """
+        # **依存として受け取らない。** 依存の解決中に落ちると、この関数に
+        # 入る前に 500 になり、503 を返せない。ここで自分で開く。
+        try:
+            with session_factory(settings=s)() as probe:
+                probe.execute(text("select 1"))
+        except Exception as exc:  # noqa: BLE001 - 理由によらず「捌けない」
+            observability.log("not ready", reason=type(exc).__name__)
+            response.status_code = 503
+            return {"ok": False, "db": "unreachable"}
         return {"ok": True}
 
     if s.resolver:

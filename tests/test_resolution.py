@@ -246,30 +246,56 @@ def test_base_name_stops_at_the_first_structural_character():
 
 
 
-# --------------------------------------------- 転送先として出してよいか
+# ----------------------------------------- 行き先に何を入れてよいか
 
 
 @pytest.mark.parametrize(
     "url,ok,why",
     [
         ("https://example.org/1", True, "https"),
-        ("http://example.org/1", True, "http"),
-        ("", True, "空は正当（対象がオンラインに無い ARK）"),
+        ("", True, "空は正当——**行き先が無い対象**は中心的な用途"),
+        # **ARK は物理オブジェクトにも他の識別子にも付けられる。**
+        # `where` は URI であって HTTP URL とは限らない。
+        ("urn:isbn:0451450523", True, "URN も正当な行き先"),
+        ("doi:10.1234/x", True, "他の識別子体系も指せる"),
+        ("ark:/99999/x9abc", True, "他の ARK も指せる"),
+        ("mailto:curator@example.ac.jp", True, "連絡先も指せる"),
+        # 拒むのは、ブラウザに解釈させると危ないものだけ
         ("javascript:alert(1)", False, "公開ページに載るので実行できてはいけない"),
-        ("JaVaScRiPt:alert(1)", False, "大小混在も同じ"),
-        ("  javascript:alert(1)", False, "前置きの空白で逃さない"),
+        ("JaVaScRiPt:alert(1)", False, "大小混在も同じ（urlsplit が正規化する）"),
+        ("  javascript:alert(1)", False, "前置きの空白も同じ"),
+        ("java\tscript:alert(1)", False, "タブを挟んでも同じ"),
         ("data:text/html,<b>x", False, "data も同じ"),
-        ("vbscript:msgbox", False, "白名簿なので、数え上げていない綴りも落ちる"),
-        ("/relative/path", False, "相対は別のページに見せかけられる"),
-        ("//example.org/x", False, "スキーム相対も同じ"),
     ],
 )
-def test_転送先のスキームを絞る(url, ok, why):
-    """**`?info` は認証を要さない公開ページ。**
+def test_登録できる行き先(url, ok, why):
+    """**登録は絞らない。** ARK が何を指せるかを狭めてはいけない。
 
-    そこに載る文字列を決めるのは採番した側なので、`javascript:` を書けると
-    リゾルバのオリジンで動くスクリプトを他人に踏ませられる。
+    拒むのはブラウザに解釈させると危ないものだけで、それも
+    `urlsplit` が綴りの揺れを吸収するので数え上げられる。
     """
-    from arkhe.domain.resolution import is_safe_target
+    from arkhe.domain.resolution import is_registrable
 
-    assert is_safe_target(url) is ok, why
+    assert is_registrable(url) is ok, why
+
+
+@pytest.mark.parametrize(
+    "url,ok,why",
+    [
+        ("https://example.org/1", True, "開ける"),
+        ("http://example.org/1", True, "開ける"),
+        ("urn:isbn:0451450523", False, "**正当だが開けない**——記述を返す"),
+        ("doi:10.1234/x", False, "同上"),
+        ("", False, "行き先が無いので記述を返す"),
+        ("javascript:alert(1)", False, "そもそも登録できないが、念のため"),
+    ],
+)
+def test_転送してよい行き先(url, ok, why):
+    """**登録できることと、ブラウザを送ってよいことは別。**
+
+    `urn:` は正当な行き先だがブラウザは開けないので、転送せず記述を返す
+    ——これは制限ではなく、`?info` が最初から担っている役目。
+    """
+    from arkhe.domain.resolution import is_followable
+
+    assert is_followable(url) is ok, why

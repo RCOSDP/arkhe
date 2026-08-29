@@ -273,10 +273,21 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
             else []
         )
 
-    counts = dict(
-        session.execute(
-            select(Ark.shoulder_id, func.count()).group_by(Ark.shoulder_id)
-        ).all()
+    # **見えている shoulder の分だけ数える。** 以前は `ark` 全体を毎回集計して
+    # いたので、ARK が増えるほど画面が重くなった（`Seq Scan on ark`）。
+    # `ix_ark_shoulder_created` が効く形にしてある。
+    visible = [sh.id for n in naans for m in n.visible_managers for sh in m.shoulders]
+    visible += [sh.id for n in naans for sh in n.visible_orphans]
+    counts = (
+        dict(
+            session.execute(
+                select(Ark.shoulder_id, func.count())
+                .where(Ark.shoulder_id.in_(visible))
+                .group_by(Ark.shoulder_id)
+            ).all()
+        )
+        if visible
+        else {}
     )
     return _remember_lang(
         request,
@@ -599,7 +610,10 @@ def mint_submit(
 
 
 @router.get("/clients", response_class=HTMLResponse)
-def clients(request: Request, principal: AdminPrincipal, session: Db, cfg: Config):
+def clients(
+    request: Request, principal: AdminPrincipal, session: Db, cfg: Config,
+    q: str = "", page: int = 1,
+):
     stmt = select(Client).options(
         selectinload(Client.credentials),
         selectinload(Client.manager),
@@ -609,7 +623,13 @@ def clients(request: Request, principal: AdminPrincipal, session: Db, cfg: Confi
         stmt = stmt.where(Client.naan == principal.naan)
     if not principal.is_naan_wide:
         stmt = stmt.where(Client.manager_id == principal.manager_id)
-    rows = list(session.scalars(stmt))
+    term = q.strip()
+    if term:
+        stmt = stmt.where(Client.client_id.ilike(f"%{term}%") | Client.label.ilike(f"%{term}%"))
+    page = max(1, page)
+    rows = list(session.scalars(stmt.offset((page - 1) * PAGE).limit(PAGE + 1)))
+    more = len(rows) > PAGE
+    rows = rows[:PAGE]
     for c in rows:
         c.live_credentials = sum(1 for x in c.credentials if x.active)
         c.dead_credentials = sum(1 for x in c.credentials if not x.active)
@@ -626,6 +646,7 @@ def clients(request: Request, principal: AdminPrincipal, session: Db, cfg: Confi
             request,
             "clients.html",
             _ctx(request, principal, "clients", clients=rows, issued=None,
+                 q=term, page_no=page, more=more,
                  can_add_client=_may_register(session, principal)),
         ),
     )
@@ -889,7 +910,8 @@ def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: st
 
 
 @router.get("/audit", response_class=HTMLResponse)
-def audit(request: Request, principal: AdminPrincipal, session: Db):
+def audit(request: Request, principal: AdminPrincipal, session: Db,
+          q: str = "", page: int = 1):
     """**監査ログは NAAN 単位以上にしか見せない。**
 
     誰がいつ何をしたかは、その名前空間を預かる側の情報。組織の担当者に他組織の
@@ -897,15 +919,28 @@ def audit(request: Request, principal: AdminPrincipal, session: Db):
     """
     if not principal.is_naan_wide:
         raise Forbidden("監査ログの閲覧は NAAN 単位以上の権限が要る")
-    stmt = select(AuditEvent).order_by(AuditEvent.at.desc()).limit(200)
-    events = list(session.scalars(stmt))
+    page = max(1, page)
+    stmt = select(AuditEvent).order_by(AuditEvent.at.desc())
+    if q.strip():
+        like = f"%{q.strip()}%"
+        stmt = stmt.where(
+            AuditEvent.client_id.ilike(like)
+            | AuditEvent.action.ilike(like)
+            | AuditEvent.target.ilike(like)
+        )
+    events = list(session.scalars(stmt.offset((page - 1) * PAGE).limit(PAGE + 1)))
+    more = len(events) > PAGE
+    events = events[:PAGE]
     for e in events:
         e.detail_text = json.dumps(e.detail, ensure_ascii=False) if e.detail else ""
     return _remember_lang(
         request,
         templates.TemplateResponse(
             request,
-            "audit.html", _ctx(request, principal, "audit", events=events)),
+            "audit.html",
+            _ctx(request, principal, "audit", events=events,
+                 q=q.strip(), page_no=page, more=more),
+        ),
     )
 
 
@@ -1043,9 +1078,13 @@ def callback(request: Request, session: Db, cfg: Config):
     return r
 
 
-@router.get("/logout", name="admin_logout")
+@router.post("/logout", name="admin_logout")
 def logout(request: Request, cfg: Config):
     """ログアウト。**外部で認証しているなら、そちらのセッションも終わらせる。**
+
+    GET ではなく POST。`SameSite=Lax` は**トップレベルの GET 遷移では Cookie を
+    送る**ので、GET のままだと外部サイトから `<img src=".../logout">` で強制
+    ログアウトさせられる。実害は嫌がらせ程度だが、直す手間も同じくらい小さい。
 
     こちらの Cookie を消すだけでは足りない。次に `/admin/` を開くと認可サーバへ
     送られ、そちらのセッションが生きているので何も訊かれずに戻ってくる——

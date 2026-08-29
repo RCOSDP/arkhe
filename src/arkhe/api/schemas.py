@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from arkhe.domain.resolution import SAFE_SCHEMES, is_safe_target
+from arkhe.domain.resolution import DANGEROUS_SCHEMES, is_registrable
 
 #: 呼び出し側が設定できる項目。**`shoulder` はここに無い**——主体から引く。
 WRITABLE = (
@@ -30,15 +30,18 @@ class ArkFields(BaseModel):
     @field_validator("url")
     @classmethod
     def _safe_url(cls, v: str) -> str:
-        """**転送先のスキームを絞る。**
+        """**ブラウザに解釈させると危ないものだけ拒む。**
 
-        `?info` は認証を要さない公開ページなので、そこに載る URL を採番した側が
-        自由に決められると、`javascript:` を他人に踏ませられる。空は正当
-        （対象がオンラインに無い ARK は中心的な用途）。
+        ARK は物理オブジェクトにも他の識別子にも付けられるので、`urn:` `doi:`
+        `ark:` などを拒んではいけない。空も正当（行き先が無い対象）。
+
+        拒むのは `javascript:` `data:` のたぐいだけ——`?info` は認証を要さない
+        公開ページで、そこに載る文字列を決めるのは採番した側だから。
         """
-        if not is_safe_target(v):
+        if not is_registrable(v):
             raise ValueError(
-                f"転送先に使えるのは {'/'.join(sorted(SAFE_SCHEMES))} だけです"
+                "ブラウザに解釈させると危ないスキームは行き先にできません"
+                f"（{'/'.join(sorted(DANGEROUS_SCHEMES))}）"
             )
         return v
 

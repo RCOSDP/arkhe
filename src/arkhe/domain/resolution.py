@@ -32,31 +32,49 @@ from arkhe.arkspec.naming import (
 from arkhe.arkspec.shoulder import split_shoulder
 
 #: D2: 未知 NAAN の取次先。設定可能にする。
-#: 転送してよいスキーム。**`javascript:` や `data:` を弾くための白名簿。**
+#: **ブラウザに解釈させると危ないスキーム。** 登録を拒む唯一の理由。
 #:
-#: ARK も ERC も対象の在り処を URI としか言っておらず、スキームを縛らない。
-#: しかし `?info` は**認証を要さない公開ページ**で、そこに載る文字列を決めるのは
-#: 採番した側である。`javascript:` を書けるなら、リゾルバのオリジンで動く
-#: スクリプトを他人に踏ませられる——保存型 XSS になる。
+#: `?info` は認証を要さない公開ページなので、そこに載る文字列を採番した側が
+#: 自由に決められると、リゾルバのオリジンで動くスクリプトを他人に踏ませられる。
 #:
-#: 黒名簿にしないのは、`vbscript:` や大小混在（`JaVaScRiPt:`）、制御文字を挟んだ
-#: 綴りまで数え上げるのが現実的でないため。**通してよいものだけを挙げる。**
-SAFE_SCHEMES = frozenset({"http", "https"})
+#: 黒名簿で足りるのは、**綴りの揺れを `urlsplit` が吸収する**から——大小混在も、
+#: 前置きの空白も、途中のタブ・改行・NUL も、同じ scheme に正規化される
+#: （ブラウザの扱いと同じ）。文字列のまま比べるなら白名簿が要るが、
+#: 解析してから比べるなら数え上げられる。
+DANGEROUS_SCHEMES = frozenset({"javascript", "data", "vbscript", "blob", "filesystem"})
+
+#: **ブラウザに「そこへ行け」と言ってよいスキーム。**
+#: これ以外は、リンクにもせず転送もしない——ただし**登録は妨げない**。
+FOLLOWABLE_SCHEMES = frozenset({"http", "https"})
 
 
-def is_safe_target(url: str) -> bool:
-    """転送先・リンク先として出してよい URL か。
-
-    空は正当（**対象がオンラインに無い ARK** は arkhe の中心的な用途）。
-    相対 URL も認めない——`?info` で他のページに見せかけられるため。
-    """
-    if not url:
-        return True
+def _scheme(url: str) -> str:
     try:
-        scheme = urlsplit(url.strip()).scheme.lower()
+        return urlsplit(url.strip()).scheme.lower()
     except ValueError:
-        return False
-    return scheme in SAFE_SCHEMES
+        return "?"
+
+
+def is_registrable(url: str) -> bool:
+    """行き先として台帳に入れてよいか。
+
+    **ARK は物理オブジェクトにも、他の識別子にも付けられる。** `where` は URI で
+    あって HTTP URL とは限らないので、`urn:` `doi:` `ark:` `mailto:` などを
+    拒んではいけない。空も正当——**行き先が無い対象**は中心的な用途である。
+
+    拒むのは、ブラウザに解釈させると危ないものだけ。
+    """
+    return not url or _scheme(url) not in DANGEROUS_SCHEMES
+
+
+def is_followable(url: str) -> bool:
+    """ブラウザを転送してよいか／リンクにしてよいか。
+
+    `urn:isbn:…` は正当な行き先だが、**転送先にはならない**（ブラウザは開けない）。
+    そういう ARK は記述を返す——これは制限ではなく、`?info` が最初から
+    担っている役目である。
+    """
+    return bool(url) and _scheme(url) in FOLLOWABLE_SCHEMES
 
 
 DEFAULT_GLOBAL_RESOLVER = "https://n2t.net"

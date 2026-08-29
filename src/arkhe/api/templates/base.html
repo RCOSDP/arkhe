@@ -393,12 +393,16 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
          アイコンなので気づかれず (2) 幅の狭い画面ではサイドバーごと畳まれて
          押す手段が無くなる。ここなら幅によらず同じ場所にある。 #}
       {% if principal.mechanism in ("password", "oidc-login", "proxy") %}
-      <a class="icon-btn out" href="/admin/logout" title="{{ t('login.logout') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M15 17l5-5-5-5M20 12H9M12 3H5v18h7"/>
-        </svg>
-        <span class="lbl">{{ t('login.logout') }}</span>
-      </a>
+      {# **GET ではなく POST。** SameSite=Lax はトップレベルの GET 遷移では
+         Cookie を送るので、GET のままだと外部から強制ログアウトさせられる。 #}
+      <form method="post" action="/admin/logout" style="display:contents">
+        <button class="icon-btn out" type="submit" title="{{ t('login.logout') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path d="M15 17l5-5-5-5M20 12H9M12 3H5v18h7"/>
+          </svg>
+          <span class="lbl">{{ t('login.logout') }}</span>
+        </button>
+      </form>
       {% endif %}
     </div>
   </header>

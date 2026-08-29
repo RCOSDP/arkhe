@@ -101,6 +101,9 @@ class Settings(BaseSettings):
     #: ——そこは client が書いた値だから。
     trusted_proxies: int = 0
 
+    #: 記録の細かさ。`DEBUG` / `INFO` / `WARNING`。
+    log_level: str = "INFO"
+
     global_resolver: str = "https://n2t.net"
 
     # ---------------------------------------------------------------- 採番

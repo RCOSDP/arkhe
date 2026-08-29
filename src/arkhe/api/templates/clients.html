@@ -19,7 +19,9 @@
 
 <div class="card">
   <div class="card-h">
-    <span class="t">{{ t('cl.principals') }}</span><span class="sub">{{ clients|length }}</span>
+    <span class="t">{{ t('cl.principals') }}</span>
+    {% with base='/admin/clients', placeholder=t('cl.search_ph'), label=t('cl.search') %}
+      {% include "partials/search.html" %}{% endwith %}
     {% if can_add_client %}<span class="right"><a class="btn sm" href="/admin/client/new">{{ t('cl.add') }}</a></span>{% endif %}
   </div>
   <div class="table-wrap">
@@ -58,5 +60,6 @@
     </tbody>
   </table>
   </div>
+  {% with base='/admin/clients' %}{% include "partials/pager.html" %}{% endwith %}
 </div>
 {% endblock %}
