@@ -1,6 +1,6 @@
 # データモデル
 
-`Naan → Manager → Shoulder → Ark` の 1 本で全 NAAN を扱う。**個別 NAAN を持つ機関でも
+`Naan → Manager → Shoulder → Ark` の 1 本で全 NAAN を扱う。**個別 NAAN を持つ組織でも
 shoulder を必ず使う**——使わないと NAAN ごとにモデルが分岐し、first-digit 規約が NAAN に
 よって成立したりしなかったりする。
 
@@ -46,7 +46,7 @@ erDiagram
         int    id PK
         string shoulder "例 /x9"
         string naan FK
-        int    manager_id FK "null は機関未割当"
+        int    manager_id FK "null は組織未割当"
         string redirect "N2T: 解決の委譲（$id / ${blade} / 303）"
         string minter "N2T: 採番の委譲先"
         string status "active / reserved / delegated / retired"

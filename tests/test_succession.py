@@ -58,7 +58,7 @@ def test_承継はNAANを跨げない(db, world, root):
         ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["c"].id)
 
 
-def test_離脱_転送先を機関のリゾルバへ一括で向け直す(db, world, root):
+def test_離脱_転送先を組織のリゾルバへ一括で向け直す(db, world, root):
     arks = [
         minting.mint(db, shoulder=world["sh_a"], created_by="a", url="https://old/x")[0]
         for _ in range(2)
@@ -75,9 +75,9 @@ def test_離脱_転送先を機関のリゾルバへ一括で向け直す(db, wo
         assert res.location.startswith("https://repo.example.ac.jp/ark/")
 
 
-def test_離脱_未登録の名前も機関のリゾルバへ流れる(db, world, root):
+def test_離脱_未登録の名前も組織のリゾルバへ流れる(db, world, root):
     """**継続作業を要求する形にすると放置されて死んだリンクが残る。**
-    以後の運用が機関側に閉じるよう、shoulder にも同じ委譲を置く。"""
+    以後の運用が組織側に閉じるよう、shoulder にも同じ委譲を置く。"""
     from arkhe.arkspec.betanumeric import check_digit_base, noid_check_digit
 
     ops.depart(

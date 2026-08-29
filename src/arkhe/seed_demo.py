@@ -21,7 +21,7 @@ from arkhe.domain import minting
 PEOPLE = [
     ("ops", Authority.SYSTEM, None, "運用者（全 NAAN）"),
     ("naan-admin", Authority.NAAN, None, "NAAN 管理者（99999 配下）"),
-    ("nibb", Authority.MANAGER, "基礎生物学研究所", "機関管理者"),
+    ("nibb", Authority.MANAGER, "基礎生物学研究所", "組織管理者"),
 ]
 
 INSTITUTIONS = [

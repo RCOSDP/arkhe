@@ -36,7 +36,7 @@ tens of thousands of records means a connection will break somewhere; without a
 receipt, resending would leave behind identifiers nobody points at — and ARK does not
 allow those to be reclaimed.
 
-**The shoulder in a request cannot widen anything.** Omit it and the institution's
+**The shoulder in a request cannot widen anything.** Omit it and the organisation's
 default is used; name one and the only question asked is whether it is already inside
 your reach.
 

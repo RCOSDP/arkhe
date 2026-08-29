@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart LR
-    W[Institutions] -->|mint| M["minter<br/><small>ARKHE_RESOLVER=0</small>"]
+    W[Organisations] -->|mint| M["minter<br/><small>ARKHE_RESOLVER=0</small>"]
     P[The public] -->|resolve| R["resolver<br/><small>ARKHE_RESOLVER=1</small>"]
     M --> DB[(primary)]
     R --> RO[(read replica)]

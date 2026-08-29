@@ -6,14 +6,14 @@ audit log the same way.
 
 | | |
 | --- | --- |
-| `arkhe onboard` | Onboard an institution and delegate one namespace to it. **The two always happen together.** |
+| `arkhe onboard` | Onboard an organisation and delegate one namespace to it. **The two always happen together.** |
 | `arkhe succeed` | A merger. **Identifiers are not broken** — the namespace moves with them. |
-| `arkhe depart` | An institution leaves. **Minting stops; resolution continues.** |
+| `arkhe depart` | An organisation leaves. **Minting stops; resolution continues.** |
 | `arkhe check` | Validate the configuration. **Fail here rather than at startup.** |
 | `arkhe naan add` | Register a NAAN. |
 | `arkhe naan list` |  |
-| `arkhe manager list` | List institutions. **The ids are input to other commands.** |
-| `arkhe manager commitment` | Restate an institution's commitment level. **Published verbatim by `??`.** |
+| `arkhe manager list` | List organisations. **The ids are input to other commands.** |
+| `arkhe manager commitment` | Restate an organisation's commitment level. **Published verbatim by `??`.** |
 | `arkhe shoulder add` | Carve out a namespace. `--reserve` holds one for later. |
 | `arkhe shoulder status` | Change the status. **There is no way back from retired.** |
 | `arkhe shoulder list` |  |
@@ -40,8 +40,8 @@ arkhe client add univ-repo 99999 --manager 1 --scopes "ark:mint ark:update"
 arkhe client key univ-repo
 ```
 
-**An institution and a namespace are always created together** — `onboard` does both.
-One without the other is an institution that cannot mint.
+**An organisation and a namespace are always created together** — `onboard` does both.
+One without the other is an organisation that cannot mint.
 
 ### Adding a person
 

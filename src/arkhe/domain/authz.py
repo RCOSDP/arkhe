@@ -1,8 +1,8 @@
 """認可の中核。**shoulder はリクエストで受け取らず主体から引く。**
 
-これ 1 点で、越境（R1）と多数機関の振り分けが同時に片づく。arklet は
+これ 1 点で、越境（R1）と多数組織の振り分けが同時に片づく。arklet は
 `{naan, shoulder}` を本文で受けて NAAN 単位でしか認可していなかったため、
-**設定ミスでも詐称でも他機関の名前空間に採番できた**。
+**設定ミスでも詐称でも他組織の名前空間に採番できた**。
 
 認証機構（apikey / oauth2 / oidc）が何であっても、判断はここ 1 か所に集まる。
 """
@@ -76,7 +76,7 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
     """
     if principal.is_naan_wide:
         # NAAN 配下（system は全 NAAN）ならどれでも使えるが、**明示が必須**
-        # ——既定を持たないので、誤って他機関の shoulder に打つ事故を防ぐ。
+        # ——既定を持たないので、誤って他組織の shoulder に打つ事故を防ぐ。
         if not requested:
             raise Invalid(
                 {"shoulder": f"authority={principal.authority} の主体は shoulder を明示すること"}
@@ -99,10 +99,10 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
         return found[0]
 
     if principal.manager_id is None:
-        raise Forbidden("主体に有効な機関が紐づいていない")
+        raise Forbidden("主体に有効な組織が紐づいていない")
     manager = session.get(Manager, principal.manager_id)
     if manager is None or not manager.active:
-        raise Forbidden("主体に有効な機関が紐づいていない")
+        raise Forbidden("主体に有効な組織が紐づいていない")
 
     # **主体が shoulder に固定されている場合はそれだけ。**
     # 同じ shoulder を複数の主体が使うのは正常（鍵は共有しない）。
@@ -116,7 +116,7 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
 
     if not requested:
         if manager.default_shoulder_id is None:
-            raise Invalid({"shoulder": "この機関に default_shoulder が設定されていない"})
+            raise Invalid({"shoulder": "この組織に default_shoulder が設定されていない"})
         return session.get(Shoulder, manager.default_shoulder_id)
 
     found = session.scalar(
@@ -127,7 +127,7 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
         )
     )
     if found is None:
-        # **他機関の shoulder を指定しても、存在の有無を漏らさず一律に拒む。**
+        # **他組織の shoulder を指定しても、存在の有無を漏らさず一律に拒む。**
         raise Forbidden(f"shoulder {requested} はこの主体の範囲外")
     return found
 
@@ -190,7 +190,7 @@ def fetch_for_update(session: Session, principal: Principal, keys: list[str]) ->
 
 
 def assert_within_quota(session: Session, principal: Principal, count: int = 1) -> None:
-    """R3: 機関単位の 1 日あたり採番上限。**一機関の暴走を止める。**
+    """R3: 組織単位の 1 日あたり採番上限。**一組織の暴走を止める。**
 
     `Manager.quota_per_day` が null なら無制限。break-glass は manager を持たない
     ので対象外——障害対応で止まっては困る。

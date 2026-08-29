@@ -11,37 +11,41 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- The word for the entity a namespace is delegated to is now **organisation**
+  throughout the interface and the documentation, and a NAAN is an "organisation
+  number (NAAN)" — it is a *Name Assigning Authority Number*, and the number belongs
+  to the organisation.
 - The CLI speaks Japanese and English. The language is decided from the environment
   at startup — `ARKHE_LANG`, then `LC_ALL` / `LC_MESSAGES` / `LANG` in POSIX order,
   defaulting to `ja` as the admin interface does. Typer assembles its help at import
   time, so a runtime `--lang` cannot work.
 - The admin interface can now build the ledger, not only mint. **Four buttons on the
-  overview — register a NAAN, onboard an institution, carve out a shoulder, manage
+  overview — register a NAAN, onboard an organisation, carve out a shoulder, manage
   one — pointed at routes that did not exist and returned 404.** They now work, and
-  NAAN and institution settings pages were added alongside them.
+  NAAN and organisation settings pages were added alongside them.
 - `arkhe manager list` and `arkhe manager commitment`, and `--commitment` on
   `arkhe onboard`. The commitment level was published by `?` and `??` but **could not
-  be set** — every institution silently carried the default `permanent-dynamic`. That
-  meant claiming, in the institution's name, a commitment it never made; publishing an
+  be set** — every organisation silently carried the default `permanent-dynamic`. That
+  meant claiming, in the organisation's name, a commitment it never made; publishing an
   undeclared default as a declaration is worse than publishing nothing. Onboarding
   without `--commitment` now says so on stderr. Unknown levels are refused.
 - `set_quota`, so a minting limit can be changed after onboarding rather than only at
-  it. An institution cannot change its own: a limit the receiving side can lift is not
+  it. An organisation cannot change its own: a limit the receiving side can lift is not
   a limit.
-- The overview page is called **Institutions** rather than "Delegation", and its
+- The overview page is called **Organisations** rather than "Delegation", and its
   explanation is written for someone opening the ledger for the first time. The terms
   are kept in parentheses — "namespace (shoulder)", "Permanent; content may change
   (permanent-dynamic)" — so the plain wording reads on its own while still lining up
   with the specification, the CLI and the API. Commitment levels no longer appear as
-  bare machine values. Buttons say what they do: "Add an institution", not "Onboard an
-  institution"; "Add a namespace", not "Carve out a shoulder". The form for adding an
-  institution now says up front that it hands over a namespace at the same time.
+  bare machine values. Buttons say what they do: "Add an organisation", not "Onboard an
+  organisation"; "Add a namespace", not "Carve out a shoulder". The form for adding an
+  organisation now says up front that it hands over a namespace at the same time.
   (Registering a NAAN keeps its own name: there is no plainer word for it than the
   term itself.) "Principals & credentials" is now "Users & keys" — what is listed
-  there is not the institutions themselves but their systems and their people — and
+  there is not the organisations themselves but their systems and their people — and
   the minting form asks for a *namespace to mint in*, since what is chosen there is a
   NAAN and a shoulder together, not a shoulder alone. A NAAN's name field is now
-  "Institution" rather than "Organisation".
+  "Organisation" rather than "Organisation".
 - `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
   Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
   to be the URL the browser actually types, so they are parameterised by
@@ -61,14 +65,14 @@ breaking in a system whose identifiers cannot be reissued.
   in the cookie would push it past 4 KB where claims are numerous, and **the browser
   would silently drop it, breaking sign-in instead**. Authorization servers with no
   `end_session_endpoint` fall back to a local logout.
-- The NAAN settings page could be opened by an institution's administrator, who was
+- The NAAN settings page could be opened by an organisation's administrator, who was
   then refused on save. A form that looks editable but is not is the same defect as a
   hidden button whose URL still works; the condition to open it now matches the
   condition to save it.
-- The NAA policy could be rewritten by an institution's administrator. It is the
-  declaration of the side handing namespaces out and covers **every institution under
+- The NAA policy could be rewritten by an organisation's administrator. It is the
+  declaration of the side handing namespaces out and covers **every organisation under
   the NAAN**, so one of them must not be able to restate it for the others. It now
-  requires NAAN scope or wider. What an institution states about itself is its
+  requires NAAN scope or wider. What an organisation states about itself is its
   commitment level, which its own administrator *can* change — the split follows ARK's
   delegation structure rather than a permissions table.
 
@@ -87,13 +91,13 @@ between *the code is correct* and *the code can be deployed*.
   route and mounts no admin interface, yet startup required `ARKHE_SESSION_SECRET`
   and the OIDC configuration — which meant handing a session signing key to every
   resolver node that would never use it.
-- A subject pinned to a shoulder now inherits that shoulder's institution. Passing
+- A subject pinned to a shoulder now inherits that shoulder's organisation. Passing
   `--shoulder` without `--manager` produced a subject that was rejected at the
   authorization gate every time, in the confusing shape of *the shoulder is right but
   it still will not go through*. A `manager` that contradicts the shoulder is
   refused rather than silently overridden.
 - Labels are unique only when there is a label. The `(manager_id, label)` unique
-  index covered the empty string, so one institution could hold only one unlabelled
+  index covered the empty string, so one organisation could hold only one unlabelled
   subject — which made the ordinary arrangement of one credential per process
   (`web-api`, `web-ui`, `worker`) impossible and pushed towards sharing one key.
   Migration `56e5e54db345`.

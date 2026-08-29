@@ -13,11 +13,11 @@ uses. There is no path through the interface that skips an invariant.
 
 ## What it shows
 
-**Institutions** — the ledger itself, as a nesting: number (NAAN) → institution →
+**Organisations** — the ledger itself, as a nesting: organisation number (NAAN) → organisation →
 namespace. ARK is a scheme of handed-down namespaces, so the shape of what was handed
 down *is* the content.
 
-The page is called "Institutions" rather than "Delegation". It is the first page
+The page is called "Organisations" rather than "Delegation". It is the first page
 someone opens, so **its heading is not a word the reader does not have yet**.
 
 The terms are kept, in parentheses: "namespace (shoulder)", "number (the NAAN)",
@@ -28,12 +28,12 @@ term can line it up with [the specification](../concepts/ark.md), the CLI and th
 else.**
 
 **Mint an ARK** — for the times one is needed by hand: a migration edge case, a
-physical object, a smoke test. Institutions normally mint through the API.
+physical object, a smoke test. Organisations normally mint through the API.
 
 **Principals and credentials** — who may mint, with which key, reaching how far.
 
 **Audit log** — restricted to NAAN scope and wider. Who did what is information
-belonging to whoever holds the namespace; an institution's administrator has no
+belonging to whoever holds the namespace; an organisation's administrator has no
 business reading another's.
 
 ## Reach shapes the page
@@ -44,8 +44,8 @@ creates the hole where a button is hidden but the URL still works.
 | Signed in as | Sees | Audit log |
 | --- | --- | --- |
 | system administrator | every NAAN | yes |
-| NAAN administrator | one NAAN, all its institutions | yes |
-| institution administrator | one institution | **403** |
+| NAAN administrator | one NAAN, all its organisations | yes |
+| organisation administrator | one organisation | **403** |
 
 ## Getting in
 
@@ -65,18 +65,18 @@ could be reissued in a system that declares `NR`.
 | --- | --- |
 | NAA policy (the NAAN's declaration) | NAAN scope or wider |
 | Where minting happens (`/.well-known/ark`) | System administrator |
-| Commitment level (the institution's declaration) | **The institution itself**, and wider |
+| Commitment level (the organisation's declaration) | **The organisation itself**, and wider |
 | Minting limit per day | NAAN scope or wider |
 | Shoulder status and delegation | NAAN scope or wider |
 
 This split is not a permissions table; it is **ARK's delegation structure showing
 through**. The NAA policy is the declaration of the side handing namespaces out and
-covers every institution beneath it, so one institution's administrator cannot change
+covers every organisation beneath it, so one organisation's administrator cannot change
 it. The commitment level is what the receiving side states about itself, and **a
-declaration nobody can make is not a declaration** — so an institutional administrator
+declaration nobody can make is not a declaration** — so an organisational administrator
 can change theirs.
 
-The minting limit is the exception an institution cannot change itself: a limit
+The minting limit is the exception an organisation cannot change itself: a limit
 imposed by the side handing the namespace out means nothing if the side receiving it
 can lift it.
 

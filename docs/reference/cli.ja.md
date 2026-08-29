@@ -5,14 +5,14 @@
 
 | | |
 | --- | --- |
-| `arkhe onboard` | 機関を迎え入れ、名前空間を 1 つ委譲する。**この 2 つは必ず対で起きる。** |
+| `arkhe onboard` | 組織を迎え入れ、名前空間を 1 つ委譲する。**この 2 つは必ず対で起きる。** |
 | `arkhe succeed` | 統廃合。**識別子は壊さない**（名前空間ごと承継先に移す）。 |
-| `arkhe depart` | 機関の離脱。**新規採番は止め、解決は続ける。** |
+| `arkhe depart` | 組織の離脱。**新規採番は止め、解決は続ける。** |
 | `arkhe check` | 設定を検証する。**起動前に落としたいものをここで落とす。** |
 | `arkhe naan add` | NAAN を登録する。 |
 | `arkhe naan list` |  |
-| `arkhe manager list` | 機関を並べる。**id は他のコマンドの入力になる。** |
-| `arkhe manager commitment` | 機関の約束の水準を言い直す。**`??` でそのまま公開される。** |
+| `arkhe manager list` | 組織を並べる。**id は他のコマンドの入力になる。** |
+| `arkhe manager commitment` | 組織の約束の水準を言い直す。**`??` でそのまま公開される。** |
 | `arkhe shoulder add` | 名前空間を切り出す。`--reserve` で将来用に確保できる。 |
 | `arkhe shoulder status` | 状態を変える。**retired からは戻せない**（引退した名前空間の再開は NR 違反の芽）。 |
 | `arkhe shoulder list` |  |
@@ -38,8 +38,8 @@ arkhe client add univ-repo 99999 --manager 1 --scopes "ark:mint ark:update"
 arkhe client key univ-repo
 ```
 
-**機関と名前空間は必ず対で作られる**（`onboard` が両方やる）。片方だけでは、採番できない
-機関を作るだけで意味がない。
+**組織と名前空間は必ず対で作られる**（`onboard` が両方やる）。片方だけでは、採番できない
+組織を作るだけで意味がない。
 
 ### 人を足す（管理画面にログインさせる）
 

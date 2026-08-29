@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart LR
-    W[機関] -->|採番| M["minter<br/><small>ARKHE_RESOLVER=0</small>"]
+    W[組織] -->|採番| M["minter<br/><small>ARKHE_RESOLVER=0</small>"]
     P[誰でも] -->|解決| R["resolver<br/><small>ARKHE_RESOLVER=1</small>"]
     M --> DB[(主系)]
     R --> RO[(読み取りレプリカ)]

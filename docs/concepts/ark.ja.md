@@ -18,8 +18,8 @@ ark:/99999/x9abc1234
 ```mermaid
 flowchart TB
     subgraph H["Handle System（CNRI / DONA）"]
-        DOI["10.xxxx — DOI<br/><small>登録機関が名前空間を管理し、<br/>レコードは RA 側に置かれる</small>"]
-        HDL["20.500.xxxxx — CNRI Handle<br/><small>機関が購入する prefix</small>"]
+        DOI["10.xxxx — DOI<br/><small>登録組織が名前空間を管理し、<br/>レコードは RA 側に置かれる</small>"]
+        HDL["20.500.xxxxx — CNRI Handle<br/><small>組織が購入する prefix</small>"]
     end
     ARK["ark:/99999/…<br/><small>HTTP と DNS の上に直接。下部構造を持たない。</small>"]
 ```
@@ -30,10 +30,10 @@ Handle の `10.x` 名前空間の名前である。**ARK だけが別系統**で
 
 ## 効いてくる違いは 3 つ
 
-**無償で、名前空間も無償。** NAAN は ARK Alliance から無償で交付される。支払う登録機関も、
+**無償で、名前空間も無償。** NAAN は ARK Alliance から無償で交付される。支払う登録組織も、
 維持する会員資格も無い。
 
-**誰も代わりに永続性を保証しない。** DOI では登録機関が約束の一部だが、ARK では
+**誰も代わりに永続性を保証しない。** DOI では登録組織が約束の一部だが、ARK では
 **約束はあなたのもので、その中身も自分で述べる**。だからこそ**尋ねる手段**が用意されている。
 
 ```bash
@@ -76,7 +76,7 @@ ARK は **NR（No Re-assignment、再割当てしない）** を宣言する。�
 | | |
 | --- | --- |
 | **NAAN** | Name Assigning Authority Number。`99999` の部分。組織に交付される |
-| **shoulder** | NAAN の下位名前空間（`/x9` など）。**機関に委譲される単位** |
+| **shoulder** | NAAN の下位名前空間（`/x9` など）。**組織に委譲される単位** |
 | **blade** | shoulder より後ろ。対象を識別する部分 |
 | **inflection** | `?` や `??` の接尾。**対象へ行く**のではなく、**識別子について尋ねる** |
 | **suffix passthrough** | `…/x9abc/page/3` は `…/x9abc` のレコードで解決される。子に識別子を振らなくてよい |

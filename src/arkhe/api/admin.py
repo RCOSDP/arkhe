@@ -157,7 +157,7 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
     naans = _visible_naans(session, principal)
     for n in naans:
         # **リレーション名（`n.managers`）には代入しない。** 代入すると SQLAlchemy は
-        # 「この Naan の子はこれで全部」と解釈し、**一覧から外した機関の naan を
+        # 「この Naan の子はこれで全部」と解釈し、**一覧から外した組織の naan を
         # NULL に更新する**。表示のための絞り込みがデータを壊す。別名に持つ。
         stmt = (
             select(Manager)
@@ -247,7 +247,7 @@ def naan_create(
 @router.get("/naan/{naan}", response_class=HTMLResponse)
 def naan_edit(request: Request, principal: AdminPrincipal, session: Db, naan: str):
     obj = session.get(Naan, naan)
-    # **開ける条件と保存できる条件を揃える。** `reaches_naan` だけだと機関管理者にも
+    # **開ける条件と保存できる条件を揃える。** `reaches_naan` だけだと組織管理者にも
     # 開けてしまい、編集できるように見えるフォームが保存で 403 になる。
     # 出し分けと認可がずれているのと同じことなので、ここで揃える。
     if obj is None or not principal.is_naan_wide or not principal.reaches_naan(naan):
@@ -279,7 +279,7 @@ def naan_save(
 @router.get("/manager/new", response_class=HTMLResponse)
 def manager_new(request: Request, principal: AdminPrincipal, session: Db):
     if not principal.is_naan_wide:
-        raise Forbidden("機関のオンボードは NAAN 単位以上の権限が要る")
+        raise Forbidden("組織のオンボードは NAAN 単位以上の権限が要る")
     return _page(
         request, principal, "manager_form.html", "overview",
         manager=None, naans=_visible_naans(session, principal), levels=list(CommitmentLevel),
@@ -310,7 +310,7 @@ def manager_create(
 def manager_edit(request: Request, principal: AdminPrincipal, session: Db, manager_id: int):
     m = session.get(Manager, manager_id)
     if m is None:
-        raise Forbidden("この機関はこの主体の範囲外")
+        raise Forbidden("この組織はこの主体の範囲外")
     ops.require_manager(session, principal, m)
     return _page(
         request, principal, "manager_form.html", "overview",
@@ -327,7 +327,7 @@ def manager_save(
     commitment: Annotated[str, Form()] = "",
     quota: Annotated[str, Form()] = "",
 ):
-    """**約束は機関自身のもの**なので、機関管理者も自機関の水準を変えられる。
+    """**約束は組織自身のもの**なので、組織管理者も自組織の水準を変えられる。
 
     採番上限はそうではない（配った側が課すもの）。判定は `admin_ops` 側にある。
     """
@@ -525,7 +525,7 @@ def clients(request: Request, principal: AdminPrincipal, session: Db):
 def audit(request: Request, principal: AdminPrincipal, session: Db):
     """**監査ログは NAAN 単位以上にしか見せない。**
 
-    誰がいつ何をしたかは、その名前空間を預かる側の情報。機関の担当者に他機関の
+    誰がいつ何をしたかは、その名前空間を預かる側の情報。組織の担当者に他組織の
     操作履歴が見えてはならない。
     """
     if not principal.is_naan_wide:

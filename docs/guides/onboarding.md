@@ -1,6 +1,6 @@
 # Setting up for the first time
 
-From holding no NAAN to an institution that can mint. **Half of this happens outside
+From holding no NAAN to an organisation that can mint. **Half of this happens outside
 arkhe**, so those steps are listed too.
 
 ```
@@ -9,9 +9,9 @@ arkhe**, so those steps are listed too.
 3. Register your resolver URL in the         outside arkhe
    NAAN registry
 4. Register the NAAN and state your policy   arkhe naan add
-5. Onboard an institution, delegate a        arkhe onboard
+5. Onboard an organisation, delegate a        arkhe onboard
    namespace
-6. Confirm the institution's commitment      arkhe manager commitment
+6. Confirm the organisation's commitment      arkhe manager commitment
 7. Register people and machines              arkhe client add
 8. From then on: rotation, succession, departure
 ```
@@ -60,14 +60,14 @@ answered with `404`". **If you have taken over a NAAN whose minting continues
 elsewhere**, pass `--authoritative false` with `--redirect`. The two go together;
 neither is accepted alone.
 
-## 5. Onboard an institution and delegate a namespace
+## 5. Onboard an organisation and delegate a namespace
 
 ```bash
 arkhe onboard 99999 "Example Institute" --shoulder /x9 --commitment permanent-stable
 ```
 
-**Registering the institution and delegating the shoulder always happen together.**
-They cannot be separated: an institution with no namespace cannot mint, so there is
+**Registering the organisation and delegating the shoulder always happen together.**
+They cannot be separated: an organisation with no namespace cannot mint, so there is
 no point putting one in the ledger.
 
 Decide the shoulder layout beforehand. **Once handed out it cannot be taken back** —
@@ -88,12 +88,12 @@ arkhe manager commitment 1 permanent-stable
 ```
 
 It can also be changed [from the admin interface](admin.md#changing-settings), where
-**the institution's own administrator may change it** — the commitment is the
-institution's, and a declaration nobody can make is not a declaration.
+**the organisation's own administrator may change it** — the commitment is the
+organisation's, and a declaration nobody can make is not a declaration.
 
 Onboarding without `--commitment` leaves the default `permanent-dynamic`. **Do not
 leave it there.** The value is published verbatim by `?` and `??`, so leaving it
-means **claiming, in the institution's name, a commitment the institution never
+means **claiming, in the organisation's name, a commitment the organisation never
 made**. Publishing an undeclared default as a declaration is worse than publishing
 nothing.
 
@@ -117,7 +117,7 @@ holding up a promise you cannot keep, and it is what keeps asking `??` worth doi
 
 | | Identifies itself with | May hold |
 | --- | --- | --- |
-| A person (an institutional administrator) | External login (OIDC / proxy) or a password | **No** API key or client secret |
+| A person (an organisational administrator) | External login (OIDC / proxy) or a password | **No** API key or client secret |
 | A machine (the repository itself) | API key / client secret | **No** password |
 
 ```bash
@@ -137,7 +137,7 @@ follows. `arkhe client passwd` is for `ARKHE_ADMIN_LOGIN=password` deployments o
 **Give each process its own credential.** Sharing one across a repository's web and
 worker processes means (1) you cannot tell which of them minted, (2) one leak forces
 you to revoke all of them, and (3) you cannot narrow scope per use. Pinning with
-`--shoulder` means a leaked key still cannot reach another institution's namespace.
+`--shoulder` means a leaked key still cannot reach another organisation's namespace.
 
 Finally, check the configuration:
 
@@ -164,7 +164,7 @@ There is a time-boxed way out for incidents:
 arkhe client breakglass 99999 --days 7
 ```
 
-When institutions merge or leave, use [succession and
+When organisations merge or leave, use [succession and
 departure](succession.md). In both, **existing identifiers go on resolving** — without
 that as an operational procedure, a declaration of `NR` cannot actually be honoured.
 
@@ -173,6 +173,6 @@ that as an operational procedure, a declaration of `NR` cannot actually be honou
 | Order | Otherwise |
 | --- | --- |
 | 2 before 3 | There is no resolver URL yet to register |
-| 4 before 5 | Institutions appear under a NAAN whose policy is unstated |
-| 5 is indivisible | An institution that cannot mint is left in the ledger |
-| 6 right after 5 | A default goes live, published as the institution's declaration |
+| 4 before 5 | Organisations appear under a NAAN whose policy is unstated |
+| 5 is indivisible | An organisation that cannot mint is left in the ledger |
+| 6 right after 5 | A default goes live, published as the organisation's declaration |

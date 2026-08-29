@@ -36,8 +36,8 @@ def test_委譲には採番の行き先が要る(db, world, root):
     assert world["sh_a"].status == ShoulderStatus.DELEGATED
 
 
-def test_機関と名前空間は対で生まれる(db, world):
-    """片方だけでは意味がない（採番できない機関を作るだけ）。"""
+def test_組織と名前空間は対で生まれる(db, world):
+    """片方だけでは意味がない（採番できない組織を作るだけ）。"""
     assert world["a"].default_shoulder_id == world["sh_a"].id
 
 
@@ -57,7 +57,7 @@ def test_自分より広い到達範囲は与えられない(db, world, principa
         )
 
 
-def test_他機関の主体は作れない(db, world, principal_of):
+def test_他組織の主体は作れない(db, world, principal_of):
     p = principal_of(manager=world["a"])
     with pytest.raises(Forbidden):
         ops.register_client(
@@ -68,15 +68,15 @@ def test_他機関の主体は作れない(db, world, principal_of):
 # ------------------------------------------------------------- 画面
 
 
-def test_機関管理者には自分の範囲しか見えない(db, world, principal_of, as_principal):
+def test_組織管理者には自分の範囲しか見えない(db, world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     body = c.get("/admin/").text
-    assert "A機関" in body
-    assert "B機関" not in body  # 同じ NAAN の他機関も見えない
+    assert "A組織" in body
+    assert "B組織" not in body  # 同じ NAAN の他組織も見えない
     assert "88888" not in body
 
 
-def test_監査ログは機関管理者には見せない(db, world, principal_of, as_principal):
+def test_監査ログは組織管理者には見せない(db, world, principal_of, as_principal):
     """誰がいつ何をしたかは、その名前空間を預かる側の情報。"""
     c = as_principal(principal_of(manager=world["a"]))
     assert c.get("/admin/audit").status_code == 403
@@ -91,7 +91,7 @@ def test_画面から採番できる(db, world, principal_of, as_principal):
     assert r.status_code == 200 and "ark:/99999/a1" in r.text
 
 
-def test_画面からでも他機関には採番できない(db, world, principal_of, as_principal):
+def test_画面からでも他組織には採番できない(db, world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     assert c.post("/admin/mint", data={"shoulder": "/b2"}).status_code == 403
 
@@ -105,7 +105,7 @@ def test_採番権限が無ければ画面も開けない(db, world, principal_o
 
 
 @pytest.mark.parametrize(
-    "lang,needle", [("ja", "機関管理"), ("en", "Institutions")]
+    "lang,needle", [("ja", "組織管理"), ("en", "Organisations")]
 )
 def test_日英を切り替えられる(db, world, principal_of, as_principal, lang, needle):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
@@ -121,7 +121,7 @@ def test_言語の選択は記憶される(db, world, principal_of, as_principal
 def test_Accept_Languageを見る(db, world, principal_of, as_principal):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/admin/", headers={"accept-language": "en-US,en;q=0.9"})
-    assert "Institutions" in r.text
+    assert "Organisations" in r.text
 
 
 def test_翻訳に抜けが無い():
@@ -242,7 +242,7 @@ def test_proxy_モードは前段のヘッダを信じる(db, world, root, raw_a
     # ヘッダが無ければログインへ（この構成に画面は無いので 404 になる）
     assert cli.get("/admin/").status_code == 302
     r = cli.get("/admin/", headers={"X-Forwarded-User": "alice@example.ac.jp"})
-    assert r.status_code == 200 and "A機関" in r.text
+    assert r.status_code == 200 and "A組織" in r.text
 
 
 def test_proxy_モードでも台帳に無い身元は通さない(db, world, raw_app):
@@ -319,7 +319,7 @@ def test_人の主体はAPIキーで認証できない(db, world, root):
 
 # ------------------------------------------------------- ID とパスワード
 #
-# 外部 IdP を持たない機関でも単体で建てられるようにするための入口。
+# 外部 IdP を持たない組織でも単体で建てられるようにするための入口。
 # oidc / proxy が使えるならそちらがよい（身元の管理が 1 か所に集まる）。
 
 
@@ -348,7 +348,7 @@ def test_パスワードでログインできる(db, world, with_password, raw_a
     r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
                                        "password": "correct-horse-battery"})
     assert r.status_code == 302 and r.headers["location"] == "/admin/"
-    assert "A機関" in cli.get("/admin/").text
+    assert "A組織" in cli.get("/admin/").text
 
 
 def test_誤ったパスワードは入れない(db, world, with_password, raw_app):
@@ -421,8 +421,8 @@ def test_外部URLへのリダイレクトに使えない(db, world, with_passwo
     assert r.headers["location"] == "/admin/"
 
 
-def test_shoulder固定の主体は機関を継ぐ(db, world, root):
-    """**shoulder は既に機関を決めている。**
+def test_shoulder固定の主体は組織を継ぐ(db, world, root):
+    """**shoulder は既に組織を決めている。**
 
     別々に渡させると、manager を書き忘れた主体ができ、認可の入口で必ず弾かれる
     ——しかも「shoulder は合っているのに通らない」という分かりにくい形で。
@@ -436,7 +436,7 @@ def test_shoulder固定の主体は機関を継ぐ(db, world, root):
     assert c.manager_id == sh.manager_id
 
 
-def test_shoulderと機関の食い違いは拒む(db, world, root):
+def test_shoulderと組織の食い違いは拒む(db, world, root):
     """黙って片方を優先しない。どちらが正しいかは呼び出し側しか知らない。"""
     from arkhe.domain.authz import Invalid
 
@@ -451,8 +451,8 @@ def test_shoulderと機関の食い違いは拒む(db, world, root):
 def test_約束の水準は言い直せる(db, world, root):
     """**既定のまま放置させないための口。**
 
-    これが無いと全機関が `permanent-dynamic` を名乗ったまま動き、`??` は
-    ソフトウェアの既定値を機関の宣言として公開してしまう。
+    これが無いと全組織が `permanent-dynamic` を名乗ったまま動き、`??` は
+    ソフトウェアの既定値を組織の宣言として公開してしまう。
     """
     m = world["a"]
     ops.set_commitment(db, root, manager_id=m.id, level="permanent-unchanging")
@@ -469,16 +469,16 @@ def test_約束の水準は下げられる(db, world, root):
 
 
 def test_知らない水準は通さない(db, world, root):
-    """`??` でそのまま公開される値なので、綴り間違いを通すと、機関が述べて
-    いない水準を機関の名前で名乗ることになる。"""
+    """`??` でそのまま公開される値なので、綴り間違いを通すと、組織が述べて
+    いない水準を組織の名前で名乗ることになる。"""
     from arkhe.domain.authz import Invalid
 
     with pytest.raises(Invalid):
         ops.set_commitment(db, root, manager_id=world["a"].id, level="permanent")
 
 
-def test_他機関の約束は変えられない(db, world, principal_of):
-    """約束はその機関のもの。"""
+def test_他組織の約束は変えられない(db, world, principal_of):
+    """約束はその組織のもの。"""
     from arkhe.auth.errors import Forbidden
 
     p = principal_of(manager=world["a"])
@@ -489,7 +489,7 @@ def test_他機関の約束は変えられない(db, world, principal_of):
 def test_onboard時に水準を述べられる(db, world, root):
     """迎え入れる時点で確かめる——後から直す運用にすると必ず既定が残る。"""
     m, _ = ops.onboard_manager(
-        db, root, naan="99999", name="約束を述べた機関", shoulder="/c1",
+        db, root, naan="99999", name="約束を述べた組織", shoulder="/c1",
         commitment_level="permanent-stable",
     )
     db.commit()

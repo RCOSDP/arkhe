@@ -1,7 +1,7 @@
 """ドメインモデル（SQLAlchemy 2.0）。
 
 `Naan → Manager → Shoulder → Ark` の 1 本で全 NAAN を扱う。**個別 NAAN を持つ
-機関でも shoulder を必ず使う**——使わないと NAAN ごとにモデルが分岐し、
+組織でも shoulder を必ず使う**——使わないと NAAN ごとにモデルが分岐し、
 first-digit 規約が NAAN によって成立したりしなかったりする。
 
 Django 版が「構造で」守っていた不変条件は、ここでも構造で守る:
@@ -82,19 +82,19 @@ class ShoulderStatus(StrEnum):
 class Authority(StrEnum):
     """到達範囲。**上の段は下の段を含む。**
 
-    ARK は「中央の権威が保証する」体系ではなく、**名前空間を委譲し、各機関が
+    ARK は「中央の権威が保証する」体系ではなく、**名前空間を委譲し、各組織が
     自分の約束を自己申告する**体系。この 3 段はその委譲構造をそのまま写している。
 
       SYSTEM   RA の運用者。全 NAAN に届く。名前空間を配る側
-      NAAN     1 つの NAAN の配下すべて。その NAAN を預かる機関の管理者
-      MANAGER  1 機関ぶん。`shoulder_id` を併せて指定すれば 1 shoulder に固定できる
+      NAAN     1 つの NAAN の配下すべて。その NAAN を預かる組織の管理者
+      MANAGER  1 組織ぶん。`shoulder_id` を併せて指定すれば 1 shoulder に固定できる
 
     **配られた側が、配った側より広く届くことはない。** 判定は `reaches()` 1 か所。
     """
 
     SYSTEM = "system"  # 全 NAAN（RA 運用者）
     NAAN = "naan"  # NAAN 配下の全 shoulder
-    MANAGER = "manager"  # その機関の shoulder のみ
+    MANAGER = "manager"  # その組織の shoulder のみ
 
 
 class Naan(Base):
@@ -142,7 +142,7 @@ class Naan(Base):
 
 
 class Manager(Base):
-    """機関テナント。N2T の shoulder レコードが持つ `manager` を実体化したもの。
+    """組織テナント。N2T の shoulder レコードが持つ `manager` を実体化したもの。
 
     **資格情報は shoulder ではなくここに紐づける**——部局別・分野別に shoulder を
     足しても鍵の再発行が要らない。
@@ -202,7 +202,7 @@ class Manager(Base):
 
 
 class Shoulder(Base):
-    """NAAN の下位名前空間。機関への名前空間の委譲を担う。"""
+    """NAAN の下位名前空間。組織への名前空間の委譲を担う。"""
 
     __tablename__ = "shoulder"
 
@@ -366,7 +366,7 @@ class Client(Base):
         # 新規発行できる＝ローテーションが型として表現される。
         #
         # **空のラベルは制約の外。** 空は「名前を付けていない」であって、名前が
-        # 衝突しているのではない。含めると、1 機関にラベル無しの主体を 2 つ置け
+        # 衝突しているのではない。含めると、1 組織にラベル無しの主体を 2 つ置け
         # なくなる（web-api / web-ui / worker のように役割で分ける普通の構成が
         # 通らない）。
         Index(
@@ -440,8 +440,8 @@ class MintReceipt(Base):
     **控えを持てば、再送を安全にできる。** 呼び出し側が `request_id` を付け、
     サーバは (client, request_id) で 1 行に固定する。
 
-    **client ごとに独立。** 他機関の `request_id` と衝突しないし、鍵の推測で
-    他機関の ARK を引くこともできない。
+    **client ごとに独立。** 他組織の `request_id` と衝突しないし、鍵の推測で
+    他組織の ARK を引くこともできない。
     """
 
     __tablename__ = "mint_receipt"
@@ -479,7 +479,7 @@ class AuditEvent(Base):
 #   ARK を消す      → 解決が止まる＝識別子が壊れる。`NR` を宣言している以上許されない。
 #                     対象が失われたときは tombstone に付け替えるか、url を空にして
 #                     記述を返す（FAIR A2）。
-#   shoulder を消す → 乱数割当が同じ文字列を再び当てうる＝**NR 違反の芽**。機関が
+#   shoulder を消す → 乱数割当が同じ文字列を再び当てうる＝**NR 違反の芽**。組織が
 #                     消えても行は残し、status=retired にする。とくに delegated
 #                     だった shoulder は、外部 minter が我々の知らない識別子を作って
 #                     いる可能性があるので絶対に消せない。

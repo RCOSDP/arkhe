@@ -304,7 +304,7 @@ def test_n5_generated_shoulders_are_opaque_and_valid():
 
 
 def test_shoulder_capacity_matches_the_design():
-    assert shoulder_capacity(3) == 3610  # 800 機関で使用率 22.2%
+    assert shoulder_capacity(3) == 3610  # 800 組織で使用率 22.2%
     assert shoulder_capacity(2) == 190
 
 

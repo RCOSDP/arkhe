@@ -36,7 +36,7 @@
         </div>
       {% endif %}
 
-      {# **約束は機関自身のもの。** 機関管理者も自分の分は変えられる。 #}
+      {# **約束は組織自身のもの。** 組織管理者も自分の分は変えられる。 #}
       <div class="field">
         <label for="commitment">{{ t('manager.f.commitment') }}</label>
         <select id="commitment" name="commitment">
@@ -50,7 +50,7 @@
         <p class="hint">{{ t('manager.f.commitment_hint')|safe }}</p>
       </div>
 
-      {# 採番上限は配った側が課すもの。**自機関では変えられない。** #}
+      {# 採番上限は配った側が課すもの。**自組織では変えられない。** #}
       {% if can_manage %}
         <div class="field">
           <label for="quota">{{ t('manager.f.quota') }} <span class="opt">— {{ t('f.optional') }}</span></label>

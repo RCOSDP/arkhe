@@ -27,10 +27,10 @@ Open **<http://localhost:8057/admin/>** and sign in as one of:
 | --- | --- | --- |
 | `ops` | `arkhe-demo-2026` | system administrator, every NAAN |
 | `naan-admin` | `arkhe-demo-2026` | NAAN administrator, everything under 99999 |
-| `nibb` | `arkhe-demo-2026` | institution administrator, one institution |
+| `nibb` | `arkhe-demo-2026` | organisation administrator, one organisation |
 
 Signing in as each in turn is the quickest way to understand what
-[reach](concepts/delegation.md) means: `nibb` cannot see the other institutions, and
+[reach](concepts/delegation.md) means: `nibb` cannot see the other organisations, and
 the audit log answers 403.
 
 Then mint one and resolve it:

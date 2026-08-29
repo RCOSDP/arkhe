@@ -1,7 +1,7 @@
 """管理操作。**画面も CLI も、ここを呼ぶ。**
 
 管理画面をテーブルの行編集にしない理由がここにある。arkhe で意味を持つのは
-「機関をオンボードする」「shoulder を retire する」「委譲先を設定する」といった
+「組織をオンボードする」「shoulder を retire する」「委譲先を設定する」といった
 **操作**で、行の項目を書き換えることではない。行編集を許すと、
 
   - `Shoulder.status` を `retired` から `active` に戻す（引退した名前空間の再開＝NR 違反の芽）
@@ -54,7 +54,7 @@ def _require_naan(p: Principal, naan: str) -> None:
 
 
 def require_manager(session: Session, p: Principal, manager: Manager) -> None:
-    """その機関に届くか。NAAN 単位以上なら配下すべて、manager 単位なら自機関のみ。
+    """その組織に届くか。NAAN 単位以上なら配下すべて、manager 単位なら自組織のみ。
 
     **画面からも呼ぶので公開名にしてある。** 画面が独自に判定を書くと、
     ボタンは出ないが POST は通る、という穴になる。
@@ -63,7 +63,7 @@ def require_manager(session: Session, p: Principal, manager: Manager) -> None:
     if p.is_naan_wide:
         return
     if p.manager_id != manager.id:
-        raise Forbidden("この機関はこの主体の範囲外")
+        raise Forbidden("この組織はこの主体の範囲外")
 
 
 # --------------------------------------------------------------------- NAAN
@@ -86,9 +86,9 @@ def set_na_policy(session: Session, p: Principal, *, naan: str, policy: str) -> 
     **ARK は「永続性は約束であって性質ではない」という立場**を取る。だから
     保証を名乗るのではなく、**どの水準の約束をするかを自分で宣言する**。
 
-    書き換えられるのは **NAAN を預かる主体だけ**。これは NAAN 配下の全機関に
-    かかる宣言なので、1 機関の管理者が他機関の分まで書き換えられてはならない。
-    機関が自分について述べるのは [`set_commitment`][] のほう——**NAA ポリシーは
+    書き換えられるのは **NAAN を預かる主体だけ**。これは NAAN 配下の全組織に
+    かかる宣言なので、1 組織の管理者が他組織の分まで書き換えられてはならない。
+    組織が自分について述べるのは [`set_commitment`][] のほう——**NAA ポリシーは
     名前空間を配る側の宣言、コミットメントは配られた側の宣言**であり、ARK の
     委譲の構造がそのままここに出ている。
     """
@@ -110,7 +110,7 @@ def _commitment(level: str) -> str:
     """コミットメントの語彙を検査する。
 
     **知らない語を通さない。** ここは `??` でそのまま公開される値なので、綴りを
-    間違えたまま通ると、機関が約束していない水準を機関の名前で名乗ることになる。
+    間違えたまま通ると、組織が約束していない水準を組織の名前で名乗ることになる。
     """
     try:
         return CommitmentLevel(level).value
@@ -124,11 +124,11 @@ def _commitment(level: str) -> str:
 
 
 def set_commitment(session: Session, p: Principal, *, manager_id: int, level: str) -> Manager:
-    """機関の約束の水準を変える。
+    """組織の約束の水準を変える。
 
-    **既定のまま放置させないための口。** これが無いと、全機関が
+    **既定のまま放置させないための口。** これが無いと、全組織が
     `permanent-dynamic` を名乗ったまま動き、`??` はソフトウェアの既定値を
-    機関の宣言として公開してしまう。宣言していないものを宣言として出すのは、
+    組織の宣言として公開してしまう。宣言していないものを宣言として出すのは、
     何も出さないより悪い。
 
     水準を**下げる**のも正当な操作である。守れない約束を掲げ続けるより、
@@ -139,7 +139,7 @@ def set_commitment(session: Session, p: Principal, *, manager_id: int, level: st
         raise NotFound({"manager": manager_id})
     _require_naan(p, manager.naan)
     if not p.is_naan_wide and manager.id != p.manager_id:
-        raise Forbidden("自機関以外の約束は変えられない")
+        raise Forbidden("自組織以外の約束は変えられない")
     before = manager.commitment_level
     manager.commitment_level = _commitment(level)
     audit(
@@ -154,7 +154,7 @@ def set_quota(
 ) -> Manager:
     """1 日あたりの採番上限を変える。`None` で無制限。
 
-    **自機関では変えられない**（`set_commitment` と違うところ）。上限は配った側が
+    **自組織では変えられない**（`set_commitment` と違うところ）。上限は配った側が
     配られた側に課すものなので、課された側が自分で外せては意味がない。
     """
     manager = session.get(Manager, manager_id)
@@ -181,18 +181,18 @@ def onboard_manager(
     commitment_level: str = "",
     quota_per_day: int | None = None,
 ) -> tuple[Manager, Shoulder]:
-    """機関を迎え入れ、名前空間を 1 つ委譲する。**この 2 つは必ず対で起きる。**
+    """組織を迎え入れ、名前空間を 1 つ委譲する。**この 2 つは必ず対で起きる。**
 
-    機関だけ作って shoulder が無い状態は、採番できない機関を生むだけで意味がない。
+    組織だけ作って shoulder が無い状態は、採番できない組織を生むだけで意味がない。
     `default_shoulder` もここで結ぶ（無いと shoulder 省略の採番が落ちる）。
     """
     _require_naan(p, naan)
     if not p.is_naan_wide:
-        raise Forbidden("機関のオンボードは NAAN 単位以上の権限が要る")
+        raise Forbidden("組織のオンボードは NAAN 単位以上の権限が要る")
     if session.get(Naan, naan) is None:
         raise NotFound({"naan": naan})
     if session.scalar(select(Manager).where(Manager.naan == naan, Manager.name == name)):
-        raise Invalid({"name": f"{naan} に機関 {name} は登録済み"})
+        raise Invalid({"name": f"{naan} に組織 {name} は登録済み"})
 
     manager = Manager(naan=naan, name=name)
     if commitment_level:
@@ -213,7 +213,7 @@ def set_succession(
     """統廃合の承継先を設定する。
 
     **識別子は壊さない。** 管理主体が変わっても `NR` を宣言している以上、解決は
-    続ける。系譜を辿れるように、旧機関の行は残したまま承継先を指す。
+    続ける。系譜を辿れるように、旧組織の行は残したまま承継先を指す。
     """
     manager = session.get(Manager, manager_id)
     if manager is None:
@@ -395,7 +395,7 @@ def register_client(
     """
     _require_naan(p, naan)
     if shoulder_id is not None:
-        # **shoulder は既に機関を決めている。** 別々に渡させると、片方だけ書いた
+        # **shoulder は既に組織を決めている。** 別々に渡させると、片方だけ書いた
         # 主体ができて認可の入口（manager が active か）で必ず弾かれる——
         # しかも「shoulder は合っているのに通らない」という分かりにくい形で。
         sh = session.get(Shoulder, shoulder_id)
@@ -404,14 +404,14 @@ def register_client(
         if manager_id is None:
             manager_id = sh.manager_id
         elif manager_id != sh.manager_id:
-            raise Invalid({"shoulder_id": "shoulder の所属機関と manager が食い違う"})
+            raise Invalid({"shoulder_id": "shoulder の所属組織と manager が食い違う"})
     target = Authority(authority)
     if target is Authority.SYSTEM:
         _require_system(p)
     elif target is Authority.NAAN and not p.is_naan_wide:
         raise Forbidden("authority=naan の主体を作るには NAAN 単位以上の権限が要る")
     if not p.is_naan_wide and manager_id != p.manager_id:
-        raise Forbidden("自機関以外の主体は作れない")
+        raise Forbidden("自組織以外の主体は作れない")
     if session.scalar(select(Client).where(Client.client_id == client_id)):
         raise Invalid({"client_id": f"{client_id} は登録済み"})
     if target is Authority.NAAN and expires_at is None:
@@ -549,7 +549,7 @@ def succeed(
     successor_id: int,
     retire: bool = True,
 ) -> dict:
-    """統廃合。**旧機関の名前空間を承継先に移す。**
+    """統廃合。**旧組織の名前空間を承継先に移す。**
 
     shoulder ごと移すので、既存 ARK の `shoulder_id` は変わらない＝**識別子も
     解決先も無傷**。変わるのは「その名前空間を今後誰が預かるか」だけ。
@@ -578,7 +578,7 @@ def succeed(
         moved.append(f"{sh.naan}{sh.shoulder}")
     pre.succeeded_by_id = suc.id
     pre.active = False
-    # 旧機関の資格情報は止める。**行は消さない**（誰の鍵だったかを残す）。
+    # 旧組織の資格情報は止める。**行は消さない**（誰の鍵だったかを残す）。
     revoked = [c.client_id for c in session.scalars(
         select(Client).where(Client.manager_id == pre.id, Client.active.is_(True))
     )]
@@ -597,15 +597,15 @@ def depart(
     resolver_template: str = "",
     keep_update_label: str = "",
 ) -> dict:
-    """**機関が離れる**（組織は存続する。統廃合とは別）。
+    """**組織が離れる**（組織は存続する。統廃合とは別）。
 
     核心は 1 点——**新規採番は止めるが、解決は永久に続ける。**
     `ark:/<この NAAN>/…` という形で配った以上、振り直せないので、NAAN の保有者が
     302 を返し続けるしかない。
 
-    **`resolver_template` を渡すのが推奨。** 既存 ARK の転送先を機関のリゾルバへ
-    一括で向け直し、shoulder にも同じ委譲を設定する。**これで以後の運用が機関側に
-    閉じる**——離れた機関に「移転のたびに我々へ更新を投げる」作業を強いない。
+    **`resolver_template` を渡すのが推奨。** 既存 ARK の転送先を組織のリゾルバへ
+    一括で向け直し、shoulder にも同じ委譲を設定する。**これで以後の運用が組織側に
+    閉じる**——離れた組織に「移転のたびに我々へ更新を投げる」作業を強いない。
     継続作業を要求する形にすると、放置されて死んだリンクが残る。
 
     テンプレートは `Shoulder.redirect` と同じ記法（`$id` / `${blade}`）。
@@ -623,7 +623,7 @@ def depart(
     if resolver_template:
         ids = [sh.id for sh in shoulders]
         for sh in shoulders:
-            sh.redirect = resolver_template  # 未登録の名前も機関のリゾルバへ
+            sh.redirect = resolver_template  # 未登録の名前も組織のリゾルバへ
         for ark in session.scalars(select(Ark).where(Ark.shoulder_id.in_(ids))):
             _, ark.url = expand_redirect(resolver_template, ark.naan, ark.assigned_name)
             rewritten += 1

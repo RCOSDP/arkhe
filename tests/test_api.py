@@ -26,7 +26,7 @@ def test_F4_同じrequest_idの再送は採番しない(world, principal_of, as_
 
 
 def test_F4_request_idは主体ごとに独立(world, principal_of, as_principal):
-    """他機関の request_id と衝突しないし、鍵の推測で他機関の ARK を引けない。"""
+    """他組織の request_id と衝突しないし、鍵の推測で他組織の ARK を引けない。"""
     a = as_principal(principal_of(manager=world["a"], client_id="a")).post(
         "/api/mint", json={"request_id": "same"}
     )
@@ -56,7 +56,7 @@ def test_一括採番は一件でも範囲外なら何も作らない(world, pri
     assert r.status_code == 403
 
 
-def test_M4_他機関のARKは読めない(db, world, principal_of, as_principal):
+def test_M4_他組織のARKは読めない(db, world, principal_of, as_principal):
     from arkhe.domain import minting
 
     theirs, _ = minting.mint(db, shoulder=world["sh_b"], created_by="b")

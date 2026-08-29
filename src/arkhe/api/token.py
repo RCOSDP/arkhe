@@ -1,9 +1,9 @@
 """トークン発行（`ARKHE_AUTH` に `oauth2` を含めたときだけ現れる）。
 
 **arkhe が単体でトークンを配るための口。** Keycloak のような認可サーバを持たない
-機関でも、OAuth2 の作法で API を叩けるようにする。
+組織でも、OAuth2 の作法で API を叩けるようにする。
 
-grant は **client_credentials だけ**。ARK の採番は機関のシステムからの M2M で、
+grant は **client_credentials だけ**。ARK の採番は組織のシステムからの M2M で、
 認可コードフローが解く「利用者が第三者アプリに代理を許可する」構図が無い。
 人のログインが要るなら `oidc` で外部に委譲する（`ARKHE_ADMIN_LOGIN` を見よ）。
 """

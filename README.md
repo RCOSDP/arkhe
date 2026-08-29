@@ -10,7 +10,7 @@ processes.**
 Unlike DOI and Handle, ARK presumes no paid registration agency and no central
 infrastructure. It holds that **persistence is not a property of the string but a
 matter of service**. arkhe implements that position: it delegates namespaces to
-institutions and lets each of them declare, for itself, the level of commitment it
+organisations and lets each of them declare, for itself, the level of commitment it
 is prepared to keep.
 
 The name is the Greek ἀρχή — beginning, first principle. The point at which a
@@ -73,7 +73,7 @@ ARKHE_AUTH=apikey,oidc
 | | |
 | --- | --- |
 | `apikey` | A personal access token. **Self-contained** — arkhe needs nothing external |
-| `oauth2` | Issued by arkhe itself. **Client credentials only** — ARK minting is machine-to-machine from an institution's repository, so the situation the authorization code flow exists to solve (a user granting a third-party app the right to act on their behalf) never arises |
+| `oauth2` | Issued by arkhe itself. **Client credentials only** — ARK minting is machine-to-machine from an organisation's repository, so the situation the authorization code flow exists to solve (a user granting a third-party app the right to act on their behalf) never arises |
 | `oidc` | Validates a JWT issued by an external authorization server such as Keycloak. Delegate here when a human has to log in |
 
 Whichever mechanism authenticates, the result collapses into a single `Principal`,
@@ -92,7 +92,7 @@ of this codebase is arranged around.
   identifier. When a target is lost you tombstone it, or empty its target so the
   resolver returns a description instead.
 - **A shoulder is never deleted.** Random assignment could hand out the same string
-  again. A departed institution's namespace is retired, not removed.
+  again. A departed organisation's namespace is retired, not removed.
 - **A retired shoulder cannot be reactivated.** You cannot rule out that something
   outside used the name in the meantime.
 - **Minting never turns into an update.** A primary key collision must fail, not
@@ -152,7 +152,7 @@ account had been revoked.
 
 ### Signing in with an ID and password
 
-A way in for institutions with no external IdP.
+A way in for organisations with no external IdP.
 
 ```bash
 export ARKHE_ADMIN_LOGIN=password
@@ -164,7 +164,7 @@ arkhe client passwd alice@example.ac.jp     # input is not echoed
 
 **Prefer `oidc` or `proxy` where they are available.** Identity then lives in one
 place, and someone leaving or moving is handled by the organisation alone.
-`password` exists so that an institution without any of that can still stand this up
+`password` exists so that an organisation without any of that can still stand this up
 on its own.
 
 What it holds to:
@@ -186,7 +186,7 @@ and lets you try `oidc` mode as it actually behaves.
 ### Issuing API tokens without Keycloak
 
 Include `oauth2` in `ARKHE_AUTH` and **arkhe issues the tokens itself**, so an
-institution that cannot stand up a separate authorization server can still speak
+organisation that cannot stand up a separate authorization server can still speak
 OAuth 2 to the API.
 
 ```bash
@@ -201,7 +201,7 @@ curl -X POST http://localhost:8000/oauth/token \
 ```
 
 **Client credentials is the only grant.** ARK minting is machine-to-machine from an
-institution's own system, so the situation the authorization code flow exists to
+organisation's own system, so the situation the authorization code flow exists to
 solve never arises. When a human has to sign in, delegate through
 `ARKHE_ADMIN_LOGIN`.
 

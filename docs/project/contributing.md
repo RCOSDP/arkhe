@@ -29,7 +29,7 @@ New behaviour needs a test that fails without it. For anything touching
 authorisation, add the negative case too: the interesting question is not that the
 right principal got in, but that the wrong one did not.
 
-Tests read as sentences on purpose — `test_他機関のARKは更新できない` — so a failure
+Tests read as sentences on purpose — `test_他組織のARKは更新できない` — so a failure
 names the rule that broke rather than the function that raised.
 
 ## The layers

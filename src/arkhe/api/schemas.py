@@ -44,7 +44,7 @@ class ArkFields(BaseModel):
 class MintIn(ArkFields):
     """採番の入力。
 
-    **`shoulder` は任意。** 省略すると機関の `default_shoulder` が使われる。
+    **`shoulder` は任意。** 省略すると組織の `default_shoulder` が使われる。
     指定した場合も**範囲を広げる手段にはならない**（登録された到達範囲内かを
     検証するだけ）。`naan` は受け取らない——主体が決めるものだから。
     """

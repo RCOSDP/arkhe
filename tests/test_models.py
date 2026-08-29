@@ -183,11 +183,11 @@ def test_変更履歴が日英で揃っている():
     assert declared in en, f"{declared} の項が変更履歴に無い"
 
 
-def test_ラベル無しの主体は機関ごとに何個でも置ける(db, world, root):
+def test_ラベル無しの主体は組織ごとに何個でも置ける(db, world, root):
     """**空のラベルは「名前が衝突している」ではない。**
 
     含めてしまうと、web-api / web-ui / worker のように役割で分ける普通の構成が
-    1 機関で通らなくなる（鍵を共有させる圧力になる）。
+    1 組織で通らなくなる（鍵を共有させる圧力になる）。
     """
     from arkhe.domain import admin_ops as ops
 

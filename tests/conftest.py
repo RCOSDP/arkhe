@@ -54,16 +54,16 @@ def root() -> Principal:
 
 @pytest.fixture
 def world(db, root):
-    """NAAN 1 つ・機関 2 つの最小の台帳。
+    """NAAN 1 つ・組織 2 つの最小の台帳。
 
-    **機関を 2 つ置くのが要点。** 1 つだと「他機関に届かないこと」を確かめられない。
+    **組織を 2 つ置くのが要点。** 1 つだと「他組織に届かないこと」を確かめられない。
     """
     ops.create_naan(db, root, naan="99999", name="RA", na_policy="NP | NR, OP, CC | 2026")
     ops.create_naan(db, root, naan="88888", name="別 RA")
     db.flush()
-    a, sh_a = ops.onboard_manager(db, root, naan="99999", name="A機関", shoulder="/a1")
-    b, sh_b = ops.onboard_manager(db, root, naan="99999", name="B機関", shoulder="/b2")
-    c, sh_c = ops.onboard_manager(db, root, naan="88888", name="C機関", shoulder="/c3")
+    a, sh_a = ops.onboard_manager(db, root, naan="99999", name="A組織", shoulder="/a1")
+    b, sh_b = ops.onboard_manager(db, root, naan="99999", name="B組織", shoulder="/b2")
+    c, sh_c = ops.onboard_manager(db, root, naan="88888", name="C組織", shoulder="/c3")
     db.commit()
     return {
         "a": a, "b": b, "c": c,

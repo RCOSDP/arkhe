@@ -3,7 +3,7 @@
 M3  update が shoulder を見ておらず、同一 NAAN の任意の ARK を書き換えられた
 M4  読み取りに認可が無かった
 M5  順序不定の queryset を入力と zip し、別の ARK に他レコードの値を書き込みえた
-R1  {naan, shoulder} を本文で受けていたため、他機関の名前空間に採番できた
+R1  {naan, shoulder} を本文で受けていたため、他組織の名前空間に採番できた
 """
 
 from __future__ import annotations
@@ -18,12 +18,12 @@ from arkhe.domain.authz import Invalid, NotFound
 # ------------------------------------------------------------- shoulder の決定
 
 
-def test_shoulder省略時は機関の既定が使われる(db, world, principal_of):
+def test_shoulder省略時は組織の既定が使われる(db, world, principal_of):
     p = principal_of(manager=world["a"])
     assert authz.shoulder_for(db, p, None).shoulder == "/a1"
 
 
-def test_shoulder自機関のものは明示できる(db, world, root, principal_of):
+def test_shoulder自組織のものは明示できる(db, world, root, principal_of):
     from arkhe.domain import admin_ops as ops
 
     extra = ops.add_shoulder(db, root, naan="99999", shoulder="/a2", manager_id=world["a"].id)
@@ -32,23 +32,23 @@ def test_shoulder自機関のものは明示できる(db, world, root, principal
     assert authz.shoulder_for(db, p, "/a2").id == extra.id
 
 
-def test_R1_他機関の名前空間は指定しても届かない(db, world, principal_of):
-    """**arklet はここが穴で、設定ミスでも詐称でも他機関に採番できた。**"""
+def test_R1_他組織の名前空間は指定しても届かない(db, world, principal_of):
+    """**arklet はここが穴で、設定ミスでも詐称でも他組織に採番できた。**"""
     p = principal_of(manager=world["a"])
     with pytest.raises(Forbidden):
         authz.shoulder_for(db, p, "/b2")
 
 
-def test_R1_存在しないshoulderと他機関のshoulderを区別させない(db, world, principal_of):
+def test_R1_存在しないshoulderと他組織のshoulderを区別させない(db, world, principal_of):
     """**存在の有無を漏らさない。**
 
-    実在する他機関の shoulder と、そもそも無い shoulder が**同じ形の拒否**に
-    なること。区別できると総当たりで他機関の構成を探れる。返る文字列に差が出るのは
+    実在する他組織の shoulder と、そもそも無い shoulder が**同じ形の拒否**に
+    なること。区別できると総当たりで他組織の構成を探れる。返る文字列に差が出るのは
     呼び出し側が送った値がそのまま入るところだけなので、そこを伏せて比べる。
     """
     p = principal_of(manager=world["a"])
     with pytest.raises(Forbidden) as a:
-        authz.shoulder_for(db, p, "/b2")  # 実在する（B機関のもの）
+        authz.shoulder_for(db, p, "/b2")  # 実在する（B組織のもの）
     with pytest.raises(Forbidden) as b:
         authz.shoulder_for(db, p, "/zz")  # 実在しない
     assert str(a.value).replace("/b2", "…") == str(b.value).replace("/zz", "…")
@@ -62,7 +62,7 @@ def test_shoulder固定された主体は固定先だけ(db, world, principal_of
 
 
 def test_NAAN単位は明示が必須(db, world, principal_of):
-    """既定を持たせない——誤って他機関の shoulder に打つ事故を防ぐ。"""
+    """既定を持たせない——誤って他組織の shoulder に打つ事故を防ぐ。"""
     p = principal_of(authority=Authority.NAAN)
     with pytest.raises(Invalid):
         authz.shoulder_for(db, p, None)
@@ -95,7 +95,7 @@ def test_system_でも曖昧なら勝手に選ばない(db, world, root, princip
 # ------------------------------------------------------------- 既存 ARK への到達
 
 
-def test_M3_他機関のARKは更新できない(db, world, principal_of):
+def test_M3_他組織のARKは更新できない(db, world, principal_of):
     """**arklet の update は shoulder を見ておらず、同一 NAAN の任意の ARK を
     書き換えられた。** 採番より重い——永続識別子の乗っ取りになる。"""
     ark, _ = minting.mint(db, shoulder=world["sh_b"], created_by="b")
@@ -105,7 +105,7 @@ def test_M3_他機関のARKは更新できない(db, world, principal_of):
         authz.assert_may_touch(db, p, ark)
 
 
-def test_M3_自機関のARKは更新できる(db, world, principal_of):
+def test_M3_自組織のARKは更新できる(db, world, principal_of):
     ark, _ = minting.mint(db, shoulder=world["sh_a"], created_by="a")
     db.commit()
     authz.assert_may_touch(db, principal_of(manager=world["a"]), ark)
@@ -172,7 +172,7 @@ def test_scope_が足りなければ拒む(principal_of):
     assert e.value.required == "ark:mint"
 
 
-def test_R3_機関単位の日次上限(db, world, principal_of, root):
+def test_R3_組織単位の日次上限(db, world, principal_of, root):
     world["a"].quota_per_day = 2
     db.commit()
     p = principal_of(manager=world["a"])
@@ -230,6 +230,6 @@ def test_R2_NAAN以上の操作は記録される(db, world, principal_of):
     authz.audit(db, principal_of(manager=world["a"]), "mint", "99999/y")
     db.commit()
     added = db.scalars(select(AuditEvent)).all()[before:]
-    # **機関単位（manager）の操作は記録しない。** 届く範囲が狭いほど、
+    # **組織単位（manager）の操作は記録しない。** 届く範囲が狭いほど、
     # 全件記録の必要は下がる。
     assert [r.target for r in added] == ["99999/x"]

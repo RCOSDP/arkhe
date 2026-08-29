@@ -6,9 +6,9 @@
 
 ARK 識別子の基盤。**採番（minter）と解決（resolver）を別プロセスで動かす。**
 
-ARK は DOI / Handle と違い、有償の登録機関と中央基盤を前提としない識別子体系で、
+ARK は DOI / Handle と違い、有償の登録組織と中央基盤を前提としない識別子体系で、
 「**永続性は文字列の性質ではなく、サービスの問題**」という立場を取る。arkhe はその立場のまま、
-機関へ名前空間を委譲し、永続性の水準を各機関が自己申告できる形で運用するための実装。
+組織へ名前空間を委譲し、永続性の水準を各組織が自己申告できる形で運用するための実装。
 
 名前の由来はギリシャ語 ἀρχή（始原・原理）。参照が始まる点、という意味。
 
@@ -67,7 +67,7 @@ ARKHE_AUTH=apikey,oidc
 | | |
 | --- | --- |
 | `apikey` | 個人アクセストークン方式。**arkhe 単体で完結する**（外部依存なし） |
-| `oauth2` | arkhe 自身が発行する。**client_credentials だけ**——ARK の採番は機関システムからの M2M で、認可コードフローが解く「利用者が第三者アプリに代理を許可する」構図が無いため |
+| `oauth2` | arkhe 自身が発行する。**client_credentials だけ**——ARK の採番は組織システムからの M2M で、認可コードフローが解く「利用者が第三者アプリに代理を許可する」構図が無いため |
 | `oidc` | 外部の認可サーバ（Keycloak 等）が発行した JWT を検証する。人間のログインが要る場面はこちらに委譲する |
 
 どの機構で認証しても `Principal` 1 つに集約され、**認可の判断は 1 か所**に集まる。
@@ -117,7 +117,7 @@ arkhe client add alice@example.ac.jp 99999 --manager 1 --person \
 
 ### ID とパスワードでログインする
 
-外部 IdP が無い機関のための入口。
+外部 IdP が無い組織のための入口。
 
 ```bash
 export ARKHE_ADMIN_LOGIN=password
@@ -128,7 +128,7 @@ arkhe client passwd alice@example.ac.jp     # 入力は画面に出ない
 ```
 
 **`oidc` や `proxy` が使えるならそちらがよい。** 身元の管理が 1 か所に集まり、退職や
-異動が組織側の操作だけで効く。`password` は、それが無い機関でも単体で建てられる
+異動が組織側の操作だけで効く。`password` は、それが無い組織でも単体で建てられる
 ようにするためのもの。
 
 守っていること:
@@ -147,7 +147,7 @@ arkhe client passwd alice@example.ac.jp     # 入力は画面に出ない
 ### API の認証を単体で済ませる（Keycloak なし）
 
 `ARKHE_AUTH` に `oauth2` を含めると、**arkhe 自身がトークンを配る**。認可サーバを
-別に立てられない機関でも、OAuth2 の作法で API を叩ける。
+別に立てられない組織でも、OAuth2 の作法で API を叩ける。
 
 ```bash
 export ARKHE_AUTH=oauth2
@@ -161,7 +161,7 @@ curl -X POST http://localhost:8000/oauth/token \
 # → {"access_token": "...", "token_type": "Bearer", "expires_in": 3600, "scope": "..."}
 ```
 
-**grant は client_credentials だけ。** ARK の採番は機関のシステムからの M2M で、
+**grant は client_credentials だけ。** ARK の採番は組織のシステムからの M2M で、
 認可コードフロー（利用者が第三者アプリに代理を許可する手順）が要る場面が無い。
 人のログインが要るなら `ARKHE_ADMIN_LOGIN` で外部に委譲する。
 

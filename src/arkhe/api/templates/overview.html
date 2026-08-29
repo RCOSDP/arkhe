@@ -9,7 +9,7 @@
 
 <div class="card">
   <div class="card-h">
-    {# 「番号 → 機関 → 名前空間」の並びは木がそのまま見せているし、説明にも
+    {# 「番号 → 組織 → 名前空間」の並びは木がそのまま見せているし、説明にも
        書いてある。見出しでもう一度言わない。 #}
     <span class="t">{{ t('ov.naans') }}</span>
     <span class="sub">{{ naans|length }}</span>
@@ -41,7 +41,7 @@
             {% if m.quota_per_day %}<span class="dim">{{ t('ov.quota') }} {{ m.quota_per_day }}{{ t('ov.per_day') }}</span>{% endif %}
             {% if m.succeeded_by_id %}<span class="pill retired">{{ t('ov.succeeded') }}</span>{% endif %}
             {% if not m.active %}<span class="pill retired">{{ t('ov.inactive') }}</span>{% endif %}
-            {# 約束は機関自身のものなので、機関管理者にもこの導線を出す。
+            {# 約束は組織自身のものなので、組織管理者にもこの導線を出す。
                何が変えられるかは遷移先で `admin_ops` が判定する。 #}
             <a class="btn sm" href="/admin/manager/{{ m.id }}">{{ t('ov.manage') }}</a>
           </span>

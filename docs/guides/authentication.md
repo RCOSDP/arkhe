@@ -27,14 +27,14 @@ Whichever path, the result is the same `Principal`, and reach is judged in one p
 | `oidc` | | yes |
 
 **They combine.** `ARKHE_AUTH=apikey,oidc` is a normal thing to want while migrating —
-institutions move over one at a time instead of all at once.
+organisations move over one at a time instead of all at once.
 
 ### apikey
 
 A key, hashed with Argon2, matched by a short non-secret prefix so a lookup does not
 walk every row. This is arklet's approach, with two changes: the prefix, and binding
 the key to a **client** rather than to a NAAN — arklet could only authorise at NAAN
-level, so one institution could mint into another's namespace.
+level, so one organisation could mint into another's namespace.
 
 ```bash
 arkhe client add univ-repo 99999 --manager 1 --scopes "ark:mint"
@@ -43,7 +43,7 @@ arkhe client key univ-repo
 
 ### oauth2 — arkhe issues its own
 
-For an institution that cannot run an authorization server. **Client credentials is
+For an organisation that cannot run an authorization server. **Client credentials is
 the only grant**: ARK minting is machine-to-machine, so the situation the
 authorization code flow solves — a user letting a third-party app act for them —
 never arises.
@@ -88,7 +88,7 @@ tokens and holds no consent.
 The session is a single signed cookie — no server-side table, so minter, resolver and
 admin can run as separate processes without a shared store. The cookie carries an
 identifier and an expiry; **reach is read from the ledger on every request**, so a
-revoked key or a merged institution takes effect immediately.
+revoked key or a merged organisation takes effect immediately.
 
 ## People and machines
 

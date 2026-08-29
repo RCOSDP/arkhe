@@ -7,7 +7,7 @@
   oauth2  … arkhe 自身が client_credentials でトークンを発行する。単体で完結する
   oidc    … 外部の認可サーバ（Keycloak 等）が発行した JWT を検証する。委譲
 
-`oauth2` を client_credentials だけに絞っているのは、ARK の採番が機関システムから
+`oauth2` を client_credentials だけに絞っているのは、ARK の採番が組織システムから
 の M2M だからで、認可コードフロー（＝利用者がブラウザで第三者アプリに許可を与える
 手順）が要る場面が無いため。人間のログインが要るなら `oidc` で外部に委譲する。
 """
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     #:   proxy     前段の認証プロキシが済ませた前提で、そのヘッダを信じる
     #:
     #: **oidc / proxy が使えるならそちらがよい。** 身元の管理が 1 か所に集まり、
-    #: 退職や異動が組織側の操作だけで効く。password は、それが無い機関のためのもの。
+    #: 退職や異動が組織側の操作だけで効く。password は、それが無い組織のためのもの。
     admin_login: AdminLogin = "bearer"
 
     #: セッション Cookie の署名鍵と寿命。**既定値は持たない。**

@@ -7,7 +7,7 @@ arklet は `Key` を NAAN に紐づけ、`Authorization: Bearer <key>` を全件
    線形に遅くなり、しかも Argon2 の照合は意図的に重い。前置きは平文の先頭 8 文字で、
    **秘密ではない**（これだけでは鍵にならない）。
 2. **紐づけ先は NAAN ではなく Client。** arklet は NAAN 単位でしか認可できず、
-   同一 NAAN 内で他機関の名前空間に採番できた（M3）。到達範囲は Client が持つ。
+   同一 NAAN 内で他組織の名前空間に採番できた（M3）。到達範囲は Client が持つ。
 """
 
 from __future__ import annotations

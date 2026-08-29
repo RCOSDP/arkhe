@@ -19,7 +19,7 @@ This is the part people get wrong, so it is worth stating plainly.
 flowchart TB
     subgraph H["Handle System (CNRI / DONA)"]
         DOI["10.xxxx — DOI<br/><small>registration agencies manage the namespace;<br/>records live with the RA</small>"]
-        HDL["20.500.xxxxx — CNRI Handle<br/><small>a prefix an institution buys</small>"]
+        HDL["20.500.xxxxx — CNRI Handle<br/><small>a prefix an organisation buys</small>"]
     end
     ARK["ark:/99999/…<br/><small>plain HTTP and DNS. No substructure beneath it.</small>"]
 ```
@@ -79,7 +79,7 @@ than left to discipline.
 | | |
 | --- | --- |
 | **NAAN** | Name Assigning Authority Number. The `99999` part. Granted to an organisation |
-| **shoulder** | A sub-namespace within a NAAN, such as `/x9`. What gets delegated to an institution |
+| **shoulder** | A sub-namespace within a NAAN, such as `/x9`. What gets delegated to an organisation |
 | **blade** | What follows the shoulder — the part that identifies the object |
 | **inflection** | A `?` or `??` suffix that asks the resolver about the identifier rather than following it |
 | **suffix passthrough** | `…/x9abc/page/3` resolves through the record for `…/x9abc`, so children need no identifiers of their own |

@@ -1,7 +1,7 @@
 # Data model
 
 One chain — `Naan → Manager → Shoulder → Ark` — carries every NAAN. **Even an
-institution with a NAAN of its own goes through a shoulder.** Skip that and the model
+organisation with a NAAN of its own goes through a shoulder.** Skip that and the model
 forks per NAAN, and the first-digit convention holds for some NAANs and not others.
 
 ```mermaid
@@ -46,7 +46,7 @@ erDiagram
         int    id PK
         string shoulder "e.g. /x9"
         string naan FK
-        int    manager_id FK "null: no institution yet"
+        int    manager_id FK "null: no organisation yet"
         string redirect "N2T: delegated resolution"
         string minter "N2T: delegated minting"
         string status "active / reserved / delegated / retired"

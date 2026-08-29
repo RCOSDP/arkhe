@@ -26,10 +26,10 @@ Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。ar
 | --- | --- | --- |
 | `ops` | `arkhe-demo-2026` | システム管理者・全 NAAN |
 | `naan-admin` | `arkhe-demo-2026` | NAAN 管理者・99999 配下すべて |
-| `nibb` | `arkhe-demo-2026` | 機関管理者・1 機関のみ |
+| `nibb` | `arkhe-demo-2026` | 組織管理者・1 組織のみ |
 
 **順に入り比べるのが、[到達範囲](concepts/delegation.md)を理解する近道**。`nibb` では
-他機関が見えず、監査ログは 403 になる。
+他組織が見えず、監査ログは 403 になる。
 
 続けて、採番して解決してみる。
 

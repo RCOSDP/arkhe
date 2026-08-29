@@ -5,7 +5,7 @@ processes.
 
 ```mermaid
 flowchart LR
-    R["Institution's<br/>repository"] -->|mint| M[minter]
+    R["Organisation's<br/>repository"] -->|mint| M[minter]
     U[Anyone] -->|ark:/99999/…| S[resolver]
     M --> D[(ledger)]
     S --> D
@@ -16,7 +16,7 @@ flowchart LR
 Unlike DOI and Handle, ARK presumes no paid registration agency and no central
 infrastructure. It holds that **persistence is not a property of the string but a
 matter of service**. arkhe implements that position: it delegates namespaces to
-institutions and lets each of them declare, for itself, the level of commitment it is
+organisations and lets each of them declare, for itself, the level of commitment it is
 prepared to keep.
 
 The name is the Greek ἀρχή — beginning, first principle. The point at which a
@@ -24,12 +24,12 @@ reference starts.
 
 ## What it does
 
-- **Mints** ARKs into a namespace delegated to an institution, and never re-assigns one.
+- **Mints** ARKs into a namespace delegated to an organisation, and never re-assigns one.
 - **Resolves** them, with the `?`, `??`, `?info` and `?json` inflections — and answers
   even when the object itself is gone.
-- **Delegates**: a NAAN holder carves out shoulders, hands them to institutions, and
+- **Delegates**: a NAAN holder carves out shoulders, hands them to organisations, and
   can hand minting or resolution onward to a third party.
-- **Survives reorganisation**: institutions merge, split and leave, and the
+- **Survives reorganisation**: organisations merge, split and leave, and the
   identifiers keep resolving.
 
 ## What it deliberately is not

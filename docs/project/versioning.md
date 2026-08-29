@@ -54,7 +54,7 @@ While the version starts with `0`, **the minor number carries breaking changes**
 
 - the ARK conformance record has no outstanding gaps,
 - the schema has been stable across at least one real migration, and
-- an institution other than the first is running it.
+- an organisation other than the first is running it.
 
 Until then, pin an exact version.
 

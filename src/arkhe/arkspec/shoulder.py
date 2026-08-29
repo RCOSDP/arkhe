@@ -1,8 +1,8 @@
 """shoulder の規約と割当。
 
-shoulder は NAAN の下位名前空間で、**機関（Manager）への名前空間の委譲**を担う。
+shoulder は NAAN の下位名前空間で、**組織（Manager）への名前空間の委譲**を担う。
 
-**全 NAAN で使う**（`design_ark_multitenant_authz.md` §2.1.1）。1 機関 1 NAAN の
+**全 NAAN で使う**（`design_ark_multitenant_authz.md` §2.1.1）。1 組織 1 NAAN の
 岡崎3研究所でも default shoulder を必ず 1 つ持たせる。使わないと NAAN ごとに
 モデルが分岐し、**first-digit 規約が NAAN によって成立したりしなかったりする**。
 
@@ -24,8 +24,8 @@ from .betanumeric import CONSONANTS
 #: 子音の並び＋末尾に数字 1 桁。母音と `l` を除くので偶然の単語にならない。
 SHOULDER_PATTERN = re.compile(rf"^/[{CONSONANTS}]+[0-9]$")
 
-#: 採用する長さ: 子音 2 ＋数字 1 の 3 文字。19*19*9 = 3,610 機関を収容できる
-#: （800 機関で使用率 22.2%）。`ark_ra_model.md` §5.0。
+#: 採用する長さ: 子音 2 ＋数字 1 の 3 文字。19*19*9 = 3,610 組織を収容できる
+#: （800 組織で使用率 22.2%）。`ark_ra_model.md` §5.0。
 DEFAULT_SHOULDER_LENGTH = 3
 
 
@@ -70,7 +70,7 @@ def generate_shoulder(length: int = DEFAULT_SHOULDER_LENGTH) -> str:
 def shoulder_capacity(length: int = DEFAULT_SHOULDER_LENGTH) -> int:
     """その長さで収容できる shoulder 数。
 
-    3 文字（子音 2 ＋数字 1）で 19² × 10 = **3,610**。JAIRO Cloud の 800 機関に
+    3 文字（子音 2 ＋数字 1）で 19² × 10 = **3,610**。JAIRO Cloud の 800 組織に
     対して使用率 22.2%・4.5 倍の余裕（`ark_ra_model.md` §5.0）。
     """
     return len(CONSONANTS) ** (length - 1) * 10
