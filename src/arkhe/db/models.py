@@ -120,6 +120,16 @@ class Naan(Base):
     #: NAA ポリシー。`NP | NR, OP, CC | 2026 | <URL>`。
     na_policy: Mapped[str] = mapped_column(String(500), default="")
 
+    #: **この名前空間の決まり。** 配下の組織すべてにかかる既定で、組織ごとの
+    #: 設定はここから**狭めるだけ**（広げられない）。
+    #:
+    #: 既定を NAAN 側に持たせるのは、**組織が増えると 1 つずつ掛けるのが
+    #: 現実的でなくなる**から。800 機関に同じ制限を入れて回る運用は成立しない。
+    #: 組織ごとの設定は例外を刻むためのもので、原則はここにある。
+    allowed_auth: Mapped[str] = mapped_column(String(100), default="")
+    may_self_register: Mapped[bool] = mapped_column(Boolean, default=True)
+    max_scopes: Mapped[str] = mapped_column(String(200), default="")
+
     #: **この NAAN の採番を外で行う場合の案内先。** 解決はここが続けることがありうる。
     #: `/.well-known/ark` で公開し、クライアントがどこへ行けばよいか分かるようにする。
     minter: Mapped[str] = mapped_column(String(500), default="")

@@ -84,42 +84,18 @@
     {% if manager %}<form method="post" action="/admin/manager/{{ manager.id }}">{% endif %}
       <input type="hidden" name="policy" value="1">
 
-      <div class="field">
-        <label>{{ t('op.auth') }}</label>
-        <div class="checks">
-          {% for mech in mechanisms %}
-          <label class="check">
-            <input type="checkbox" name="allowed_auth" value="{{ mech }}"
-                   {% if manager and mech in manager.allowed_auth.split() %}checked{% endif %}>
-            <span><b>{{ t('au.mech.' ~ mech) }}</b> <code>{{ mech }}</code></span>
-          </label>
-          {% endfor %}
-        </div>
-        <p class="hint">{{ t('op.auth_hint')|safe }}</p>
-      </div>
-
-      <div class="field">
-        <label class="check">
-          <input type="checkbox" name="self_register" value="1"
-                 {% if not manager or manager.may_self_register %}checked{% endif %}>
-          <span><b>{{ t('op.self') }}</b></span>
-        </label>
-        <p class="hint">{{ t('op.self_hint') }}</p>
-      </div>
-
-      <div class="field">
-        <label>{{ t('op.max') }}</label>
-        <div class="checks">
-          {% for sc in scopes %}
-          <label class="check">
-            <input type="checkbox" name="max_scopes" value="{{ sc }}"
-                   {% if manager and sc in manager.max_scopes.split() %}checked{% endif %}>
-            <span><b>{{ t('sc.' ~ sc) }}</b> <code>{{ sc }}</code></span>
-          </label>
-          {% endfor %}
-        </div>
-        <p class="hint">{{ t('op.max_hint')|safe }}</p>
-      </div>
+      {% if naan_policy and (naan_policy.allowed_auth or naan_policy.max_scopes
+                             or not naan_policy.may_self_register) %}
+      <div class="note info"><span>{{ t('op.from_naan') }}
+        <span class="mono">{{ naan_policy.allowed_auth }} {{ naan_policy.max_scopes }}</span>
+        {{ t('op.narrow_only')|safe }}</span></div>
+      {% endif %}
+      {% with outer=naan_policy,
+              current_auth=(manager.allowed_auth if manager else ''),
+              current_self=(manager.may_self_register if manager else True),
+              current_max=(manager.max_scopes if manager else '') %}
+        {% include "partials/rules.html" %}
+      {% endwith %}
       <div class="actions">
         <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
         <button class="btn primary" type="submit">

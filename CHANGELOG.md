@@ -11,6 +11,13 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **The rules now live on the NAAN** (ways in, self-registration, scope ceiling).
+  They could only be set per organisation, which **stops being practical as
+  organisations grow** — nobody applies the same restriction to 800 institutions one at
+  a time. The rule belongs to the namespace; a per-organisation setting can only
+  **narrow** it, never widen it. The organisation's page shows what the namespace
+  already narrowed and disables those boxes, since a control that can be ticked but has
+  no effect reads as a setting that does not work.
 - The ARK list gained an **organisation filter** and an **open button**; the detail
   page shows the whole description (ERC / Dublin Core) that `?` and `??` publish. The
   filter cannot widen reach — only organisations within reach are offered, and the

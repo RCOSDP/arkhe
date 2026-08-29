@@ -1114,3 +1114,76 @@ def test_制限の欄は組織管理者には出さない(world, principal_of, a
     assert i18n.JA["op.title"] not in page
     # 約束の水準（組織自身のもの）は出る
     assert i18n.JA["manager.f.commitment"] in page
+
+
+# ------------------------- 名前空間の決まりと、組織ごとの狭め
+
+
+def test_名前空間の決まりが配下すべてにかかる(db, world, root):
+    """**原則は NAAN。** 組織が増えると 1 つずつ掛けるのは現実的でない。"""
+    from arkhe.domain.authz import Invalid
+
+    ops.set_naan_policy(db, root, naan="99999", max_scopes=["ark:mint"])
+    db.commit()
+    # 組織側は何も設定していないのに、上限が効く
+    with pytest.raises(Invalid):
+        ops.register_client(db, root, client_id="over-naan", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:tombstone")
+
+
+def test_組織は狭められるが広げられない(db, world, root):
+    from arkhe.db.models import Naan
+    from arkhe.domain.admin_ops import policy_for
+
+    ops.set_naan_policy(db, root, naan="99999", max_scopes=["ark:mint", "ark:update"])
+    ops.set_org_policy(db, root, manager_id=world["a"].id, max_scopes=["ark:mint"])
+    ops.set_org_policy(db, root, manager_id=world["b"].id,
+                       max_scopes=["ark:mint", "ark:update", "ark:tombstone"])
+    db.commit()
+    naan = db.get(Naan, "99999")
+    # 狭めたほうは効く
+    assert policy_for(naan, world["a"]).max_scopes == "ark:mint"
+    # 広げようとしても、NAAN の外には出られない
+    assert set(policy_for(naan, world["b"]).max_scopes.split()) == {"ark:mint", "ark:update"}
+
+
+def test_自己登録はNAANが許していなければ組織でも許されない(db, world, root):
+    from arkhe.db.models import Naan
+    from arkhe.domain.admin_ops import policy_for
+
+    ops.set_naan_policy(db, root, naan="99999", may_self_register=False)
+    ops.set_org_policy(db, root, manager_id=world["a"].id, may_self_register=True)
+    db.commit()
+    assert not policy_for(db.get(Naan, "99999"), world["a"]).may_self_register
+
+
+def test_名前空間の決まりは認証時にも効く(db, world, root):
+    """組織側だけを見ると、名前空間の既定が効かない。"""
+    from arkhe.auth import apikey
+    from arkhe.auth.errors import AuthError
+
+    c = ops.register_client(db, root, client_id="naan-wide-stop", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    issued = ops.issue_credential(db, root, client_pk=c.id)
+    db.commit()
+    assert apikey.authenticate(db, issued.secret).client_id == "naan-wide-stop"
+
+    ops.set_naan_policy(db, root, naan="99999", mechanisms=["oidc"])
+    db.commit()
+    with pytest.raises(AuthError):
+        apikey.authenticate(db, issued.secret)
+
+
+def test_NAAN画面から決まりを掛けられる(db, world, principal_of, as_principal):
+    from arkhe.db.models import Naan
+
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    r = c.post("/admin/naan/99999", data={
+        "policy": "NP | NR", "minter": "", "rules": "1",
+        "allowed_auth": ["oidc"], "self_register": "", "max_scopes": ["ark:mint"],
+    })
+    assert r.status_code == 303
+    db.expire_all()
+    n = db.get(Naan, "99999")
+    assert n.allowed_auth == "oidc" and not n.may_self_register
+    assert n.max_scopes == "ark:mint" and n.na_policy == "NP | NR"

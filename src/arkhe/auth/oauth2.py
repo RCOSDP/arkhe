@@ -137,7 +137,7 @@ def authenticate(session: Session, token: str, *, secret_key: str, issuer: str =
     if client is None or _expired(client.expires_at):
         raise AuthError("client is no longer active")
     # **組織に許されていない機構では通さない**（apikey と同じ）。
-    if not _mechanism_allowed(client, "oauth2"):
+    if not _mechanism_allowed(session, client, "oauth2"):
         raise AuthError("this mechanism is not allowed for the organisation")
 
     principal = _to_principal(client, mechanism="oauth2")

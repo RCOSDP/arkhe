@@ -85,7 +85,7 @@ def authenticate(session: Session, raw: str) -> Principal:
             continue
         # **組織に許されていない機構では通さない。** 発行を止めるだけだと、
         # 制限を掛ける前に出した鍵が生き残り、制限したつもりで通り続ける。
-        if not _mechanism_allowed(client, "apikey"):
+        if not _mechanism_allowed(session, client, "apikey"):
             continue
         cred.last_used_at = datetime.now(UTC)
         return _to_principal(client, mechanism="apikey")
@@ -95,14 +95,17 @@ def authenticate(session: Session, raw: str) -> Principal:
     raise AuthError("invalid api key")
 
 
-def _mechanism_allowed(client: Client, mechanism: str) -> bool:
-    """この主体の組織が、その機構での入場を許しているか。
+def _mechanism_allowed(session: Session, client: Client, mechanism: str) -> bool:
+    """その機構での入場が許されているか。
 
-    組織の設定が空なら制限なし。**名前空間を配る側の宣言**なので、配られた側の
-    設定ではなく `Manager` に持たせてある。
+    **原則は NAAN、例外は組織。** 決まりを重ねた結果で判断する
+    （`admin_ops.policy_for`）——組織側だけを見ると、名前空間の既定が効かない。
     """
-    m = client.manager
-    return not (m is not None and m.allowed_auth) or mechanism in m.allowed_auth.split()
+    from arkhe.db.models import Naan
+    from arkhe.domain.admin_ops import policy_for
+
+    allowed = policy_for(session.get(Naan, client.naan), client.manager).allowed_auth
+    return not allowed or mechanism in allowed.split()
 
 
 def _to_principal(client: Client, *, mechanism: str) -> Principal:

@@ -107,7 +107,8 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
 def naan_new(request: Request, principal: AdminPrincipal):
     if not principal.is_system:
         raise Forbidden("NAAN の登録はシステム管理者のみ")
-    return _page(request, principal, "naan_form.html", "overview", naan=None)
+    return _page(request, principal, "naan_form.html", "overview", naan=None,
+                 mechanisms=ops.MECHANISMS, scopes=authz.SCOPES)
 
 
 @router.post("/naan/new")
@@ -121,12 +122,25 @@ def naan_create(
     description: Annotated[str, Form()] = "",
     authoritative: Annotated[str, Form()] = "",
     redirect: Annotated[str, Form()] = "",
+    allowed_auth: Annotated[list[str], Form()] = None,
+    self_register: Annotated[str, Form()] = "",
+    max_scopes: Annotated[list[str], Form()] = None,
+    rules: Annotated[str, Form()] = "",
 ):
     ops.create_naan(
         session, principal, naan=naan.strip(), name=name.strip(), na_policy=policy.strip(),
         description=description.strip(),
         is_authoritative=bool(authoritative), redirect=redirect.strip(),
     )
+    session.flush()
+    # **登録の時点で決められるようにする。** 後回しにすると掛け忘れが残る。
+    if rules:
+        ops.set_naan_policy(
+            session, principal, naan=naan.strip(),
+            mechanisms=list(allowed_auth or []),
+            may_self_register=bool(self_register),
+            max_scopes=list(max_scopes or []),
+        )
     session.commit()
     return _redirect(f"/admin/naan/{naan.strip()}")
 
@@ -139,7 +153,8 @@ def naan_edit(request: Request, principal: AdminPrincipal, session: Db, naan: st
     # 出し分けと認可がずれているのと同じことなので、ここで揃える。
     if obj is None or not principal.is_naan_wide or not principal.reaches_naan(naan):
         raise Forbidden(f"NAAN {naan} はこの主体の範囲外")
-    return _page(request, principal, "naan_form.html", "overview", naan=obj)
+    return _page(request, principal, "naan_form.html", "overview", naan=obj,
+                 mechanisms=ops.MECHANISMS, scopes=authz.SCOPES)
 
 
 @router.post("/naan/{naan}")
@@ -150,9 +165,24 @@ def naan_save(
     naan: str,
     policy: Annotated[str, Form()] = "",
     minter: Annotated[str, Form()] = "",
+    allowed_auth: Annotated[list[str], Form()] = None,
+    self_register: Annotated[str, Form()] = "",
+    max_scopes: Annotated[list[str], Form()] = None,
+    rules: Annotated[str, Form()] = "",
 ):
-    """**NAA ポリシーは名前空間を配る側の宣言。** NAAN 単位以上でしか変えられない。"""
+    """**NAA ポリシーは名前空間を配る側の宣言。** NAAN 単位以上でしか変えられない。
+
+    この名前空間の決まり（入り方・自己登録・scope の上限）もここで決める。
+    **原則をここに置く**——組織が増えると 1 つずつ掛けるのが現実的でなくなる。
+    """
     ops.set_na_policy(session, principal, naan=naan, policy=policy.strip())
+    if rules:
+        ops.set_naan_policy(
+            session, principal, naan=naan,
+            mechanisms=list(allowed_auth or []),
+            may_self_register=bool(self_register),
+            max_scopes=list(max_scopes or []),
+        )
     obj = session.get(Naan, naan)
     if minter.strip() != obj.minter:
         if not principal.is_system:
@@ -218,6 +248,9 @@ def manager_edit(request: Request, principal: AdminPrincipal, session: Db, manag
         request, principal, "manager_form.html", "overview",
         manager=m, naans=[], levels=list(CommitmentLevel),
         mechanisms=ops.MECHANISMS, scopes=authz.SCOPES,
+        # **NAAN 側で既に絞られている分を見せる。** 見せないと、組織側で
+        # 選んだのに効かない項目が出て、設定が効いていないように見える。
+        naan_policy=ops.policy_for(session.get(Naan, m.naan), None),
     )
 
 

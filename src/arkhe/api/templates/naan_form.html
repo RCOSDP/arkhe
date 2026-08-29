@@ -70,9 +70,37 @@
         </div>
       {% endif %}
 
+      {% if naan %}
       <div class="actions">
         <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
-        <button class="btn primary" type="submit">{{ t('f.save') if naan else t('f.create') }}</button>
+        <button class="btn primary" type="submit">{{ t('f.save') }}</button>
+      </div>
+      {% endif %}
+    {% if naan %}</form>{% endif %}
+  </div>
+</div>
+
+{# **原則はここ。** 配下の組織すべてにかかる既定で、組織ごとの設定は
+   ここから狭めるだけ。組織が増えると 1 つずつ掛けるのが現実的でなくなる。 #}
+<div class="card" style="margin-top:20px">
+  <div class="card-h"><span class="t">{{ t('np.title') }}</span></div>
+  <div class="card-b">
+    <p class="hint" style="margin-top:0">{{ t('np.lede')|safe }}</p>
+    {% if not naan %}<p class="hint">{{ t('np.at_create')|safe }}</p>{% endif %}
+    {% if naan %}<form method="post" action="/admin/naan/{{ naan.naan }}">
+      <input type="hidden" name="policy" value="{{ naan.na_policy }}">
+      <input type="hidden" name="minter" value="{{ naan.minter }}">{% endif %}
+      <input type="hidden" name="rules" value="1">
+      {% with outer=None,
+              current_auth=(naan.allowed_auth if naan else ''),
+              current_self=(naan.may_self_register if naan else True),
+              current_max=(naan.max_scopes if naan else '') %}
+        {% include "partials/rules.html" %}
+      {% endwith %}
+      <div class="actions">
+        <a class="btn" href="/admin/">{{ t('f.cancel') }}</a>
+        <button class="btn primary" type="submit">
+          {{ t('f.save') if naan else t('f.create') }}</button>
       </div>
     </form>
   </div>

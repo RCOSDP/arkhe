@@ -338,6 +338,15 @@ JA: dict[str, str] = {
     "cu.f.scopes_hint": "<b>ここが上限です。</b>認可サーバのトークンに載っている scope との"
                         "積が、実際にできることになります——トークンで広がることはありません。",
     # 組織に何を任せ、何を制限するか
+    "np.title": "この名前空間の決まり",
+    "np.lede": "<b>配下の組織すべてにかかる既定です。</b>組織ごとの設定は"
+               "ここから<b>狭めるだけ</b>で、広げられません。"
+               "組織が増えると 1 つずつ掛けるのは現実的でないので、原則はここに置きます。",
+    "np.at_create": "登録の時点で決められます。あとから変えられますが、"
+                    "<b>後回しにすると掛け忘れが残ります</b>。",
+    "op.from_naan": "名前空間の決まりで既に絞られています：",
+    "op.narrow_only": "ここで選べるのは<b>さらに狭めること</b>だけです。"
+                      "広げるには名前空間の決まりのほうを変えてください。",
     "op.title": "この組織に任せること",
     "op.lede": "<b>名前空間を配る側が決めます。</b>組織自身では変えられません"
                "——課された制限を課された側が外せては意味がないからです。",
@@ -738,6 +747,16 @@ EN: dict[str, str] = {
     "cu.f.scopes_hint": "<b>This is the ceiling.</b> What it may actually do is the "
                         "intersection with the scopes in the token — a token cannot widen "
                         "it.",
+    "np.title": "The rules of this namespace",
+    "np.lede": "<b>The default for every organisation under it.</b> A per-organisation "
+               "setting can only <b>narrow</b> this, never widen it. Applying the same "
+               "restriction to each organisation stops being practical as they grow, so "
+               "the rule belongs here.",
+    "np.at_create": "These can be set as the number is registered. They can be changed "
+                    "later, but <b>left for later they tend to stay unset</b>.",
+    "op.from_naan": "Already narrowed by the namespace rules:",
+    "op.narrow_only": "What you can do here is <b>narrow it further</b>. To widen it, "
+                      "change the namespace rules instead.",
     "op.title": "What this organisation is trusted with",
     "op.lede": "<b>Decided by the side handing the namespace out.</b> The organisation "
                "cannot change it — a limit the limited party can lift is not a limit.",

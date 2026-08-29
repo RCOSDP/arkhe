@@ -153,15 +153,100 @@ def set_commitment(session: Session, p: Principal, *, manager_id: int, level: st
 MECHANISMS = ("apikey", "oauth2", "oidc")
 
 
-def allowed_auth_for(manager: Manager | None, enabled: tuple[str, ...] | list[str]) -> list[str]:
-    """この組織が実際に使える機構。**構成で有効なものとの積。**
+def _narrow(outer: str, inner: str) -> str:
+    """外側の決まりを内側が**狭める**。広げられない。
 
-    組織の設定が空なら制限なし——構成で有効な機構がそのまま使える。
+    どちらも空白区切り。空は「制限なし」なので、**空との積は相手をそのまま**
+    返す（空を「何も許さない」と読むと、既定が全面禁止になってしまう）。
     """
-    if manager is None or not manager.allowed_auth:
+    if not outer:
+        return inner
+    if not inner:
+        return outer
+    return " ".join(x for x in outer.split() if x in set(inner.split()))
+
+
+@dataclass(frozen=True)
+class OrgPolicy:
+    """組織に実際にかかっている決まり。**NAAN の既定と組織の設定を重ねた結果。**"""
+
+    allowed_auth: str
+    may_self_register: bool
+    max_scopes: str
+
+
+def policy_for(naan: Naan | None, manager: Manager | None) -> OrgPolicy:
+    """**原則は NAAN、例外は組織。** 組織は狭めるだけで、広げられない。
+
+    既定を NAAN 側に持たせるのは、組織が増えると 1 つずつ掛けるのが現実的で
+    なくなるから。`may_self_register` は **and**——NAAN が許していなければ、
+    組織の設定によらず許されない。
+    """
+    n_auth = naan.allowed_auth if naan else ""
+    n_self = naan.may_self_register if naan else True
+    n_max = naan.max_scopes if naan else ""
+    if manager is None:
+        return OrgPolicy(n_auth, n_self, n_max)
+    return OrgPolicy(
+        _narrow(n_auth, manager.allowed_auth),
+        n_self and manager.may_self_register,
+        _narrow(n_max, manager.max_scopes),
+    )
+
+
+def allowed_auth_for(
+    naan: Naan | None, manager: Manager | None, enabled: tuple[str, ...] | list[str]
+) -> list[str]:
+    """実際に使える機構。**決まりと、構成で有効なものとの積。**"""
+    allowed = policy_for(naan, manager).allowed_auth
+    if not allowed:
         return list(enabled)
-    allowed = set(manager.allowed_auth.split())
-    return [m for m in enabled if m in allowed]
+    return [m for m in enabled if m in set(allowed.split())]
+
+
+def set_naan_policy(
+    session: Session,
+    p: Principal,
+    *,
+    naan: str,
+    mechanisms: list[str] | None = None,
+    may_self_register: bool | None = None,
+    max_scopes: list[str] | None = None,
+) -> Naan:
+    """**この名前空間の決まり。** 配下の組織すべてにかかる既定。
+
+    組織ごとの設定はここから狭めるだけ。原則をここに置くのは、組織が増えると
+    1 つずつ掛けるのが現実的でなくなるから。
+    """
+    from arkhe.domain.authz import SCOPES
+
+    obj = session.get(Naan, naan)
+    if obj is None:
+        raise NotFound({"naan": naan})
+    _require_naan(p, naan)
+    if not p.is_naan_wide:
+        raise Forbidden("名前空間の決まりは NAAN 単位以上の権限が要る")
+
+    before = {"allowed_auth": obj.allowed_auth, "may_self_register": obj.may_self_register,
+              "max_scopes": obj.max_scopes}
+    if mechanisms is not None:
+        unknown = [m for m in mechanisms if m not in MECHANISMS]
+        if unknown:
+            raise Invalid({"mechanisms": f"未知の機構: {', '.join(unknown)}"})
+        obj.allowed_auth = " ".join(m for m in MECHANISMS if m in mechanisms)
+    if may_self_register is not None:
+        obj.may_self_register = may_self_register
+    if max_scopes is not None:
+        unknown = [x for x in max_scopes if x not in SCOPES]
+        if unknown:
+            raise Invalid({"max_scopes": f"未知の scope: {', '.join(unknown)}"})
+        obj.max_scopes = " ".join(x for x in SCOPES if x in max_scopes)
+
+    audit(session, p, "set_naan_policy", naan, before=before,
+          after={"allowed_auth": obj.allowed_auth,
+                 "may_self_register": obj.may_self_register,
+                 "max_scopes": obj.max_scopes})
+    return obj
 
 
 def set_org_policy(
@@ -482,19 +567,19 @@ def register_client(
     if not p.is_naan_wide and manager_id != p.manager_id:
         raise Forbidden("自組織以外の主体は作れない")
     org = session.get(Manager, manager_id) if manager_id else None
-    if org is not None:
-        # **任せていない組織では、配る側を通す。** 自分で増やせるかは配る側が決める。
-        if not p.is_naan_wide and not org.may_self_register:
-            raise Forbidden("この組織では利用者の登録が許されていない（NAAN 管理者に依頼する）")
-        # **上限は誰が作るかによらず効く。** 例外を作るなら上限のほうを動かす
-        # ——さもないと、宣言した上限を超える主体が台帳に並ぶ。
-        if org.max_scopes:
-            over = set(scopes.split()) - set(org.max_scopes.split())
-            if over:
-                raise Invalid(
-                    {"scopes": f"この組織の上限を超えている: {' '.join(sorted(over))}",
-                     "max_scopes": org.max_scopes}
-                )
+    policy = policy_for(session.get(Naan, naan), org)
+    # **任せていなければ、配る側を通す。** 自分で増やせるかは配る側が決める。
+    if not p.is_naan_wide and not policy.may_self_register:
+        raise Forbidden("この組織では利用者の登録が許されていない（NAAN 管理者に依頼する）")
+    # **上限は誰が作るかによらず効く。** 例外を作るなら上限のほうを動かす
+    # ——さもないと、宣言した上限を超える主体が台帳に並ぶ。
+    if policy.max_scopes:
+        over = set(scopes.split()) - set(policy.max_scopes.split())
+        if over:
+            raise Invalid(
+                {"scopes": f"上限を超えている: {' '.join(sorted(over))}",
+                 "max_scopes": policy.max_scopes}
+            )
     if session.scalar(select(Client).where(Client.client_id == client_id)):
         raise Invalid({"client_id": f"{client_id} は登録済み"})
     if target is Authority.NAAN and expires_at is None:
@@ -543,13 +628,14 @@ def issue_credential(
         raise Invalid(
             {"subject_type": "人の主体には資格情報を発行しない（身元は外部が保証する）"}
         )
-    # **組織に許された機構の鍵しか出さない。** 出せてしまうと、制限が宣言だけになる。
+    # **許された機構の鍵しか出さない。** 出せてしまうと、制限が宣言だけになる。
     manager = session.get(Manager, client.manager_id) if client.manager_id else None
-    if manager is not None and manager.allowed_auth:
+    policy = policy_for(session.get(Naan, client.naan), manager)
+    if policy.allowed_auth:
         need = "apikey" if kind == CredentialKind.API_KEY else "oauth2"
-        if need not in manager.allowed_auth.split():
+        if need not in policy.allowed_auth.split():
             raise Invalid(
-                {"kind": f"この組織には {need} を許していない（許可: {manager.allowed_auth}）"}
+                {"kind": f"{need} は許されていない（許可: {policy.allowed_auth}）"}
             )
 
     gen = apikey.generate_key if kind == CredentialKind.API_KEY else oauth2.generate_secret

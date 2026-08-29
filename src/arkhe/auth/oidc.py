@@ -108,7 +108,7 @@ class OidcVerifier:
         if client is None or _expired(client.expires_at):
             raise AuthError(f"subject {subject} is not registered with this resolver")
         # **組織に許されていない機構では通さない**（apikey / oauth2 と同じ）。
-        if not _mechanism_allowed(client, "oidc"):
+        if not _mechanism_allowed(session, client, "oidc"):
             raise AuthError("this mechanism is not allowed for the organisation")
 
         principal = _to_principal(client, mechanism="oidc")
