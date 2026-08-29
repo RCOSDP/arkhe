@@ -1,6 +1,6 @@
 """コマンドの国際化。日本語と英語を既定で持つ。
 
-管理画面（`api/i18n.py`）と同じく **gettext ではなく辞書**にしてある。理由も同じで、
+管理画面（`api/i18n/`）と同じく **gettext ではなく辞書**にしてある。理由も同じで、
 `.mo` のコンパイルをビルド手順に増やさずに済み、翻訳の抜けが起動時に分かる。
 
 ## 画面と違うのは、言語を決める時点
@@ -13,7 +13,7 @@
 順序は **`ARKHE_LANG` → `LC_ALL` → `LC_MESSAGES` → `LANG` → 既定(ja)**。
 POSIX の変数を見るのは、この種の道具に期待される作法だから。`C` と `POSIX` は
 「言語の情報が無い」の意味なので飛ばす。既定を `ja` にしてあるのは管理画面と
-揃えるため（`api/i18n.py` の `DEFAULT`）。
+揃えるため（`api/i18n/` の `DEFAULT`）。
 """
 
 from __future__ import annotations
@@ -308,7 +308,7 @@ EN: dict[str, str] = {
 
 CATALOGS = {"ja": JA, "en": EN}
 
-#: 翻訳の抜けは**起動時に落とす**（`api/i18n.py` と同じ）。片方だけ足して気づかない、を防ぐ。
+#: 翻訳の抜けは**起動時に落とす**（`api/i18n/` と同じ）。片方だけ足して気づかない、を防ぐ。
 _missing = {lang: sorted(set(JA) - set(cat)) for lang, cat in CATALOGS.items()}
 if any(_missing.values()):  # pragma: no cover - 開発時にしか起きない
     raise RuntimeError(f"翻訳の抜け: { {k: v for k, v in _missing.items() if v} }")

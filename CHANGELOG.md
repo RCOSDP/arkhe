@@ -9,6 +9,14 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Changed
+
+- **The admin interface's strings are split by screen** (`api/i18n/`). 288 entries in
+  one file meant reading the whole file to find one word. **Split by screen, not by
+  language** — separate files per language put the pair out of sight, and adding one
+  side only stops showing up in the diff. The catalogues are byte-identical before and
+  after; nothing on screen changed.
+
 ## [0.0.7] — 2026-08-29
 
 **Two things the ledger could do that the terminal could not, and a piece of

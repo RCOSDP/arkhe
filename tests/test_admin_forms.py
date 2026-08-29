@@ -1087,6 +1087,22 @@ def test_画面の文言にマークダウンを残さない():
             assert "**" not in value, f"{lang}/{key}: 強調は <b> にする"
 
 
+def test_訳の対はファイル内でそろっている():
+    """**分けた単位ごとに JA と EN の鍵が一致する。**
+
+    全体の抜けは起動時に落ちるが、それは最後の砦であって最初の砦ではない。
+    画面ごとに揃えておけば、片方だけ足したことが**その差分の中で**分かる。
+    """
+    from arkhe.api import i18n
+
+    for part in i18n._PARTS:
+        only_ja = sorted(set(part.JA) - set(part.EN))
+        only_en = sorted(set(part.EN) - set(part.JA))
+        assert not only_ja and not only_en, (
+            f"{part.__name__}: 日本語だけ={only_ja} 英語だけ={only_en}"
+        )
+
+
 def test_迎える時点で制限を掛けられる(db, world, principal_of, as_principal):
     """**後から掛け直す運用にすると、必ず掛け忘れが残る。**"""
     from arkhe.db.models import Manager
