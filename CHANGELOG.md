@@ -11,6 +11,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **Keys could be issued that the deployment would never accept.** `authenticate`
+  only tries the mechanisms listed in `ARKHE_AUTH`, so a `client_secret` issued where
+  `oauth2` is not enabled goes nowhere — which was the case in the compose demo. The
+  kinds on offer are now derived from the enabled mechanisms. Where authentication is
+  delegated to an authorization server, the page explains that **arkhe holds only the
+  mapping from identifier to reach; the secret lives at the authorization server**.
 - **Buttons and links that would only be refused are no longer shown.** An
   organisation's administrator was shown the audit log link, which answered 403 when
   pressed, and the minting link appeared for principals without `ark:mint`. The

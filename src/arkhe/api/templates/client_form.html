@@ -132,14 +132,20 @@
   {% endif %}
 
   <div class="card-b" style="border-top:1px solid var(--line-2)">
-    {% if client.subject_type == 'machine' %}
+    {# **認可サーバに寄せた構成では、ここで出すものが無い。** 秘密は向こうが持ち、
+       arkhe が持つのは識別子と到達範囲の対応だけ。押しても通らない鍵を
+       出せる画面にしない。 #}
+    {% if uses_oidc %}
+      <div class="note info"><span>{{ t('cu.key.oidc')|safe }}
+        {{ t('cu.key.oidc_match')|safe }}</span></div>
+    {% endif %}
+    {% if client.subject_type == 'machine' and kinds %}
       <form method="post" action="/admin/client/{{ client.id }}/key">
         <div class="grid2">
           <div class="field">
             <label for="kind">{{ t('cu.key.kind') }}</label>
             <select id="kind" name="kind">
-              <option value="api_key">{{ t('cu.key.api_key') }}</option>
-              <option value="client_secret">{{ t('cu.key.client_secret') }}</option>
+              {% for k in kinds %}<option value="{{ k }}">{{ t('cu.key.' ~ k) }}</option>{% endfor %}
             </select>
           </div>
           <div class="field">
@@ -150,8 +156,10 @@
         <p class="hint">{{ t('cu.key.revoke_note')|safe }}</p>
         <div class="actions"><button class="btn primary" type="submit">{{ t('cu.key.issue') }}</button></div>
       </form>
-    {% else %}
+    {% elif client.subject_type != 'machine' %}
       <div class="note info"><span>{{ t('cu.key.person') }}</span></div>
+    {% elif not kinds and not uses_oidc %}
+      <div class="note info"><span>{{ t('cu.key.none_kind')|safe }}</span></div>
     {% endif %}
   </div>
 </div>

@@ -259,6 +259,18 @@ JA: dict[str, str] = {
     "notice.nologin.h": "この構成にログイン画面はありません",
     "notice.nologin.m": "この arkhe は、ID とパスワードで入る構成になっていません。"
                         "入り方はシステム管理者にお問い合わせください。",
+    # 認可サーバに寄せた構成での説明
+    "cu.key.oidc": "<b>この構成では、トークンは認可サーバが出します。</b>"
+                   "arkhe が持っているのは、上の識別子と<b>どこまで届くか</b>の"
+                   "対応だけです。秘密は認可サーバ側で作り、そこで失効させます——"
+                   "失効が 1 か所で効くのがこの形の利点です。",
+    "cu.key.oidc_match": "認可サーバが出すトークンの <code>client_id</code>（Keycloak なら "
+                         "<code>azp</code>）が、上の識別子と<b>同じ文字列</b>である"
+                         "必要があります。",
+    "cu.key.none_kind": "<b>この構成で発行できる鍵はありません。</b>"
+                        "<code>ARKHE_ADMIN_LOGIN</code> ではなく "
+                        "<code>ARKHE_AUTH</code> に <code>apikey</code> か "
+                        "<code>oauth2</code> を入れると、ここから発行できるようになります。",
     "login.title": "管理画面にログイン",
     "login.id": "ID",
     "login.id_ph": "メールアドレスなど",
@@ -504,6 +516,18 @@ EN: dict[str, str] = {
     "notice.nologin.h": "This deployment has no sign-in page",
     "notice.nologin.m": "This arkhe is not configured for signing in with an ID and "
                         "password. Ask a system administrator how to get in.",
+    "cu.key.oidc": "<b>In this deployment the tokens come from the authorization "
+                   "server.</b> What arkhe holds is the mapping from the identifier "
+                   "above to <b>how far it reaches</b>. The secret is created and "
+                   "revoked at the authorization server — revocation taking effect in "
+                   "one place is the point of this arrangement.",
+    "cu.key.oidc_match": "The <code>client_id</code> in the token the authorization "
+                         "server issues (<code>azp</code> in Keycloak) must be the "
+                         "<b>same string</b> as the identifier above.",
+    "cu.key.none_kind": "<b>No key can be issued in this deployment.</b> Add "
+                        "<code>apikey</code> or <code>oauth2</code> to "
+                        "<code>ARKHE_AUTH</code> (not <code>ARKHE_ADMIN_LOGIN</code>) "
+                        "to issue one here.",
     "login.title": "Sign in to the admin interface",
     "login.id": "ID",
     "login.id_ph": "your email address, for example",

@@ -318,3 +318,57 @@ def test_出ている導線は全て開ける(world, principal_of, as_principal)
             for href in re.findall(r'href="(/admin/[^"?#]*)"', r.text):
                 if href not in seen and not href.endswith(("logout", "login")):
                     todo.append(href)
+
+
+# --------------------------------- 構成が受け付ける鍵だけを出す
+
+
+@pytest.fixture
+def with_auth(app, settings, as_principal, principal_of):
+    """`ARKHE_AUTH` を差し替えた画面を、システム管理者として開く。"""
+    from arkhe.settings import get_settings
+
+    def use(mechanisms):
+        app.dependency_overrides[get_settings] = lambda: settings.model_copy(
+            update={"auth": mechanisms}
+        )
+        return as_principal(principal_of(authority=Authority.SYSTEM))
+
+    return use
+
+
+def test_apikeyを受けない構成ではAPIキーを出さない(db, world, root, with_auth):
+    """**使えない鍵を出せる画面は、押しても何も起きないボタンと同じ。**
+
+    `authenticate` は `ARKHE_AUTH` に挙がった機構しか試さないので、
+    apikey が無効なら、出した API キーはどこからも通らない。
+    """
+    c = ops.register_client(db, root, client_id="m1", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    cli = with_auth(["oidc"])
+    page = cli.get(f"/admin/client/{c.id}").text
+    assert 'value="api_key"' not in page and 'value="client_secret"' not in page
+    # 認可サーバに寄せた構成であることを画面で説明する
+    assert "azp" in page
+    # URL を直接叩いても作らせない
+    assert cli.post(f"/admin/client/{c.id}/key", data={"kind": "api_key"}).status_code == 403
+    db.expire_all()
+    assert db.get(Client, c.id).credentials == []
+
+
+def test_oauth2を受ける構成ではclient_secretも出す(db, world, root, with_auth):
+    c = ops.register_client(db, root, client_id="m2", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    page = with_auth(["apikey", "oauth2"]).get(f"/admin/client/{c.id}").text
+    assert 'value="api_key"' in page and 'value="client_secret"' in page
+
+
+def test_どちらも受けない構成では理由を出す(db, world, root, with_auth):
+    """空欄を見せて終わらせない。**何を直せばよいかまで書く。**"""
+    c = ops.register_client(db, root, client_id="m3", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    page = with_auth([]).get(f"/admin/client/{c.id}").text
+    assert "ARKHE_AUTH" in page

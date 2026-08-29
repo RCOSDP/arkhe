@@ -31,6 +31,7 @@ from arkhe.db.models import (
     AuditEvent,
     Client,
     CommitmentLevel,
+    CredentialKind,
     Manager,
     Naan,
     Shoulder,
@@ -42,6 +43,26 @@ from arkhe.domain import authz, minting
 # 管理画面は HTML であって API ではない。**OpenAPI には載せない。**
 router = APIRouter(prefix="/admin", tags=["admin"], include_in_schema=False)
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+
+def _issuable_kinds(cfg) -> list[str]:
+    """この構成で**実際に使える**資格情報の種別。
+
+    機構が有効でなければ、出した鍵はどこからも通らない（`auth.deps.authenticate`
+    は `ARKHE_AUTH` に挙がった機構しか試さない）。**使えない鍵を出せる画面は、
+    押しても何も起きないボタンと同じ。**
+
+      apikey ∈ auth  → API キー（Bearer でそのまま送る）
+      oauth2 ∈ auth  → client_secret（arkhe 自身の /oauth/token で換える）
+      oidc   のみ    → **どちらも出さない。** 秘密は認可サーバが持っていて、
+                       arkhe が持つのは client_id と到達範囲の対応だけ
+    """
+    kinds = []
+    if "apikey" in cfg.auth:
+        kinds.append(CredentialKind.API_KEY.value)
+    if "oauth2" in cfg.auth:
+        kinds.append(CredentialKind.CLIENT_SECRET.value)
+    return kinds
 
 
 def _can_add_client(p: Principal) -> bool:
@@ -547,7 +568,8 @@ def _reachable_client(session: Session, principal: Principal, client_id: int) ->
     return c
 
 
-def _client_page(request: Request, principal: Principal, session: Db, c: Client | None, **extra):
+def _client_page(request: Request, principal: Principal, session: Db, cfg,
+                 c: Client | None, **extra):
     managers = []
     if principal.is_naan_wide:
         stmt = select(Manager).where(Manager.active.is_(True)).order_by(Manager.naan, Manager.name)
@@ -560,16 +582,17 @@ def _client_page(request: Request, principal: Principal, session: Db, c: Client 
         request, principal, "client_form.html", "clients",
         client=c, managers=managers, shoulders=shoulders,
         creds=sorted(c.credentials, key=lambda x: x.id, reverse=True) if c else [],
+        kinds=_issuable_kinds(cfg), uses_oidc="oidc" in cfg.auth,
         **extra,
     )
 
 
 @router.get("/client/new", response_class=HTMLResponse)
-def client_new(request: Request, principal: AdminPrincipal, session: Db):
+def client_new(request: Request, principal: AdminPrincipal, session: Db, cfg: Config):
     # 出し分けと同じ述語で閉じる（`_ctx` の `can_add_client` と同じもの）。
     if not _can_add_client(principal):
         raise Forbidden("この主体は利用者を登録できない")
-    return _client_page(request, principal, session, None)
+    return _client_page(request, principal, session, cfg, None)
 
 
 @router.post("/client/new")
@@ -607,9 +630,10 @@ def client_create(
 
 
 @router.get("/client/{client_id}", response_class=HTMLResponse)
-def client_detail(request: Request, principal: AdminPrincipal, session: Db, client_id: int):
+def client_detail(request: Request, principal: AdminPrincipal, session: Db, cfg: Config,
+                  client_id: int):
     c = _reachable_client(session, principal, client_id)
-    return _client_page(request, principal, session, c)
+    return _client_page(request, principal, session, cfg, c)
 
 
 @router.post("/client/{client_id}/key", response_class=HTMLResponse)
@@ -617,6 +641,7 @@ def client_issue_key(
     request: Request,
     principal: AdminPrincipal,
     session: Db,
+    cfg: Config,
     client_id: int,
     kind: Annotated[str, Form()] = "api_key",
     label: Annotated[str, Form()] = "",
@@ -626,13 +651,16 @@ def client_issue_key(
     リダイレクトで一覧に戻さないのはそのため——戻した先では、もう取り出せない。
     """
     c = _reachable_client(session, principal, client_id)
+    # 出し分けと同じ述語で閉じる。**使えない鍵を作らせない。**
+    if kind not in _issuable_kinds(cfg):
+        raise Forbidden(f"この構成は {kind} を受け付けない（ARKHE_AUTH を確認すること）")
     issued = ops.issue_credential(
         session, principal, client_pk=c.id, kind=kind, label=label.strip()
     )
     secret = issued.secret
     session.commit()
     session.refresh(c)
-    return _client_page(request, principal, session, c, issued=secret)
+    return _client_page(request, principal, session, cfg, c, issued=secret)
 
 
 @router.post("/client/{client_id}/revoke")
