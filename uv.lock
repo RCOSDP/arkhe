@@ -151,10 +151,10 @@ requires-dist = [
     { name = "mike", marker = "extra == 'docs'", specifier = ">=2.1" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
     { name = "mkdocs-static-i18n", marker = "extra == 'docs'", specifier = ">=1.2" },
-    { name = "psycopg", extras = ["binary"], marker = "extra == 'app'", specifier = ">=3.2" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'app'", specifier = ">=3.3.4" },
     { name = "pydantic", marker = "extra == 'app'", specifier = ">=2.9" },
     { name = "pydantic-settings", marker = "extra == 'app'", specifier = ">=2.6" },
-    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'app'", specifier = ">=2.9" },
+    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'app'", specifier = ">=2.13.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
@@ -162,7 +162,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "sqlalchemy", marker = "extra == 'app'", specifier = ">=2.0" },
     { name = "typer", marker = "extra == 'app'", specifier = ">=0.15" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'app'", specifier = ">=0.32" },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'app'", specifier = ">=0.52.4" },
 ]
 provides-extras = ["app", "dev", "docs"]
 
