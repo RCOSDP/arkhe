@@ -105,7 +105,7 @@ def test_採番権限が無ければ画面も開けない(db, world, principal_o
 
 
 @pytest.mark.parametrize(
-    "lang,needle", [("ja", "委譲の構造"), ("en", "Delegation")]
+    "lang,needle", [("ja", "機関管理"), ("en", "Institutions")]
 )
 def test_日英を切り替えられる(db, world, principal_of, as_principal, lang, needle):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
@@ -121,7 +121,7 @@ def test_言語の選択は記憶される(db, world, principal_of, as_principal
 def test_Accept_Languageを見る(db, world, principal_of, as_principal):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/admin/", headers={"accept-language": "en-US,en;q=0.9"})
-    assert "Delegation" in r.text
+    assert "Institutions" in r.text
 
 
 def test_翻訳に抜けが無い():

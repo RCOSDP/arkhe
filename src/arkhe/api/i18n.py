@@ -23,7 +23,7 @@ JA: dict[str, str] = {
     "app.subtitle": "ARK 識別子基盤",
     "nav.ledger": "台帳",
     "nav.actions": "操作",
-    "nav.overview": "委譲の構造",
+    "nav.overview": "機関管理",
     "nav.clients": "主体と資格情報",
     "nav.mint": "ARK を採番",
     "nav.audit": "監査ログ",
@@ -37,15 +37,22 @@ JA: dict[str, str] = {
     "au.naan": "NAAN 管理者",
     "au.manager": "機関管理者",
     # 委譲の構造
-    "ov.title": "委譲の構造",
-    "ov.lede": "ARK は中央の権威が保証する体系ではなく、"
-               "<b>名前空間を委譲し、各機関が自分の約束を自己申告する</b>体系です。"
-               "ここに見えているのが、その委譲の実体です。",
-    "ov.tree": "NAAN → 機関 → shoulder",
+    "ov.title": "機関管理",
+    # **一般の読み手を想定する。** ここは台帳を初めて見る人が最初に開く画面なので、
+    # **用語は捨てず、括弧で残す。** 平易な言い方を先に置いて用語を添えると、
+    # 初めての人はそのまま読め、用語を知っている人は対応が取れる。
+    # 用語を消すと、この画面と仕様書・CLI・API の語が食い違ってしまう。
+    "ov.lede": "<b>ARK を発行できる機関と、それぞれに渡した名前空間（shoulder）の"
+               "一覧です。</b>ARK には発行を束ねる中央組織がありません。"
+               "番号（NAAN）を預かった側が機関に名前空間を渡し（委譲）、"
+               "機関はその中で識別子を発行します。<b>発行した識別子をどこまで維持するかも、"
+               "機関ごとに決めて公開します</b>——各行に出ている「約束の水準"
+               "（commitment level）」がそれです。",
+    "ov.tree": "番号（NAAN） → 機関 → 名前空間（shoulder）",
     "ov.naans": "NAAN",
-    "ov.authoritative": "権威あり",
+    "ov.authoritative": "自組織で管理（権威あり）",
     "ov.delegated_to": "委譲先",
-    "ov.no_manager": "機関未割当",
+    "ov.no_manager": "機関に未割当",
     "ov.records": "件",
     "ov.quota": "上限",
     "ov.per_day": "／日",
@@ -111,6 +118,9 @@ JA: dict[str, str] = {
     "au.empty": "記録がありません。",
     # ログイン
     # 台帳を組む操作
+    # 用語を括弧で添えるときの括弧。**言語で形が違う**（全角と半角＋前スペース）。
+    "f.paren_open": "（",
+    "f.paren_close": "）",
     "f.save": "保存",
     "f.create": "登録",
     "f.cancel": "やめる",
@@ -191,7 +201,7 @@ EN: dict[str, str] = {
     "app.subtitle": "ARK identifier infrastructure",
     "nav.ledger": "Ledger",
     "nav.actions": "Actions",
-    "nav.overview": "Delegation",
+    "nav.overview": "Institutions",
     "nav.clients": "Principals & credentials",
     "nav.mint": "Mint an ARK",
     "nav.audit": "Audit log",
@@ -203,15 +213,19 @@ EN: dict[str, str] = {
     "au.system": "System administrator",
     "au.naan": "NAAN administrator",
     "au.manager": "Institution administrator",
-    "ov.title": "Delegation",
-    "ov.lede": "ARK is not a scheme where a central authority guarantees persistence. "
-               "It <b>delegates namespaces and lets each institution declare its own "
-               "commitment</b>. What you see here is that delegation, made concrete.",
-    "ov.tree": "NAAN → institution → shoulder",
+    "ov.title": "Institutions",
+    "ov.lede": "<b>The institutions that can issue ARKs, and the namespace (shoulder) "
+               "each one was given.</b> ARK has no central body issuing identifiers on "
+               "everyone's behalf. Whoever holds the number (the NAAN) hands a namespace "
+               "to an institution — this is called delegation — and the institution "
+               "issues identifiers within it. <b>How far each institution undertakes to "
+               "keep those identifiers working is also its own to state</b>: that is the "
+               "commitment level shown on each row.",
+    "ov.tree": "number (NAAN) → institution → namespace (shoulder)",
     "ov.naans": "NAANs",
-    "ov.authoritative": "authoritative",
+    "ov.authoritative": "run here (authoritative)",
     "ov.delegated_to": "delegated to",
-    "ov.no_manager": "no institution",
+    "ov.no_manager": "not assigned",
     "ov.records": "records",
     "ov.quota": "cap",
     "ov.per_day": "/day",
@@ -273,6 +287,8 @@ EN: dict[str, str] = {
     "au.detail": "Detail",
     "au.count": "entries",
     "au.empty": "Nothing recorded.",
+    "f.paren_open": " (",
+    "f.paren_close": ")",
     "f.save": "Save",
     "f.create": "Create",
     "f.cancel": "Cancel",

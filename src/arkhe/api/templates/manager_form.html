@@ -43,7 +43,7 @@
           {% for lv in levels %}
             <option value="{{ lv.value }}"
               {% if manager and manager.commitment_level == lv.value %}selected{% endif %}>
-              {{ t('cm.' ~ lv.value) }} — {{ lv.value }}
+              {{ t('cm.' ~ lv.value) }}{{ t('f.paren_open') }}{{ lv.value }}{{ t('f.paren_close') }}
             </option>
           {% endfor %}
         </select>

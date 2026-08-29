@@ -13,9 +13,19 @@ uses. There is no path through the interface that skips an invariant.
 
 ## What it shows
 
-**Delegation** — the ledger itself, as a nesting: NAAN → institution → shoulder. ARK
-is a scheme of handed-down namespaces, so the shape of the delegation *is* the
-content.
+**Institutions** — the ledger itself, as a nesting: number (NAAN) → institution →
+namespace. ARK is a scheme of handed-down namespaces, so the shape of what was handed
+down *is* the content.
+
+The page is called "Institutions" rather than "Delegation". It is the first page
+someone opens, so **its heading is not a word the reader does not have yet**.
+
+The terms are kept, in parentheses: "namespace (shoulder)", "number (the NAAN)",
+"Permanent; content may change (permanent-dynamic)". The plain wording comes first and
+the term follows, so a newcomer can read it as it stands and someone who knows the
+term can line it up with [the specification](../concepts/ark.md), the CLI and the API.
+**Drop the terms and this page ends up speaking a different language from everything
+else.**
 
 **Mint an ARK** — for the times one is needed by hand: a migration edge case, a
 physical object, a smoke test. Institutions normally mint through the API.

@@ -28,6 +28,12 @@ breaking in a system whose identifiers cannot be reissued.
 - `set_quota`, so a minting limit can be changed after onboarding rather than only at
   it. An institution cannot change its own: a limit the receiving side can lift is not
   a limit.
+- The overview page is called **Institutions** rather than "Delegation", and its
+  explanation is written for someone opening the ledger for the first time. The terms
+  are kept in parentheses — "namespace (shoulder)", "Permanent; content may change
+  (permanent-dynamic)" — so the plain wording reads on its own while still lining up
+  with the specification, the CLI and the API. Commitment levels no longer appear as
+  bare machine values.
 - `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
   Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
   to be the URL the browser actually types, so they are parameterised by

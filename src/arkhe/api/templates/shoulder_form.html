@@ -42,7 +42,7 @@
           <select id="status" name="status">
             {% for st in statuses %}
               <option value="{{ st.value }}" {% if shoulder.status == st.value %}selected{% endif %}>
-                {{ t('st.' ~ st.value) }} — {{ st.value }}
+                {{ t('st.' ~ st.value) }}{{ t('f.paren_open') }}{{ st.value }}{{ t('f.paren_close') }}
               </option>
             {% endfor %}
           </select>

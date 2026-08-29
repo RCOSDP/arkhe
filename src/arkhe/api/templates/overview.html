@@ -33,7 +33,9 @@
           <span class="tick">└</span>
           <span class="label">{{ m.name }}</span>
           <span class="meta">
-            <span class="dim">{{ m.commitment_level }}</span>
+            {# **用語は捨てず、括弧で残す。** 生の `permanent-dynamic` だけだと初めて
+               見る人に伝わらず、訳語だけだと仕様書・CLI・API の語と対応が取れない。 #}
+            <span class="dim">{{ t('cm.' ~ m.commitment_level) }}<span class="mono">{{ t('f.paren_open') }}{{ m.commitment_level }}{{ t('f.paren_close') }}</span></span>
             {% if m.quota_per_day %}<span class="dim">{{ t('ov.quota') }} {{ m.quota_per_day }}{{ t('ov.per_day') }}</span>{% endif %}
             {% if m.succeeded_by_id %}<span class="pill retired">{{ t('ov.succeeded') }}</span>{% endif %}
             {% if not m.active %}<span class="pill retired">{{ t('ov.inactive') }}</span>{% endif %}
