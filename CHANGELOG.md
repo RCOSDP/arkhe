@@ -9,6 +9,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.7] — 2026-08-29
+
+**Two things the ledger could do that the terminal could not, and a piece of
+documentation that was telling people the wrong thing.** Neither is a change to how
+identifiers behave.
+
 ### Added
 
 - **`AGENTS.md`.** The working procedure and **the traps actually hit during
@@ -336,7 +342,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7
 [0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6
 [0.0.5]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.5
 [0.0.4]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.4

@@ -8,6 +8,11 @@
 
 ## [未リリース]
 
+## [0.0.7] — 2026-08-29
+
+**台帳にはあるのに端末からは見えなかったものと、読んだ人を間違った方に導いて
+いた記述。** どちらも識別子の振る舞いは変えていない。
+
 ### 追加
 
 - **`AGENTS.md`。** 改修の手順と、**実際に踏んだ罠**をまとめた。人にも
@@ -312,7 +317,8 @@
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.6...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7
 [0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6
 [0.0.5]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.5
 [0.0.4]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.4
