@@ -36,6 +36,8 @@ breaking in a system whose identifiers cannot be reissued.
   bare machine values. Buttons say what they do: "Add an institution", not "Onboard an
   institution"; "Add a namespace", not "Carve out a shoulder". The form for adding an
   institution now says up front that it hands over a namespace at the same time.
+  (Registering a NAAN keeps its own name: there is no plainer word for it than the
+  term itself.)
 - `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
   Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
   to be the URL the browser actually types, so they are parameterised by

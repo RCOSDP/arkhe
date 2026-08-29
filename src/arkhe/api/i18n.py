@@ -58,7 +58,7 @@ JA: dict[str, str] = {
     "ov.succeeded": "承継済",
     "ov.inactive": "停止",
     "ov.manage": "操作",
-    "ov.add_naan": "番号を登録",
+    "ov.add_naan": "NAAN を登録",
     "ov.onboard": "機関を追加",
     "ov.add_shoulder": "名前空間を追加",
     "ov.empty": "まだ NAAN が登録されていません。",
@@ -126,7 +126,7 @@ JA: dict[str, str] = {
     "f.saved": "保存しました。",
     "f.optional": "任意",
     "f.readonly_here": "この画面からは変えられません",
-    "naan.new.title": "番号（NAAN）を登録",
+    "naan.new.title": "NAAN を登録",
     "naan.edit.title": "NAAN の設定",
     "naan.lede": "<b>NAA ポリシーは名前空間を配る側の宣言</b>です。"
                  "この NAAN の配下すべてにかかるので、機関単位では変えられません"
@@ -236,7 +236,7 @@ EN: dict[str, str] = {
     "ov.succeeded": "succeeded",
     "ov.inactive": "inactive",
     "ov.manage": "Manage",
-    "ov.add_naan": "Add a number",
+    "ov.add_naan": "Register a NAAN",
     "ov.onboard": "Add an institution",
     "ov.add_shoulder": "Add a namespace",
     "ov.empty": "No NAAN registered yet.",
@@ -299,7 +299,7 @@ EN: dict[str, str] = {
     "f.saved": "Saved.",
     "f.optional": "optional",
     "f.readonly_here": "cannot be changed here",
-    "naan.new.title": "Register a number (NAAN)",
+    "naan.new.title": "Register a NAAN",
     "naan.edit.title": "NAAN settings",
     "naan.lede": "<b>The NAA policy is the declaration of the side handing namespaces "
                  "out.</b> It covers everything under this NAAN, so an institution "
