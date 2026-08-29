@@ -19,10 +19,10 @@ jobs:
           --health-timeout 5s --health-retries 10
         ports: ["5432:5432"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: {python-version: "3.12"}
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with: {enable-cache: true}
       # **lock どおりに入れる**（`--frozen`）。lock と pyproject がずれていたら
       # ここで落ちる——ずれたまま緑になるほうが困る。
@@ -51,7 +51,7 @@ jobs:
           uv run alembic upgrade head
 
       - run: uv run python -m build
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           generate_release_notes: true
