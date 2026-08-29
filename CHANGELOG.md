@@ -9,109 +9,79 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.5] — 2026-08-29
+
+**One vulnerability on the public surface closed, and the `NR` claim made checkable.**
+Both concern identifiers already handed out, so they are cut as their own release.
+
+Most of this came out of reading the code through; the rest came out of actually using
+the interface.
+
 ### Added
 
-- **The rules now live on the NAAN** (ways in, self-registration, scope ceiling).
-  They could only be set per organisation, which **stops being practical as
+- **The rules of a namespace now live on the NAAN** (ways in, self-registration, scope
+  ceiling). They could only be set per organisation, which **stops being practical as
   organisations grow** — nobody applies the same restriction to 800 institutions one at
-  a time. The rule belongs to the namespace; a per-organisation setting can only
-  **narrow** it, never widen it. The organisation's page shows what the namespace
-  already narrowed and disables those boxes, since a control that can be ticked but has
-  no effect reads as a setting that does not work.
-- The ARK list gained an **organisation filter** and an **open button**; the detail
-  page shows the whole description (ERC / Dublin Core) that `?` and `??` publish. The
-  filter cannot widen reach — only organisations within reach are offered, and the
-  reach filter is applied first regardless. An organisation's own administrator is not
-  offered the filter at all, since a one-option filter only adds a step.
-- **Signing in and out are recorded in the audit log**, without the reach filter that
-  applies to other actions: when someone got in matters as much as what they did, and
-  **a failed sign-in is the entry you want to see before the successful ones**. The
-  identifier that was typed is kept; the password is not.
-- **Prepared the lists for the scale that breaks them.** The organisations page
-  aggregated the whole `ark` table on every load (a `Seq Scan`, 27.6ms at 300k rows);
-  it now counts only the shoulders in view, so the index applies (300,000 rows read →
-  7,500 under the same conditions). Search and paging were added to the users list and
-  the audit log — the audit log **stopped at the most recent 200 entries**, with no way
-  to see anything older.
-- **Structured logs and a request id** (`X-Request-Id`). There were none, so the only
-  way to investigate an incident was to read the database. Authentication failures are
-  now recorded **server-side only**: the reason is still withheld from the caller (it
-  would help a brute-force), but an operator has to be able to tell "the key expired"
-  from "the organisation is stopped".
-- **`/readyz` is separate from `/healthz`.** Sharing one endpoint meant a pod **stayed
-  Ready while its database was unreachable**. Readiness consults the database;
-  liveness does not — restarting a pod does not fix a database, it just produces a
-  restart storm.
-- **Where an ARK used to point is now recorded** (`ark_change`). Without it the
-  previous target could not be recovered, so a system declaring `NR` gave its users no
-  way to check that claim. It is kept separately from the audit log, which only keeps
-  what reaches NAAN scope — and **minting and repointing are done by organisations**,
-  so the audit log alone lost exactly the changes that matter. Each ARK's history is
-  reachable from the admin list. **Existing ARKs have no history**: what was not
-  recorded at the time cannot be conjured up afterwards.
-- **A list of the ARKs issued.** It is filtered by reach, nothing more: a system
-  administrator sees them all, NAAN scope sees that NAAN, an organisation sees what
-  was minted in its own shoulders. **Search and paging are there from the start**,
-  because the count only ever grows. The total is never counted — `count(*)` would
-  start to hurt — so "is there more" is answered by fetching one extra row.
-- A logo: the **α** of ἀρχή, drawn as paths. Pictograms (branching lines and the like)
-  were tried and dropped — they read as the generic "share" glyph. The same mark is
-  the favicon.
-- **The side handing a namespace out can now decide what an organisation is trusted
-  with** (`arkhe manager policy` and the organisation's settings page): the ways in
-  (apikey / oauth2 / oidc), whether it may register its own users, and a ceiling on
-  the scopes its users may hold. **The organisation cannot change these** — a limit
-  the limited party can lift is not a limit. The restriction on ways in **bites at
-  authentication, not only at issuance**.
-- The audit log records **where the request came from**. `X-Forwarded-For` can be set
-  by anyone, so it is ignored by default; with `ARKHE_TRUSTED_PROXIES=n` the **n-th
-  entry from the right** is used — never the leftmost, which the client wrote. A
-  header shorter than expected falls back to the peer.
-- Scopes are chosen with **checkboxes**, from the single vocabulary in `authz.SCOPES`
-  (free text let you register spellings that are never checked).
+  a time. A per-organisation setting can only **narrow** the namespace rule. The
+  composed result is decided in one place and used at issuance, registration **and
+  authentication**.
+- **A record of where an ARK used to point** (`ark_change`). Without it the previous
+  target could not be recovered, so a system declaring `NR` gave its users no way to
+  check that claim. It is separate from the audit log, which keeps only what reaches
+  NAAN scope — and **minting and repointing are done by organisations**.
+- **A list of the ARKs issued**, filtered by reach, filterable by organisation, with a
+  detail page showing everything `?` and `??` publish. **Search and paging are there
+  from the start**, because the count only ever grows.
+- **Users can be registered and keys issued and revoked from the interface.** The
+  "Open" and "Register a user" buttons pointed at routes that did not exist. **People
+  are offered no key** — one would outlive the person's departure.
+- `arkhe client disable` / `enable` and the same control in the interface. **Where
+  authentication is delegated this is the only way to stop a user from arkhe's side.**
+- **Structured logs, a request id and `/readyz`.** There was no way to investigate an
+  incident but to read the database, and sharing `/healthz` meant a pod **stayed Ready
+  while its database was unreachable**. Authentication failures are recorded
+  server-side only.
+- **Signing in and out are audited**, without the reach filter: **a failed sign-in is
+  the entry you want to see before the successful ones**.
+- The minting form offers resource types (DataCite's `resourceTypeGeneral`). **Not a
+  constraint** — ERC's `what` defines no vocabulary, so anything can still be typed.
+- A logo: the **α** of ἀρχή, drawn as paths, also used as the favicon.
 
 ### Fixed
 
-- The per-organisation restrictions **looked as though they could not be applied**.
-  They worked, but they sat in the same card as the commitment level — which the
-  organisation itself declares — so **who decides what was not readable**. They are now
-  a card of their own. The page for adding an organisation also **had no restrictions
-  at all**, so they could only be applied afterwards; left for later they tend to stay
-  unset, so they can now be decided as the organisation is onboarded.
-- Logging out is a POST. `SameSite=Lax` **does send the cookie on a top-level GET
-  navigation**, so as a GET it could be triggered from another site.
-- **A stored XSS on the public resolver is closed.** Targets had no scheme
-  restriction, so `javascript:` could be minted — and `?info` is a page that needs no
-  authentication, so anyone holding `ark:mint` could get a script running in the
-  resolver's origin on someone else's browser. It is closed in three places: schemes that execute in a
-  browser (`javascript:`, `data:`) are refused on write, the target is checked again
-  on read for whether a browser may be sent there, and the pages carry a CSP.
-  **Registration itself is not narrowed** — an ARK can name a physical object or
-  another identifier, so `urn:`, `doi:` and `ark:` must be allowed. A target a
-  browser cannot open is described rather than redirected to, which is what `?info`
-  was always for. **An existing dangerous row now
-  answers 502 instead of redirecting, and `?info` renders it as text, not a link.**
-  The API documentation gets a looser CSP — Swagger UI loads script from a CDN, so a
-  bare `script-src 'none'` renders it blank (verified against the running stack).
-- The entry route claimed "the authorization server" outright. **arkhe never queries
-  it**, so it cannot know whether the subject exists there — the demo ledger had two
-  subjects registered in arkhe with no Keycloak client, and they looked ready. It now
-  says the decision is *delegated* to it, and points at where to check.
-- **A correctly configured user looked unconfigured** where authentication is
-  delegated: the list said "0 credentials active", which is exactly what a machine
-  holding no key looks like under `oidc`. The column now says **how it gets in** — a
-  key, the authorization server, an external login, or nothing yet. **A key whose
-  mechanism is disabled does not count**: it cannot authenticate, so saying it is there
-  would be a lie. A subject that genuinely cannot get in is told what to do about it.
+- **A stored XSS on the public resolver.** Targets had no scheme restriction, so
+  `javascript:` could be minted — and `?info` needs no authentication, so anyone
+  holding `ark:mint` could get a script running in the resolver's origin on someone
+  else's browser. **Registration itself is not narrowed**: an ARK can name a physical
+  object or another identifier, so `urn:`, `doi:` and `ark:` are legitimate. Only
+  schemes that execute in a browser are refused, and **whether a browser may be sent
+  there is decided separately**. The pages carry a CSP.
+- **Prepared the lists for the scale that breaks them.** The organisations page
+  aggregated the whole `ark` table on every load (300k rows read → 7,500 under the same
+  conditions). Search and paging were added to the users list and the audit log, which
+  **stopped at the most recent 200 entries**.
+- **Buttons and links that would only be refused are no longer shown.** A test walks
+  every link shown to each kind of principal and asserts none is refused.
+- Where authentication is delegated, **a correctly configured user looked
+  unconfigured** — it holds no key, so the list said "0 credentials active". The column
+  now says how it gets in, and **a key whose mechanism is disabled does not count**.
+- **Keys could be issued that the deployment would never accept.**
+- The per-organisation restrictions **looked as though they could not be applied**,
+  sharing a card with the commitment level the organisation declares for itself.
+- An expired sign-in round trip answered with bare text and **no way back**.
+- On a phone the **tables were cut off** and **logging out was impossible** (the
+  control lived in a sidebar that folds away).
+- Logging out was a GET; `SameSite=Lax` **does send the cookie on a top-level GET**.
+- Anchors for Japanese headings were `_1`, `_2`, … so **deep links did not work**.
+- A foreign key that was declared but never created: `use_alter` inside
+  `create_table` does not become a deferred ALTER, so `alembic check` was right.
 
-### Added
+### Changed
 
-- The minting form's **type can be picked from a list** (DataCite's
-  `resourceTypeGeneral`). **It is not a constraint** — ERC's `what` defines no
-  vocabulary, so anything not in the list can still be typed (a `datalist`, so no JS).
-- Where only one kind of key can be issued, the page now says **why, and what to add**.
-  The compose demo runs `ARKHE_AUTH=apikey,oauth2,oidc`, so both an API key and a
-  client_secret can be issued and compared.
+- `api/admin.py`, 1,100 lines, split by screen (316 at most). **Lines were moved;
+  nothing was rewritten.**
+- Scopes and the organisation restrictions are chosen with checkboxes from a single
+  vocabulary. Free text let you **register spellings that are never checked**.
 
 ## [0.0.4] — 2026-08-29
 
@@ -333,7 +303,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.4...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.5
 [0.0.4]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.4
 [0.0.3]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.3
 [0.0.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.2
