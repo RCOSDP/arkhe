@@ -550,6 +550,43 @@ class AuditEvent(Base):
     __table_args__ = (Index("ix_audit_authority_at", "authority", "at"),)
 
 
+class UnknownSubject(Base):
+    """認可サーバから来たが、台帳に登録の無い主体。
+
+    **綴りが 1 文字違うと黙って 401 になる。** その 1 文字を、arkhe は弾いた
+    瞬間に手に持っている——`azp` はもう署名検証を通っている。捨てずに残せば、
+    運用者は打ち直さずに登録できる。
+
+    残すのは**認可サーバが署名した値だけ**である。ログイン欄に打たれた文字列は
+    残さない（`record_sign_in` の方針）が、ここは事情が違う——攻撃者が仕込める
+    値ではないし、これを見せないと typo の切り分け手段が運用者の側に無い。
+
+    **どの組織のものかは分からない。** トークンにその情報は無く、推測もしない。
+    だから見えるのは NAAN 以上に届く主体だけにしてある——組織単位の管理者に
+    見せると、他組織の client_id が混ざって出る。
+    """
+
+    __tablename__ = "unknown_subject"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    #: `azp` → `client_id` → `sub` の順で採った、認可サーバ側の識別子。
+    subject: Mapped[str] = mapped_column(String(255), index=True)
+    issuer: Mapped[str] = mapped_column(String(500), default="")
+
+    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_seen: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
+    #: 何回来たか。**1 回なら間違い、何度も来るなら設定が生きている**——
+    #: 直す優先度がこれで分かる。
+    seen: Mapped[int] = mapped_column(Integer, default=1)
+    ip: Mapped[str] = mapped_column(String(45), default="")
+
+    #: **同じ主体で行を増やさない。** 認可サーバの client 数で頭打ちになる。
+    __table_args__ = (UniqueConstraint("subject", "issuer", name="uq_unknown_subject"),)
+
+
 # --------------------------------------------------------------------- 削除の禁止
 #
 # **ARK も shoulder も消さない。**

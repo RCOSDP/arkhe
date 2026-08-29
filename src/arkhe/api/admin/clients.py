@@ -34,11 +34,35 @@ from arkhe.auth.principal import Principal
 from arkhe.db.models import (
     Client,
     Manager,
+    UnknownSubject,
 )
 from arkhe.domain import admin_ops as ops
 from arkhe.domain import authz
 
 # ------------------------------------------------------------------ 主体
+
+
+def _unknown_subjects(session: Session, principal: Principal) -> list[UnknownSubject]:
+    """登録の無いまま来た主体。**登録が済んだものは出さない。**
+
+    照合はここで毎回やる。登録のたびに行を消して回る処理を持たないので、
+    **消し忘れが原因でいつまでも残る**ということが起きない。
+
+    見せるのは NAAN 以上に届く主体だけ。トークンからは**どの組織のものか
+    分からず**、推測もしないので、組織単位の管理者に見せると他組織の
+    client_id が混ざって出てしまう。
+    """
+    if not principal.is_naan_wide:
+        return []
+    registered = select(Client.client_id)
+    return list(
+        session.scalars(
+            select(UnknownSubject)
+            .where(UnknownSubject.subject.not_in(registered))
+            .order_by(UnknownSubject.last_seen.desc())
+            .limit(20)
+        )
+    )
 
 
 @router.get("/clients", response_class=HTMLResponse)
@@ -79,7 +103,8 @@ def clients(
             "clients.html",
             _ctx(request, principal, "clients", clients=rows, issued=None,
                  q=term, page_no=page, more=more,
-                 can_add_client=_may_register(session, principal)),
+                 can_add_client=_may_register(session, principal),
+                 unknown=_unknown_subjects(session, principal)),
         ),
     )
 
@@ -104,7 +129,7 @@ def _reachable_client(session: Session, principal: Principal, client_id: int) ->
 
 
 def _client_page(request: Request, principal: Principal, session: Db, cfg,
-                 c: Client | None, **extra):
+                 c: Client | None, prefill: str = "", **extra):
     managers = []
     if principal.is_naan_wide:
         stmt = select(Manager).where(Manager.active.is_(True)).order_by(Manager.naan, Manager.name)
@@ -120,6 +145,7 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
         scopes=authz.SCOPES,
         kinds=_issuable_kinds(cfg), uses_oidc="oidc" in cfg.auth,
         entry=_entry_route(c, cfg) if c else "",
+        prefill=prefill,
         # 選べないなら**なぜ選べないか**まで出す（空欄を見せて終わらせない）。
         missing_mech=("oauth2" if "apikey" in cfg.auth else "apikey")
         if len(_issuable_kinds(cfg)) == 1 else "",
@@ -131,11 +157,16 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
 
 
 @router.get("/client/new", response_class=HTMLResponse)
-def client_new(request: Request, principal: AdminPrincipal, session: Db, cfg: Config):
+def client_new(
+    request: Request, principal: AdminPrincipal, session: Db, cfg: Config,
+    client_id: str = "",
+):
     # 出し分けと同じ述語で閉じる。
     if not _may_register(session, principal):
         raise Forbidden("この主体は利用者を登録できない")
-    return _client_page(request, principal, session, cfg, None)
+    # **未登録の一覧から渡ってきた識別子を初期値にする。** 認可サーバが署名した
+    # 値そのものなので、打ち直させると綴り違いを作る機会をわざわざ増やすことになる。
+    return _client_page(request, principal, session, cfg, None, prefill=client_id.strip())
 
 
 @router.post("/client/new")

@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import pytest
 
 from arkhe.db.models import Authority, Client, Manager, Naan, Shoulder
@@ -384,6 +386,7 @@ def test_登録が無ければ正しいトークンでも通さない(db, world,
     from arkhe.auth.oidc import OidcVerifier
 
     v = OidcVerifier.__new__(OidcVerifier)
+    v.issuer = "https://kc.example.org/realms/arkhe"
     v.decode = lambda _t: {"azp": "誰でもない", "scope": "ark:mint"}
     with pytest.raises(AuthError, match="not registered"):
         v.authenticate(db, "dummy")
@@ -397,6 +400,7 @@ def test_登録すれば同じトークンが通る(db, world, root):
                         manager_id=world["a"].id, scopes="ark:mint")
     db.commit()
     v = OidcVerifier.__new__(OidcVerifier)
+    v.issuer = "https://kc.example.org/realms/arkhe"
     v.decode = lambda _t: {"azp": "kc-repo", "scope": "ark:mint"}
     p = v.authenticate(db, "dummy")
     assert p.client_id == "kc-repo" and p.has("ark:mint")
@@ -439,12 +443,15 @@ def test_oidcでは止める手段が要る(db, world, root):
                             manager_id=world["a"].id, scopes="ark:mint")
     db.commit()
     v = OidcVerifier.__new__(OidcVerifier)
+    v.issuer = "https://kc.example.org/realms/arkhe"
     v.decode = lambda _t: {"azp": "kc-stop", "scope": "ark:mint"}
     assert v.authenticate(db, "t").client_id == "kc-stop"
 
     ops.set_client_active(db, root, client_pk=c.id, active=False)
     db.commit()
-    with pytest.raises(AuthError, match="not registered"):
+    # **「登録が無い」ではなく「止めてある」。** 返す答えは同じ 401 だが、
+    # 未登録の一覧に混ぜないために区別している。
+    with pytest.raises(AuthError, match="not usable"):
         v.authenticate(db, "t")
 
 
@@ -584,6 +591,7 @@ def test_止めた主体は入り方によらず通らない(db, world, root):
     ops.set_client_active(db, root, client_pk=c.id, active=False)
     db.commit()
     v = OidcVerifier.__new__(OidcVerifier)
+    v.issuer = "https://kc.example.org/realms/arkhe"
     v.decode = lambda _t: {"azp": "idp-stop", "scope": "ark:mint"}
     with pytest.raises(AuthError):
         v.authenticate(db, "t")
@@ -1203,3 +1211,123 @@ def test_NAAN画面から決まりを掛けられる(db, world, principal_of, as
     n = db.get(Naan, "99999")
     assert n.allowed_auth == "oidc" and not n.may_self_register
     assert n.max_scopes == "ark:mint" and n.na_policy == "NP | NR"
+
+
+# ------------------------- 認可サーバから来た、登録の無い主体
+#
+# **綴りが 1 文字違うだけで 401 になる。** そこがこの構成でいちばん多い詰まり
+# どころで、しかも黙って落ちる。弾いた瞬間に正しい文字列は手元にあるので、
+# 捨てずに残して打ち直させない。
+
+
+@contextmanager
+def _oidc_says(subject: str, issuer: str = "https://kc.example.org/realms/arkhe"):
+    """認可サーバがこの主体のトークンを出した、という状況を作る。
+
+    **署名検証だけを差し替える。** 台帳との突き合わせも記録も本物を通す
+    ——見たいのはそこだから。
+    """
+    from arkhe.auth import deps
+    from arkhe.auth.oidc import OidcVerifier
+
+    v = OidcVerifier.__new__(OidcVerifier)
+    v.issuer = issuer
+    v.decode = lambda _t: {"azp": subject, "scope": "ark:mint"}
+    orig = deps.oidc_verifier
+    deps.oidc_verifier = lambda _s: v
+    try:
+        yield deps
+    finally:
+        deps.oidc_verifier = orig
+
+
+def _reject(db, subject, ip="", issuer="https://kc.example.org/realms/arkhe"):
+    """未登録の主体として弾かせる。戻り値は上がった `AuthError`。"""
+    from arkhe.auth.errors import AuthError
+    from arkhe.settings import Settings
+
+    cfg = Settings(auth=["oidc"], oidc_issuer=issuer, database_url="sqlite://")
+    with _oidc_says(subject, issuer) as deps, pytest.raises(AuthError) as e:
+        deps.authenticate("dummy", db, cfg, ip)
+    return e.value
+
+
+def test_登録の無い主体は弾いた文字列ごと残る(db, world):
+    """**その 1 文字を捨てない。** 運用者が打ち直さずに登録できるようにする。"""
+    from arkhe.db.models import UnknownSubject
+
+    _reject(db, "example-invenoi", ip="10.0.0.9")  # 綴り違い
+
+    row = db.scalar(db.query(UnknownSubject).statement)
+    assert row.subject == "example-invenoi"
+    assert row.issuer == "https://kc.example.org/realms/arkhe"
+    assert row.seen == 1 and row.ip == "10.0.0.9"
+
+
+def test_同じ主体で行は増えず回数が上がる(db, world):
+    """**認可サーバの client 数で頭打ちになる。** 行が増え続けない。"""
+    from arkhe.db.models import UnknownSubject
+
+    for _ in range(3):
+        _reject(db, "example-invenoi")
+
+    rows = list(db.scalars(db.query(UnknownSubject).statement))
+    assert len(rows) == 1 and rows[0].seen == 3
+
+
+def test_401はそのまま401で返る(db, world):
+    """記録は運用者の便宜であって、**認証の判断ではない**。
+
+    返す理由も増やさない——どの主体が台帳に在るかを教えないため。
+    """
+    assert _reject(db, "誰でもない").detail == "invalid credentials"
+
+
+def test_登録すれば一覧から消える(db, world, root, principal_of, as_principal):
+    """**消して回る処理を持たない。** 照合を毎回やるので、消し忘れが残らない。"""
+    from arkhe.api import i18n
+
+    _reject(db, "kc-repo")
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    page = c.get("/admin/clients").text
+    assert "kc-repo" in page
+    # **打ち直させない。** 一覧から登録画面へ、識別子を持ったまま渡す。
+    assert "/admin/client/new?client_id=kc-repo" in page
+
+    ops.register_client(db, root, client_id="kc-repo", naan="99999",
+                        manager_id=world["a"].id, scopes="ark:mint")
+    db.commit()
+    assert i18n.JA["uk.title"] not in c.get("/admin/clients").text
+
+
+def test_組織単位の管理者には見せない(db, world, root, principal_of, as_principal):
+    """**どの組織のものか分からない。** 見せると他組織の client_id が混ざる。"""
+    from arkhe.api import i18n
+
+    _reject(db, "他所の何か")
+    page = as_principal(principal_of(manager=world["a"])).get("/admin/clients").text
+    assert i18n.JA["uk.title"] not in page and "他所の何か" not in page
+
+
+def test_登録画面に識別子が入った状態で開く(db, world, principal_of, as_principal):
+    """**打ち直させない。** 認可サーバが署名した値をそのまま初期値にする。"""
+    c = as_principal(principal_of(authority=Authority.NAAN))
+    page = c.get("/admin/client/new", params={"client_id": "example-invenoi"}).text
+    assert 'value="example-invenoi"' in page
+
+
+def test_止めた主体は未登録として並べない(db, world, root):
+    """**意図して止めたものを「登録し忘れ」に混ぜない。**
+
+    混ぜると、一覧から消すために登録し直すことになり、止めた意味が消える。
+    返す答えは同じ 401 でも、記録の扱いを分ける。
+    """
+    from arkhe.db.models import UnknownSubject
+
+    c = ops.register_client(db, root, client_id="kc-stopped", naan="99999",
+                            manager_id=world["a"].id, scopes="ark:mint")
+    ops.set_client_active(db, root, client_pk=c.id, active=False)
+    db.commit()
+
+    assert _reject(db, "kc-stopped").detail == "invalid credentials"
+    assert db.scalar(db.query(UnknownSubject).statement) is None

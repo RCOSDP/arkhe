@@ -16,7 +16,15 @@ from sqlalchemy.orm import Session, selectinload
 
 from arkhe.auth.errors import Forbidden, InsufficientScope
 from arkhe.auth.principal import Principal
-from arkhe.db.models import Ark, ArkChange, AuditEvent, Manager, Shoulder, ShoulderStatus
+from arkhe.db.models import (
+    Ark,
+    ArkChange,
+    AuditEvent,
+    Manager,
+    Shoulder,
+    ShoulderStatus,
+    UnknownSubject,
+)
 
 
 class NotFound(Exception):
@@ -250,6 +258,35 @@ def record_sign_in(
             detail={**detail, "mechanism": mechanism, "ok": ok},
         )
     )
+
+
+def record_unknown_subject(
+    session: Session, *, subject: str, issuer: str = "", ip: str = ""
+) -> None:
+    """認可サーバから来たが登録の無い主体を残す。**同じ主体で行を増やさない。**
+
+    `client_id` の綴り違いは、認可サーバに寄せた構成でいちばん多い詰まりどころ
+    である。**弾いた瞬間に正しい文字列は手元にある**（`azp` は署名検証を通って
+    いる）ので、捨てずに残せば運用者は打ち直さずに登録できる。
+
+    回数を数えるのは、**1 回きりなら打ち間違い、何度も来るなら設定が生きている**
+    からで、直す優先度がそれで分かる。行が増え続けることはない——認可サーバに
+    実在する client の数で頭打ちになる。
+
+    登録が済んだ行を消す処理は要らない。一覧は**登録の無いものだけ**を毎回
+    引き直すので、登録すればひとりでに消える。
+    """
+    row = session.scalar(
+        select(UnknownSubject).where(
+            UnknownSubject.subject == subject, UnknownSubject.issuer == issuer
+        )
+    )
+    if row is None:
+        session.add(UnknownSubject(subject=subject, issuer=issuer, ip=ip))
+        return
+    row.last_seen = datetime.now(UTC)
+    row.seen += 1
+    row.ip = ip or row.ip
 
 
 def record_change(

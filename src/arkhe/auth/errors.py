@@ -14,6 +14,21 @@ class AuthError(Exception):
         super().__init__(detail)
 
 
+class UnregisteredSubject(AuthError):
+    """認可サーバのトークンは正しいが、その主体が台帳に無い。
+
+    **AuthError と区別するのは、記録に残す価値がここだけ違うから。**
+    署名検証を通った後なので `subject` は認可サーバが書いた値であり、
+    運用者が登録するときにそのまま写せる——`client_id` の綴り違いは、
+    この構成でいちばん多い詰まりどころである。
+    """
+
+    def __init__(self, subject: str, issuer: str = ""):
+        self.subject = subject
+        self.issuer = issuer
+        super().__init__(f"subject {subject} is not registered with this resolver")
+
+
 class Forbidden(Exception):
     """403。認証はできたが、その操作・その名前空間には届かない。"""
 

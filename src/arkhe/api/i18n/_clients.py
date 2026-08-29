@@ -7,6 +7,25 @@
 from __future__ import annotations
 
 JA: dict[str, str] = {
+    # 認可サーバから来たが登録の無い主体
+    # **綴りが 1 文字違うだけで 401 になる。** その 1 文字を弾いた時点で
+    # 持っているので、打ち直させずに登録へ渡す。
+    "uk.title": "認可サーバから来た、登録の無い主体",
+    "uk.lede": "<b>トークンは正しいのに、この台帳に登録がなかった主体です。</b>"
+               "登録が無ければ通りません——認可サーバで認証できることと、"
+               "この名前空間を触ってよいことは別だからです。"
+               "<b>下の識別子は認可サーバが署名した値そのもの</b>なので、"
+               "「登録する」から進めば打ち間違いは起こりません。",
+    "uk.subject": "識別子",
+    "uk.issuer": "認可サーバ",
+    "uk.seen": "回数",
+    "uk.last": "最後に来た",
+    "uk.register": "登録する",
+    "uk.hint": "1 回だけなら打ち間違い、何度も来るならその設定が生きています。",
+    "uk.note": "<b>どの組織のものかは分かりません。</b>トークンにその情報が無く、"
+               "推測もしないためです——この一覧が見えるのは NAAN 以上に届く"
+               "主体だけにしてあります。",
+    "uk.gone": "登録が済んだものは、この一覧から自動的に消えます。",
     # 主体
     "cl.title": "利用者と鍵",
     "cl.lede": "<b>ARK を発行できる利用者と、その鍵の一覧です。</b>"
@@ -146,6 +165,23 @@ JA: dict[str, str] = {
 }
 
 EN: dict[str, str] = {
+    "uk.title": "Subjects from the authorization server with no registration",
+    "uk.lede": "<b>Their token was valid, but they are not in this ledger.</b> "
+               "Without a registration they do not get in — authenticating with the "
+               "authorization server and being allowed into this namespace are "
+               "different questions. <b>The identifier below is exactly what the "
+               "authorization server signed</b>, so registering from here cannot "
+               "introduce a typo.",
+    "uk.subject": "Identifier",
+    "uk.issuer": "Authorization server",
+    "uk.seen": "Times",
+    "uk.last": "Last seen",
+    "uk.register": "Register",
+    "uk.hint": "Once is a typo; repeatedly means that configuration is live.",
+    "uk.note": "<b>Which organisation it belongs to is unknown.</b> The token does not "
+               "say and arkhe does not guess — which is why only NAAN-wide principals "
+               "see this list.",
+    "uk.gone": "Once registered, an entry disappears from this list by itself.",
     "cl.title": "Users & keys",
     "cl.lede": "<b>Who may issue ARKs, and with which key.</b> There are two kinds: "
                "an organisation's systems, which identify themselves with an API key, and "

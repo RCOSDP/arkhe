@@ -120,7 +120,25 @@ erDiagram
         string target
         json   detail
     }
+    UNKNOWN_SUBJECT {
+        int    id PK
+        string subject "認可サーバ側の識別子（azp / client_id / sub）"
+        string issuer
+        date   first_seen
+        date   last_seen
+        int    seen
+        string ip
+    }
 ```
+
+`UNKNOWN_SUBJECT` は、**認可サーバのトークンは正しいのに台帳に登録の無かった主体**
+である。`client_id` の綴りが 1 文字違うだけで 401 になるが、弾いた時点で arkhe は
+正しい文字列を手に持っている——`azp` はもう署名検証を通っている。捨てずに残せば、
+運用者は打ち直さずに登録できる。**登録が済めば一覧から自動的に消える**（照合は
+問い合わせのたびに行うので、消す操作が要らない）。
+
+他の表と外部キーで結ばない。**どの組織のものかは分からない**からで、推測もしない
+——だから見えるのは NAAN 以上に届く主体だけにしてある。
 
 `ARK_CHANGE` は **ARK の行き先が変わった記録**で、監査ログとは別に持つ。監査は
 NAAN 単位以上の操作しか残さないが、**採番も付け替えも組織が行う**ので、監査だけ

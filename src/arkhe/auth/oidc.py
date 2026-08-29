@@ -20,7 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from arkhe.auth.apikey import _expired, _mechanism_allowed, _to_principal
-from arkhe.auth.errors import AuthError
+from arkhe.auth.errors import AuthError, UnregisteredSubject
 from arkhe.auth.principal import Principal
 from arkhe.db.models import Client
 
@@ -102,11 +102,18 @@ class OidcVerifier:
         subject = claims.get("azp") or claims.get("client_id") or claims["sub"]
         client = session.scalar(
             select(Client)
-            .where(Client.client_id == subject, Client.active.is_(True))
+            .where(Client.client_id == subject)
             .options(selectinload(Client.manager))
         )
-        if client is None or _expired(client.expires_at):
-            raise AuthError(f"subject {subject} is not registered with this resolver")
+        if client is None:
+            # **弾いた文字列を捨てない。** 呼び出し側がこれを記録し、運用者は
+            # 打ち直さずに登録できる（`domain.authz.record_unknown_subject`）。
+            raise UnregisteredSubject(subject, self.issuer)
+        # **止めた主体は「登録が無い」ではない。** 意図して止めたものを
+        # 「登録し忘れ」として画面に並べると、消すために登録し直すことになる
+        # ——止めた意味が消える。返す答え（401）は同じでも、区別して扱う。
+        if not client.active or _expired(client.expires_at):
+            raise AuthError(f"subject {subject} is registered but not usable")
         # **組織に許されていない機構では通さない**（apikey / oauth2 と同じ）。
         if not _mechanism_allowed(session, client, "oidc"):
             raise AuthError("this mechanism is not allowed for the organisation")

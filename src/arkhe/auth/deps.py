@@ -19,10 +19,11 @@ from sqlalchemy.orm import Session
 
 from arkhe import observability
 from arkhe.auth import apikey, oauth2
-from arkhe.auth.errors import AuthError
+from arkhe.auth.errors import AuthError, UnregisteredSubject
 from arkhe.auth.oidc import OidcVerifier
 from arkhe.auth.principal import Principal
 from arkhe.db.session import get_session
+from arkhe.domain import authz
 from arkhe.settings import Settings, get_settings
 
 _oidc_verifier: OidcVerifier | None = None
@@ -70,13 +71,14 @@ def challenge_for(settings: Settings) -> str:
 
 
 def authenticate(
-    token: str, session: Session, settings: Settings
+    token: str, session: Session, settings: Settings, ip: str = ""
 ) -> Principal:
     """機構を順に試す。**どれも通らなければ 401。**"""
     if not token:
         raise AuthError("no credentials", challenge=challenge_for(settings))
 
     tried: list[str] = []
+    unregistered: UnregisteredSubject | None = None
     for mechanism in settings.auth:
         try:
             if mechanism == "apikey":
@@ -90,13 +92,42 @@ def authenticate(
                 )
             if mechanism == "oidc":
                 return oidc_verifier(settings).authenticate(session, token)
+        except UnregisteredSubject as exc:
+            # **署名は通ったが台帳に無い。** 弾いた文字列を捨てずに残す
+            # ——`client_id` の綴り違いは、この構成でいちばん多い詰まりどころで、
+            # 運用者はこれを見て打ち直さずに登録できる。
+            unregistered = exc
+            tried.append(f"{mechanism}: {exc.detail}")
+            continue
         except AuthError as exc:
             # **理由は利用者に返さないが、ここには残す。** 「鍵が期限切れ」なのか
             # 「組織が停止中」なのかを運用者が知る手段が無いと、切り分けられない。
             tried.append(f"{mechanism}: {exc.detail}")
             continue  # 次の機構を試す
     observability.log("auth failed", mechanisms=tried)
+    if unregistered is not None:
+        _remember(session, unregistered, ip)
     raise AuthError("invalid credentials", challenge=challenge_for(settings))
+
+
+def _remember(session: Session, exc: UnregisteredSubject, ip: str) -> None:
+    """未登録の主体を残す。**ここで失敗しても 401 は 401 のまま返す。**
+
+    記録は運用者の便宜であって、認証の判断ではない。読み取り専用の DB に
+    向いている構成もありうるので、書けなかったことで 500 に化けさせない。
+
+    **その場で commit する。** この後 `AuthError` が上がり、要求のセッションは
+    巻き戻される（`db/session.py`）——commit しておかないと、残したはずの記録が
+    一緒に消える。
+    """
+    try:
+        authz.record_unknown_subject(
+            session, subject=exc.subject, issuer=exc.issuer, ip=ip
+        )
+        session.commit()
+    except Exception as err:  # pragma: no cover - DB 側の事情でしか起きない
+        session.rollback()
+        observability.log("could not record unknown subject", error=str(err))
 
 
 def client_ip(request: Request, settings: Settings) -> str:
@@ -129,9 +160,10 @@ def current_principal(
 ) -> Principal:
     # トークンは `bearer()` で取る。`_cred` は OpenAPI に載せるためだけの依存で、
     # **値は使わない**——`ark:/…` のようにヘッダ以外から来る経路と扱いを揃えるため。
-    p = authenticate(bearer(request), session, settings)
-    # **接続元は要求の層でだけ分かる。** 監査に残すために運ぶ。
-    return replace(p, ip=client_ip(request, settings))
+    # **接続元は要求の層でだけ分かる。** 監査に残すために運ぶ——
+    # 未登録の主体を残すときにも要るので、認証より先に求める。
+    ip = client_ip(request, settings)
+    return replace(authenticate(bearer(request), session, settings, ip), ip=ip)
 
 
 CurrentPrincipal = Annotated[Principal, Depends(current_principal)]

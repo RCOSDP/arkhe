@@ -33,7 +33,7 @@
     <form method="post" action="/admin/client/new">
       <div class="field">
         <label for="client_id">{{ t('cu.f.client_id') }}</label>
-        <input id="client_id" name="client_id" required autofocus>
+        <input id="client_id" name="client_id" required autofocus value="{{ prefill }}">
         <p class="hint">{{ t('cu.f.client_id_oidc' if uses_oidc
              else 'cu.f.client_id_hint')|safe }}</p>
       </div>

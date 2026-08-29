@@ -120,7 +120,26 @@ erDiagram
         string target
         json   detail
     }
+    UNKNOWN_SUBJECT {
+        int    id PK
+        string subject "認可サーバ側の識別子（azp / client_id / sub）"
+        string issuer
+        date   first_seen
+        date   last_seen
+        int    seen
+        string ip
+    }
 ```
+
+`UNKNOWN_SUBJECT` holds **subjects whose token verified but who were not in the
+ledger**. One wrong character in a `client_id` produces a 401, and at the moment of
+rejection arkhe already holds the right string — `azp` has passed signature
+verification by then. Keeping it lets an operator register without retyping, and the
+row **disappears from the list once registered** (the match is made per query, so
+nothing has to be cleaned up).
+
+It has no foreign keys: **which organisation it belongs to is unknowable** from the
+token, and arkhe does not guess — which is why only NAAN-wide principals see the list.
 
 `ARK_CHANGE` records **where an ARK used to point**, separately from the audit log.
 The audit log keeps only what reaches NAAN scope or wider, but **minting and

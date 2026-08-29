@@ -17,6 +17,44 @@
 </div>
 {% endif %}
 
+{# **登録の無いまま来た主体。** 認可サーバが署名した識別子をそのまま渡すので、
+   ここから登録すれば綴り違いが起こらない。登録が済めばひとりでに消える。 #}
+{% if unknown %}
+<div class="card stop" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('uk.title') }}</span></div>
+  <div class="card-b">
+    <p class="lede">{{ t('uk.lede')|safe }}</p>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>{{ t('uk.subject') }}</th><th>{{ t('uk.issuer') }}</th>
+      <th>{{ t('uk.seen') }}</th><th>{{ t('uk.last') }}</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for u in unknown %}
+      <tr>
+        <td class="mono" data-label="{{ t('uk.subject') }}">{{ u.subject }}</td>
+        <td class="mono dim" data-label="{{ t('uk.issuer') }}">{{ u.issuer }}</td>
+        <td data-label="{{ t('uk.seen') }}">{{ u.seen }}</td>
+        <td class="mono dim" data-label="{{ t('uk.last') }}">{{ u.last_seen.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td data-label="" style="text-align:right">
+          {% if can_add_client %}
+          <a class="btn sm" href="/admin/client/new?client_id={{ u.subject|urlencode }}">{{ t('uk.register') }}</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="card-b">
+    <p class="note"><span>{{ t('uk.hint') }} {{ t('uk.gone') }}</span></p>
+    <p class="note"><span>{{ t('uk.note')|safe }}</span></p>
+  </div>
+</div>
+{% endif %}
+
 <div class="card">
   <div class="card-h">
     <span class="t">{{ t('cl.principals') }}</span>
