@@ -8,6 +8,12 @@
 
 ## [未リリース]
 
+## [0.0.6] — 2026-08-29
+
+**中身は変えず、同じコミットから同じものができるようにした版。** `src/` は 1 行も
+触っていないので挙動は変わらない。取る理由は、これ以降**あるタグから焼き直した
+イメージが、そのタグで試したものと同じ**になること。
+
 ### 変更
 
 - **依存を `uv.lock` で固定した。** 宣言は下限しか書いていないので、これが無いと
@@ -16,7 +22,9 @@
   `uv sync --frozen` にした（lock と `pyproject.toml` がずれていたらそこで落ちる）。
   **上限は書かない**——lock があれば要らないし、上限はライブラリとして使われる
   ときに他と共存しにくくする。更新は Dependabot が毎週まとめて出す
-  ——**固定は「新しいものを見なくてよい」という意味ではない**。
+  ——**固定は「新しいものを見なくてよい」という意味ではない**。動かすのは lock だけで、
+  宣言の下限は触らせない（入れた版まで引き上げるのは「それより古いと動かない」と
+  確かめずに言うことになる）。
 
 ## [0.0.5] — 2026-08-29
 
@@ -289,7 +297,8 @@
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.5...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6
 [0.0.5]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.5
 [0.0.4]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.4
 [0.0.3]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.3

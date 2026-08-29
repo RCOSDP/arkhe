@@ -9,6 +9,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.6] — 2026-08-29
+
+**A build-only release: the same commit now builds into the same thing.** Nothing under
+`src/` was touched, so no behaviour changed. The reason to take it is that from here on,
+an image rebuilt from a given tag holds what that tag was tested with.
+
 ### Changed
 
 - **Dependencies are pinned in `uv.lock`.** The declarations carry only lower bounds,
@@ -17,7 +23,8 @@ breaking in a system whose identifiers cannot be reissued.
   the image build use `uv sync --frozen`, which fails if the lock and `pyproject.toml`
   disagree. **No upper bounds**: with a lock they are unnecessary, and they make the
   package harder to live with as a dependency. Dependabot proposes grouped updates
-  weekly — **pinning is not permission to stop looking**.
+  weekly, and only ever moves the lock: raising the declared floor to whatever happens
+  to be installed would assert that older versions do not work, without checking.
 
 ## [0.0.5] — 2026-08-29
 
@@ -313,7 +320,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6
 [0.0.5]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.5
 [0.0.4]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.4
 [0.0.3]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.3
