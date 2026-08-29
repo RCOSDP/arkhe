@@ -14,6 +14,7 @@ from sqlalchemy import select
 from arkhe.auth.principal import Principal
 from arkhe.cli_i18n import t
 from arkhe.db.models import (
+    Ark,
     Authority,
     Client,
     CommitmentLevel,
@@ -24,6 +25,7 @@ from arkhe.db.models import (
 )
 from arkhe.db.session import session_factory
 from arkhe.domain import admin_ops as ops
+from arkhe.domain.queries import narrow_arks, visible_arks
 from arkhe.settings import get_settings
 
 app = typer.Typer(help=t("app.help"), no_args_is_help=True)
@@ -31,10 +33,12 @@ naan_app = typer.Typer(help=t("naan.help"), no_args_is_help=True)
 shoulder_app = typer.Typer(help=t("shoulder.help"), no_args_is_help=True)
 manager_app = typer.Typer(help=t("manager.help"), no_args_is_help=True)
 client_app = typer.Typer(help=t("client.help"), no_args_is_help=True)
+ark_app = typer.Typer(help=t("ark.help"), no_args_is_help=True)
 app.add_typer(naan_app, name="naan")
 app.add_typer(shoulder_app, name="shoulder")
 app.add_typer(manager_app, name="manager")
 app.add_typer(client_app, name="client")
+app.add_typer(ark_app, name="ark")
 
 
 def _root() -> Principal:
@@ -308,6 +312,44 @@ def client_revoke(credential_id: int):
         cred = ops.revoke_credential(s, _root(), credential_id=credential_id)
         s.commit()
         typer.echo(t("client.revoke.done", id=cred.id))
+
+
+@ark_app.command("list", help=t("ark.list.help"))
+def ark_list(
+    naan: str = typer.Option("", help=t("opt.only_naan")),
+    org: int = typer.Option(None, help=t("ark.list.org")),
+    q: str = typer.Option("", "--search", "-q", help=t("ark.list.search")),
+    limit: int = typer.Option(50, help=t("ark.list.limit")),
+    offset: int = typer.Option(0, help=t("ark.list.offset")),
+):
+    """発行した ARK を並べる。**絞り込みは画面と同じ式を通る**（`domain.queries`）。
+
+    **既定で打ち切る。** ARK は消えないので台帳は増える一方で、全件を黙って
+    流すと運用の端末で止まらなくなる。打ち切ったことは標準エラーに出す
+    ——出さなければ「これで全部」と読まれる。
+
+    題名は出さない。長さに上限が無く、行き先の URL を押し出してしまうため
+    ——**行き先は目で追って写す列**なので、そこを崩さない。題名で引きたい
+    ときは `-q` が見ている（画面と同じ 3 項目）。
+    """
+    with _session() as s:
+        stmt = narrow_arks(visible_arks(_root()), naan=naan, org=org or "", q=q)
+        # 1 件多く取って、続きがあるかを**数えずに**知る。件数の COUNT は
+        # 台帳が大きくなるほど重く、ここで欲しいのは有無だけ。
+        rows = list(
+            s.scalars(
+                stmt.order_by(Ark.created_at.desc()).offset(max(0, offset)).limit(limit + 1)
+            )
+        )
+        for a in rows[:limit]:
+            typer.echo(
+                f"ark:/{a.ark:<24}  {a.created_at:%Y-%m-%d}  "
+                f"{a.created_by or '-':<14}  {a.url}"
+            )
+        if not rows:
+            typer.echo(t("ark.list.empty"), err=True)
+        elif len(rows) > limit:
+            typer.echo(t("ark.list.more", next=max(0, offset) + limit), err=True)
 
 
 @app.command("succeed", help=t("succeed.help"))

@@ -24,6 +24,7 @@ audit log the same way.
 | `arkhe client revoke` | Revoke. **The row is not deleted** — when it stopped remains. |
 | `arkhe client disable` | Stop a principal. **The only way where authentication is delegated.** |
 | `arkhe client enable` | Restore one (not if its organisation has left). |
+| `arkhe ark list` | List minted ARKs. **Stops at 50 by default** — the ledger only grows. `--naan` and `--org` narrow it; `-q` looks at the ARK, its target and its title. |
 
 `--help` on any command gives its arguments.
 
