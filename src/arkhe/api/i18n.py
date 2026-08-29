@@ -48,8 +48,7 @@ JA: dict[str, str] = {
                "機関はその中で識別子を発行します。<b>発行した識別子をどこまで維持するかも、"
                "機関ごとに決めて公開します</b>——各行に出ている「約束の水準"
                "（commitment level）」がそれです。",
-    "ov.tree": "番号（NAAN） → 機関 → 名前空間（shoulder）",
-    "ov.naans": "NAAN",
+    "ov.naans": "番号（NAAN）",
     "ov.authoritative": "自組織で管理（権威あり）",
     "ov.delegated_to": "委譲先",
     "ov.no_manager": "機関に未割当",
@@ -59,9 +58,9 @@ JA: dict[str, str] = {
     "ov.succeeded": "承継済",
     "ov.inactive": "停止",
     "ov.manage": "操作",
-    "ov.add_naan": "NAAN を登録",
-    "ov.onboard": "機関をオンボード",
-    "ov.add_shoulder": "shoulder を切り出す",
+    "ov.add_naan": "番号を登録",
+    "ov.onboard": "機関を追加",
+    "ov.add_shoulder": "名前空間を追加",
     "ov.empty": "まだ NAAN が登録されていません。",
     # 採番
     "mint.title": "ARK を採番",
@@ -127,7 +126,7 @@ JA: dict[str, str] = {
     "f.saved": "保存しました。",
     "f.optional": "任意",
     "f.readonly_here": "この画面からは変えられません",
-    "naan.new.title": "NAAN を登録",
+    "naan.new.title": "番号（NAAN）を登録",
     "naan.edit.title": "NAAN の設定",
     "naan.lede": "<b>NAA ポリシーは名前空間を配る側の宣言</b>です。"
                  "この NAAN の配下すべてにかかるので、機関単位では変えられません"
@@ -146,8 +145,14 @@ JA: dict[str, str] = {
     "naan.f.authoritative_hint": "持つなら、未知の名前に <code>404</code> と答えます"
                                  "（＝「無い」と言える）。持たないなら委譲先が要ります。",
     "naan.f.redirect": "委譲先",
-    "manager.new.title": "機関をオンボード",
+    "manager.new.title": "機関を追加",
     "manager.edit.title": "機関の設定",
+    # **追加のときは、まず何が起きるかを述べる。** ここを開く人は、この操作が
+    # 名前空間の受け渡しでもあることをまだ知らない。
+    "manager.new.lede": "機関を追加すると、<b>同時に名前空間（shoulder）を 1 つ渡します</b>。"
+                        "この 2 つは分けられません——名前空間を持たない機関は識別子を"
+                        "発行できないので、置いても意味がないからです。"
+                        "以後その機関は、渡した名前空間の中で ARK を発行します。",
     "manager.lede": "<b>約束の水準は機関自身の宣言</b>です。"
                     "だから機関管理者も自分の分は変えられます——"
                     "採番上限はそうではありません（配った側が課すもの）。",
@@ -170,7 +175,7 @@ JA: dict[str, str] = {
     "cm.permanent-stable": "永続・内容は実質的に変わらない",
     "cm.permanent-unchanging": "永続・内容は変えない",
     "cm.descriptive-only": "記述だけ（対象がオンラインに無い）",
-    "shoulder.new.title": "shoulder を切り出す",
+    "shoulder.new.title": "名前空間（shoulder）を追加",
     "shoulder.edit.title": "shoulder の設定",
     "shoulder.lede": "<b>一度配った名前空間は取り戻せません。</b>"
                      "<code>NR</code> を宣言している以上、既存の ARK は解決し続けます。"
@@ -221,8 +226,7 @@ EN: dict[str, str] = {
                "issues identifiers within it. <b>How far each institution undertakes to "
                "keep those identifiers working is also its own to state</b>: that is the "
                "commitment level shown on each row.",
-    "ov.tree": "number (NAAN) → institution → namespace (shoulder)",
-    "ov.naans": "NAANs",
+    "ov.naans": "Numbers (NAAN)",
     "ov.authoritative": "run here (authoritative)",
     "ov.delegated_to": "delegated to",
     "ov.no_manager": "not assigned",
@@ -232,9 +236,9 @@ EN: dict[str, str] = {
     "ov.succeeded": "succeeded",
     "ov.inactive": "inactive",
     "ov.manage": "Manage",
-    "ov.add_naan": "Register a NAAN",
-    "ov.onboard": "Onboard an institution",
-    "ov.add_shoulder": "Carve out a shoulder",
+    "ov.add_naan": "Add a number",
+    "ov.onboard": "Add an institution",
+    "ov.add_shoulder": "Add a namespace",
     "ov.empty": "No NAAN registered yet.",
     "mint.title": "Mint an ARK",
     "mint.lede": "Institutions normally mint through the API. This page is for the times "
@@ -295,7 +299,7 @@ EN: dict[str, str] = {
     "f.saved": "Saved.",
     "f.optional": "optional",
     "f.readonly_here": "cannot be changed here",
-    "naan.new.title": "Register a NAAN",
+    "naan.new.title": "Register a number (NAAN)",
     "naan.edit.title": "NAAN settings",
     "naan.lede": "<b>The NAA policy is the declaration of the side handing namespaces "
                  "out.</b> It covers everything under this NAAN, so an institution "
@@ -317,8 +321,13 @@ EN: dict[str, str] = {
                                  "<code>404</code> — you can say it does not exist. "
                                  "If you do not, a delegation target is required.",
     "naan.f.redirect": "Delegate to",
-    "manager.new.title": "Onboard an institution",
+    "manager.new.title": "Add an institution",
     "manager.edit.title": "Institution settings",
+    "manager.new.lede": "Adding an institution <b>hands it one namespace (shoulder) at "
+                        "the same time</b>. The two cannot be separated: an institution "
+                        "with no namespace cannot issue identifiers, so there would be no "
+                        "point putting one here. From then on it issues ARKs within that "
+                        "namespace.",
     "manager.lede": "<b>The commitment level is the institution's own declaration</b>, "
                     "which is why an institutional administrator may change their own. "
                     "The minting limit is not — that is imposed by the side handing the "
@@ -344,7 +353,7 @@ EN: dict[str, str] = {
     "cm.permanent-stable": "Permanent; content substantially unchanged",
     "cm.permanent-unchanging": "Permanent; content not changed",
     "cm.descriptive-only": "Description only (the object is not online)",
-    "shoulder.new.title": "Carve out a shoulder",
+    "shoulder.new.title": "Add a namespace (shoulder)",
     "shoulder.edit.title": "Shoulder settings",
     "shoulder.lede": "<b>A namespace once handed out cannot be taken back.</b> Having "
                      "declared <code>NR</code>, existing ARKs go on resolving. One you "

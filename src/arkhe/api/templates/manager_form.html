@@ -5,7 +5,7 @@
 {% block body %}
 <div class="head">
   <h1>{{ title }}{% if manager %} <span class="dim">{{ manager.name }}</span>{% endif %}</h1>
-  <p class="lede">{{ t('manager.lede')|safe }}</p>
+  <p class="lede">{{ t('manager.lede' if manager else 'manager.new.lede')|safe }}</p>
 </div>
 
 {% if request.query_params.get('saved') %}

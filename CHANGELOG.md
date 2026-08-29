@@ -33,7 +33,9 @@ breaking in a system whose identifiers cannot be reissued.
   are kept in parentheses — "namespace (shoulder)", "Permanent; content may change
   (permanent-dynamic)" — so the plain wording reads on its own while still lining up
   with the specification, the CLI and the API. Commitment levels no longer appear as
-  bare machine values.
+  bare machine values. Buttons say what they do: "Add an institution", not "Onboard an
+  institution"; "Add a namespace", not "Carve out a shoulder". The form for adding an
+  institution now says up front that it hands over a namespace at the same time.
 - `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
   Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
   to be the URL the browser actually types, so they are parameterised by

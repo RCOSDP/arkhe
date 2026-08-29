@@ -9,8 +9,10 @@
 
 <div class="card">
   <div class="card-h">
-    <span class="t">{{ t('ov.tree') }}</span>
-    <span class="sub">{{ naans|length }} {{ t('ov.naans') }}</span>
+    {# 「番号 → 機関 → 名前空間」の並びは木がそのまま見せているし、説明にも
+       書いてある。見出しでもう一度言わない。 #}
+    <span class="t">{{ t('ov.naans') }}</span>
+    <span class="sub">{{ naans|length }}</span>
     {% if principal.is_system %}
     <span class="right"><a class="btn sm" href="/admin/naan/new">{{ t('ov.add_naan') }}</a></span>
     {% endif %}
