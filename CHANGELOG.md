@@ -40,7 +40,8 @@ breaking in a system whose identifiers cannot be reissued.
   term itself.) "Principals & credentials" is now "Users & keys" — what is listed
   there is not the institutions themselves but their systems and their people — and
   the minting form asks for a *namespace to mint in*, since what is chosen there is a
-  NAAN and a shoulder together, not a shoulder alone.
+  NAAN and a shoulder together, not a shoulder alone. A NAAN's name field is now
+  "Institution" rather than "Organisation".
 - `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
   Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
   to be the URL the browser actually types, so they are parameterised by

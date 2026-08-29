@@ -36,7 +36,7 @@
   無いため。「主体と資格情報」は「利用者と鍵」に——ここに並ぶのは機関そのものでは
   なく、機関のシステムと人だから。採番の欄は「shoulder」ではなく「採番する名前空間」
   にした（選ぶのは NAAN と shoulder の組であって shoulder だけではないため）。
-  NAAN は「機関番号（NAAN）」、その名前の欄は「機関名」にした。
+  NAAN の名前の欄は「組織名」から「機関名」にした。
 - `compose/oidc/lan.yml`。LAN の別の端末からデモを見るための上書き。公開先を
   `0.0.0.0` にするだけでは足りず、issuer と redirect_uri はブラウザが実際に打つ
   URL でなければならないので、`ARKHE_DEMO_HOST` で受け取り、redirect は realm JSON

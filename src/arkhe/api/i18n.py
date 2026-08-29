@@ -48,7 +48,7 @@ JA: dict[str, str] = {
                "機関はその中で識別子を発行します。<b>発行した識別子をどこまで維持するかも、"
                "機関ごとに決めて公開します</b>——各行に出ている「約束の水準"
                "（commitment level）」がそれです。",
-    "ov.naans": "機関番号（NAAN）",
+    "ov.naans": "番号（NAAN）",
     "ov.authoritative": "自組織で管理（権威あり）",
     "ov.delegated_to": "委譲先",
     "ov.no_manager": "機関に未割当",
@@ -134,7 +134,7 @@ JA: dict[str, str] = {
     "naan.lede": "<b>NAA ポリシーは名前空間を配る側の宣言</b>です。"
                  "この NAAN の配下すべてにかかるので、機関単位では変えられません"
                  "（機関が自分について述べるのは<b>約束の水準</b>のほう）。",
-    "naan.f.naan": "機関番号（NAAN）",
+    "naan.f.naan": "番号（NAAN）",
     "naan.f.naan_hint": "ARK Alliance から交付された番号。<b>後から変えられません。</b>",
     "naan.f.name": "機関名",
     "naan.f.description": "説明",
@@ -159,7 +159,7 @@ JA: dict[str, str] = {
     "manager.lede": "<b>約束の水準は機関自身の宣言</b>です。"
                     "だから機関管理者も自分の分は変えられます——"
                     "採番上限はそうではありません（配った側が課すもの）。",
-    "manager.f.naan": "機関番号（NAAN）",
+    "manager.f.naan": "番号（NAAN）",
     "manager.f.name": "機関名",
     "manager.f.name_hint": "<b>内部専用です。</b>公開しません"
                            "（shoulder から機関が読めてはいけないため）。",
@@ -183,7 +183,7 @@ JA: dict[str, str] = {
     "shoulder.lede": "<b>一度配った名前空間は取り戻せません。</b>"
                      "<code>NR</code> を宣言している以上、既存の ARK は解決し続けます。"
                      "使わなくなったものは消すのではなく <b>retired</b> にします。",
-    "shoulder.f.naan": "機関番号（NAAN）",
+    "shoulder.f.naan": "番号（NAAN）",
     "shoulder.f.shoulder": "shoulder",
     "shoulder.f.shoulder_hint": "<code>/x9</code> のように <code>/</code> で始めます。",
     "shoulder.f.manager": "機関",
@@ -229,7 +229,7 @@ EN: dict[str, str] = {
                "issues identifiers within it. <b>How far each institution undertakes to "
                "keep those identifiers working is also its own to state</b>: that is the "
                "commitment level shown on each row.",
-    "ov.naans": "Authority numbers (NAAN)",
+    "ov.naans": "Numbers (NAAN)",
     "ov.authoritative": "run here (authoritative)",
     "ov.delegated_to": "delegated to",
     "ov.no_manager": "not assigned",
@@ -311,7 +311,7 @@ EN: dict[str, str] = {
                  "out.</b> It covers everything under this NAAN, so an institution "
                  "cannot change it — what an institution states about itself is its "
                  "<b>commitment level</b>.",
-    "naan.f.naan": "Authority number (NAAN)",
+    "naan.f.naan": "Number (NAAN)",
     "naan.f.naan_hint": "The number issued by the ARK Alliance. <b>It cannot be changed "
                         "later.</b>",
     "naan.f.name": "Institution",
@@ -338,7 +338,7 @@ EN: dict[str, str] = {
                     "which is why an institutional administrator may change their own. "
                     "The minting limit is not — that is imposed by the side handing the "
                     "namespace out.",
-    "manager.f.naan": "Authority number (NAAN)",
+    "manager.f.naan": "Number (NAAN)",
     "manager.f.name": "Institution",
     "manager.f.name_hint": "<b>Internal only.</b> Never published — a shoulder must not "
                            "reveal which institution holds it.",
@@ -364,7 +364,7 @@ EN: dict[str, str] = {
     "shoulder.lede": "<b>A namespace once handed out cannot be taken back.</b> Having "
                      "declared <code>NR</code>, existing ARKs go on resolving. One you "
                      "stop using is <b>retired</b>, not deleted.",
-    "shoulder.f.naan": "Authority number (NAAN)",
+    "shoulder.f.naan": "Number (NAAN)",
     "shoulder.f.shoulder": "Shoulder",
     "shoulder.f.shoulder_hint": "Begins with <code>/</code>, as in <code>/x9</code>.",
     "shoulder.f.manager": "Institution",
