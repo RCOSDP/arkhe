@@ -9,6 +9,13 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **`arkhe ark list`.** The admin screen listed minted ARKs; the CLI could not. Both
+  now go through the same query (`domain/queries.py`) — **write reach in two places and
+  the two drift**. It stops at 50 by default and says so on stderr, with the `--offset`
+  to continue from; silence would read as "that is all of them".
+
 ## [0.0.6] — 2026-08-29
 
 **A build-only release: the same commit now builds into the same thing.** Nothing under
