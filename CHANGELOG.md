@@ -9,77 +9,87 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.3] — 2026-08-29
+
+The admin interface went from a page that only mints to one that **builds the
+ledger**. As in 0.0.2, every defect here was found by actually using the interface;
+none of them showed up in the test suite.
+
 ### Added
 
-- The documentation now states that "users" in the interface and "principals" in the
-  API and CLI are the same thing. **The two words stay**, because the readers differ:
-  the interface is read by whoever operates the service, the API and CLI by whoever
-  writes against them. The mapping appears in both the admin guide and the CLI
-  reference.
-- The word for the entity a namespace is delegated to is now **organisation**
-  throughout the interface and the documentation, and a NAAN is an "organisation
-  number (NAAN)" — it is a *Name Assigning Authority Number*, and the number belongs
-  to the organisation.
-- The CLI speaks Japanese and English. The language is decided from the environment
-  at startup — `ARKHE_LANG`, then `LC_ALL` / `LC_MESSAGES` / `LANG` in POSIX order,
-  defaulting to `ja` as the admin interface does. Typer assembles its help at import
-  time, so a runtime `--lang` cannot work.
-- The admin interface can now build the ledger, not only mint. **Four buttons on the
-  overview — register a NAAN, onboard an organisation, carve out a shoulder, manage
-  one — pointed at routes that did not exist and returned 404.** They now work, and
-  NAAN and organisation settings pages were added alongside them.
-- `arkhe manager list` and `arkhe manager commitment`, and `--commitment` on
-  `arkhe onboard`. The commitment level was published by `?` and `??` but **could not
-  be set** — every organisation silently carried the default `permanent-dynamic`. That
-  meant claiming, in the organisation's name, a commitment it never made; publishing an
-  undeclared default as a declaration is worse than publishing nothing. Onboarding
-  without `--commitment` now says so on stderr. Unknown levels are refused.
+- **The admin interface can now build the ledger.** The four buttons on the overview
+  — register a NAAN, onboard an organisation, carve out a shoulder, manage one —
+  **pointed at routes that did not exist and returned 404**. They now work, and
+  settings pages for NAANs, organisations and shoulders were added alongside them.
+- **The commitment level can be set** (`arkhe manager commitment`,
+  `arkhe onboard --commitment`, and the admin interface). It was published by `?` and
+  `??` but could not be set, so every organisation silently carried the default
+  `permanent-dynamic` — claiming, in the organisation's name, a commitment it never
+  made. **Publishing an undeclared default as a declaration is worse than publishing
+  nothing.** Onboarding without `--commitment` now says so on stderr, and unknown
+  levels are refused. **An organisation's own administrator may change theirs**: the
+  commitment is the organisation's, and a declaration nobody can make is not a
+  declaration.
+- `arkhe manager list`. Organisation ids are input to other commands, but nothing
+  listed them.
 - `set_quota`, so a minting limit can be changed after onboarding rather than only at
-  it. An organisation cannot change its own: a limit the receiving side can lift is not
-  a limit.
-- The overview page is called **Organisations** rather than "Delegation", and its
-  explanation is written for someone opening the ledger for the first time. The terms
-  are kept in parentheses — "namespace (shoulder)", "Permanent; content may change
-  (permanent-dynamic)" — so the plain wording reads on its own while still lining up
-  with the specification, the CLI and the API. Commitment levels no longer appear as
-  bare machine values. Buttons say what they do: "Add an organisation", not "Onboard an
-  organisation"; "Add a namespace", not "Carve out a shoulder". The form for adding an
-  organisation now says up front that it hands over a namespace at the same time.
-  (Registering a NAAN keeps its own name: there is no plainer word for it than the
-  term itself.) "Principals & credentials" is now "Users & keys" — what is listed
-  there is not the organisations themselves but their systems and their people — and
-  the minting form asks for a *namespace to mint in*, since what is chosen there is a
-  NAAN and a shoulder together, not a shoulder alone. A NAAN's name field is now
-  "Organisation" rather than "Organisation".
+  it. An organisation cannot change its own: a limit the receiving side can lift is
+  not a limit.
+- **The CLI speaks Japanese and English.** The language is decided from the
+  environment at startup — `ARKHE_LANG`, then `LC_ALL` / `LC_MESSAGES` / `LANG` in
+  POSIX order, defaulting to `ja` as the admin interface does. Typer assembles its
+  help at import time, so a runtime `--lang` cannot work.
+- **A guide for setting up from scratch**, in both languages, covering the steps that
+  happen **outside** arkhe as well — requesting a NAAN, and registering your
+  resolver's URL in the NAAN registry. Miss the latter and `n2t.net/ark:/99999/…`
+  never reaches you.
 - `compose/oidc/lan.yml`, for viewing the demo from another machine on the LAN.
   Publishing on `0.0.0.0` is not enough on its own: the issuer and redirect_uri have
   to be the URL the browser actually types, so they are parameterised by
   `ARKHE_DEMO_HOST` and the redirect is registered at startup rather than baked into
   the realm JSON. The default binding stays on `127.0.0.1` — this stack carries its
   secrets in the clear.
-- A guide for setting up from scratch, covering the steps that happen **outside**
-  arkhe as well — requesting a NAAN, and registering your resolver's URL in the NAAN
-  registry. Miss the latter and `n2t.net/ark:/99999/…` never reaches you.
+
+### Changed
+
+- **The interface is written for someone opening the ledger for the first time.** The
+  overview is called **Organisations** rather than "Delegation". Buttons say what they
+  do: "Add an organisation", not "Onboard an organisation"; "Add a namespace", not
+  "Carve out a shoulder". The form for adding an organisation says up front that it
+  hands over a namespace at the same time. "Principals & credentials" is now "Users &
+  keys" — what is listed there is not the organisations themselves but their systems
+  and their people — and the minting form asks for a *namespace to mint in*, since
+  what is chosen there is a NAAN and a shoulder together, not a shoulder alone.
+  Commitment levels no longer appear as bare machine values.
+- **The terms are kept, in parentheses**: "namespace (shoulder)", "Permanent; content
+  may change (permanent-dynamic)". The plain wording comes first and the term follows,
+  so a newcomer can read it as it stands and someone who knows the term can line it up
+  with the specification, the CLI and the API.
+- The word for the entity a namespace is delegated to is now **organisation**
+  throughout, and a NAAN is an "organisation number (NAAN)" — it is a *Name Assigning
+  Authority Number*, and the number belongs to the organisation.
+- The documentation states that "users" in the interface and "principals" in the API
+  and CLI are the same thing. **The two words stay**, because the readers differ.
 
 ### Fixed
 
-- Logging out did not log you out. The session cookie was cleared, but **the
-  authorization server's session was left standing**, so opening the interface again
+- **Logging out did not log you out.** The session cookie was cleared, but the
+  authorization server's session was left standing, so opening the interface again
   signed you straight back in without asking. Under OIDC the logout now ends that
   session too (RP-Initiated Logout). No `id_token_hint` is sent: carrying the ID token
   in the cookie would push it past 4 KB where claims are numerous, and **the browser
   would silently drop it, breaking sign-in instead**. Authorization servers with no
   `end_session_endpoint` fall back to a local logout.
+- **The NAA policy could be rewritten by an organisation's administrator.** It is the
+  declaration of the side handing namespaces out and covers every organisation under
+  the NAAN, so one of them must not be able to restate it for the others. It now
+  requires NAAN scope or wider. What an organisation states about itself is its
+  commitment level, which its own administrator *can* change — the split follows ARK's
+  delegation structure rather than a permissions table.
 - The NAAN settings page could be opened by an organisation's administrator, who was
   then refused on save. A form that looks editable but is not is the same defect as a
   hidden button whose URL still works; the condition to open it now matches the
   condition to save it.
-- The NAA policy could be rewritten by an organisation's administrator. It is the
-  declaration of the side handing namespaces out and covers **every organisation under
-  the NAAN**, so one of them must not be able to restate it for the others. It now
-  requires NAAN scope or wider. What an organisation states about itself is its
-  commitment level, which its own administrator *can* change — the split follows ARK's
-  delegation structure rather than a permissions table.
 
 ## [0.0.2] — 2026-08-28
 
@@ -148,6 +158,7 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.3
 [0.0.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.2
 [0.0.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.1
