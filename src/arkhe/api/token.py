@@ -13,13 +13,39 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Form, Request, Response
+from fastapi.openapi.models import OAuthFlowClientCredentials, OAuthFlows
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2
 
+from arkhe.api import i18n
 from arkhe.auth import oauth2
 from arkhe.auth.deps import Config, Db
 from arkhe.auth.errors import AuthError, Forbidden
+from arkhe.domain import authz
 
 router = APIRouter(prefix="/oauth", tags=["oauth"])
+
+#: **仕様書にも「ここで取る」と書く。** これを依存に置いた口には `securitySchemes`
+#: の `oauth2` が載り、Swagger UI の Authorize からトークンを取れる。生成した
+#: クライアントも取得手順を持てる——エンドポイントの URL は README にしか無かった。
+#:
+#: **値は使わない**（`bearer_scheme` と同じで、載せるためだけの依存）。検証は
+#: `auth.deps` の 1 か所に集める。`auto_error=False` なのも同じ理由で、
+#: 公開情報の読取をここで 403 にしない。
+#:
+#: scope の語彙は `authz.SCOPES`、その説明は管理画面と同じ語から起こす。
+#: **3 か所目を作らない**——増えると、登録できるのに説明の無い scope が生まれる。
+scheme = OAuth2(
+    scheme_name="oauth2",
+    description="arkhe が自分で発行するトークン（RFC 6749 §4.4 client_credentials）。",
+    flows=OAuthFlows(
+        clientCredentials=OAuthFlowClientCredentials(
+            tokenUrl=f"{router.prefix}/token",
+            scopes={s: i18n.EN[f"sc.{s}"] for s in authz.SCOPES},
+        )
+    ),
+    auto_error=False,
+)
 
 
 @router.post("/token", summary="アクセストークンを発行する（client_credentials）")

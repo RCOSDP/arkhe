@@ -315,3 +315,44 @@ def test_解決は読み取り側の接続を使う(monkeypatch):
         assert next(gen).get_bind() is read
     finally:
         gen.close()
+
+
+def _spec(**over):
+    from arkhe.app import create_app
+    from arkhe.settings import Settings
+
+    base = dict(database_url="sqlite://", admin_login="bearer", token_secret="x" * 48)
+    return create_app(Settings(**(base | over))).openapi()
+
+
+def test_トークンの取り方が仕様書に載る():
+    """**「どこで取るか」を機械可読で言う。** URL は README にしかなく、OpenAPI
+    からクライアントを起こすと認証の取得手順が落ちていた。
+
+    広告した URL が実在することまで見る——prefix を変えたときに、仕様書だけが
+    古い場所を指し続けるのを防ぐ。
+    """
+    from arkhe.domain import authz
+
+    spec = _spec(auth=["apikey", "oauth2"])
+    flow = spec["components"]["securitySchemes"]["oauth2"]["flows"]["clientCredentials"]
+
+    assert flow["tokenUrl"] in spec["paths"]              # 実在する口を指している
+    assert set(flow["scopes"]) == set(authz.SCOPES)       # 語彙は 1 か所から
+    assert "security" not in spec["paths"][flow["tokenUrl"]]["post"]  # 取る口自体は素通し
+
+    # **bearer と並ぶ**（どちらでもよい）。片方に寄せると、apikey での利用が
+    # 仕様書の上では通らないことになる。
+    assert {"oauth2": []} in spec["paths"]["/api/mint"]["post"]["security"]
+    assert {"bearer": []} in spec["paths"]["/api/mint"]["post"]["security"]
+
+
+@pytest.mark.parametrize(
+    "over", [{"auth": ["apikey"]}, {"resolver": True, "auth": ["apikey"]}],
+    ids=["minter-apikey", "resolver"],
+)
+def test_口の無い構成では取り方を広告しない(over):
+    """**無い口を指さない。** 広告だけ残ると、生成したクライアントが 404 を踏む。"""
+    spec = _spec(**over)
+    assert "oauth2" not in spec.get("components", {}).get("securitySchemes", {})
+    assert "/oauth/token" not in spec["paths"]

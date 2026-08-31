@@ -11,6 +11,45 @@
     "version": "0.0.9"
   },
   "paths": {
+    "/oauth/token": {
+      "post": {
+        "tags": [
+          "oauth"
+        ],
+        "summary": "アクセストークンを発行する（client_credentials）",
+        "description": "RFC 6749 §4.4 の client_credentials。\n\n資格情報は **本文でも Basic 認証でも**受ける（§2.3.1 は Basic を推奨し、\n本文も認めている。既存のクライアントライブラリはどちらも使う）。",
+        "operationId": "token_oauth_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_token_oauth_token_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/mint": {
       "post": {
         "tags": [
@@ -51,6 +90,9 @@
           }
         },
         "security": [
+          {
+            "oauth2": []
+          },
           {
             "bearer": []
           }
@@ -97,6 +139,9 @@
           }
         },
         "security": [
+          {
+            "oauth2": []
+          },
           {
             "bearer": []
           }
@@ -145,6 +190,9 @@
         },
         "security": [
           {
+            "oauth2": []
+          },
+          {
             "bearer": []
           }
         ]
@@ -191,6 +239,9 @@
           }
         },
         "security": [
+          {
+            "oauth2": []
+          },
           {
             "bearer": []
           }
@@ -239,6 +290,9 @@
         },
         "security": [
           {
+            "oauth2": []
+          },
+          {
             "bearer": []
           }
         ]
@@ -285,6 +339,9 @@
           }
         },
         "security": [
+          {
+            "oauth2": []
+          },
           {
             "bearer": []
           }
@@ -333,6 +390,9 @@
         },
         "security": [
           {
+            "oauth2": []
+          },
+          {
             "bearer": []
           }
         ]
@@ -379,6 +439,9 @@
           }
         },
         "security": [
+          {
+            "oauth2": []
+          },
           {
             "bearer": []
           }
@@ -427,48 +490,12 @@
         },
         "security": [
           {
+            "oauth2": []
+          },
+          {
             "bearer": []
           }
         ]
-      }
-    },
-    "/oauth/token": {
-      "post": {
-        "tags": [
-          "oauth"
-        ],
-        "summary": "アクセストークンを発行する（client_credentials）",
-        "description": "RFC 6749 §4.4 の client_credentials。\n\n資格情報は **本文でも Basic 認証でも**受ける（§2.3.1 は Basic を推奨し、\n本文も認めている。既存のクライアントライブラリはどちらも使う）。",
-        "operationId": "token_oauth_token_post",
-        "requestBody": {
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_token_oauth_token_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
       }
     }
   },
@@ -1052,6 +1079,22 @@
       }
     },
     "securitySchemes": {
+      "oauth2": {
+        "type": "oauth2",
+        "description": "arkhe が自分で発行するトークン（RFC 6749 §4.4 client_credentials）。",
+        "flows": {
+          "clientCredentials": {
+            "scopes": {
+              "ark:mint": "Mint",
+              "ark:update": "Change where it points",
+              "ark:read": "Read",
+              "ark:tombstone": "Declare it lost",
+              "ark:hold": "Suspend forwarding"
+            },
+            "tokenUrl": "/oauth/token"
+          }
+        }
+      },
       "bearer": {
         "type": "http",
         "description": "API キー（apikey モード）、arkhe が発行したトークン（oauth2 モード）、外部の認可サーバが発行した JWT（oidc モード）のいずれか。有効な機構は ARKHE_AUTH で決まる。",

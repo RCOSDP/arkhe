@@ -8,6 +8,23 @@
 
 ## [未リリース]
 
+### 追加
+
+- **トークンの取り方が OpenAPI に載るようになった。** `securitySchemes` に
+  `clientCredentials` フロー（`tokenUrl` と scope の一覧）が無く、「これは OAuth 2.0
+  である」と機械可読な形では言っていなかった——エンドポイントの URL は README と
+  手引きにしか無く、仕様書からクライアントを起こすと認証の取得手順が落ちた。
+  Swagger UI の Authorize からもトークンを取れる。
+
+  **`ARKHE_AUTH` に `oauth2` を含む構成でだけ載せる。** 口の無い構成で広告すると、
+  生成したクライアントが取りに行って 404 を踏む。scope の語彙は `authz.SCOPES` から、
+  その説明は管理画面と同じ語から起こしている。
+
+- **トークンを保ち回して使う作法**を[認証の手引き](https://rcosdp.github.io/arkhe/ja/guides/authentication/)に書いた。
+  `expires_in` が尽きる手前で取り直すもので、**API 1 回ごとに取り直すものではない**
+  ——発行のたびに `client_secret` を Argon2 で照合するので、そうすると `apikey` と
+  同じ重さを払ったうえに往復が 1 回増える。
+
 ### 修正
 
 - **`ark:hold` の語が日英とも欠けていて、管理画面に `sc.ark:hold` という生のキーが

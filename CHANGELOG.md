@@ -9,6 +9,25 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **The OpenAPI document now says how to get a token.** There was no
+  `clientCredentials` flow in `securitySchemes` — no `tokenUrl`, no scope list — so
+  nothing stated in machine-readable form that this is OAuth 2.0. The endpoint's URL
+  lived only in the README and the guide, so a client generated from the specification
+  had no way to authenticate. Swagger UI's Authorize button now works too.
+
+  **It is advertised only where `ARKHE_AUTH` includes `oauth2`**; advertising an
+  endpoint a deployment does not serve would send generated clients into a 404. The
+  scope vocabulary comes from `authz.SCOPES`, and the wording from the same terms the
+  admin interface uses.
+
+- **How to hold on to a token** is now in
+  [the authentication guide](https://rcosdp.github.io/arkhe/guides/authentication/):
+  fetch a new one shortly before `expires_in` runs out, **not once per API call** —
+  issuing a token verifies `client_secret` with Argon2, so fetching per call pays the
+  same cost as `apikey` and adds a round trip on top.
+
 ### Fixed
 
 - **The `ark:hold` scope had no label in either language, so the admin interface showed
