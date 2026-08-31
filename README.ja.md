@@ -53,7 +53,7 @@ cd compose/oidc && docker compose up -d --build
 採番の口も無い**（別々にスケールさせ、resolver を読み取り専用ロールとレプリカに
 向けるため）。
 
-データモデルは [`docs/data-model.ja.md`](docs/data-model.ja.md)（ER 図）。
+データモデルは [`docs/reference/data-model.ja.md`](docs/reference/data-model.ja.md)（ER 図）。
 
 ## 認証
 
@@ -181,7 +181,7 @@ introspection、revocation。これらが要るようになったら、その時
 
 ```bash
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 184 tests
+python -m pytest -q          # 403 件（2026-08 時点）
 python -m ruff check src tests
 
 # 台帳を組み立てる

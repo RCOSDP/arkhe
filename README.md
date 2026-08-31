@@ -59,7 +59,7 @@ Set `ARKHE_RESOLVER=1` to run as a resolver. **A minter has no resolution endpoi
 and a resolver has no minting endpoint** — so the two can be scaled separately and
 the resolver can be pointed at a read-only role and a replica.
 
-The data model is in [`docs/data-model.md`](docs/data-model.md), with an ER diagram.
+The data model is in [`docs/reference/data-model.md`](docs/reference/data-model.md), with an ER diagram.
 
 ## Authentication
 
@@ -221,7 +221,7 @@ They **combine** — `ARKHE_AUTH=apikey,oidc` is a normal thing to want while mi
 
 ```bash
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 184 tests
+python -m pytest -q          # 403 tests (2026-08)
 python -m ruff check src tests
 
 # Build up the ledger
