@@ -10,6 +10,20 @@
 
 ### 追加
 
+- **口ごとに、要求する scope が仕様書に出るようになった。** これまでは
+  `{"oauth2": []}`——「トークンで入れる」とは書いてあるが、**何が要るかは書いていない**
+  ので、仕様書から起こしたクライアントは全部入りの scope を要求するしかなかった。
+
+      POST /api/mint       {"oauth2": ["ark:mint"]}
+      PUT  /api/tombstone  {"oauth2": ["ark:tombstone"]}
+      POST /api/query      {"oauth2": ["ark:read"]}
+
+  scope を載せるのは oauth2 の要求だけ。`bearer` は `type: http` で、**OpenAPI は
+  oauth2 以外のスキームに scope を書くことを許さない**（空配列でなければならない）。
+  宣言と本体の検査が一致することは、検査で固定してある。
+
+### 追加
+
 - **トークンの取り方が OpenAPI に載るようになった。** `securitySchemes` に
   `clientCredentials` フロー（`tokenUrl` と scope の一覧）が無く、「これは OAuth 2.0
   である」と機械可読な形では言っていなかった——エンドポイントの URL は README と

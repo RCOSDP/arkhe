@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import text
 
@@ -216,16 +216,40 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     from arkhe.api import admin, mint
 
-    advertise: list = []
     if "oauth2" in s.auth:
         # **自前でトークンを配るときだけ口を開ける。** 使わない構成に
         # 認可サーバの入口を生やさない。
         from arkhe.api import token
 
         app.include_router(token.router)
-        # **仕様書の記述も同じ条件で出す。** 口が無い構成で「ここで取れる」と
-        # 広告すると、生成したクライアントが取りに行って 404 を踏む。
-        advertise = [Depends(token.scheme)]
-    app.include_router(mint.router, dependencies=advertise)
+    else:
+        # **口が無いなら広告も出さない。** 「ここで取れる」と書いてある仕様書から
+        # クライアントを起こすと、取りに行って 404 を踏む。
+        #
+        # 刈り取る形にしているのは、**scope は口ごと・広告の可否は app ごと**に
+        # 決まるため。口は import の時点で組まれるので、そこで条件を見られない
+        # （`mint.needs()` を見よ）。
+        _hide_oauth2(app)
+    app.include_router(mint.router)
     app.include_router(admin.router)
     return app
+
+
+def _hide_oauth2(app: FastAPI) -> None:
+    """`oauth2` を提供しない構成の仕様書から、その広告を取り除く。"""
+    build = app.openapi
+
+    def openapi() -> dict:
+        schema = build()
+        if schema.get("components", {}).get("securitySchemes", {}).pop("oauth2", None) is None:
+            return schema  # 既に取り除いてある（FastAPI が結果を覚えている）
+        for methods in schema.get("paths", {}).values():
+            for op in methods.values():
+                if not (req := op.get("security")):
+                    continue
+                op["security"] = [x for x in req if "oauth2" not in x]
+                if not op["security"]:
+                    del op["security"]
+        return schema
+
+    app.openapi = openapi

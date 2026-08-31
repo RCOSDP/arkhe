@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Security
 from sqlalchemy import select
 
 from arkhe.api.schemas import (
@@ -23,12 +23,27 @@ from arkhe.api.schemas import (
     TombstoneIn,
     UpdateIn,
 )
+from arkhe.api.token import scheme as oauth2_scheme
 from arkhe.auth.deps import Config, CurrentPrincipal, Db
 from arkhe.db.models import Ark, MintReceipt
 from arkhe.domain import admin_ops, authz, minting
 from arkhe.domain.queries import ark_key_from_input
 
 router = APIRouter(prefix="/api", tags=["ark"])
+
+
+def needs(scope: str) -> list:
+    """**この口が要求する scope を宣言する。** 仕様書の security requirement に出る
+    ——`{"oauth2": ["ark:mint"]}` のように、口ごとに何が要るかが機械可読になる。
+
+    **弾くのは本体の `require_scope` のまま。** 宣言と検査が 2 か所に分かれるので、
+    一致することを検査で固定してある（`test_宣言した scope と検査する scope が一致する`）。
+
+    scope を載せるのは oauth2 の要求だけである。`bearer` は `type: http` で、
+    **OpenAPI では oauth2 以外のスキームに scope を書けない**（空配列でなければ
+    ならない）——ここで `Security` に包む対象を `oauth2_scheme` に限る理由。
+    """
+    return [Security(oauth2_scheme, scopes=[scope])]
 
 
 def _key(raw: str) -> str:
@@ -79,6 +94,7 @@ def _apply(ark: Ark, data: dict, principal) -> Ark:
 
 @router.post(
     "/mint",
+    dependencies=needs("ark:mint"),
     response_model=ArkOut,
     status_code=201,
     # **再送は 201 では返らない。** 宣言しないと、生成クライアントが 200 を
@@ -119,6 +135,7 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
 
 @router.post(
     "/mint/bulk",
+    dependencies=needs("ark:mint"),
     response_model=BulkMintOut,
     status_code=201,
     responses={200: {"model": BulkMintOut, "description": "全件が再送だった"}},
@@ -198,7 +215,7 @@ def bulk_mint(
     )
 
 
-@router.post("/register", response_model=ArkOut, status_code=201)
+@router.post("/register", dependencies=needs("ark:mint"), response_model=ArkOut, status_code=201)
 def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
     """B4: **既存 ARK に修飾子を付けた行を登録する。**
 
@@ -231,7 +248,11 @@ def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
 # ------------------------------------------------------------------- 更新
 
 
-@router.put("/update", response_model=ArkOut)
+@router.put(
+    "/update",
+    dependencies=needs("ark:update"),
+    response_model=ArkOut,
+)
 def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
     """既存 ARK を更新する。**対象の shoulder の manager を照合する**（M3）。"""
     authz.require_scope(principal, "ark:update")
@@ -246,7 +267,11 @@ def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
     return ArkOut.of(ark)
 
 
-@router.put("/update/bulk", response_model=BulkUpdateOut)
+@router.put(
+    "/update/bulk",
+    dependencies=needs("ark:update"),
+    response_model=BulkUpdateOut,
+)
 def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     """M5: **辞書で引き当て、部分適用しない。**"""
     authz.require_scope(principal, "ark:update")
@@ -266,7 +291,11 @@ def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cf
     return BulkUpdateOut(updated=len(rows))
 
 
-@router.put("/tombstone", response_model=ArkOut)
+@router.put(
+    "/tombstone",
+    dependencies=needs("ark:tombstone"),
+    response_model=ArkOut,
+)
 def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
     """**対象が失われたと宣言する。** ARK は削除しない。
 
@@ -295,7 +324,11 @@ def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
 # --------------------------------------------------------------- 転送の保留
 
 
-@router.put("/hold", response_model=ArkOut)
+@router.put(
+    "/hold",
+    dependencies=needs("ark:hold"),
+    response_model=ArkOut,
+)
 def hold(body: HoldIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     """**転送を一時的に止める。** 解決は止めない——記述は返り続ける。
 
@@ -318,7 +351,11 @@ def hold(body: HoldIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     return ArkOut.of(ark)
 
 
-@router.put("/hold/release", response_model=ArkOut)
+@router.put(
+    "/hold/release",
+    dependencies=needs("ark:hold"),
+    response_model=ArkOut,
+)
 def hold_release(body: HoldReleaseIn, principal: CurrentPrincipal, session: Db):
     """期限を待たずに保留を外す。**期限切れは時計が勝手に外す**ので、これは前倒し。"""
     authz.require_scope(principal, "ark:hold")
@@ -328,7 +365,11 @@ def hold_release(body: HoldReleaseIn, principal: CurrentPrincipal, session: Db):
     return ArkOut.of(ark)
 
 
-@router.post("/query", response_model=BulkQueryOut)
+@router.post(
+    "/query",
+    dependencies=needs("ark:read"),
+    response_model=BulkQueryOut,
+)
 def bulk_query(body: BulkQueryIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     """M4: **読み取りも到達範囲に絞る**（arklet は認可を一切していなかった）。"""
     authz.require_scope(principal, "ark:read")
