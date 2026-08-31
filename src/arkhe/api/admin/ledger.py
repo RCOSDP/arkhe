@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import Form, Request
@@ -36,6 +37,7 @@ from arkhe.db.models import (
 )
 from arkhe.domain import admin_ops as ops
 from arkhe.domain import authz
+from arkhe.settings import get_settings
 
 # ------------------------------------------------------------------ 委譲の構造
 
@@ -126,6 +128,9 @@ def naan_create(
     self_register: Annotated[str, Form()] = "",
     max_scopes: Annotated[list[str], Form()] = None,
     rules: Annotated[str, Form()] = "",
+    hold_days: Annotated[int, Form()] = 0,
+    hold_reason: Annotated[str, Form()] = "",
+    hold_release: Annotated[str, Form()] = "",
 ):
     ops.create_naan(
         session, principal, naan=naan.strip(), name=name.strip(), na_policy=policy.strip(),
@@ -154,7 +159,8 @@ def naan_edit(request: Request, principal: AdminPrincipal, session: Db, naan: st
     if obj is None or not principal.is_naan_wide or not principal.reaches_naan(naan):
         raise Forbidden(f"NAAN {naan} はこの主体の範囲外")
     return _page(request, principal, "naan_form.html", "overview", naan=obj,
-                 mechanisms=ops.MECHANISMS, scopes=authz.SCOPES)
+                 mechanisms=ops.MECHANISMS, scopes=authz.SCOPES,
+                 hold_max=get_settings().hold_max_days)
 
 
 @router.post("/naan/{naan}")
@@ -169,6 +175,9 @@ def naan_save(
     self_register: Annotated[str, Form()] = "",
     max_scopes: Annotated[list[str], Form()] = None,
     rules: Annotated[str, Form()] = "",
+    hold_days: Annotated[int, Form()] = 0,
+    hold_reason: Annotated[str, Form()] = "",
+    hold_release: Annotated[str, Form()] = "",
 ):
     """**NAA ポリシーは名前空間を配る側の宣言。** NAAN 単位以上でしか変えられない。
 
@@ -189,8 +198,28 @@ def naan_save(
             raise Forbidden("採番の案内先の変更はシステム管理者のみ")
         obj.minter = minter.strip()
         authz.audit(session, principal, "set_minter", naan, minter=obj.minter)
+    _apply_hold(
+        session, principal, kind="naan", key=naan,
+        days=hold_days, reason=hold_reason, release=hold_release,
+    )
     session.commit()
     return _redirect(f"/admin/naan/{naan}?saved=1")
+
+
+def _apply_hold(session, principal, *, kind, key, days: int, reason: str, release: str):
+    """画面のフォームから保留を掛ける／外す。**CLI と同じ `admin_ops` を呼ぶ。**
+
+    日数が 0 なら何もしない——保存のたびに「掛け直す」ことになると、
+    期限が延び続けて恒久になる。
+    """
+    if release:
+        ops.release_hold(session, principal, kind=kind, key=key)
+    elif days:
+        ops.set_hold(
+            session, principal, kind=kind, key=key,
+            until=datetime.now(UTC) + timedelta(days=days),
+            reason=reason.strip(), max_days=get_settings().hold_max_days,
+        )
 
 
 @router.get("/manager/new", response_class=HTMLResponse)
@@ -330,6 +359,7 @@ def shoulder_edit(request: Request, principal: AdminPrincipal, session: Db, shou
     return _page(
         request, principal, "shoulder_form.html", "overview",
         shoulder=sh, naans=[], statuses=list(ShoulderStatus),
+        hold_max=get_settings().hold_max_days,
     )
 
 
@@ -343,6 +373,9 @@ def shoulder_save(
     minter: Annotated[str, Form()] = "",
     redirect: Annotated[str, Form()] = "",
     note: Annotated[str, Form()] = "",
+    hold_days: Annotated[int, Form()] = 0,
+    hold_reason: Annotated[str, Form()] = "",
+    hold_release: Annotated[str, Form()] = "",
 ):
     """**retired からは戻せない。** その判定は `admin_ops` 側が持っている。"""
     sh = session.get(Shoulder, shoulder_id)
@@ -357,7 +390,23 @@ def shoulder_save(
         ops.set_shoulder_redirect(
             session, principal, shoulder_id=shoulder_id, redirect=redirect.strip()
         )
+    _apply_hold(
+        session, principal, kind="shoulder", key=shoulder_id,
+        days=hold_days, reason=hold_reason, release=hold_release,
+    )
     session.commit()
     return _redirect(f"/admin/shoulder/{shoulder_id}?saved=1")
 
 
+
+
+# ------------------------------------------------------------ 保留中の転送
+#
+# **期限つきでも、目に見えないと恒久化する。** 掛けた人が忘れても、一覧に
+# 残っていれば誰かが気づく。
+
+
+@router.get("/holds", response_class=HTMLResponse)
+def holds(request: Request, principal: AdminPrincipal, session: Db):
+    """今かかっている保留を、層をまたいで 1 枚に並べる。"""
+    return _page(request, principal, "holds.html", "holds", holds=ops.held(session, principal))

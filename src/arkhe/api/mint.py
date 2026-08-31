@@ -16,21 +16,17 @@ from arkhe.api.schemas import (
     BulkQueryOut,
     BulkUpdateIn,
     BulkUpdateOut,
+    HoldIn,
+    HoldReleaseIn,
     MintIn,
     RegisterIn,
     TombstoneIn,
     UpdateIn,
 )
-from arkhe.arkspec.naming import (
-    ArkParseError,
-    ark_key,
-    normalize_structural,
-    parse_ark,
-    strip_hyphens,
-)
 from arkhe.auth.deps import Config, CurrentPrincipal, Db
 from arkhe.db.models import Ark, MintReceipt
-from arkhe.domain import authz, minting
+from arkhe.domain import admin_ops, authz, minting
+from arkhe.domain.queries import ark_key_from_input
 
 router = APIRouter(prefix="/api", tags=["ark"])
 
@@ -38,14 +34,13 @@ router = APIRouter(prefix="/api", tags=["ark"])
 def _key(raw: str) -> str:
     """`ark:/99999/xyz` でも `99999/xyz` でも受ける。
 
-    **解決側と同じ正規化を通す。** ここだけ素通しにすると、`…/x/` や `…/x..v` を
-    送ったクライアントが「同じ ARK」を更新できず 404 になる。
+    **正規化は `domain.queries` の 1 か所**（画面・CLI・API が同じ式を通る）。
+    ここで独自に書くと、API では触れる ARK が CLI では 404 になる。
     """
     try:
-        p = parse_ark(raw if raw.lower().startswith(("ark:", "http")) else f"ark:/{raw}")
-    except ArkParseError as exc:
+        return ark_key_from_input(raw)
+    except ValueError as exc:
         raise authz.Invalid({"ark": str(exc)}) from exc
-    return ark_key(p.naan, strip_hyphens(normalize_structural(p.name)))
 
 
 def _replay(session, principal, request_id: str) -> Ark | None:
@@ -239,6 +234,42 @@ def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
     ark.updated_by = principal.client_id
     authz.record_change(session, principal, ark, action="tombstone", before_url=before)
     authz.audit(session, principal, "tombstone", ark.ark)
+    session.commit()
+    return ArkOut.of(ark)
+
+
+# --------------------------------------------------------------- 転送の保留
+
+
+@router.put("/hold", response_model=ArkOut)
+def hold(body: HoldIn, principal: CurrentPrincipal, session: Db, cfg: Config):
+    """**転送を一時的に止める。** 解決は止めない——記述は返り続ける。
+
+    委譲先が落ちた、間違った行き先を配ってしまった、対象が移動中——急いで
+    止めたいが、識別子は殺したくない場面のためのもの。`404` は嘘（その識別子は
+    存在する）で、`503` は識別子が壊れて見えるので、**`200` と記述**を返す
+    経路（D6・tombstone と同じ）に乗せる。
+
+    **scope を `ark:update` と分けてある。** 止めるのは「どこにあるか」を書き換える
+    のとは別の判断で、公開の口に理由が出る。tombstone とも分ける——あちらは
+    「もう無い」という恒久の宣言で、こちらは**期限つきで、元の行き先を残す**。
+    """
+    authz.require_scope(principal, "ark:hold")
+    ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
+    admin_ops.set_hold(
+        session, principal, kind="ark", key=ark.ark,
+        until=body.until, reason=body.reason, max_days=cfg.hold_max_days,
+    )
+    session.commit()
+    return ArkOut.of(ark)
+
+
+@router.put("/hold/release", response_model=ArkOut)
+def hold_release(body: HoldReleaseIn, principal: CurrentPrincipal, session: Db):
+    """期限を待たずに保留を外す。**期限切れは時計が勝手に外す**ので、これは前倒し。"""
+    authz.require_scope(principal, "ark:hold")
+    ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
+    admin_ops.release_hold(session, principal, kind="ark", key=ark.ark)
     session.commit()
     return ArkOut.of(ark)
 

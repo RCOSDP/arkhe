@@ -89,6 +89,25 @@ class RegisterIn(ArkFields):
     qualifier: str = Field(description="`/`（包含）か `.`（変種）で始める")
 
 
+class HoldIn(BaseModel):
+    """転送の一時停止。**解決は止めない**（記述は返り続ける）。
+
+    `until` を必須にしてあるのは、「一時的」を人の記憶に頼ると恒久化するから。
+    `reason` を必須にしてあるのは、**公開の口（`?info`）に出る**うえ、外す判断に
+    要るから——理由の無い保留は、掛けた本人以外に外せない。
+    """
+
+    ark: str
+    until: datetime = Field(description="この時点まで転送しない。過去は受けない")
+    reason: str = Field(min_length=1, max_length=500, description="止めている理由")
+
+
+class HoldReleaseIn(BaseModel):
+    """期限を待たずに保留を外す。"""
+
+    ark: str
+
+
 class UpdateIn(ArkFields):
     ark: str
 
@@ -131,6 +150,9 @@ class ArkOut(BaseModel):
     when: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    #: 転送を止めているなら、その期限と理由。**止まっていることは隠さない。**
+    hold_until: datetime | None = None
+    hold_reason: str = ""
 
     @classmethod
     def of(cls, ark) -> ArkOut:
@@ -139,6 +161,8 @@ class ArkOut(BaseModel):
             **{f: getattr(ark, "metadata_" if f == "metadata" else f) for f in WRITABLE},
             created_at=ark.created_at,
             updated_at=ark.updated_at,
+            hold_until=ark.hold_until,
+            hold_reason=ark.hold_reason,
         )
 
 

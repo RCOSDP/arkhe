@@ -1,0 +1,22 @@
+{# 転送の保留。**shoulder と NAAN で同じものを出す**——同じ操作を 2 か所に
+   書き分けると、片方だけ直したときに挙動が割れる。
+   呼び出し側は `row`（保留の 3 列を持つ行）と `action`（POST 先）を渡す。 #}
+<fieldset class="field">
+  <legend>{{ t('hold.f.legend') }}
+    {% if row.hold_until %}<span class="pill reserved">{{ t('hold.f.on') }}</span>{% endif %}
+  </legend>
+  <p class="hint">{{ t('hold.f.lede')|safe }}</p>
+  {% if row.hold_until %}
+  <p class="hint"><b>{{ t('hold.f.until') }}</b>
+    <span class="mono">{{ row.hold_until.strftime('%Y-%m-%d %H:%M') }}</span>
+    — {{ row.hold_reason }}</p>
+  <label><input type="checkbox" name="hold_release" value="1"> {{ t('hold.f.release') }}</label>
+  {% else %}
+  <label for="hold_days">{{ t('hold.f.days') }}</label>
+  <input id="hold_days" name="hold_days" type="number" min="0" max="{{ hold_max }}" value="0">
+  <p class="hint">{{ t('hold.f.days_hint') }} {{ hold_max }}</p>
+  <label for="hold_reason">{{ t('hold.f.reason') }}</label>
+  <input id="hold_reason" name="hold_reason" maxlength="500">
+  <p class="hint">{{ t('hold.f.reason_hint')|safe }}</p>
+  {% endif %}
+</fieldset>

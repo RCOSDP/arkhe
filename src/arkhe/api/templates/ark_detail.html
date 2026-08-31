@@ -29,6 +29,41 @@
   </div>
 </div>
 
+{# **止めるのは転送だけ。** 削除でも「失われた宣言」でもないことが画面から
+   分かるようにしておく——ここを取り違えると、戻せない操作を戻せると思って押す。 #}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('ak.hold') }}</span>
+    {% if ark.hold_until %}<span class="pill reserved">{{ t('ak.hold_on') }}</span>{% endif %}
+  </div>
+  <div class="card-b">
+    <p class="hint" style="margin-top:0">{{ t('ak.hold_lede')|safe }}</p>
+    {% if ark.hold_until %}
+    <div class="kv">
+      <span class="k">{{ t('ak.hold_until') }}</span>
+      <span class="v mono">{{ ark.hold_until.strftime('%Y-%m-%d %H:%M') }}</span>
+      <span class="k">{{ t('ak.hold_reason') }}</span>
+      <span class="v">{{ ark.hold_reason }}</span>
+      <span class="k">{{ t('ak.by') }}</span>
+      <span class="v mono dim">{{ ark.hold_by }}</span>
+    </div>
+    <form method="post" action="/admin/arks/{{ ark.ark }}/hold" style="margin-top:14px">
+      <input type="hidden" name="release" value="1">
+      <button class="btn sm" type="submit">{{ t('ak.hold_off') }}</button>
+    </form>
+    {% else %}
+    <form method="post" action="/admin/arks/{{ ark.ark }}/hold" class="row">
+      <label>{{ t('ak.hold_days') }}
+        <input type="number" name="days" min="1" max="{{ hold_max }}" value="7" required>
+        <span class="hint">{{ t('ak.hold_days_hint') }} {{ hold_max }}</span></label>
+      <label>{{ t('ak.hold_reason') }}
+        <input type="text" name="reason" maxlength="500" required>
+        <span class="hint">{{ t('ak.hold_reason_hint')|safe }}</span></label>
+      <button class="btn sm" type="submit">{{ t('ak.hold_do') }}</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
 {# **`?` と `??` で公開されるのはこの内容。** 画面と公開面がずれていないかを
    ここで見られるようにする。空は出さない——ERC は「無い」ことを書かない書式。 #}
 <div class="card" style="margin-bottom:20px">

@@ -6,6 +6,15 @@
   <h1>{{ erc.what or erc.ark }}</h1>
   <p class="ark mono">{{ erc.ark }}</p>
 
+  {# **止まっていることを隠さない。** 転送しない理由が分からないと、利用者には
+     「壊れている」としか見えない——識別子が生きていることを、ここで言う。 #}
+  {% if hold %}
+  <p class="note"><b>この識別子は今、転送を止めています。</b>
+    {% if hold.reason %}{{ hold.reason }}{% endif %}
+    {% if hold.until %}<br><span class="dim">{{ hold.until }} までの一時的な措置です。
+      識別子は有効で、記述はこのとおり答え続けます。</span>{% endif %}</p>
+  {% endif %}
+
   {% if res.inherited_from %}
   <p class="note">この記述は <span class="mono">{{ erc.inherited_from }}</span> から継承しています
     （要求された名前は登録されていませんが、最も近い祖先の記述を返しています）。</p>
@@ -18,7 +27,8 @@
     <dt>where</dt>
     {# **安全なスキームのときだけリンクにする。** そうでなければ文字として出す
        ——踏めなければ実行されない。 #}
-    <dd>{% if erc.where and erc.where_safe %}<a href="{{ erc.where }}">{{ erc.where }}</a>
+    <dd>{% if hold %}<span class="dim">今は転送していません（保留中）</span>
+      {% elif erc.where and erc.where_safe %}<a href="{{ erc.where }}">{{ erc.where }}</a>
       {% elif erc.where %}<span class="mono">{{ erc.where }}</span>
       <span class="dim">（このスキームは開けません）</span>
         {% else %}<span class="dim">この ARK に転送先はありません（記述のみ）</span>{% endif %}</dd>

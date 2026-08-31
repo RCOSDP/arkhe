@@ -124,8 +124,7 @@ flowchart TD
 ```bash
 arkhe shoulder add 99999 /s7 --note "拠点 B へ委譲"
 arkhe shoulder status <id> delegated --minter https://ark.b.example.ac.jp
-# 解決の委譲（shoulder.redirect）は管理画面から設定する。CLI にはまだ無い
-#   → 台帳 › shoulder › 解決の委譲: 303 https://ark.b.example.ac.jp/ark:/$id
+arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:/$id'
 ```
 
 下位の台帳:
@@ -207,6 +206,25 @@ NOID＋検査桁でない名前を採ると、**上位経由の解決だけが 4
 
 **③ ホップは増える。** 上位が落ちれば、下位が生きていても外からは解決できない。
 **深さは 2 まで**にする。A→B→A のような循環はループになり、arkhe は検知しない。
+
+### 委譲先が落ちたとき
+
+委譲は**行き先を書いておく**仕組みなので、その行き先が落ちても上位は気づかないし、
+落ちた先へ 302 を出し続ける。利用者から見れば**壊れた識別子**である。
+
+そのときは**転送だけを止める**。
+
+```bash
+arkhe hold add shoulder <id> --days 1 --reason "委譲先のリゾルバが落ちている"
+arkhe hold release shoulder <id>            # 直ったら外す（期限が来れば自動でも戻る）
+```
+
+保留中、上位は `302` を出さず `200` と理由を返す。**識別子は生きている**——
+`?info` も `??` も答え続けるので、永続性の宣言を引っ込めることにはならない。
+期限は必須で、切れれば時計だけで元に戻る（[壊さないもの](../concepts/invariants.md)）。
+
+止めている名前空間は `/.well-known/ark` の `held` に出る。**下位から見て、上位が
+止めたことを機械的に確かめられる**——連絡が付かないときに効く。
 
 ### 何が上位に残り、何が下位に移るか
 
@@ -404,7 +422,7 @@ curl -X PUT …/api/update -d '{"ark": "ark:/99999/c7xyz…",
 ```bash
 # 公開側: この名前空間では自分は採番しない、と台帳に刻む
 arkhe shoulder status <id> delegated --minter https://ark.closed.example.ac.jp
-# 解決の委譲は管理画面から: 303 https://ark.example.ac.jp/closed-namespace
+arkhe shoulder redirect <id> '303 https://ark.example.ac.jp/closed-namespace'
 #   （内部ホスト名を書かない。/.well-known/ark に載る）
 
 # 閉域側: 同じ NAAN・同じ shoulder を、権威を持つ側として持つ
@@ -470,8 +488,7 @@ flowchart TD
   ない（[C](#c-arkhe) の制約はここから来ている）。入れるなら、名前が委譲した shoulder の
   内側にあること・二重採番でないこと・検査桁が合っていることを、取り込みの時点で
   確かめる必要がある。
-- **`shoulder.redirect` を設定する CLI。** 管理画面と `arkhe depart --resolver` からのみ。
-  委譲の設定を自動化で組むなら、ここが引っかかる。
+- ~~`shoulder.redirect` を設定する CLI~~ → **入った**（`arkhe shoulder redirect`）。
 - **台帳をまたぐ一覧・監査・quota。** `/.well-known/ark` が公開するのは名前空間の割当までで、
   個々の ARK は含まない。
 - **委譲先の健全性の監視。** 上位は下位が生きているかを知らない。委譲した shoulder の

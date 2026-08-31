@@ -16,6 +16,7 @@
 | `arkhe manager policy` | 組織にできることを狭める（入り方・自己登録・scope の上限）。**NAAN の決まりから狭めることしかできない**——広げられない。 |
 | `arkhe shoulder add` | 名前空間を切り出す。`--reserve` で将来用に確保できる。 |
 | `arkhe shoulder status` | 状態を変える。**retired からは戻せない**（引退した名前空間の再開は NR 違反の芽）。 |
+| `arkhe shoulder redirect` | shoulder 単位で解決を委譲する（`$id` / `${blade}` / 先頭の `303 `）。**空文字を渡せば外す。** |
 | `arkhe shoulder list` |  |
 | `arkhe client add` | 主体を登録する。 |
 | `arkhe client key` | 資格情報を発行する。**平文はこの一度しか表示されない。** |
@@ -24,6 +25,9 @@
 | `arkhe client revoke` | 失効させる。**行は消さない**（いつ失効したかを残す）。 |
 | `arkhe client disable` | 主体を止める。**認可サーバに寄せた構成ではこれが唯一の止め方。** |
 | `arkhe client enable` | 止めた主体を戻す（去った組織の主体は戻せない）。 |
+| `arkhe hold add` | 転送を一時的に止める（`ark` / `shoulder` / `naan`）。**解決は止めない**——記述は答え続ける。期限と理由は必須。 |
+| `arkhe hold release` | 期限を待たずに保留を外す。 |
+| `arkhe hold list` | 今かかっている保留を並べる。**見えないと恒久化する。** |
 | `arkhe ark list` | 発行した ARK を並べる。**既定で 50 件で打ち切る**（台帳は増える一方なので）。`--naan` `--org` で絞り、`-q` は ARK・行き先・題名を見る。 |
 
 `--help` に各コマンドの引数がある。
@@ -74,6 +78,19 @@ arkhe shoulder add 99999 /q0 --reserve --note "将来用に確保"
 arkhe shoulder status 3 delegated --minter https://mint.partner.example.org
 arkhe shoulder status 3 retired --note "移行完了"
 ```
+
+### 転送を止める
+
+```bash
+arkhe hold add ark ark:/99999/x9abc --days 3 --reason "行き先を確認中"
+arkhe hold add shoulder 3 --days 1 --reason "委譲先のリゾルバが落ちている"
+arkhe hold list
+arkhe hold release shoulder 3
+```
+
+**解決は止まらない。** 止まるのは転送だけで、`?info` も `??` も答え続ける。期限は
+必須で、切れれば時計だけで戻る——**戻し忘れが残らない**。失われた対象を宣言するのは
+これではなく tombstone のほう（意味も可逆性も違う）。
 
 **`retired` からは戻せない。** 予約は作成時にしか指定できない——一度採番できる状態に
 した名前空間を、後から未使用扱いにはできないから。

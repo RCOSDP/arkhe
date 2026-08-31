@@ -16,7 +16,7 @@ from sqlalchemy import select
 
 from arkhe.arkspec.naming import ArkParseError, parse_ark
 from arkhe.auth.deps import Config, Db
-from arkhe.db.models import Manager, Naan, Shoulder
+from arkhe.db.models import Manager, Naan, Shoulder, utcnow
 from arkhe.db.repository import SqlArkRepository
 from arkhe.domain.resolution import Inflection, Outcome, is_followable, resolve
 
@@ -156,6 +156,23 @@ def well_known_ark(session: Db, cfg: Config):
                     select(Shoulder).where(Shoulder.status == "delegated")
                 ).all()
             ],
+            # **転送を止めている名前空間を公開する。** 分散構成では、上位が止めた
+            # ことを下位が（その逆も）機械的に確かめられる必要がある。
+            "held": [
+                {
+                    "scope": scope,
+                    "target": target(row),
+                    "until": row.hold_until.isoformat(),
+                    "reason": row.hold_reason,
+                }
+                for scope, model, target in (
+                    ("naan", Naan, lambda r: r.naan),
+                    ("shoulder", Shoulder, lambda r: f"{r.naan}{r.shoulder}"),
+                )
+                for row in session.scalars(
+                    select(model).where(model.hold_until > utcnow())
+                ).all()
+            ],
         }
     )
 
@@ -200,6 +217,21 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
         # 誘導で、inflection はこのリゾルバへの問い合わせだから。
         return RedirectResponse(res.location, status_code=res.status)
 
+    if res.outcome is Outcome.HELD:
+        # **404 にしない。** その名前空間は存在していて、我々が今は転送しないだけ。
+        # 行が無いので記述は出せないが、**理由と期限は出す**——黙って止まるより良い。
+        return PlainTextResponse(
+            _anvl(
+                [
+                    ("where", f"ark:/{res.requested}"),
+                    ("hold", res.hold.reason if res.hold else ""),
+                    ("hold-until", res.hold.until.isoformat() if res.hold else ""),
+                    ("hold-scope", res.hold.scope if res.hold else ""),
+                ]
+            ),
+            media_type="text/plain; charset=utf-8",
+        )
+
     if res.outcome is Outcome.NOT_FOUND:
         return PlainTextResponse(f"ark:/{res.requested} — {res.reason}", status_code=404)
 
@@ -217,7 +249,14 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
         return PlainTextResponse(_anvl(kernel), media_type="text/plain; charset=utf-8")
 
     if res.inflection is Inflection.JSON:
-        return JSONResponse({**erc, "commitment": res.ark.commitment})
+        return JSONResponse(
+            {
+                **erc,
+                "commitment": res.ark.commitment,
+                # **止まっていることは隠さない。** 機械にも分かる形で出す。
+                "hold": res.hold.as_dict() if res.hold else None,
+            }
+        )
 
     if res.inflection is Inflection.POLICY:
         # `??` は **`?` の内容 ＋ 永続性宣言**（C4）。
@@ -236,11 +275,19 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
                     # 読めるが、約束は下の commitment-level で分かっている。
                     ("commitment", res.ark.commitment or None),
                     ("commitment-level", erc["commitment_level"]),
+                    # 保留は**約束の一部として**出す。`??` は「この識別子をどう
+                    # 保つか」を答える口なので、今転送していない事実はここに要る。
+                    ("hold", res.hold.reason if res.hold else None),
+                    ("hold-until", res.hold.until.isoformat() if res.hold else None),
                     ("inherited-from", erc["inherited_from"] or None),
                 ]
             ),
             media_type="text/plain; charset=utf-8",
         )
 
-    return templates.TemplateResponse(request, "info.html", {"erc": erc, "res": res})
+    return templates.TemplateResponse(
+        request,
+        "info.html",
+        {"erc": erc, "res": res, "hold": res.hold.as_dict() if res.hold else None},
+    )
 

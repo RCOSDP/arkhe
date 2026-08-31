@@ -95,6 +95,18 @@ JA: dict[str, str] = {
     "shoulder.f.status": "状態",
     "shoulder.f.status_hint": "<b>retired からは戻せません</b>"
                               "（引退した名前空間の再開は NR 違反の芽）。",
+    "hold.f.legend": "転送の保留",
+    "hold.f.lede": "この名前空間の<b>転送だけ</b>を一時的に止めます。"
+    "解決は続き、記述は答え続けます——委譲先が落ちた・行き先が信用できない、"
+    "といった場面のためのものです。",
+    "hold.f.days": "日数",
+    "hold.f.days_hint": "過ぎれば自動的に戻ります。上限は",
+    "hold.f.reason": "理由",
+    "hold.f.reason_hint": "<b>公開の口に出ます。</b>機微は書かないこと。",
+    "hold.f.on": "保留中",
+    "hold.f.until": "この日時まで",
+    "hold.f.release": "保留を外す",
+    "hold.none": "止めている転送はありません。",
     "shoulder.f.minter": "採番の行き先",
     "shoulder.f.minter_hint": "<b>delegated</b> のときだけ意味を持ちます。",
     "shoulder.f.redirect": "解決の委譲先",
@@ -223,6 +235,18 @@ EN: dict[str, str] = {
     "shoulder.f.status": "Status",
     "shoulder.f.status_hint": "<b>There is no way back from retired</b> (reopening a "
                               "retired namespace is the seed of an NR violation).",
+    "hold.f.legend": "Hold on redirection",
+    "hold.f.lede": "Temporarily stop <b>the redirect only</b> for this namespace. "
+    "Resolution continues and descriptions keep answering — for when a delegate is "
+    "down, or its target can no longer be trusted.",
+    "hold.f.days": "Days",
+    "hold.f.days_hint": "It lifts itself when this passes. The maximum is",
+    "hold.f.reason": "Reason",
+    "hold.f.reason_hint": "<b>This is published.</b> Keep it non-sensitive.",
+    "hold.f.on": "On hold",
+    "hold.f.until": "Until",
+    "hold.f.release": "Lift the hold",
+    "hold.none": "No redirection is being held.",
     "shoulder.f.minter": "Where minting goes",
     "shoulder.f.minter_hint": "Meaningful only when <b>delegated</b>.",
     "shoulder.f.redirect": "Delegate resolution to",

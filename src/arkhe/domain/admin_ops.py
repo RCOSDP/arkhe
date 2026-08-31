@@ -872,3 +872,144 @@ def depart(
         "revoked": revoked,
         "update_secret": issued,
     }
+
+
+# ------------------------------------------------------------------ 転送の保留
+
+
+#: 保留を掛けられる層。**狭い順**（効くときもこの順に見る）。
+HOLD_KINDS = ("ark", "shoulder", "naan")
+
+
+def _hold_deadline(until: datetime, max_days: int, now: datetime | None = None) -> datetime:
+    """期限を検める。**過去も、上限より先も受けない。**
+
+    上限があるのは、期限を必須にしただけでは足りないからである——「1 年後」と
+    書けば恒久と変わらない。延ばしたければ掛け直す（そのたびに監査に残る）。
+    """
+    now = now or datetime.now(UTC)
+    if until.tzinfo is None:
+        until = until.replace(tzinfo=UTC)
+    if until <= now:
+        raise Invalid({"until": "期限が過去。保留は未来の時点までしか掛けられない"})
+    if (until - now).days > max_days:
+        raise Invalid(
+            {
+                "until": f"期限が上限（{max_days} 日）より先",
+                "reason": "長い保留は恒久と変わらない。延ばすなら掛け直す",
+            }
+        )
+    return until
+
+
+def _hold_row(session: Session, p: Principal, kind: str, key):
+    """保留を掛ける対象の行を引き、**掛けてよい主体か**を確かめる。
+
+    ARK は組織の管理者でも止められる（自分の shoulder の中だから）。
+    shoulder と NAAN は**名前空間そのものを止める**ので NAAN 単位以上に限る
+    ——1 組織の判断で、他組織の識別子まで巻き込めてはいけない。
+    """
+    if kind == "ark":
+        row = session.get(Ark, key)
+        if row is None:
+            raise NotFound({"ark": key})
+        from arkhe.domain import authz  # 循環 import を避ける（authz は models だけ見る）
+
+        authz.assert_may_touch(session, p, row)
+        return row, row.ark
+    if kind == "shoulder":
+        row = session.get(Shoulder, key)
+        if row is None:
+            raise NotFound({"shoulder": key})
+        _require_naan(p, row.naan)
+        if not p.is_naan_wide:
+            raise Forbidden("名前空間の保留は NAAN 単位以上の権限が要る")
+        return row, f"{row.naan}{row.shoulder}"
+    if kind == "naan":
+        row = session.get(Naan, key)
+        if row is None:
+            raise NotFound({"naan": key})
+        _require_naan(p, row.naan)
+        if not p.is_naan_wide:
+            raise Forbidden("NAAN の保留は NAAN 単位以上の権限が要る")
+        return row, row.naan
+    raise Invalid({"kind": f"{kind} は保留の対象にならない（{', '.join(HOLD_KINDS)}）"})
+
+
+def set_hold(
+    session: Session,
+    p: Principal,
+    *,
+    kind: str,
+    key,
+    until: datetime,
+    reason: str,
+    max_days: int = 90,
+):
+    """**転送を一時的に止める。** 解決は止めない——記述は返り続ける。
+
+    理由を必須にしてある。`?info` に出る文字列であり、**理由の書かれていない
+    保留は、掛けた本人以外には外し方が分からない**（そして期限まで放置される）。
+    """
+    if not reason.strip():
+        raise Invalid({"reason": "理由が要る。公開の口に出るし、外す判断にも要る"})
+    row, target = _hold_row(session, p, kind, key)
+    row.hold_until = _hold_deadline(until, max_days)
+    row.hold_reason = reason.strip()
+    row.hold_by = p.client_id
+    audit(
+        session, p, "hold", f"{kind}:{target}",
+        until=row.hold_until.isoformat(), reason=row.hold_reason,
+    )
+    if kind == "ark":
+        # **識別子そのものの履歴に残す。** 監査は NAAN 単位以上しか残さないが、
+        # 止めたのは組織かもしれない——利用者から見れば「行き先が変わった」に等しい。
+        from arkhe.domain import authz
+
+        authz.record_change(session, p, row, action="hold", before_url=row.url)
+    return row
+
+
+def release_hold(session: Session, p: Principal, *, kind: str, key):
+    """**保留を外す。** 期限を待たずに戻す。
+
+    期限切れは時計で自動的に効かなくなる（`resolution.hold_of`）ので、これは
+    「予定より早く戻す」ためのもの。行は消さず、`hold_until` を落とすだけ。
+    """
+    row, target = _hold_row(session, p, kind, key)
+    row.hold_until = None
+    row.hold_reason = ""
+    row.hold_by = ""
+    audit(session, p, "release_hold", f"{kind}:{target}")
+    if kind == "ark":
+        from arkhe.domain import authz
+
+        authz.record_change(session, p, row, action="release_hold", before_url=row.url)
+    return row
+
+
+def held(session: Session, p: Principal, now: datetime | None = None) -> list[dict]:
+    """**今かかっている保留を並べる。** 期限つきでも、目に見えないと恒久化する。
+
+    到達範囲で絞る——見えない名前空間の保留を見せない。
+    """
+    now = now or datetime.now(UTC)
+    out: list[dict] = []
+    for kind, model, label in (
+        ("naan", Naan, lambda r: r.naan),
+        ("shoulder", Shoulder, lambda r: f"{r.naan}{r.shoulder}"),
+        ("ark", Ark, lambda r: r.ark),
+    ):
+        for row in session.scalars(select(model).where(model.hold_until > now)):
+            if not p.reaches_naan(row.naan):
+                continue
+            out.append(
+                {
+                    "kind": kind,
+                    "target": label(row),
+                    "until": row.hold_until,
+                    "reason": row.hold_reason,
+                    "by": row.hold_by,
+                }
+            )
+    return out

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.holds') }} — arkhe{% endblock %}
+{% block crumb %}{{ t('nav.holds') }}{% endblock %}
+{% block body %}
+<div class="head">
+  <h1>{{ t('nav.holds') }}</h1>
+  <p class="lede">{{ t('hold.f.lede')|safe }}</p>
+</div>
+
+<div class="card">
+  {% if holds %}
+  <div class="card-b">
+  <table>
+    <thead><tr>
+      <th>{{ t('hold.f.legend') }}</th><th>{{ t('ak.title') }}</th>
+      <th>{{ t('hold.f.until') }}</th><th>{{ t('hold.f.reason') }}</th><th>{{ t('ak.by') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for h in holds %}
+      <tr>
+        <td data-label="{{ t('hold.f.legend') }}">
+          <span class="pill reserved">{{ h.kind }}</span></td>
+        <td class="mono" data-label="{{ t('ak.title') }}">
+          {% if h.kind == 'ark' %}<a href="/admin/arks/{{ h.target }}">{{ h.target }}</a>
+          {% else %}{{ h.target }}{% endif %}</td>
+        <td class="mono dim" data-label="{{ t('hold.f.until') }}">
+          {{ h.until.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td data-label="{{ t('hold.f.reason') }}">{{ h.reason }}</td>
+        <td class="mono dim" data-label="{{ t('ak.by') }}">{{ h.by }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  {# **何も無いことを、はっきり出す。** 空の表だと「読み込めていない」と紛れる。 #}
+  <div class="card-b"><p class="dim">{{ t('hold.none') }}</p></div>
+  {% endif %}
+</div>
+{% endblock %}

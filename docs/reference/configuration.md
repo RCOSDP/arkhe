@@ -71,6 +71,7 @@ See [Authentication](../guides/authentication.md) for which mechanism suits what
 | | Default | |
 | --- | --- | --- |
 | `ARKHE_BULK_LIMIT` | `1000` | Rows per bulk request. Split larger loads and use `request_id` so a broken batch can simply be resent |
+| `ARKHE_HOLD_MAX_DAYS` | `90` | Longest a redirect may be held. **Requiring an expiry is not enough** — "a year from now" is indistinguishable from permanent, so there is a ceiling. Extending means setting it again, which the audit log records |
 
 ## Behind a proxy
 

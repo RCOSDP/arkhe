@@ -17,6 +17,7 @@ audit log the same way.
 | `arkhe manager policy` | Narrow what an organisation may do — ways in, self-registration, scope ceiling. **It can only narrow what the NAAN allows**, never widen it. |
 | `arkhe shoulder add` | Carve out a namespace. `--reserve` holds one for later. |
 | `arkhe shoulder status` | Change the status. **There is no way back from retired.** |
+| `arkhe shoulder redirect` | Delegate resolution for a shoulder (`$id` / `${blade}` / a leading `303 `). **An empty value clears it.** |
 | `arkhe shoulder list` |  |
 | `arkhe client add` | Register a principal. |
 | `arkhe client key` | Issue a credential. **The plaintext is shown this once and never again.** |
@@ -25,6 +26,9 @@ audit log the same way.
 | `arkhe client revoke` | Revoke. **The row is not deleted** — when it stopped remains. |
 | `arkhe client disable` | Stop a principal. **The only way where authentication is delegated.** |
 | `arkhe client enable` | Restore one (not if its organisation has left). |
+| `arkhe hold add` | Hold redirection for an `ark` / `shoulder` / `naan`. **Resolution is not stopped** — the description keeps answering. An expiry and a reason are required. |
+| `arkhe hold release` | Lift a hold before its expiry. |
+| `arkhe hold list` | List the holds in force. **What is not visible becomes permanent.** |
 | `arkhe ark list` | List minted ARKs. **Stops at 50 by default** — the ledger only grows. `--naan` and `--org` narrow it; `-q` looks at the ARK, its target and its title. |
 
 `--help` on any command gives its arguments.
@@ -80,6 +84,20 @@ arkhe shoulder status 3 retired --note "migration complete"
 
 **`retired` has no way back.** A reservation can only be set at creation: once a
 namespace has been mintable, it cannot be called unused again.
+
+### Holding a redirect
+
+```bash
+arkhe hold add ark ark:/99999/x9abc --days 3 --reason "verifying the target"
+arkhe hold add shoulder 3 --days 1 --reason "the delegate's resolver is down"
+arkhe hold list
+arkhe hold release shoulder 3
+```
+
+**Resolution does not stop.** Only the redirect does; `?info` and `??` keep answering.
+An expiry is required and lifts itself by the clock alone — **nothing has to remember to
+undo it**. Declaring an object lost is a different operation (`tombstone`), with
+different meaning and no way back.
 
 ## The language of the commands
 

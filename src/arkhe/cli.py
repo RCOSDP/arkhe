@@ -25,7 +25,7 @@ from arkhe.db.models import (
 )
 from arkhe.db.session import session_factory
 from arkhe.domain import admin_ops as ops
-from arkhe.domain.queries import narrow_arks, visible_arks
+from arkhe.domain.queries import ark_key_from_input, narrow_arks, visible_arks
 from arkhe.settings import get_settings
 
 app = typer.Typer(help=t("app.help"), no_args_is_help=True)
@@ -34,11 +34,13 @@ shoulder_app = typer.Typer(help=t("shoulder.help"), no_args_is_help=True)
 manager_app = typer.Typer(help=t("manager.help"), no_args_is_help=True)
 client_app = typer.Typer(help=t("client.help"), no_args_is_help=True)
 ark_app = typer.Typer(help=t("ark.help"), no_args_is_help=True)
+hold_app = typer.Typer(help=t("hold.help"), no_args_is_help=True)
 app.add_typer(naan_app, name="naan")
 app.add_typer(shoulder_app, name="shoulder")
 app.add_typer(manager_app, name="manager")
 app.add_typer(client_app, name="client")
 app.add_typer(ark_app, name="ark")
+app.add_typer(hold_app, name="hold")
 
 
 def _root() -> Principal:
@@ -132,6 +134,26 @@ def shoulder_status(
         )
         s.commit()
         typer.echo(f"{sh.naan}{sh.shoulder} → {sh.status}")
+
+
+@shoulder_app.command("redirect", help=t("shoulder.redirect.help"))
+def shoulder_redirect(
+    shoulder_id: int,
+    redirect: str = typer.Argument("", help=t("shoulder.redirect.arg")),
+):
+    """**画面にしかなかった操作を CLI にも置く。**
+
+    委譲の設定は分散構成を組むときにいちばん自動化したいところで、そこだけ
+    画面を開かせるのは「画面と CLI に差を作らない」に反していた。
+    空文字を渡せば委譲を外す。
+    """
+    with _session() as s:
+        sh = ops.set_shoulder_redirect(
+            s, _root(), shoulder_id=shoulder_id, redirect=redirect.strip()
+        )
+        s.commit()
+        key = "shoulder.redirect.done" if sh.redirect else "shoulder.redirect.cleared"
+        typer.echo(t(key, naan=sh.naan, shoulder=sh.shoulder, redirect=sh.redirect))
 
 
 @shoulder_app.command("list")
@@ -350,6 +372,66 @@ def ark_list(
             typer.echo(t("ark.list.empty"), err=True)
         elif len(rows) > limit:
             typer.echo(t("ark.list.more", next=max(0, offset) + limit), err=True)
+
+
+# ------------------------------------------------------------------ 転送の保留
+
+
+def _hold_key(kind: str, key: str):
+    """CLI の入力を台帳の鍵に直す。
+
+    **ARK は API と同じ正規化を通す**（`ark:/` を付けても付けなくても、
+    ハイフン入りでも同じ行に当たる）。ここだけ素通しにすると、画面や API で
+    止められる ARK が CLI では 404 になる。
+    """
+    if kind == "ark":
+        return ark_key_from_input(key)
+    if kind == "shoulder":
+        return int(key)
+    return key
+
+
+@hold_app.command("add", help=t("hold.add.help"))
+def hold_add(
+    kind: str = typer.Argument(..., help=t("hold.add.kind")),
+    key: str = typer.Argument(..., help=t("hold.add.key")),
+    days: int = typer.Option(..., help=t("hold.add.days")),
+    reason: str = typer.Option(..., help=t("hold.add.reason")),
+):
+    with _session() as s:
+        row = ops.set_hold(
+            s, _root(), kind=kind, key=_hold_key(kind, key),
+            until=datetime.now(UTC) + timedelta(days=days),
+            reason=reason, max_days=get_settings().hold_max_days,
+        )
+        s.commit()
+        typer.echo(
+            t("hold.add.done", kind=kind, target=key, until=row.hold_until.isoformat())
+        )
+
+
+@hold_app.command("release", help=t("hold.release.help"))
+def hold_release(
+    kind: str = typer.Argument(..., help=t("hold.add.kind")),
+    key: str = typer.Argument(..., help=t("hold.add.key")),
+):
+    with _session() as s:
+        ops.release_hold(s, _root(), kind=kind, key=_hold_key(kind, key))
+        s.commit()
+        typer.echo(t("hold.release.done", kind=kind, target=key))
+
+
+@hold_app.command("list", help=t("hold.list.help"))
+def hold_list():
+    with _session() as s:
+        rows = ops.held(s, _root())
+        if not rows:
+            typer.echo(t("hold.list.empty"))
+            return
+        for h in rows:
+            typer.echo(
+                f"{h['kind']:<9} {h['target']:<28} {h['until'].isoformat()}  {h['reason']}"
+            )
 
 
 @app.command("succeed", help=t("succeed.help"))

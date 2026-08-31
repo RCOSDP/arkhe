@@ -363,6 +363,124 @@
         }
       }
     },
+    "/api/hold": {
+      "put": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Hold",
+        "description": "**転送を一時的に止める。** 解決は止めない——記述は返り続ける。\n\n委譲先が落ちた、間違った行き先を配ってしまった、対象が移動中——急いで\n止めたいが、識別子は殺したくない場面のためのもの。`404` は嘘（その識別子は\n存在する）で、`503` は識別子が壊れて見えるので、**`200` と記述**を返す\n経路（D6・tombstone と同じ）に乗せる。\n\n**scope を `ark:update` と分けてある。** 止めるのは「どこにあるか」を書き換える\nのとは別の判断で、公開の口に理由が出る。tombstone とも分ける——あちらは\n「もう無い」という恒久の宣言で、こちらは**期限つきで、元の行き先を残す**。",
+        "operationId": "hold_api_hold_put",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hold/release": {
+      "put": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Hold Release",
+        "description": "期限を待たずに保留を外す。**期限切れは時計が勝手に外す**ので、これは前倒し。",
+        "operationId": "hold_release_api_hold_release_put",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "read_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Read Only"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldReleaseIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/query": {
       "post": {
         "tags": [
@@ -560,6 +678,23 @@
               }
             ],
             "title": "Updated At"
+          },
+          "hold_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hold Until"
+          },
+          "hold_reason": {
+            "type": "string",
+            "title": "Hold Reason",
+            "default": ""
           }
         },
         "type": "object",
@@ -709,6 +844,49 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HoldIn": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Until",
+            "description": "この時点まで転送しない。過去は受けない"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "description": "止めている理由"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark",
+          "until",
+          "reason"
+        ],
+        "title": "HoldIn",
+        "description": "転送の一時停止。**解決は止めない**（記述は返り続ける）。\n\n`until` を必須にしてあるのは、「一時的」を人の記憶に頼ると恒久化するから。\n`reason` を必須にしてあるのは、**公開の口（`?info`）に出る**うえ、外す判断に\n要るから——理由の無い保留は、掛けた本人以外に外せない。"
+      },
+      "HoldReleaseIn": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "HoldReleaseIn",
+        "description": "期限を待たずに保留を外す。"
       },
       "MintIn": {
         "properties": {

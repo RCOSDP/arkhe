@@ -6,7 +6,10 @@
 
 from __future__ import annotations
 
-from fastapi import Request
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
+
+from fastapi import Form, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -16,11 +19,14 @@ from arkhe.api.admin._common import (
     AdminPrincipal,
     Db,
     _page,
+    _redirect,
     router,
 )
 from arkhe.auth.errors import Forbidden
 from arkhe.db.models import Ark, ArkChange
+from arkhe.domain import admin_ops as ops
 from arkhe.domain.queries import narrow_arks, selectable_orgs, visible_arks
+from arkhe.settings import get_settings
 
 # ------------------------------------------------------------ 発行した ARK
 #
@@ -76,4 +82,35 @@ def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: st
             select(ArkChange).where(ArkChange.ark == key).order_by(ArkChange.at.desc())
         )
     )
-    return _page(request, principal, "ark_detail.html", "arks", ark=row, changes=changes)
+    return _page(
+        request, principal, "ark_detail.html", "arks",
+        ark=row, changes=changes, hold_max=get_settings().hold_max_days,
+    )
+
+
+@router.post("/arks/{ark:path}/hold")
+def ark_hold(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    ark: str,
+    days: Annotated[int, Form()] = 0,
+    reason: Annotated[str, Form()] = "",
+    release: Annotated[str, Form()] = "",
+):
+    """**画面と CLI に差を作らない。** `arkhe hold add/release` と同じ操作を呼ぶ。
+
+    到達範囲の判定も `admin_ops` 側に任せる——ここで独自に書くと、ボタンは
+    出ないのに POST は通る、という穴になる。
+    """
+    key = ark.removeprefix("ark:/").removeprefix("ark:")
+    if release:
+        ops.release_hold(session, principal, kind="ark", key=key)
+    else:
+        ops.set_hold(
+            session, principal, kind="ark", key=key,
+            until=datetime.now(UTC) + timedelta(days=days),
+            reason=reason, max_days=get_settings().hold_max_days,
+        )
+    session.commit()
+    return _redirect(f"/admin/arks/{key}")

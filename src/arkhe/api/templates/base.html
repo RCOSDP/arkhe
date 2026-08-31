@@ -340,6 +340,10 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   <a class="nav" href="/admin/clients" {% if page=='clients' %}aria-current="page"{% endif %}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"/></svg>
     {{ t("nav.clients") }}</a>
+  {# **止めた転送を目に見えるところに置く。** 期限つきでも、見えないと恒久化する。 #}
+  <a class="nav" href="/admin/holds" {% if page=='holds' %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><path d="M10 9v6M14 9v6"/></svg>
+    {{ t("nav.holds") }}</a>
 
   {# **押しても断られるだけの項目は出さない。** 採番は scope、監査ログは
      到達範囲で決まる。判定は `_ctx` が持っていて、ルートと同じ式を使う。 #}

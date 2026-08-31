@@ -97,7 +97,34 @@ class Authority(StrEnum):
     MANAGER = "manager"  # その組織の shoulder のみ
 
 
-class Naan(Base):
+class HoldMixin:
+    """**転送の一時停止。** 解決は止めない——止めるのは転送だけ。
+
+    委譲先のリゾルバが落ちた、間違った行き先を配ってしまった、機密が漏れて
+    取り下げを求められた、対象が移動中——**どれも急いで止めたいが、識別子を
+    殺したくない**。`404` は嘘（その識別子は存在する）で、`503` は識別子が
+    壊れて見える。だから `200` と記述を返す経路（D6・tombstone と同じ）に乗せる。
+
+    tombstone との違いは意味と可逆性である:
+
+      tombstone  **対象が失われた。** 恒久。元の行き先は捨てる
+      hold       **対象は在るが、今は行き先を出せない。** 期限つき。元の行き先は残す
+
+    **期限は必須。**「一時的」を人の記憶に頼ると恒久化する。そして**期限切れを
+    バッチで戻さない**——解決のたびに時計で見るので、戻し忘れが起きない
+    （`domain.resolution.hold_of`）。
+    """
+
+    #: **これを過ぎたら効かない。** null は保留していない。
+    hold_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None, index=True
+    )
+    #: 止めている理由。**公開の口（`?info` / `?json`）に出る**ので、機微を書かない。
+    hold_reason: Mapped[str] = mapped_column(String(500), default="")
+    hold_by: Mapped[str] = mapped_column(String(255), default="")
+
+
+class Naan(Base, HoldMixin):
     """Name Assigning Authority Number。
 
     N2: **naan は文字列**。`099999` と `99999` は別の NAAN であり、整数化してはならない。
@@ -237,7 +264,7 @@ class Manager(Base):
     __table_args__ = (UniqueConstraint("naan", "name", name="uniq_manager_name_per_naan"),)
 
 
-class Shoulder(Base):
+class Shoulder(Base, HoldMixin):
     """NAAN の下位名前空間。組織への名前空間の委譲を担う。"""
 
     __tablename__ = "shoulder"
@@ -289,7 +316,7 @@ class Shoulder(Base):
         return self.status == ShoulderStatus.ACTIVE.value
 
 
-class Ark(Base):
+class Ark(Base, HoldMixin):
     """採番済みの ARK。
 
     **子リソースは採番しない。** suffix passthrough が任意の深さを賄うので、

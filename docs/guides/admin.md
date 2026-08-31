@@ -45,6 +45,11 @@ is **not the organisations themselves** but their systems and their people.
     "Principal" is the access-control term, which is also where the `Subject` column
     (machine / person) comes from.
 
+**Held redirects** — which identifiers and namespaces currently have **redirection
+stopped**. Holds expire on their own, but **what is not visible becomes permanent**: the
+person who set one may forget, and this list is how someone else notices. Only the
+redirect is stopped; resolution continues ([Invariants](../concepts/invariants.md)).
+
 **Audit log** — restricted to NAAN scope and wider. Who did what is information
 belonging to whoever holds the namespace; an organisation's administrator has no
 business reading another's.

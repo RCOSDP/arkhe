@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
 from urllib.parse import urlsplit
 
@@ -99,6 +100,65 @@ class Outcome(Enum):
     DESCRIBE = "describe"  # リゾルバ自身が記述を返す
     NOT_FOUND = "not_found"
     FORWARD = "forward"  # 他所の NAAN / 未知 NAAN へ取り次ぐ
+    HELD = "held"  # 転送を一時停止している。**識別子は生きている**
+
+
+@dataclass(frozen=True)
+class Hold:
+    """効いている保留。**転送だけを止める**（解決は止めない）。
+
+    `scope` は誰が止めているか——`ark` / `shoulder` / `naan`。止めた層が分かると、
+    「この 1 件が悪いのか、名前空間ごと止まっているのか」を外から見分けられる。
+    """
+
+    scope: str
+    reason: str = ""
+    until: datetime | None = None
+
+    def as_dict(self) -> dict:
+        return {
+            "scope": self.scope,
+            "reason": self.reason,
+            "until": self.until.isoformat() if self.until else "",
+        }
+
+
+def _aware(value):
+    """素の datetime を UTC とみなす。
+
+    **SQLite は tz を落として返す。** 素と aware を比べると `TypeError` になり、
+    保留の判定だけが例外で落ちる——**止めたつもりが転送され続ける**ほうが、
+    ここでは何倍も悪い。
+    """
+    if value is None or not isinstance(value, datetime):
+        return None
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+def hold_of(obj, scope: str, now: datetime) -> Hold | None:
+    """その行が今まさに保留中なら `Hold` を返す。
+
+    **期限切れをバッチで戻さない。** 解決のたびにここで時計を見るので、
+    戻し忘れが起きない——止め忘れは残るが、**戻し忘れは残らない**。
+    """
+    until = _aware(getattr(obj, "hold_until", None))
+    if until is None or until <= now:
+        return None
+    return Hold(scope=scope, reason=getattr(obj, "hold_reason", "") or "", until=until)
+
+
+def effective_hold(now: datetime, *pairs) -> Hold | None:
+    """`(行, scope)` を狭い順に見て、最初に効いているものを返す。
+
+    狭い順に見るのは、**その 1 件を止めた理由のほうが具体的**だから。
+    """
+    for obj, scope in pairs:
+        if obj is None:
+            continue
+        found = hold_of(obj, scope, now)
+        if found is not None:
+            return found
+    return None
 
 
 @dataclass
@@ -117,6 +177,8 @@ class Resolution:
     inflection: Inflection = Inflection.NONE
     reason: str = ""
     detail: dict = field(default_factory=dict)
+    #: 効いている保留。**転送を止めた理由**を応答に載せるために運ぶ。
+    hold: Hold | None = None
 
 
 def base_name(name: str) -> str:
@@ -183,8 +245,14 @@ def resolve(
     inflection: Inflection = Inflection.NONE,
     *,
     global_resolver: str = DEFAULT_GLOBAL_RESOLVER,
+    now: datetime | None = None,
 ) -> Resolution:
-    """ARK を解決する。"""
+    """ARK を解決する。
+
+    `now` は保留（hold）の判定にだけ使う。**引数にしてあるのはテストのため**で、
+    渡さなければ現在時刻を見る。
+    """
+    now = now or datetime.now(UTC)
     name = normalize_structural(name)  # N4
     normalized = strip_hyphens(name)  # A2
     requested = ark_key(naan, name)
@@ -194,7 +262,7 @@ def resolve(
     for key in dict.fromkeys([ark_key(naan, name), ark_key(naan, normalized)]):
         ark = repo.get_ark(key)
         if ark is not None:
-            return _deliver(ark, requested=requested, inflection=inflection)
+            return _deliver(ark, requested=requested, inflection=inflection, now=now)
 
     # --- 祖先 passthrough（D5: 最長一致） -----------------------------------
     candidates = list(gen_prefixes(normalized))  # 長い順
@@ -213,6 +281,7 @@ def resolve(
                 inflection=inflection,
                 suffix=suffix,
                 inherited_from=ark_key(naan, cand),
+                now=now,
             )
 
     # --- ここから未登録 -----------------------------------------------------
@@ -255,6 +324,11 @@ def resolve(
         if shoulder_part:
             shoulder = repo.get_shoulder(naan, f"/{shoulder_part}")
             if shoulder is not None and shoulder.redirect:
+                # **委譲先を止められるのはここだけ。** この名前は我々の台帳に無い
+                # ので、止める判断は shoulder か NAAN の側にしか置けない。
+                held = effective_hold(now, (shoulder, "shoulder"), (naan_obj, "naan"))
+                if held is not None:
+                    return _held(requested, inflection, held)
                 status, location = expand_redirect(shoulder.redirect, naan, name)
                 return Resolution(
                     Outcome.REDIRECT,
@@ -273,7 +347,10 @@ def resolve(
             reason="this resolver is authoritative for the NAAN and has no such ark",
         )
 
-    # 他所の NAAN は登録された委譲先へ。
+    # 他所の NAAN は登録された委譲先へ。**その NAAN ごと止めることもできる。**
+    held = effective_hold(now, (naan_obj, "naan"))
+    if held is not None:
+        return _held(requested, inflection, held)
     return Resolution(
         Outcome.FORWARD,
         status=302,
@@ -283,10 +360,54 @@ def resolve(
     )
 
 
+def _held(requested: str, inflection: Inflection, held: Hold) -> Resolution:
+    """台帳に行が無いまま止まっているとき（shoulder / NAAN 単位）の応答。
+
+    **`404` にはしない。** その名前空間は存在していて、我々が今は転送しないだけ。
+    """
+    return Resolution(
+        Outcome.HELD,
+        status=200,
+        requested=requested,
+        inflection=inflection,
+        reason="redirection is on hold",
+        hold=held,
+    )
+
+
 def _deliver(
-    ark, *, requested: str, inflection: Inflection, suffix: str = "", inherited_from: str = ""
+    ark,
+    *,
+    requested: str,
+    inflection: Inflection,
+    suffix: str = "",
+    inherited_from: str = "",
+    now: datetime | None = None,
 ) -> Resolution:
     """見つかった ARK（本人または祖先）をどう返すか決める。"""
+    now = now or datetime.now(UTC)
+    # ARK → その shoulder → その NAAN の順に見る（狭いほうの理由が具体的）。
+    # **関係は辿るだけで引かない。** repository が同じ 1 本の問い合わせで載せてくる。
+    shoulder = getattr(ark, "shoulder", None)
+    held = effective_hold(
+        now,
+        (ark, "ark"),
+        (shoulder, "shoulder"),
+        (getattr(shoulder, "naan_obj", None), "naan"),
+    )
+    if held is not None:
+        # **転送だけを止める。** 記述は返し続ける——識別子は生きている。
+        return Resolution(
+            Outcome.DESCRIBE,
+            status=200,
+            ark=ark,
+            requested=requested,
+            suffix=suffix,
+            inherited_from=inherited_from,
+            inflection=inflection,
+            reason="redirection is on hold",
+            hold=held,
+        )
     if inflection.wants_metadata:
         # C5: **inflection は suffix passthrough でも失われない。** 最も近い
         # 登録済み祖先のメタデータを、要求された ARK の名前で返す（FAIR A2）。

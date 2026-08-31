@@ -91,6 +91,7 @@
       <input type="hidden" name="policy" value="{{ naan.na_policy }}">
       <input type="hidden" name="minter" value="{{ naan.minter }}">{% endif %}
       <input type="hidden" name="rules" value="1">
+      {% if naan %}{% with row=naan %}{% include "partials/hold.html" %}{% endwith %}{% endif %}
       {% with outer=None,
               current_auth=(naan.allowed_auth if naan else ''),
               current_self=(naan.may_self_register if naan else True),

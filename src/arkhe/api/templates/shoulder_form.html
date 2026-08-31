@@ -63,6 +63,7 @@
           <label for="note">{{ t('shoulder.f.note') }} <span class="opt">— {{ t('f.optional') }}</span></label>
           <input id="note" name="note" value="{{ shoulder.note }}">
         </div>
+        {% with row=shoulder %}{% include "partials/hold.html" %}{% endwith %}
       {% endif %}
 
       <div class="actions">

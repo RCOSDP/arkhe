@@ -12,8 +12,29 @@ from __future__ import annotations
 
 from sqlalchemy import Select, select
 
+from arkhe.arkspec.naming import (
+    ArkParseError,
+    ark_key,
+    normalize_structural,
+    parse_ark,
+    strip_hyphens,
+)
 from arkhe.auth.principal import Principal
 from arkhe.db.models import Ark, Manager, Shoulder
+
+
+def ark_key_from_input(raw: str) -> str:
+    """`ark:/99999/xyz` でも `99999/xyz` でも、台帳の鍵に直す。
+
+    **解決側と同じ正規化を通す。** ここだけ素通しにすると、`…/x/` や `…/x..v` を
+    送った側が「同じ ARK」に触れず 404 になる。画面・CLI・API が別々に書くと、
+    片方でだけ当たらない、が起きる——だから 1 か所に置く。
+    """
+    try:
+        p = parse_ark(raw if raw.lower().startswith(("ark:", "http")) else f"ark:/{raw}")
+    except ArkParseError as exc:
+        raise ValueError(str(exc)) from exc
+    return ark_key(p.naan, strip_hyphens(normalize_structural(p.name)))
 
 
 def visible_arks(p: Principal) -> Select:

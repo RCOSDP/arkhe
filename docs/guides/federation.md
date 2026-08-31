@@ -132,9 +132,7 @@ The upper ledger:
 ```bash
 arkhe shoulder add 99999 /s7 --note "delegated to site B"
 arkhe shoulder status <id> delegated --minter https://ark.b.example.ac.jp
-# Resolution delegation (shoulder.redirect) is set from the admin interface;
-# there is no CLI for it yet.
-#   Ledger › shoulder › delegate resolution: 303 https://ark.b.example.ac.jp/ark:/$id
+arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:/$id'
 ```
 
 The lower ledger:
@@ -219,6 +217,28 @@ future names can be divided; names already handed out cannot be moved.
 **③ There is one more hop.** If the upper instance is down, the lower one is
 unreachable from outside even while healthy. **Keep the depth at two.** A→B→A is a
 loop, and arkhe does not detect it.
+
+### When a delegate goes down
+
+Delegation is a written-down address, so the upper instance does not notice when that
+address dies — it keeps handing out `302`s to something unreachable. To a user that is
+**a broken identifier**.
+
+Hold the redirect instead.
+
+```bash
+arkhe hold add shoulder <id> --days 1 --reason "the delegate's resolver is down"
+arkhe hold release shoulder <id>     # once it is back (an expiry would also lift it)
+```
+
+While held, the upper instance answers `200` and the reason instead of a `302`. **The
+identifier is alive**: `?info` and `??` keep answering, so the persistence promise is not
+withdrawn. The expiry is mandatory and lifts itself by the clock alone
+([Invariants](../concepts/invariants.md)).
+
+Held namespaces appear under `held` in `/.well-known/ark`, so **the instance below can
+verify mechanically that the one above stopped forwarding** — which matters when nobody
+answers the phone.
 
 ### What stays above, what moves below
 
@@ -433,8 +453,7 @@ the largest constraint in this design today.
 ```bash
 # Public side: record in the ledger that we do not mint in this namespace
 arkhe shoulder status <id> delegated --minter https://ark.closed.example.ac.jp
-# Resolution delegation, from the admin interface:
-#   303 https://ark.example.ac.jp/closed-namespace
+arkhe shoulder redirect <id> '303 https://ark.example.ac.jp/closed-namespace'
 #   (not an internal hostname — it is published at /.well-known/ark)
 
 # Closed side: the same NAAN and shoulder, held as authoritative here
