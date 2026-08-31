@@ -391,3 +391,35 @@ def test_口の無い構成では取り方を広告しない(over):
     spec = _spec(**over)
     assert "oauth2" not in spec.get("components", {}).get("securitySchemes", {})
     assert "/oauth/token" not in spec["paths"]
+
+
+def test_解決の3xxは委譲テンプレートが出せるものと一致する():
+    """**宣言と実装を突き合わせる。** 仕様書に並べた 3xx は、`expand_redirect` が
+    実際に出せる符号（`_STATUS_PREFIX`）と同じでなければ、契約として嘘になる。
+    """
+    from arkhe.api.resolve import _RESOLVE_RESPONSES
+    from arkhe.domain.resolution import expand_redirect
+
+    declared = {c for c in _RESOLVE_RESPONSES if 300 <= c < 400}
+    produced = {expand_redirect(f"{c} https://x/$id", "99999", "abc")[0] for c in declared}
+    assert produced == declared
+    # 受けない符号は既定に落ちる。**宣言を増やす理由にはならない。**
+    assert expand_redirect("308 https://x/$id", "99999", "abc")[0] == 302
+
+
+def test_解決の200は宣言した3つの媒体で返る(world, principal_of, as_principal):
+    """**同じ 200 でも媒体が違う。** `application/json` だけを宣言していたので、
+    仕様書から起こしたクライアントは ANVL と HTML を「知らない応答」として扱う。
+    """
+    from arkhe.api.resolve import _RESOLVE_RESPONSES
+
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post(
+        "/api/mint", json={"url": "https://example.org/1", "title": "A"}
+    ).json()["ark"].removeprefix("ark:/")
+
+    got = {
+        c.get(f"/ark:/{key}?{q}").headers["content-type"].split(";")[0]
+        for q in ("json", "?", "info")
+    }
+    assert got == set(_RESOLVE_RESPONSES[200]["content"])
