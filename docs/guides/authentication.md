@@ -53,6 +53,14 @@ curl -X POST http://localhost:8000/oauth/token \
   -d grant_type=client_credentials -d client_id=univ-repo -d client_secret=…
 ```
 
+**Hold on to the token and reuse it.** Fetch a new one shortly before `expires_in`
+(3600 seconds by default) runs out; **do not fetch one per API call** — issuing a token
+verifies `client_secret` with Argon2, so fetching per call pays the same cost as
+`apikey` and adds a round trip on top. An hour of minting is one token fetch, however
+many identifiers it covers. Standard client libraries (`requests-oauthlib`'s
+`BackendApplicationClient`, `authlib`'s `OAuth2Session`) do this holding and
+re-fetching for you.
+
 Deliberately absent: `authorization_code` and PKCE, `refresh_token`, introspection,
 revocation. **If you come to need them, moving to a real authorization server is safer
 than growing half of one here.**

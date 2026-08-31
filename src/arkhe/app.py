@@ -11,7 +11,7 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import text
 
@@ -204,12 +204,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     from arkhe.api import admin, mint
 
-    app.include_router(mint.router)
-    app.include_router(admin.router)
+    advertise: list = []
     if "oauth2" in s.auth:
         # **自前でトークンを配るときだけ口を開ける。** 使わない構成に
         # 認可サーバの入口を生やさない。
         from arkhe.api import token
 
         app.include_router(token.router)
+        # **仕様書の記述も同じ条件で出す。** 口が無い構成で「ここで取れる」と
+        # 広告すると、生成したクライアントが取りに行って 404 を踏む。
+        advertise = [Depends(token.scheme)]
+    app.include_router(mint.router, dependencies=advertise)
+    app.include_router(admin.router)
     return app
