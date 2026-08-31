@@ -13,6 +13,21 @@ uv run pytest -q
 uv run ruff check src tests
 ```
 
+## Run CI locally before you push
+
+```bash
+./scripts/ci.sh          # everything CI checks
+./scripts/ci.sh --no-db  # without docker — **not the same thing**
+```
+
+It mirrors `.github/workflows/ci.yml` and `docs.yml`, down to **starting a disposable
+PostgreSQL and round-tripping the migrations** (it never touches the demo database).
+Finding out after the push only costs a round trip.
+
+If you are cutting a release, `./scripts/release.sh vX.Y.Z` checks that the tag matches
+the version, that the CHANGELOG has that section and its link definition in both
+languages, runs the CI equivalent and builds `dist/`. **It does not push.**
+
 ## What the review will ask
 
 **Does an invariant still hold?** Most of the design is refusals — see

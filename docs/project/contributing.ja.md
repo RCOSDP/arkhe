@@ -13,6 +13,20 @@ uv run pytest -q
 uv run ruff check src tests
 ```
 
+## 出す前に、CI を手元で回す
+
+```bash
+./scripts/ci.sh          # CI と同じ検査を全部
+./scripts/ci.sh --no-db  # docker が無いとき（**同じにはならない**）
+```
+
+`.github/workflows/ci.yml` と `docs.yml` の写しで、**使い捨ての PostgreSQL を立てて
+マイグレーションを往復させる**ところまでやる（デモの DB には当たらない）。
+落ちるのが push の後だと往復が要るだけで、得るものが無い。
+
+リリースを出す側なら `./scripts/release.sh vX.Y.Z`——版の一致、CHANGELOG の節と
+リンク定義（日英）、CI 相当、`dist/` の作成まで通す。**push はしない。**
+
 ## レビューで見ること
 
 **不変条件が保たれているか。** この設計の多くは拒否でできている

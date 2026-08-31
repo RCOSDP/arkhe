@@ -7,6 +7,9 @@
 [Contributing](docs/project/contributing.md) にある。ここに書くのは**手順と、
 実際に踏んだ罠**。
 
+**今どこまで来ていて何が無いかは [STATUS.md](STATUS.md)。** 版・テスト数・分かっている穴は
+そちらだけに書く（両方に書くと必ず片方が古くなる）。
+
 ---
 
 ## 1. 何をしているシステムか
@@ -21,14 +24,43 @@ ARK 識別子の払い出しと解決。**一度配った名前が、別のも�
 
 ```bash
 uv sync --frozen --all-extras     # lock どおりに入れる
-uv run pytest -q                  # 395 件（2026-08 時点）
+uv run pytest -q                  # 全部通ること（件数は STATUS.md）
 uv run ruff check src tests
 ```
 
 `--frozen` は lock と `pyproject.toml` がずれていたら落ちる。**依存を足したら
 `uv lock` を実行する**（忘れると CI で落ちる。それが狙い）。
 
-## 3. 層
+出す前に、**CI と同じものを手元で通す**:
+
+```bash
+./scripts/ci.sh          # sync/ruff/pytest/マイグレーション往復/OpenAPI/mkdocs --strict
+./scripts/ci.sh --no-db  # docker が無いとき（**CI と同じにはならない**）
+```
+
+`ci.yml` と `docs.yml` の写しである。**落ちるのが push の後だと往復が要る**ので、
+先に同じ検査を通す。使い捨ての PostgreSQL を立てて往復させるところまでやる
+（デモの DB には当たらない）。ワークフローを触ったらこちらも触ること。
+
+## 3. 地図
+
+まずリポジトリ全体。**どこに何があり、どれが生成物か。**
+
+```
+src/arkhe/     実装。層の説明は下
+tests/         ファイル名が対象を表す
+alembic/       マイグレーション。**PostgreSQL で検証する**
+docs/          MkDocs。`page.md` が英語、`page.ja.md` が日本語
+compose/oidc/  Keycloak つきの体験環境。**見本であって手本ではない**
+scripts/       ci.sh / release.sh（CI とリリースの写し）、export_openapi.py
+.github/       ci / docs / release の 3 つのワークフロー
+AGENTS.md      これ。手順と罠
+STATUS.md      現在地と、分かっている穴
+CHANGELOG{,.ja}.md  版ごとの変更。**未リリースの節に足す**
+site/ dist/ db.sqlite3   生成物。**すべて .gitignore 済み**
+```
+
+そして実装の層。
 
 ```
 arkspec/    ARK 仕様を純粋な関数で。**stdlib しか import しない**
@@ -75,6 +107,17 @@ MANAGER  1 組織ぶん（shoulder_id を併せると 1 shoulder に固定）
 
 CLI は `_root()` でシステム管理者として動く。サーバのシェルに入れる時点で DB に
 届くので権限で絞っても意味の在る防御にならない——**代わりに操作は必ず監査に残る**。
+
+### 委譲まわりを触るなら、解決の順を先に読む
+
+`domain/resolution.py` の判断順（完全一致 → 祖先 → **検査桁** → shoulder の redirect →
+404）は、**順序そのものが結論を決める**。検査桁が shoulder 委譲より先にあるので、
+委譲先が検査桁を作らないと**上位経由の解決だけが 404 になる**——下位に直接来た要求は
+通るので、いちばん見つけにくい壊れ方をする。
+
+複数の arkhe で分担する構成の前提と穴は[分散して運用する](docs/guides/federation.md)。
+**台帳を分けた瞬間、コードが守っていた不変条件のいくつかが人の手に移る**（同じ
+shoulder を 2 か所で採らない、権威を持つ台帳は NAAN あたり 1 つ）。
 
 ## 5. 実際に踏んだ罠
 
@@ -126,23 +169,30 @@ uv run python scripts/export_openapi.py   # API 仕様はここだけ生成物
 **設定を足したら `docs/reference/configuration.{md,ja.md}` に、コマンドを足したら
 `cli.{md,ja.md}` に、両方の言語で行を足す。** 忘れるとテストが落ちる。
 
+ページを 1 枚足すときにやること（**どれか 1 つ抜けると片方の言語で消える**）:
+
+1. `docs/…/name.md` と `docs/…/name.ja.md` を対で作る
+2. `mkdocs.yml` の `nav` に英語の題で足す
+3. 同じ題を `nav_translations` に日本語で足す——**ここを忘れると日本語版に英語の項目が並ぶ**
+4. 日本語の見出しに深いリンクを張るなら `{#anchor}` を自分で書く（`attr_list` が効く）。
+   自動生成のアンカーは見出しを 1 つ足すとずれる
+
 ## 8. コミットとリリース
 
 コミットメッセージは**変更ではなく理由**を書く。将来の読者が知りたいのは、
 何を知っていたからそれが正解だったのか——特に答えが奇妙に見えるところで。
 
-タグを打つ前に、リリースの手順を手元で通しておく（失敗しても直せるので）:
+**タグを打つ前に、リリースを手元で通しておく。** タグの後に落ちると、世に出ている版の
+検査が赤いという始末の悪い状態になる。
 
 ```bash
-uv run ruff check src tests && uv run pytest -q
-uv run mkdocs build --strict
-# 使い捨ての PostgreSQL で往復。デモの DB は壊さない
-docker run -d --name pg-check -e POSTGRES_USER=arkhe -e POSTGRES_PASSWORD=arkhe \
-  -e POSTGRES_DB=arkhe -p 55432:5432 postgres:17-alpine
-ARKHE_DATABASE_URL=postgresql+psycopg://arkhe:arkhe@localhost:55432/arkhe ARKHE_AUTH=apikey \
-  uv run alembic upgrade head && ... downgrade base && ... upgrade head && ... check
-docker rm -f pg-check
+./scripts/release.sh v0.0.9          # 版の一致・CHANGELOG・CI 相当・dist の作成
+./scripts/release.sh v0.0.9 --tag    # 通ったら注釈つきタグを手元に作る（push はしない）
 ```
+
+`release.yml` の写しに、**手順そのものの検査**を足してある——版の一致（`pyproject` と
+タグ）、CHANGELOG にその版の節とリンク定義が**日英とも**あること、「未リリース」の比較
+リンクが新しい版を指していること。どれも実際に間違えたことのある場所である。
 
 版は `pyproject.toml` だけで決まる。`release.yml` がタグと突き合わせて、ずれて
 いれば落とす——**「v0.0.2 と名乗る 0.0.1」を世に出さないため**。手順:
@@ -150,8 +200,11 @@ docker rm -f pg-check
 1. `pyproject.toml` の `version` を上げる → `uv lock`
 2. CHANGELOG の「未リリース / Unreleased」の下に版の節を作る（**リリース済みの
    節に追記しない**）。末尾のリンク定義も 2 言語ぶん
-3. コミット → `git tag -a vX.Y.Z` → `git push origin main && git push origin vX.Y.Z`
-4. `weko4` 側のサブモジュールポインタを進める
+3. `./scripts/release.sh vX.Y.Z --tag` が緑になること
+4. コミット → `git push origin main && git push origin vX.Y.Z`
+5. `weko4` 側のサブモジュールポインタを進める
+
+**push は script がしない。** 出したものは取り消せないので、最後の一手は人が打つ。
 
 0.x のあいだはプレリリースとして出る。
 
