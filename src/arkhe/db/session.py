@@ -32,9 +32,17 @@ def session_factory(*, read_only: bool = False, settings: Settings | None = None
     return sessionmaker(bind=read if read_only else write, expire_on_commit=False, future=True)
 
 
-def get_session(*, read_only: bool = False) -> Iterator[Session]:
-    """FastAPI の依存として使う。**例外時は必ず巻き戻す。**"""
-    factory = session_factory(read_only=read_only)
+def get_session() -> Iterator[Session]:
+    """FastAPI の依存として使う。**例外時は必ず巻き戻す。**
+
+    **引数を取らない。** FastAPI は依存の引数をクエリパラメータとして公開するので、
+    `read_only` を引数で受けていたころは `?read_only=true` が全エンドポイントに
+    生えていた——**採番の書き込みを、外からレプリカへ向けられた**。
+
+    向き先を決めるのは**プロセスの役割**（`ARKHE_RESOLVER`）であって、要求ごとに
+    切り替えるものではない。
+    """
+    factory = session_factory(read_only=get_settings().resolver)
     session = factory()
     try:
         yield session
