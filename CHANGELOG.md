@@ -65,6 +65,11 @@ breaking in a system whose identifiers cannot be reissued.
   itself. The check script **caught this on its first run**, and now fails when the two
   drift apart.
 
+- **The icons in "Where to start" on the front page were not rendering** — the literal
+  string `:material-api:` was being published, because `pymdownx.emoji`, the extension
+  that turns those into SVG, was not configured. **An unknown shortcode passes through as
+  plain text**, so nothing warns and `mkdocs build --strict` cannot catch it.
+
 - The README's link to the ER diagram pointed at a location the page had moved from
   (`docs/data-model.md`); reference pages live under `docs/reference/`. The test count
   quoted there was updated too.

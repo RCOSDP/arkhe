@@ -509,6 +509,14 @@ rule of **never handing the same shoulder out twice**.
 - **Health of the delegate.** The upper instance does not know whether the lower one is
   alive; monitoring a delegated shoulder's redirect from outside is an operational job.
 
+- **A way to suspend redirection temporarily.** The delegate's resolver is down, or was
+  taken over, or a wrong target went out — **all of them want stopping quickly, and none
+  of them want the identifier killed**. Per ARK, emptying `url` returns a description
+  (D6), but **the previous target, the reason and any expiry are not kept**, so restoring
+  it relies on someone remembering. Per shoulder or per NAAN there is nothing at all
+  (overwriting `redirect` loses the value it had). A design sketch is in
+  [STATUS.md](https://github.com/RCOSDP/arkhe/blob/main/STATUS.md).
+
 ## Checklist before building
 
 - [ ] Confirmed that the undivided configuration is genuinely not enough (read load is

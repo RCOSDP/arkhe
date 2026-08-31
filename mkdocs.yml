@@ -96,6 +96,13 @@ markdown_extensions:
       # 番号がずれて既存のリンクが黙って別の場所を指す。
       slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
   - pymdownx.details
+  # **アイコンの `:material-…:` は emoji 拡張が変換している。** これが無いと、
+  # 「どこから読むか」のカードに `:material-api:` という文字列がそのまま出る
+  # （警告は出ない——未知の短縮記法はただの文字列として通るので、
+  # `--strict` でも気づけない。実際にそのまま公開されていた）。
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight: {anchor_linenums: true}
   - pymdownx.inlinehilite
   # ルートの CHANGELOG をドキュメントに取り込む（二重管理しない）
