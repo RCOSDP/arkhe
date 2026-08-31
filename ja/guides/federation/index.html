@@ -2075,8 +2075,18 @@ who / what / when をそのまま入れると、<strong>題名から中身が推
   委譲の設定を自動化で組むなら、ここが引っかかる。</li>
 <li><strong>台帳をまたぐ一覧・監査・quota。</strong> <code>/.well-known/ark</code> が公開するのは名前空間の割当までで、
   個々の ARK は含まない。</li>
-<li><strong>委譲先の健全性の監視。</strong> 上位は下位が生きているかを知らない。委譲した shoulder の
-  redirect 先を外形監視するのは運用の仕事になる。</li>
+<li>
+<p><strong>委譲先の健全性の監視。</strong> 上位は下位が生きているかを知らない。委譲した shoulder の
+  redirect 先を外形監視するのは運用の仕事になる。</p>
+</li>
+<li>
+<p><strong>転送を一時的に止める手段。</strong> 委譲先のリゾルバが落ちた・乗っ取られた・間違った
+  行き先を配ってしまった——<strong>どれも急いで止めたいが、識別子は殺したくない</strong>。
+  ARK 単位なら <code>url</code> を空にすれば記述が返る（D6）が、<strong>元の行き先も理由も期限も
+  残らない</strong>ので、戻すのは人の記憶に頼ることになる。shoulder / NAAN 単位には
+  手段が無い（<code>redirect</code> を書き換えると元の値が失われる）。設計案は
+  <a href="https://github.com/RCOSDP/arkhe/blob/main/STATUS.md">STATUS.md</a> にある。</p>
+</li>
 </ul>
 <h2 id="組む前のチェックリスト">組む前のチェックリスト<a class="headerlink" href="#組む前のチェックリスト" title="Permanent link">&para;</a></h2>
 <ul>

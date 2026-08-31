@@ -1977,6 +1977,12 @@ breaking in a system whose identifiers cannot be reissued.</p>
   drift apart.</p>
 </li>
 <li>
+<p><strong>The icons in "Where to start" on the front page were not rendering</strong> — the literal
+  string <code>:material-api:</code> was being published, because <code>pymdownx.emoji</code>, the extension
+  that turns those into SVG, was not configured. <strong>An unknown shortcode passes through as
+  plain text</strong>, so nothing warns and <code>mkdocs build --strict</code> cannot catch it.</p>
+</li>
+<li>
 <p>The README's link to the ER diagram pointed at a location the page had moved from
   (<code>docs/data-model.md</code>); reference pages live under <code>docs/reference/</code>. The test count
   quoted there was updated too.</p>

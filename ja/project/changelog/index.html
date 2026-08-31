@@ -1968,6 +1968,12 @@
   見つけた</strong>ので、以後はずれていたら落とすようにしてある。</p>
 </li>
 <li>
+<p><strong>トップページの「どこから読むか」のアイコンが出ていなかった。</strong> <code>:material-api:</code>
+  という文字列がそのまま公開されていた——アイコンを SVG に変える <code>pymdownx.emoji</code> が
+  設定されていなかったため。<strong>未知の短縮記法はただの文字列として通る</strong>ので警告も出ず、
+  <code>mkdocs build --strict</code> でも気づけない。</p>
+</li>
+<li>
 <p>README の ER 図へのリンクが移動前の場所（<code>docs/data-model.md</code>）を指していた。
   参照ページは <code>docs/reference/</code> にある。あわせてテスト件数の表記を現状に直した。</p>
 </li>

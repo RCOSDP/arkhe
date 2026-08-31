@@ -2107,8 +2107,19 @@ rule of <strong>never handing the same shoulder out twice</strong>.</p>
   <code>arkhe depart --resolver</code> set it, which is where automating a delegation snags.</li>
 <li><strong>Cross-ledger listing, audit and quota.</strong> <code>/.well-known/ark</code> publishes the namespace
   allocation, not the individual ARKs.</li>
-<li><strong>Health of the delegate.</strong> The upper instance does not know whether the lower one is
-  alive; monitoring a delegated shoulder's redirect from outside is an operational job.</li>
+<li>
+<p><strong>Health of the delegate.</strong> The upper instance does not know whether the lower one is
+  alive; monitoring a delegated shoulder's redirect from outside is an operational job.</p>
+</li>
+<li>
+<p><strong>A way to suspend redirection temporarily.</strong> The delegate's resolver is down, or was
+  taken over, or a wrong target went out — <strong>all of them want stopping quickly, and none
+  of them want the identifier killed</strong>. Per ARK, emptying <code>url</code> returns a description
+  (D6), but <strong>the previous target, the reason and any expiry are not kept</strong>, so restoring
+  it relies on someone remembering. Per shoulder or per NAAN there is nothing at all
+  (overwriting <code>redirect</code> loses the value it had). A design sketch is in
+  <a href="https://github.com/RCOSDP/arkhe/blob/main/STATUS.md">STATUS.md</a>.</p>
+</li>
 </ul>
 <h2 id="checklist-before-building">Checklist before building<a class="headerlink" href="#checklist-before-building" title="Permanent link">&para;</a></h2>
 <ul>
