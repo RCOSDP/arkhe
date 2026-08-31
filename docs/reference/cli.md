@@ -11,14 +11,14 @@ audit log the same way.
 | `arkhe depart` | An organisation leaves. **Minting stops; resolution continues.** |
 | `arkhe check` | Validate the configuration. **Fail here rather than at startup.** |
 | `arkhe naan add` | Register a NAAN. |
-| `arkhe naan list` |  |
+| `arkhe naan list` | List NAANs. Shows **which it holds authority for, and where the rest are delegated**. |
 | `arkhe manager list` | List organisations. **The ids are input to other commands.** |
 | `arkhe manager commitment` | Restate an organisation's commitment level. **Published verbatim by `??`.** |
 | `arkhe manager policy` | Narrow what an organisation may do — ways in, self-registration, scope ceiling. **It can only narrow what the NAAN allows**, never widen it. |
 | `arkhe shoulder add` | Carve out a namespace. `--reserve` holds one for later. |
 | `arkhe shoulder status` | Change the status. **There is no way back from retired.** |
 | `arkhe shoulder redirect` | Delegate resolution for a shoulder (`$id` / `${blade}` / a leading `303 `). **An empty value clears it.** |
-| `arkhe shoulder list` |  |
+| `arkhe shoulder list` | List shoulders. **The id is the input to the other commands.** |
 | `arkhe client add` | Register a principal. |
 | `arkhe client key` | Issue a credential. **The plaintext is shown this once and never again.** |
 | `arkhe client breakglass` | Create a temporary principal reaching everything under a NAAN. **Time-boxed.** |

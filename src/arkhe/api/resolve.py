@@ -180,6 +180,25 @@ def well_known_ark(session: Db, cfg: Config):
 @router.get("/ark:/{rest:path}")
 @router.get("/ark:{rest:path}")
 def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
+    """**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の
+    どちらの表記でも受ける。
+
+    返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:
+
+      302  行き先へ転送する（通常）
+      200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない
+           とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき
+      307  その shoulder の採番が委譲されているとき、案内する
+      404  この台帳に無く、取次先も無いとき
+      400  ARK として読めない文字列
+
+    **保留（hold）でも 404 にしない。** その識別子は存在していて、我々が今は転送
+    しないだけなので、理由と期限を添えて 200 で返す。**墓碑（tombstone）も同じ**
+    ——「失われた」と述べることと、「無かった」と言うことは違う。
+
+    NAAN だけの ARK（`ark:/12345`）には、その NAAN について答えられることを返す。
+    知らない NAAN は上位のリゾルバ（`ARKHE_GLOBAL_RESOLVER`、既定 n2t.net）へ取り次ぐ。
+    """
     raw = str(request.url.path)
     try:
         parsed = parse_ark(raw.lstrip("/"), allow_naan_only=True)  # D4

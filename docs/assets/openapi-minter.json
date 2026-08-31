@@ -56,6 +56,7 @@
           "ark"
         ],
         "summary": "Mint",
+        "description": "**新しい ARK を 1 つ発行する。** `ark:mint` が要る。\n\n採番先の shoulder は、省略すれば組織の既定。指定した場合は**その主体の到達範囲に\n含まれるかを検証するだけ**で、範囲を広げる手段にはならない。\n\n**`request_id` を付けると再送で番号が増えない**（F4）。同じ主体が同じ\n`request_id` で送り直すと、最初に採番した ARK をそのまま返す——応答だけが失われた\nときに死んだ番号が増えるのを防ぐ。区別は状態符号に出る:\n\n  201  採番した\n  200  以前の採番を返した（再送）\n\nARK は**振り直せない**。採番は取り消せない操作である。",
         "operationId": "mint_api_mint_post",
         "requestBody": {
           "content": {
@@ -105,6 +106,7 @@
           "ark"
         ],
         "summary": "Bulk Mint",
+        "description": "**まとめて採番する。** `ark:mint` が要る。1 リクエストの上限は\n`ARKHE_BULK_LIMIT`（既定 1000）。\n\n**1 件でも範囲外なら、何も作らない。** 到達範囲と shoulder の検証を全件先に済ませて\nから採番するので、途中まで採番された状態は残らない。\n\n**応答は入力の順序で返す。** 再送ぶん（`request_id` が既知の行）と新規ぶんが混ざる\nので、並びを保って呼び出し側が突き合わせられるようにしてある。`created` と\n`replayed` にそれぞれの件数が出る。全件が再送なら 200、1 件でも採番していれば 201。\n\n行ごとに `request_id` を付けておけば、**切れた塊をそのまま送り直せる**——\n採番済みの行は飛ばされる。",
         "operationId": "bulk_mint_api_mint_bulk_post",
         "requestBody": {
           "content": {
