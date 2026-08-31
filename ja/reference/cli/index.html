@@ -976,6 +976,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#転送を止める" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        転送を止める
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1289,6 +1300,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#転送を止める" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        転送を止める
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1386,6 +1408,10 @@
 <td>状態を変える。<strong>retired からは戻せない</strong>（引退した名前空間の再開は NR 違反の芽）。</td>
 </tr>
 <tr>
+<td><code>arkhe shoulder redirect</code></td>
+<td>shoulder 単位で解決を委譲する（<code>$id</code> / <code>${blade}</code> / 先頭の <code>303</code>）。<strong>空文字を渡せば外す。</strong></td>
+</tr>
+<tr>
 <td><code>arkhe shoulder list</code></td>
 <td></td>
 </tr>
@@ -1416,6 +1442,18 @@
 <tr>
 <td><code>arkhe client enable</code></td>
 <td>止めた主体を戻す（去った組織の主体は戻せない）。</td>
+</tr>
+<tr>
+<td><code>arkhe hold add</code></td>
+<td>転送を一時的に止める（<code>ark</code> / <code>shoulder</code> / <code>naan</code>）。<strong>解決は止めない</strong>——記述は答え続ける。期限と理由は必須。</td>
+</tr>
+<tr>
+<td><code>arkhe hold release</code></td>
+<td>期限を待たずに保留を外す。</td>
+</tr>
+<tr>
+<td><code>arkhe hold list</code></td>
+<td>今かかっている保留を並べる。<strong>見えないと恒久化する。</strong></td>
 </tr>
 <tr>
 <td><code>arkhe ark list</code></td>
@@ -1453,6 +1491,15 @@ registry への登録という、arkhe の外で起きる手順も含めて</str
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span><span class="m">3</span><span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://mint.partner.example.org
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span><span class="m">3</span><span class="w"> </span>retired<span class="w"> </span>--note<span class="w"> </span><span class="s2">"移行完了"</span>
 </code></pre></div>
+<h3 id="転送を止める">転送を止める<a class="headerlink" href="#転送を止める" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:/99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"行き先を確認中"</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">3</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"委譲先のリゾルバが落ちている"</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>list
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>release<span class="w"> </span>shoulder<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<p><strong>解決は止まらない。</strong> 止まるのは転送だけで、<code>?info</code> も <code>??</code> も答え続ける。期限は
+必須で、切れれば時計だけで戻る——<strong>戻し忘れが残らない</strong>。失われた対象を宣言するのは
+これではなく tombstone のほう（意味も可逆性も違う）。</p>
 <p><strong><code>retired</code> からは戻せない。</strong> 予約は作成時にしか指定できない——一度採番できる状態に
 した名前空間を、後から未使用扱いにはできないから。</p>
 <h2 id="コマンドの言語">コマンドの言語<a class="headerlink" href="#コマンドの言語" title="Permanent link">&para;</a></h2>
@@ -1481,7 +1528,7 @@ Typer が help を組み立てるのが import の時点なので、<code>--lang
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
 </code></pre></div>
 
 

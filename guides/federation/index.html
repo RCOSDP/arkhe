@@ -862,6 +862,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#when-a-delegate-goes-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a delegate goes down
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-stays-above-what-moves-below" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1434,6 +1445,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#when-a-delegate-goes-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a delegate goes down
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-stays-above-what-moves-below" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1740,9 +1762,7 @@ pointed at <strong>another arkhe</strong> rather than at an organisation.</p>
 <p>The upper ledger:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/s7<span class="w"> </span>--note<span class="w"> </span><span class="s2">"delegated to site B"</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.b.example.ac.jp
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Resolution delegation (shoulder.redirect) is set from the admin interface;</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># there is no CLI for it yet.</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1">#   Ledger › shoulder › delegate resolution: 303 https://ark.b.example.ac.jp/ark:/$id</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.b.example.ac.jp/ark:/$id'</span>
 </code></pre></div>
 <p>The lower ledger:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span><span class="w">     </span><span class="c1"># registered as authoritative here</span>
@@ -1808,6 +1828,21 @@ future names can be divided; names already handed out cannot be moved.</p>
 <p><strong>③ There is one more hop.</strong> If the upper instance is down, the lower one is
 unreachable from outside even while healthy. <strong>Keep the depth at two.</strong> A→B→A is a
 loop, and arkhe does not detect it.</p>
+<h3 id="when-a-delegate-goes-down">When a delegate goes down<a class="headerlink" href="#when-a-delegate-goes-down" title="Permanent link">&para;</a></h3>
+<p>Delegation is a written-down address, so the upper instance does not notice when that
+address dies — it keeps handing out <code>302</code>s to something unreachable. To a user that is
+<strong>a broken identifier</strong>.</p>
+<p>Hold the redirect instead.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the delegate's resolver is down"</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>release<span class="w"> </span>shoulder<span class="w"> </span>&lt;id&gt;<span class="w">     </span><span class="c1"># once it is back (an expiry would also lift it)</span>
+</code></pre></div>
+<p>While held, the upper instance answers <code>200</code> and the reason instead of a <code>302</code>. <strong>The
+identifier is alive</strong>: <code>?info</code> and <code>??</code> keep answering, so the persistence promise is not
+withdrawn. The expiry is mandatory and lifts itself by the clock alone
+(<a href="../../concepts/invariants/">Invariants</a>).</p>
+<p>Held namespaces appear under <code>held</code> in <code>/.well-known/ark</code>, so <strong>the instance below can
+verify mechanically that the one above stopped forwarding</strong> — which matters when nobody
+answers the phone.</p>
 <h3 id="what-stays-above-what-moves-below">What stays above, what moves below<a class="headerlink" href="#what-stays-above-what-moves-below" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1993,27 +2028,27 @@ added later, never removed.</p>
 <p><strong>A. Mint on the public side and hand the names inward</strong>
 (<a href="#c-a-closed-arkhe-underneath">C-1</a>). No outbound connection is needed from the closed
 network, and the public side can state that the identifier exists.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Build the ledger (public arkhe)</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Your organisation"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://…/policy"</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7<span class="w">      </span><span class="c1"># open PIDs</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/c7<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--note<span class="w"> </span><span class="s2">"closed PIDs (objects inside)"</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Mint with no url — the resolver describes instead of redirecting</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://ark.example.ac.jp/api/mint<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Authorization: Bearer …'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"shoulder": "/c7",</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="s1">       "what_title": "(only what may leave the closed network)",</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="s1">       "commitment": "Restricted access; use requires an application",</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="s1">       "url": ""}'</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># → ark:/99999/c7xyz…</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># Add the door (raise it to the third level)</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="c1"># When the embargo lifts, point it at the object. **The identifier does not change**</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Build the ledger (public arkhe)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Your organisation"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://…/policy"</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7<span class="w">      </span><span class="c1"># open PIDs</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/c7<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--note<span class="w"> </span><span class="s2">"closed PIDs (objects inside)"</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># Mint with no url — the resolver describes instead of redirecting</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://ark.example.ac.jp/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Authorization: Bearer …'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"shoulder": "/c7",</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="s1">       "what_title": "(only what may leave the closed network)",</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="s1">       "commitment": "Restricted access; use requires an application",</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="s1">       "url": ""}'</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># → ark:/99999/c7xyz…</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># Add the door (raise it to the third level)</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="c1"># When the embargo lifts, point it at the object. **The identifier does not change**</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
 </code></pre></div>
 <p>The closed side keeps no ledger — only the mapping from the names it was given to the
 objects inside.</p>
@@ -2022,15 +2057,14 @@ there and mark <code>/c7</code> <code>delegated</code> on the public side. The c
 but <strong>the public side never learns the names that follow</strong> — there is
 <a href="#what-does-not-exist-yet">no endpoint for importing an ARK minted elsewhere</a>, which is
 the largest constraint in this design today.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Public side: record in the ledger that we do not mint in this namespace</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Resolution delegation, from the admin interface:</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">#   303 https://ark.example.ac.jp/closed-namespace</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1">#   (not an internal hostname — it is published at /.well-known/ark)</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Closed side: the same NAAN and shoulder, held as authoritative here</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"The closed organisation"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Public side: record in the ledger that we do not mint in this namespace</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.example.ac.jp/closed-namespace'</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1">#   (not an internal hostname — it is published at /.well-known/ark)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Closed side: the same NAAN and shoulder, held as authoritative here</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"The closed organisation"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
 </code></pre></div>
 <h3 id="what-arkhe-does-not-do-here">What arkhe does not do here<a class="headerlink" href="#what-arkhe-does-not-do-here" title="Permanent link">&para;</a></h3>
 <p><strong>It does not do access control.</strong> A closed PID is closed <strong>because its target is</strong>, not

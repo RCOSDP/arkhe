@@ -1546,6 +1546,11 @@ header. Use a NetworkPolicy on Kubernetes, or listen only on 127.0.0.1.</p>
 <td><code>1000</code></td>
 <td>Rows per bulk request. Split larger loads and use <code>request_id</code> so a broken batch can simply be resent</td>
 </tr>
+<tr>
+<td><code>ARKHE_HOLD_MAX_DAYS</code></td>
+<td><code>90</code></td>
+<td>Longest a redirect may be held. <strong>Requiring an expiry is not enough</strong> — "a year from now" is indistinguishable from permanent, so there is a ceiling. Extending means setting it again, which the audit log records</td>
+</tr>
 </tbody>
 </table>
 <h2 id="behind-a-proxy">Behind a proxy<a class="headerlink" href="#behind-a-proxy" title="Permanent link">&para;</a></h2>

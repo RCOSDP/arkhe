@@ -590,6 +590,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-stops-is-redirection-never-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What stops is redirection, never resolution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#a-namespace-is-never-deleted-either" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1250,6 +1261,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-stops-is-redirection-never-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What stops is redirection, never resolution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#a-namespace-is-never-deleted-either" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1357,6 +1379,22 @@ description stay, only reachability goes.</p>
 <p>The resolver then returns the description instead of a redirect — which is
 <a href="https://www.go-fair.org/fair-principles/">FAIR A2</a>: <em>metadata should be accessible
 even when the data are no longer available</em>.</p>
+<h2 id="what-stops-is-redirection-never-resolution">What stops is redirection, never resolution<a class="headerlink" href="#what-stops-is-redirection-never-resolution" title="Permanent link">&para;</a></h2>
+<p>When a target can no longer be trusted — the delegate is down, a wrong URL went out, a
+takedown was requested — <strong>it has to stop quickly, and the identifier must not die.</strong></p>
+<p><code>404</code> would be a lie: the identifier exists. <code>503</code> says "not right now", but a permanent
+identifier still looks broken. arkhe answers <code>200</code> with a <strong>description</strong> instead — the
+same path as <a href="#an-ark-is-never-deleted">An ARK is never deleted</a>, so the identifier stays
+alive while only the redirect stops.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:/99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">7</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the delegate's resolver is down"</span>
+</code></pre></div>
+<p>Do not confuse this with a tombstone. <strong>That is a permanent declaration that the object
+is gone</strong>; this is <strong>a dated measure saying the object is there but its address cannot be
+given out</strong>. So a hold keeps the previous target and expires by the clock alone — nothing
+has to remember to undo it.</p>
+<p>Neither <code>?info</code> nor <code>??</code> is stopped: silencing them would withdraw the persistence
+promise itself. The reason and the expiry are published there instead.</p>
 <h2 id="a-namespace-is-never-deleted-either">A namespace is never deleted either<a class="headerlink" href="#a-namespace-is-never-deleted-either" title="Permanent link">&para;</a></h2>
 <p>Deleting a shoulder would let random assignment hand out a string that was already
 used. Set <code>status=retired</code> instead; existing ARKs keep resolving.</p>
@@ -1399,6 +1437,10 @@ the more it matters that you can trace who did what.</p>
 <tr>
 <td>No deletion of ARK or shoulder</td>
 <td><code>before_delete</code> events in <code>db/models.py</code></td>
+</tr>
+<tr>
+<td>A hold stops redirection only</td>
+<td><code>hold_of</code> / <code>effective_hold</code> in <code>domain/resolution.py</code></td>
 </tr>
 <tr>
 <td><code>retired</code> is one-way</td>

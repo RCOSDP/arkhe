@@ -1546,6 +1546,11 @@ k8s なら NetworkPolicy、単体なら 127.0.0.1 だけで待ち受ける。</p
 <td><code>1000</code></td>
 <td>1 リクエストの件数。<strong>それ以上は分割し、<code>request_id</code> を付ける</strong>——切れた塊はそのまま再送してよい</td>
 </tr>
+<tr>
+<td><code>ARKHE_HOLD_MAX_DAYS</code></td>
+<td><code>90</code></td>
+<td>転送を止めておける最長日数。<strong>期限を必須にしただけでは足りない</strong>——「1 年後」と書けば恒久と変わらないので上限を置く。延ばすなら掛け直す（そのたびに監査に残る）</td>
+</tr>
 </tbody>
 </table>
 <h2 id="前段がある場合">前段がある場合<a class="headerlink" href="#前段がある場合" title="Permanent link">&para;</a></h2>

@@ -976,6 +976,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#holding-a-redirect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Holding a redirect
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1289,6 +1300,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#holding-a-redirect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Holding a redirect
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1387,6 +1409,10 @@ audit log the same way.</p>
 <td>Change the status. <strong>There is no way back from retired.</strong></td>
 </tr>
 <tr>
+<td><code>arkhe shoulder redirect</code></td>
+<td>Delegate resolution for a shoulder (<code>$id</code> / <code>${blade}</code> / a leading <code>303</code>). <strong>An empty value clears it.</strong></td>
+</tr>
+<tr>
 <td><code>arkhe shoulder list</code></td>
 <td></td>
 </tr>
@@ -1417,6 +1443,18 @@ audit log the same way.</p>
 <tr>
 <td><code>arkhe client enable</code></td>
 <td>Restore one (not if its organisation has left).</td>
+</tr>
+<tr>
+<td><code>arkhe hold add</code></td>
+<td>Hold redirection for an <code>ark</code> / <code>shoulder</code> / <code>naan</code>. <strong>Resolution is not stopped</strong> — the description keeps answering. An expiry and a reason are required.</td>
+</tr>
+<tr>
+<td><code>arkhe hold release</code></td>
+<td>Lift a hold before its expiry.</td>
+</tr>
+<tr>
+<td><code>arkhe hold list</code></td>
+<td>List the holds in force. <strong>What is not visible becomes permanent.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe ark list</code></td>
@@ -1458,6 +1496,16 @@ does is recorded</strong>.</p>
 </code></pre></div>
 <p><strong><code>retired</code> has no way back.</strong> A reservation can only be set at creation: once a
 namespace has been mintable, it cannot be called unused again.</p>
+<h3 id="holding-a-redirect">Holding a redirect<a class="headerlink" href="#holding-a-redirect" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:/99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">3</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the delegate's resolver is down"</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>list
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>release<span class="w"> </span>shoulder<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<p><strong>Resolution does not stop.</strong> Only the redirect does; <code>?info</code> and <code>??</code> keep answering.
+An expiry is required and lifts itself by the clock alone — <strong>nothing has to remember to
+undo it</strong>. Declaring an object lost is a different operation (<code>tombstone</code>), with
+different meaning and no way back.</p>
 <h2 id="the-language-of-the-commands">The language of the commands<a class="headerlink" href="#the-language-of-the-commands" title="Permanent link">&para;</a></h2>
 <p><code>arkhe</code>'s help and output exist in Japanese and English. <strong>The language is decided
 from the environment at startup</strong> — Typer assembles its help at import time, so a
@@ -1484,7 +1532,7 @@ runtime switch like <code>--lang</code> cannot work.</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
 </code></pre></div>
 
 

@@ -590,6 +590,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#止めるのは転送であって解決ではない" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        止めるのは転送であって、解決ではない
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#名前空間も削除しない" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1250,6 +1261,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#止めるのは転送であって解決ではない" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        止めるのは転送であって、解決ではない
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#名前空間も削除しない" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1354,6 +1376,20 @@ ORM の層で削除を拒む。</p>
 <p>以後リゾルバは、転送ではなく記述を返す。これは
 <a href="https://www.go-fair.org/fair-principles/">FAIR A2</a>——<strong>データが利用できなくなっても
 メタデータは参照できるべき</strong>——そのものである。</p>
+<h2 id="止めるのは転送であって解決ではない">止めるのは転送であって、解決ではない<a class="headerlink" href="#止めるのは転送であって解決ではない" title="Permanent link">&para;</a></h2>
+<p>行き先が信用できなくなったとき——委譲先が落ちた、間違った URL を配ってしまった、
+取り下げを求められた——<strong>急いで止めたいが、識別子を殺してはいけない。</strong></p>
+<p><code>404</code> は嘘である（その識別子は存在する）。<code>503</code> は「今は答えられない」と言えるが、
+永続識別子が壊れて見えることに変わりはない。arkhe は <code>200</code> と<strong>記述</strong>を返す
+——<a href="#ark">ARK は削除しない</a>と同じ経路で、識別子は生きたまま転送だけが止まる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:/99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"行き先を確認中"</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">7</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"委譲先のリゾルバが落ちている"</span>
+</code></pre></div>
+<p>tombstone と混ぜない。<strong>あちらは「対象が失われた」という恒久の宣言</strong>で、こちらは
+<strong>「対象は在るが、今は行き先を出せない」という期限つきの措置</strong>である。だから hold は
+元の行き先を残し、期限が切れれば時計だけで元に戻る（戻し忘れが起きない）。</p>
+<p><code>?info</code> も <code>??</code> も止めない。<strong>永続性の宣言を引っ込めることになる</strong>からで、
+止めている理由と期限はむしろそこに載せて公開する。</p>
 <h2 id="名前空間も削除しない">名前空間も削除しない<a class="headerlink" href="#名前空間も削除しない" title="Permanent link">&para;</a></h2>
 <p>shoulder を消すと、乱数割当が<strong>既に使われた文字列</strong>を再び当てうる。消さずに
 <code>status=retired</code> にする。既存の ARK は解決し続ける。</p>
@@ -1392,6 +1428,10 @@ ORM の層で削除を拒む。</p>
 <tr>
 <td>ARK と shoulder の削除禁止</td>
 <td><code>db/models.py</code> の <code>before_delete</code></td>
+</tr>
+<tr>
+<td>保留は転送だけを止める</td>
+<td><code>domain/resolution.py</code> の <code>hold_of</code> / <code>effective_hold</code></td>
 </tr>
 <tr>
 <td><code>retired</code> から戻せない</td>

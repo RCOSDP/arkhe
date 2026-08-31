@@ -862,6 +862,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#委譲先が落ちたとき" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        委譲先が落ちたとき
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#何が上位に残り何が下位に移るか" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1434,6 +1445,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#委譲先が落ちたとき" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        委譲先が落ちたとき
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#何が上位に残り何が下位に移るか" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1732,8 +1754,7 @@
 <p>上位の台帳:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/s7<span class="w"> </span>--note<span class="w"> </span><span class="s2">"拠点 B へ委譲"</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.b.example.ac.jp
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># 解決の委譲（shoulder.redirect）は管理画面から設定する。CLI にはまだ無い</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">#   → 台帳 › shoulder › 解決の委譲: 303 https://ark.b.example.ac.jp/ark:/$id</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.b.example.ac.jp/ark:/$id'</span>
 </code></pre></div>
 <p>下位の台帳:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"（上位と同じ NAAN）"</span><span class="w">      </span><span class="c1"># 権威を持つ側として登録する</span>
@@ -1796,6 +1817,18 @@ NOID＋検査桁でない名前を採ると、<strong>上位経由の解決だ�
 移せない。</p>
 <p><strong>③ ホップは増える。</strong> 上位が落ちれば、下位が生きていても外からは解決できない。
 <strong>深さは 2 まで</strong>にする。A→B→A のような循環はループになり、arkhe は検知しない。</p>
+<h3 id="委譲先が落ちたとき">委譲先が落ちたとき<a class="headerlink" href="#委譲先が落ちたとき" title="Permanent link">&para;</a></h3>
+<p>委譲は<strong>行き先を書いておく</strong>仕組みなので、その行き先が落ちても上位は気づかないし、
+落ちた先へ 302 を出し続ける。利用者から見れば<strong>壊れた識別子</strong>である。</p>
+<p>そのときは<strong>転送だけを止める</strong>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"委譲先のリゾルバが落ちている"</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>release<span class="w"> </span>shoulder<span class="w"> </span>&lt;id&gt;<span class="w">            </span><span class="c1"># 直ったら外す（期限が来れば自動でも戻る）</span>
+</code></pre></div>
+<p>保留中、上位は <code>302</code> を出さず <code>200</code> と理由を返す。<strong>識別子は生きている</strong>——
+<code>?info</code> も <code>??</code> も答え続けるので、永続性の宣言を引っ込めることにはならない。
+期限は必須で、切れれば時計だけで元に戻る（<a href="../../concepts/invariants/">壊さないもの</a>）。</p>
+<p>止めている名前空間は <code>/.well-known/ark</code> の <code>held</code> に出る。<strong>下位から見て、上位が
+止めたことを機械的に確かめられる</strong>——連絡が付かないときに効く。</p>
 <h3 id="何が上位に残り何が下位に移るか">何が上位に残り、何が下位に移るか<a class="headerlink" href="#何が上位に残り何が下位に移るか" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1967,40 +2000,40 @@ FAIR A2 の形そのものである。制限公開は、この基盤にとって
 <h3 id="実装イメージ">実装イメージ<a class="headerlink" href="#実装イメージ" title="Permanent link">&para;</a></h3>
 <p><strong>A. 公開側で採番し、名前を閉域に払い出す</strong>（<a href="#c-arkhe">C-1</a>）。閉域から外向きの通信が要らず、
 公開側が「その識別子は存在する」と言える。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># 台帳を組む（公開側の arkhe）</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"あなたの組織"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://…/policy"</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"例示大学"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7<span class="w">          </span><span class="c1"># オープン PID</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/c7<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--note<span class="w"> </span><span class="s2">"クローズド PID（閉域の対象）"</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># 採番する。url を入れない——リゾルバは転送ではなく記述を返す</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://ark.example.ac.jp/api/mint<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Authorization: Bearer …'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"shoulder": "/c7",</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="s1">       "what_title": "（外に出してよい範囲の題）",</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="s1">       "commitment": "制限公開。利用には申請が要る",</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="s1">       "url": ""}'</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># → ark:/99999/c7xyz…</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># 申請窓口を付ける（3 段目に上げる）</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="c1"># 禁止期間が明けたら、実体へ向け替える。**識別子は変わらない**</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 台帳を組む（公開側の arkhe）</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"あなたの組織"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://…/policy"</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"例示大学"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7<span class="w">          </span><span class="c1"># オープン PID</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/c7<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--note<span class="w"> </span><span class="s2">"クローズド PID（閉域の対象）"</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># 採番する。url を入れない——リゾルバは転送ではなく記述を返す</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://ark.example.ac.jp/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Authorization: Bearer …'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"shoulder": "/c7",</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="s1">       "what_title": "（外に出してよい範囲の題）",</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="s1">       "commitment": "制限公開。利用には申請が要る",</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="s1">       "url": ""}'</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># → ark:/99999/c7xyz…</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># 申請窓口を付ける（3 段目に上げる）</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="c1"># 禁止期間が明けたら、実体へ向け替える。**識別子は変わらない**</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
 </code></pre></div>
 <p>閉域側は台帳を持たず、<strong>払い出された名前と中の対象の対応だけ</strong>を持つ。</p>
 <p><strong>B. 閉域で採番する</strong>（<a href="#c-arkhe">C-2</a>）。閉域に arkhe を建て、公開側は <code>/c7</code> を <code>delegated</code> に
 する。閉域が自律する代わりに、<strong>公開側はその後の名前を知らない</strong>——<a href="#gaps">外部で採番された ARK を
 取り込む口が無い</a>ためで、ここが現状のいちばん大きな制約である。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 公開側: この名前空間では自分は採番しない、と台帳に刻む</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># 解決の委譲は管理画面から: 303 https://ark.example.ac.jp/closed-namespace</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">#   （内部ホスト名を書かない。/.well-known/ark に載る）</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># 閉域側: 同じ NAAN・同じ shoulder を、権威を持つ側として持つ</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"（上位と同じ NAAN）"</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"閉域の組織"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># 公開側: この名前空間では自分は採番しない、と台帳に刻む</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.example.ac.jp/closed-namespace'</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1">#   （内部ホスト名を書かない。/.well-known/ark に載る）</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># 閉域側: 同じ NAAN・同じ shoulder を、権威を持つ側として持つ</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"（上位と同じ NAAN）"</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"閉域の組織"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
 </code></pre></div>
 <h3 id="arkhe-がやらないこと">arkhe がやらないこと<a class="headerlink" href="#arkhe-がやらないこと" title="Permanent link">&para;</a></h3>
 <p><strong>アクセス制御はしない。</strong> クローズド PID が「閉じている」のは<strong>行き先が閉じているから</strong>で
@@ -2071,8 +2104,7 @@ who / what / when をそのまま入れると、<strong>題名から中身が推
   ない（<a href="#c-arkhe">C</a> の制約はここから来ている）。入れるなら、名前が委譲した shoulder の
   内側にあること・二重採番でないこと・検査桁が合っていることを、取り込みの時点で
   確かめる必要がある。</li>
-<li><strong><code>shoulder.redirect</code> を設定する CLI。</strong> 管理画面と <code>arkhe depart --resolver</code> からのみ。
-  委譲の設定を自動化で組むなら、ここが引っかかる。</li>
+<li>~~<code>shoulder.redirect</code> を設定する CLI~~ → <strong>入った</strong>（<code>arkhe shoulder redirect</code>）。</li>
 <li><strong>台帳をまたぐ一覧・監査・quota。</strong> <code>/.well-known/ark</code> が公開するのは名前空間の割当までで、
   個々の ARK は含まない。</li>
 <li>
