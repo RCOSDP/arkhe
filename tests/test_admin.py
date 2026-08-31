@@ -131,6 +131,23 @@ def test_翻訳に抜けが無い():
         assert set(cat) == set(i18n.JA), f"{lang} に抜けがある"
 
 
+def test_scopeにはすべて説明がある():
+    """**語彙が増えたら訳も増える。** 言語間の抜けは既存の検査で見つかるが、
+    `SCOPES` に足して**どの言語にも入れ忘れる**と、対が揃ってしまうので通る
+    ——実際 `ark:hold` は、画面に `sc.ark:hold` という生のキーが出ていた。
+
+    OpenAPI の `clientCredentials.scopes` もここから起こすので、抜けると
+    仕様書にキーが漏れる。
+    """
+    from arkhe.api import i18n
+    from arkhe.domain import authz
+
+    for lang, cat in i18n.CATALOGS.items():
+        missing = [f"sc.{s}{sfx}" for s in authz.SCOPES for sfx in ("", ".d")
+                   if f"sc.{s}{sfx}" not in cat]
+        assert not missing, f"{lang} に無い scope の語: {missing}"
+
+
 def test_予約は作成時にしか指定できない(db, world, root):
     """**active から reserved へは戻せない。** 一度採番できる状態にした名前空間を
     後から「未使用扱い」にはできない。"""

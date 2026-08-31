@@ -160,6 +160,9 @@ JA: dict[str, str] = {
     "sc.ark:tombstone": "失われたと宣言する",
     "sc.ark:tombstone.d": "対象が失われたことを述べる。<b>転送先の付け替えとは意味が違う</b>"
                           "ので、権限も分けてある。",
+    "sc.ark:hold": "転送を止める",
+    "sc.ark:hold.d": "行き先への転送を一時的に止める。<b>解決そのものは止まらない</b>"
+                     "——識別子は生きたまま、記述を返す。",
     "cu.f.scopes_hint": "<b>ここが上限です。</b>認可サーバのトークンに載っている scope との"
                         "積が、実際にできることになります——トークンで広がることはありません。",
 }
@@ -315,6 +318,9 @@ EN: dict[str, str] = {
     "sc.ark:tombstone": "Declare it lost",
     "sc.ark:tombstone.d": "State that the object is gone. <b>That means something other "
                           "than repointing</b>, so the permission is separate.",
+    "sc.ark:hold": "Suspend forwarding",
+    "sc.ark:hold.d": "Temporarily stop forwarding to the target. <b>Resolution itself does "
+                     "not stop</b> — the identifier stays alive and returns a description.",
     "cu.f.scopes_hint": "<b>This is the ceiling.</b> What it may actually do is the "
                         "intersection with the scopes in the token — a token cannot widen "
                         "it.",
