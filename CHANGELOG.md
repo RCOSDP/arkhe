@@ -11,6 +11,20 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **Each operation now states the scope it requires.** The specification said
+  `{"oauth2": []}` — that a token gets you in, but **not what it has to carry** — so a
+  client generated from it had no choice but to ask for every scope.
+
+      POST /api/mint       {"oauth2": ["ark:mint"]}
+      PUT  /api/tombstone  {"oauth2": ["ark:tombstone"]}
+      POST /api/query      {"oauth2": ["ark:read"]}
+
+  Only the oauth2 requirement carries scopes: `bearer` is `type: http`, and OpenAPI
+  **does not allow scopes on anything but oauth2** (the array must be empty). A test
+  holds each declaration to the check performed in the handler.
+
+### Added
+
 - **The OpenAPI document now says how to get a token.** There was no
   `clientCredentials` flow in `securitySchemes` — no `tokenUrl`, no scope list — so
   nothing stated in machine-readable form that this is OAuth 2.0. The endpoint's URL

@@ -102,7 +102,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:mint"
+            ]
           },
           {
             "bearer": []
@@ -162,7 +164,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:mint"
+            ]
           },
           {
             "bearer": []
@@ -212,7 +216,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:mint"
+            ]
           },
           {
             "bearer": []
@@ -262,7 +268,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:update"
+            ]
           },
           {
             "bearer": []
@@ -312,7 +320,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:update"
+            ]
           },
           {
             "bearer": []
@@ -362,7 +372,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:tombstone"
+            ]
           },
           {
             "bearer": []
@@ -412,7 +424,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:hold"
+            ]
           },
           {
             "bearer": []
@@ -462,7 +476,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:hold"
+            ]
           },
           {
             "bearer": []
@@ -512,7 +528,9 @@
         },
         "security": [
           {
-            "oauth2": []
+            "oauth2": [
+              "ark:read"
+            ]
           },
           {
             "bearer": []

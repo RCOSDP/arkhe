@@ -378,8 +378,9 @@ def test_トークンの取り方が仕様書に載る():
 
     # **bearer と並ぶ**（どちらでもよい）。片方に寄せると、apikey での利用が
     # 仕様書の上では通らないことになる。
-    assert {"oauth2": []} in spec["paths"]["/api/mint"]["post"]["security"]
-    assert {"bearer": []} in spec["paths"]["/api/mint"]["post"]["security"]
+    security = spec["paths"]["/api/mint"]["post"]["security"]
+    assert {"oauth2": ["ark:mint"]} in security   # 何が要るかも書く
+    assert {"bearer": []} in security
 
 
 @pytest.mark.parametrize(
@@ -423,3 +424,48 @@ def test_解決の200は宣言した3つの媒体で返る(world, principal_of, 
         for q in ("json", "?", "info")
     }
     assert got == set(_RESOLVE_RESPONSES[200]["content"])
+
+
+def test_宣言したscopeと検査するscopeが一致する():
+    """**宣言と検査が 2 か所に分かれている。** 仕様書に出るのは口の `needs(…)`、
+    実際に弾くのは本体の `require_scope(…)`——ずれれば仕様書が嘘になる。
+
+    束ねなかったのは、束ねると scope が `bearer` にも付くため。OpenAPI は
+    **oauth2 以外のスキームに scope を書くことを許さない**（空配列でなければ
+    ならない）ので、`Security` に包む対象は oauth2 だけに限っている。
+    """
+    import ast
+    import pathlib
+
+    src = pathlib.Path("src/arkhe/api/mint.py").read_text(encoding="utf-8")
+    for fn in ast.walk(ast.parse(src)):
+        if not isinstance(fn, ast.FunctionDef):
+            continue
+        declared = [
+            k.value.args[0].value
+            for d in fn.decorator_list if isinstance(d, ast.Call)
+            for k in d.keywords
+            if k.arg == "dependencies" and isinstance(k.value, ast.Call)
+            and getattr(k.value.func, "id", "") == "needs"
+        ]
+        enforced = [
+            x.args[1].value for x in ast.walk(fn)
+            if isinstance(x, ast.Call)
+            and ast.unparse(x.func) == "authz.require_scope"
+        ]
+        assert declared == enforced, f"{fn.name}: 宣言 {declared} / 検査 {enforced}"
+        if fn.name != "_apply":
+            assert not enforced or declared, f"{fn.name}: 検査はあるのに宣言が無い"
+
+
+def test_scopeはoauth2にしか付かない():
+    """OpenAPI 3.1 §4.8.30: **oauth2 と openIdConnect 以外は空配列でなければならない。**
+    `bearer` は `type: http` なので、ここに scope を書くと仕様として不正になる。
+    """
+    spec = _spec(auth=["apikey", "oauth2"])
+    for path, methods in spec["paths"].items():
+        for method, op in methods.items():
+            for requirement in op.get("security", []):
+                for name, scopes in requirement.items():
+                    if name != "oauth2":
+                        assert scopes == [], f"{method.upper()} {path}: {name} に {scopes}"
