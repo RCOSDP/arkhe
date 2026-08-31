@@ -30,6 +30,18 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **The published API specification had no description for minting or resolution.**
+  FastAPI turns a handler's docstring into the OpenAPI `description`, and three
+  handlers had none — `POST /api/mint`, `POST /api/mint/bulk` and `GET /ark:…` (four
+  operations). The other nine were documented, so it was exactly the two most-used
+  endpoints that were blank. They now describe replay handling (201 vs 200), the
+  all-or-nothing rule for bulk minting, and when resolution answers with something
+  other than a 302.
+
+- **`arkhe naan list` and `arkhe shoulder list` had no description**, leaving those two
+  rows blank in `--help` and in the CLI reference, where the other 22 commands are
+  filled in for both languages.
+
 - **The `ark:hold` scope had no label in either language, so the admin interface showed
   the raw key `sc.ark:hold`.** It was missed when the scope was added in 0.0.9. The
   existing check for missing translations compares the two catalogues against each

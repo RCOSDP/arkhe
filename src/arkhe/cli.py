@@ -73,7 +73,7 @@ def naan_add(
         typer.echo(t("naan.add.done", naan=obj.naan, name=obj.name))
 
 
-@naan_app.command("list")
+@naan_app.command("list", help=t("naan.list.help"))
 def naan_list():
     with _session() as s:
         for n in s.scalars(select(Naan).order_by(Naan.naan)):
@@ -156,7 +156,7 @@ def shoulder_redirect(
         typer.echo(t(key, naan=sh.naan, shoulder=sh.shoulder, redirect=sh.redirect))
 
 
-@shoulder_app.command("list")
+@shoulder_app.command("list", help=t("shoulder.list.help"))
 def shoulder_list(naan: str = typer.Option("", help=t("opt.only_naan"))):
     with _session() as s:
         stmt = select(Shoulder).order_by(Shoulder.naan, Shoulder.shoulder)

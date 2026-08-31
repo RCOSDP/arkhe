@@ -10,14 +10,14 @@
 | `arkhe depart` | 組織の離脱。**新規採番は止め、解決は続ける。** |
 | `arkhe check` | 設定を検証する。**起動前に落としたいものをここで落とす。** |
 | `arkhe naan add` | NAAN を登録する。 |
-| `arkhe naan list` |  |
+| `arkhe naan list` | NAAN を並べる。**権威を持つのか、どこへ委譲しているのか**が出る。 |
 | `arkhe manager list` | 組織を並べる。**id は他のコマンドの入力になる。** |
 | `arkhe manager commitment` | 組織の約束の水準を言い直す。**`??` でそのまま公開される。** |
 | `arkhe manager policy` | 組織にできることを狭める（入り方・自己登録・scope の上限）。**NAAN の決まりから狭めることしかできない**——広げられない。 |
 | `arkhe shoulder add` | 名前空間を切り出す。`--reserve` で将来用に確保できる。 |
 | `arkhe shoulder status` | 状態を変える。**retired からは戻せない**（引退した名前空間の再開は NR 違反の芽）。 |
 | `arkhe shoulder redirect` | shoulder 単位で解決を委譲する（`$id` / `${blade}` / 先頭の `303 `）。**空文字を渡せば外す。** |
-| `arkhe shoulder list` |  |
+| `arkhe shoulder list` | shoulder を並べる。**id は他のコマンドの入力になる。** |
 | `arkhe client add` | 主体を登録する。 |
 | `arkhe client key` | 資格情報を発行する。**平文はこの一度しか表示されない。** |
 | `arkhe client breakglass` | NAAN 配下すべてに届く一時的な主体を作る。**期限つき。** |

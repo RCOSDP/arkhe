@@ -79,6 +79,20 @@ def _apply(ark: Ark, data: dict, principal) -> Ark:
 
 @router.post("/mint", response_model=ArkOut, status_code=201)
 def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Response):
+    """**新しい ARK を 1 つ発行する。** `ark:mint` が要る。
+
+    採番先の shoulder は、省略すれば組織の既定。指定した場合は**その主体の到達範囲に
+    含まれるかを検証するだけ**で、範囲を広げる手段にはならない。
+
+    **`request_id` を付けると再送で番号が増えない**（F4）。同じ主体が同じ
+    `request_id` で送り直すと、最初に採番した ARK をそのまま返す——応答だけが失われた
+    ときに死んだ番号が増えるのを防ぐ。区別は状態符号に出る:
+
+      201  採番した
+      200  以前の採番を返した（再送）
+
+    ARK は**振り直せない**。採番は取り消せない操作である。
+    """
     authz.require_scope(principal, "ark:mint")
     # F4: **再送なら採番しない。** 応答が失われただけのときに番号を増やさない。
     if (existing := _replay(session, principal, body.request_id)) is not None:
@@ -100,6 +114,19 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
 def bulk_mint(
     body: BulkMintIn, principal: CurrentPrincipal, session: Db, cfg: Config, response: Response
 ):
+    """**まとめて採番する。** `ark:mint` が要る。1 リクエストの上限は
+    `ARKHE_BULK_LIMIT`（既定 1000）。
+
+    **1 件でも範囲外なら、何も作らない。** 到達範囲と shoulder の検証を全件先に済ませて
+    から採番するので、途中まで採番された状態は残らない。
+
+    **応答は入力の順序で返す。** 再送ぶん（`request_id` が既知の行）と新規ぶんが混ざる
+    ので、並びを保って呼び出し側が突き合わせられるようにしてある。`created` と
+    `replayed` にそれぞれの件数が出る。全件が再送なら 200、1 件でも採番していれば 201。
+
+    行ごとに `request_id` を付けておけば、**切れた塊をそのまま送り直せる**——
+    採番済みの行は飛ばされる。
+    """
     authz.require_scope(principal, "ark:mint")
     rows = body.data
     if len(rows) > cfg.bulk_limit:

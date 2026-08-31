@@ -60,6 +60,7 @@ JA: dict[str, str] = {
     "word.authoritative": "権威あり",
     "word.delegated_to": "委譲 → {target}",
     # naan add
+    "naan.list.help": "NAAN を並べる。**権威を持つのか、どこへ委譲しているのか**が出る。",
     "naan.add.help": "NAAN を登録する。",
     "naan.add.policy": "NAA ポリシー（`NP | NR, OP, CC | 2026 | <URL>`）",
     "naan.add.authoritative": "この NAAN の権威を持つか",
@@ -78,6 +79,7 @@ JA: dict[str, str] = {
     "onboard.default_warning": "↑ 既定のままです。組織に確かめて "
                                "`arkhe manager commitment` で言い直してください。",
     # shoulder
+    "shoulder.list.help": "shoulder を並べる。**id は他のコマンドの入力になる。**",
     "shoulder.add.help": "名前空間を切り出す。`--reserve` で将来用に確保できる。",
     "shoulder.add.reserve": "押さえるだけで採番させない",
     "shoulder.add.done": "{naan}{shoulder} を切り出しました",
@@ -203,6 +205,8 @@ EN: dict[str, str] = {
     "word.machine": "machine",
     "word.authoritative": "authoritative",
     "word.delegated_to": "delegated → {target}",
+    "naan.list.help": "List NAANs. Shows **which it holds authority for, and where "
+                      "the rest are delegated**.",
     "naan.add.help": "Register a NAAN.",
     "naan.add.policy": "NAA policy (`NP | NR, OP, CC | 2026 | <URL>`)",
     "naan.add.authoritative": "whether you hold authority over this NAAN",
@@ -221,6 +225,7 @@ EN: dict[str, str] = {
     "onboard.level": "Commitment level: {level}",
     "onboard.default_warning": "↑ Left at the default. Confirm it with the organisation "
                                "and restate it with `arkhe manager commitment`.",
+    "shoulder.list.help": "List shoulders. **The id is the input to the other commands.**",
     "shoulder.add.help": "Carve out a namespace. `--reserve` holds one for later.",
     "shoulder.add.reserve": "hold it without allowing minting",
     "shoulder.add.done": "Carved out {naan}{shoulder}",
