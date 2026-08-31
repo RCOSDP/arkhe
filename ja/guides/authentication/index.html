@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rcosdp.github.io/arkhe/ja/guides/authentication/">
       
       
-        <link rel="prev" href="../../concepts/invariants/">
+        <link rel="prev" href="../onboarding/">
       
       
         <link rel="next" href="../admin/">
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#認証" class="md-skip">
           コンテンツにスキップ
         </a>
       
@@ -603,6 +603,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -666,7 +694,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
+  <a href="#api-側" class="md-nav__link">
     <span class="md-ellipsis">
       
         API 側
@@ -689,7 +717,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oauth2-arkhe" class="md-nav__link">
+  <a href="#oauth2--arkhe-が自分で発行する" class="md-nav__link">
     <span class="md-ellipsis">
       
         oauth2 — arkhe が自分で発行する
@@ -700,7 +728,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oidc" class="md-nav__link">
+  <a href="#oidc--他所が発行したトークンを検証する" class="md-nav__link">
     <span class="md-ellipsis">
       
         oidc — 他所が発行したトークンを検証する
@@ -716,7 +744,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#管理画面側" class="md-nav__link">
     <span class="md-ellipsis">
       
         管理画面側
@@ -727,7 +755,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#人と機械" class="md-nav__link">
     <span class="md-ellipsis">
       
         人と機械
@@ -817,6 +845,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -1178,7 +1234,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
+  <a href="#api-側" class="md-nav__link">
     <span class="md-ellipsis">
       
         API 側
@@ -1201,7 +1257,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oauth2-arkhe" class="md-nav__link">
+  <a href="#oauth2--arkhe-が自分で発行する" class="md-nav__link">
     <span class="md-ellipsis">
       
         oauth2 — arkhe が自分で発行する
@@ -1212,7 +1268,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oidc" class="md-nav__link">
+  <a href="#oidc--他所が発行したトークンを検証する" class="md-nav__link">
     <span class="md-ellipsis">
       
         oidc — 他所が発行したトークンを検証する
@@ -1228,7 +1284,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#管理画面側" class="md-nav__link">
     <span class="md-ellipsis">
       
         管理画面側
@@ -1239,7 +1295,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#人と機械" class="md-nav__link">
     <span class="md-ellipsis">
       
         人と機械
@@ -1274,7 +1330,7 @@
   
 
 
-<h1 id="_1">認証<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="認証">認証<a class="headerlink" href="#認証" title="Permanent link">&para;</a></h1>
 <p>ここには<strong>別々の 2 つの仕組み</strong>がある。混同が混乱の元になりやすい。</p>
 <pre class="mermaid"><code>flowchart LR
     subgraph API["API — ARKHE_AUTH（併用可）"]
@@ -1288,7 +1344,7 @@
 問題は「このトークンをどう検証するか」、管理画面側の問題は「人をどうログインさせるか」
 で、別物である。ただし<strong>どの経路でも行き着く先は同じ <code>Principal</code></strong> で、到達範囲の
 判断も 1 か所に集まる。</p>
-<h2 id="api">API 側<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
+<h2 id="api-側">API 側<a class="headerlink" href="#api-側" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1315,18 +1371,18 @@
 </tr>
 </tbody>
 </table>
-<p><strong>併用できる。</strong> <code>ARKHE_AUTH=apikey,oidc</code> は移行期に普通に要る形で、機関ごとに好きな
+<p><strong>併用できる。</strong> <code>ARKHE_AUTH=apikey,oidc</code> は移行期に普通に要る形で、組織ごとに好きな
 時期に移れる（一斉切り替えを強いない）。</p>
 <h3 id="apikey">apikey<a class="headerlink" href="#apikey" title="Permanent link">&para;</a></h3>
 <p>Argon2 でハッシュした鍵を、<strong>秘密ではない短い前置き</strong>で 1 行に絞ってから照合する。
 arklet の方式に 2 点だけ変更を加えている——前置きと、<strong>鍵を NAAN ではなく主体に
-結びつける</strong>こと。arklet は NAAN 単位でしか認可できず、<strong>同一 NAAN 内で他機関の
+結びつける</strong>こと。arklet は NAAN 単位でしか認可できず、<strong>同一 NAAN 内で他組織の
 名前空間に採番できた</strong>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>univ-repo<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint"</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo
 </code></pre></div>
-<h3 id="oauth2-arkhe">oauth2 — arkhe が自分で発行する<a class="headerlink" href="#oauth2-arkhe" title="Permanent link">&para;</a></h3>
-<p>認可サーバを運用できない機関のための入口。<strong>grant は client_credentials だけ</strong>——
+<h3 id="oauth2--arkhe-が自分で発行する">oauth2 — arkhe が自分で発行する<a class="headerlink" href="#oauth2--arkhe-が自分で発行する" title="Permanent link">&para;</a></h3>
+<p>認可サーバを運用できない組織のための入口。<strong>grant は client_credentials だけ</strong>——
 ARK の採番は機械同士のやりとりで、認可コードフローが解く「利用者が第三者アプリに
 代理を許可する」構図が発生しない。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/oauth/token<span class="w"> </span><span class="se">\</span>
@@ -1335,7 +1391,7 @@ ARK の採番は機械同士のやりとりで、認可コードフローが解�
 <p>意図的に持たないもの: <code>authorization_code</code> と PKCE、<code>refresh_token</code>、introspection、
 revocation。<strong>これらが要るようになったら、中途半端な認可サーバを育てるより、
 本物に寄せるほうが安全。</strong></p>
-<h3 id="oidc">oidc — 他所が発行したトークンを検証する<a class="headerlink" href="#oidc" title="Permanent link">&para;</a></h3>
+<h3 id="oidc--他所が発行したトークンを検証する">oidc — 他所が発行したトークンを検証する<a class="headerlink" href="#oidc--他所が発行したトークンを検証する" title="Permanent link">&para;</a></h3>
 <p>issuer の JWKS で署名を確かめ、<code>iss</code> / <code>aud</code> / <code>exp</code> を見て、<strong>自分の台帳に突き合わせる</strong>。
 認可サーバが身元を保証しても、<strong>配られていない名前空間に触ってよいことにはならない。</strong></p>
 <p>主体は <code>azp</code> → <code>client_id</code> → <code>sub</code> の順で見る。<code>azp</code> を先にするのは、サービス
@@ -1347,7 +1403,7 @@ revocation。<strong>これらが要るようになったら、中途半端な�
 署名するので、単一サービスが自分のトークンを検証する用途なら十分だが、性質としては
 弱い。</p>
 </div>
-<h2 id="_2">管理画面側<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="管理画面側">管理画面側<a class="headerlink" href="#管理画面側" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1379,8 +1435,8 @@ revocation。<strong>これらが要るようになったら、中途半端な�
 預からない。</p>
 <p>セッションは<strong>署名付き Cookie 1 枚</strong>で、サーバ側に表を持たない（minter / resolver /
 admin を別プロセスで動かす設計と噛み合わせるため）。Cookie に入るのは識別子と期限だけで、
-<strong>到達範囲は毎回台帳から引き直す</strong>——鍵の失効や機関の統廃合が次のリクエストから効く。</p>
-<h2 id="_3">人と機械<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<strong>到達範囲は毎回台帳から引き直す</strong>——鍵の失効や組織の統廃合が次のリクエストから効く。</p>
+<h2 id="人と機械">人と機械<a class="headerlink" href="#人と機械" title="Permanent link">&para;</a></h2>
 <p><code>person</code> の主体は API キーを持てない。<code>machine</code> の主体は外部ログインで名乗れない。</p>
 <p>前段を正しく置けばなりすましは防げるが、<strong>設定 1 つの誤りが「一括投入バッチとして
 全件書き換え」に化ける</strong>のは、放置してよい鋭さではない。</p>
@@ -1419,7 +1475,7 @@ admin を別プロセスで動かす設計と噛み合わせるため）。Cooki
       <nav class="md-footer__inner md-grid" aria-label="フッター" >
         
           
-          <a href="../../concepts/invariants/" class="md-footer__link md-footer__link--prev" aria-label="前: 壊さないもの">
+          <a href="../onboarding/" class="md-footer__link md-footer__link--prev" aria-label="前: はじめて立ち上げるとき">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1429,7 +1485,7 @@ admin を別プロセスで動かす設計と噛み合わせるため）。Cooki
                 前
               </span>
               <div class="md-ellipsis">
-                壊さないもの
+                はじめて立ち上げるとき
               </div>
             </div>
           </a>

@@ -604,6 +604,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -696,6 +724,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1176,7 +1232,7 @@
 
 <h1 id="data-model">Data model<a class="headerlink" href="#data-model" title="Permanent link">&para;</a></h1>
 <p>One chain — <code>Naan → Manager → Shoulder → Ark</code> — carries every NAAN. <strong>Even an
-institution with a NAAN of its own goes through a shoulder.</strong> Skip that and the model
+organisation with a NAAN of its own goes through a shoulder.</strong> Skip that and the model
 forks per NAAN, and the first-digit convention holds for some NAANs and not others.</p>
 <pre class="mermaid"><code>erDiagram
     NAAN ||--o{ MANAGER : "delegates a namespace to"
@@ -1194,6 +1250,7 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
 
     CLIENT ||--o{ CREDENTIAL : "holds"
     ARK ||--o{ MINT_RECEIPT : "receipt for"
+    ARK ||--o{ ARK_CHANGE : "where it used to point"
 
     NAAN {
         string naan PK "N2: a string. 099999 is not 99999"
@@ -1219,7 +1276,7 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
         int    id PK
         string shoulder "e.g. /x9"
         string naan FK
-        int    manager_id FK "null: no institution yet"
+        int    manager_id FK "null: no organisation yet"
         string redirect "N2T: delegated resolution"
         string minter "N2T: delegated minting"
         string status "active / reserved / delegated / retired"
@@ -1272,6 +1329,17 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
         string ark FK
     }
 
+    ARK_CHANGE {
+        int    id PK
+        string ark FK
+        date   at
+        string action "update / tombstone"
+        string before_url "**what you want back**"
+        string after_url
+        string by
+        string ip
+    }
+
     AUDIT_EVENT {
         int    id PK
         date   at
@@ -1280,7 +1348,30 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
         string action "mint / update / succeed / depart …"
         string target
         json   detail
+    }
+    UNKNOWN_SUBJECT {
+        int    id PK
+        string subject "認可サーバ側の識別子（azp / client_id / sub）"
+        string issuer
+        date   first_seen
+        date   last_seen
+        int    seen
+        string ip
     }</code></pre>
+<p><code>UNKNOWN_SUBJECT</code> holds <strong>subjects whose token verified but who were not in the
+ledger</strong>. One wrong character in a <code>client_id</code> produces a 401, and at the moment of
+rejection arkhe already holds the right string — <code>azp</code> has passed signature
+verification by then. Keeping it lets an operator register without retyping, and the
+row <strong>disappears from the list once registered</strong> (the match is made per query, so
+nothing has to be cleaned up).</p>
+<p>It has no foreign keys: <strong>which organisation it belongs to is unknowable</strong> from the
+token, and arkhe does not guess — which is why only NAAN-wide principals see the list.</p>
+<p><code>ARK_CHANGE</code> records <strong>where an ARK used to point</strong>, separately from the audit log.
+The audit log keeps only what reaches NAAN scope or wider, but <strong>minting and
+repointing are done by organisations</strong>, so the audit log alone loses exactly the
+changes that matter. Declaring <code>NR</code> and saying the identifier does not change means
+being able to show what changed, when and by whom — otherwise the promise cannot be
+checked from outside.</p>
 <p><code>AUDIT_EVENT</code> has no foreign keys into the rest. <strong>A record should outlive what it
 describes</strong>, and referential integrity would push the other way: it makes deleting the
 record the easy way out.</p>

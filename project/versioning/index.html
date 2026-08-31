@@ -604,6 +604,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -696,6 +724,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1242,7 +1298,9 @@
 
 <h1 id="versioning">Versioning<a class="headerlink" href="#versioning" title="Permanent link">&para;</a></h1>
 <p>arkhe follows <a href="https://semver.org/">Semantic Versioning 2.0.0</a>: <code>MAJOR.MINOR.PATCH</code>.</p>
-<p>Current version: <strong>0.0.1</strong> — see <a href="#before-10">Before 1.0</a>.</p>
+<p>The version is still <code>0.x</code> — see <a href="#before-10">Before 1.0</a>. <strong>The current release is
+not written here</strong>, because it would go stale at every release; it is in the
+<a href="../changelog/">changelog</a>.</p>
 <h2 id="what-the-version-covers">What the version covers<a class="headerlink" href="#what-the-version-covers" title="Permanent link">&para;</a></h2>
 <p>SemVer is only meaningful once you say what the public surface is. For a piece of
 infrastructure rather than a library, it is broader than "the functions we export".</p>
@@ -1297,7 +1355,8 @@ anything under <code>compose/</code> (those are demonstrations).</p>
 signature, because the damage would be to identifiers rather than to a build.</p>
 <h2 id="migrations">Migrations<a class="headerlink" href="#migrations" title="Permanent link">&para;</a></h2>
 <p><strong>A minor release may add a migration; it must never lose data.</strong> Every migration is
-run <code>upgrade → downgrade → upgrade</code> against PostgreSQL in CI, because SQLite accepts
+run <code>upgrade → downgrade → upgrade</code> against PostgreSQL before every release
+(<code>scripts/check.sh</code>), because SQLite accepts
 schemas PostgreSQL rejects.</p>
 <p>The ledger cannot be rebuilt. Under NR a lost ARK cannot be minted again, so "restore
 from the source system" is not available to us the way it is to most services.</p>
@@ -1308,7 +1367,7 @@ from the source system" is not available to us the way it is to most services.</
 <ul>
 <li>the ARK conformance record has no outstanding gaps,</li>
 <li>the schema has been stable across at least one real migration, and</li>
-<li>an institution other than the first is running it.</li>
+<li>an organisation other than the first is running it.</li>
 </ul>
 <p>Until then, pin an exact version.</p>
 <h2 id="releasing">Releasing<a class="headerlink" href="#releasing" title="Permanent link">&para;</a></h2>

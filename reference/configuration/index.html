@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rcosdp.github.io/arkhe/reference/configuration/">
       
       
-        <link rel="prev" href="../../guides/deployment/">
+        <link rel="prev" href="../../guides/federation/">
       
       
         <link rel="next" href="../cli/">
@@ -604,6 +604,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -696,6 +724,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -859,7 +915,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#authentication-api" class="md-nav__link">
+  <a href="#authentication--api" class="md-nav__link">
     <span class="md-ellipsis">
       
         Authentication — API
@@ -870,7 +926,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#authentication-the-admin-interface" class="md-nav__link">
+  <a href="#authentication--the-admin-interface" class="md-nav__link">
     <span class="md-ellipsis">
       
         Authentication — the admin interface
@@ -896,6 +952,17 @@
     <span class="md-ellipsis">
       
         Minting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#behind-a-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behind a proxy
       
     </span>
   </a>
@@ -1194,7 +1261,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#authentication-api" class="md-nav__link">
+  <a href="#authentication--api" class="md-nav__link">
     <span class="md-ellipsis">
       
         Authentication — API
@@ -1205,7 +1272,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#authentication-the-admin-interface" class="md-nav__link">
+  <a href="#authentication--the-admin-interface" class="md-nav__link">
     <span class="md-ellipsis">
       
         Authentication — the admin interface
@@ -1231,6 +1298,17 @@
     <span class="md-ellipsis">
       
         Minting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#behind-a-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behind a proxy
       
     </span>
   </a>
@@ -1326,7 +1404,7 @@ ships to production unnoticed.</p>
 between <code>manager</code> and <code>shoulder</code>, and the order in which tables are created. Both
 slipped through a SQLite-only check during development.</p>
 </div>
-<h2 id="authentication-api">Authentication — API<a class="headerlink" href="#authentication-api" title="Permanent link">&para;</a></h2>
+<h2 id="authentication--api">Authentication — API<a class="headerlink" href="#authentication--api" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1374,7 +1452,7 @@ slipped through a SQLite-only check during development.</p>
 </tbody>
 </table>
 <p>See <a href="../../guides/authentication/">Authentication</a> for which mechanism suits what.</p>
-<h2 id="authentication-the-admin-interface">Authentication — the admin interface<a class="headerlink" href="#authentication-the-admin-interface" title="Permanent link">&para;</a></h2>
+<h2 id="authentication--the-admin-interface">Authentication — the admin interface<a class="headerlink" href="#authentication--the-admin-interface" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1470,6 +1548,28 @@ header. Use a NetworkPolicy on Kubernetes, or listen only on 127.0.0.1.</p>
 </tr>
 </tbody>
 </table>
+<h2 id="behind-a-proxy">Behind a proxy<a class="headerlink" href="#behind-a-proxy" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Default</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ARKHE_TRUSTED_PROXIES</code></td>
+<td><code>0</code></td>
+<td>How many proxies in front to believe. <strong><code>X-Forwarded-For</code> is a header anyone can set</strong>, so by default it is ignored and the peer address is recorded — recording a forged value is worse than recording a coarse one, because an audit log full of attacker-written strings is the worst outcome. With <code>n</code> proxies in front, set <code>n</code>: the <strong>n-th value from the right</strong> is taken. Never the leftmost — that one the client wrote</td>
+</tr>
+<tr>
+<td><code>ARKHE_LOG_LEVEL</code></td>
+<td><code>INFO</code></td>
+<td><code>DEBUG</code> / <code>INFO</code> / <code>WARNING</code>. Logs are JSON lines carrying the request id</td>
+</tr>
+</tbody>
+</table>
 
 
 
@@ -1505,7 +1605,7 @@ header. Use a NetworkPolicy on Kubernetes, or listen only on 127.0.0.1.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../guides/deployment/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Deployment">
+          <a href="../../guides/federation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Running several arkhe">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1515,7 +1615,7 @@ header. Use a NetworkPolicy on Kubernetes, or listen only on 127.0.0.1.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Deployment
+                Running several arkhe
               </div>
             </div>
           </a>

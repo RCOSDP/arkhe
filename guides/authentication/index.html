@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://rcosdp.github.io/arkhe/guides/authentication/">
       
       
-        <link rel="prev" href="../../concepts/invariants/">
+        <link rel="prev" href="../onboarding/">
       
       
         <link rel="next" href="../admin/">
@@ -603,6 +603,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -689,7 +717,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oauth2-arkhe-issues-its-own" class="md-nav__link">
+  <a href="#oauth2--arkhe-issues-its-own" class="md-nav__link">
     <span class="md-ellipsis">
       
         oauth2 — arkhe issues its own
@@ -700,7 +728,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oidc-validate-someone-elses-tokens" class="md-nav__link">
+  <a href="#oidc--validate-someone-elses-tokens" class="md-nav__link">
     <span class="md-ellipsis">
       
         oidc — validate someone else's tokens
@@ -817,6 +845,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1201,7 +1257,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oauth2-arkhe-issues-its-own" class="md-nav__link">
+  <a href="#oauth2--arkhe-issues-its-own" class="md-nav__link">
     <span class="md-ellipsis">
       
         oauth2 — arkhe issues its own
@@ -1212,7 +1268,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oidc-validate-someone-elses-tokens" class="md-nav__link">
+  <a href="#oidc--validate-someone-elses-tokens" class="md-nav__link">
     <span class="md-ellipsis">
       
         oidc — validate someone else's tokens
@@ -1316,17 +1372,17 @@ Whichever path, the result is the same <code>Principal</code>, and reach is judg
 </tbody>
 </table>
 <p><strong>They combine.</strong> <code>ARKHE_AUTH=apikey,oidc</code> is a normal thing to want while migrating —
-institutions move over one at a time instead of all at once.</p>
+organisations move over one at a time instead of all at once.</p>
 <h3 id="apikey">apikey<a class="headerlink" href="#apikey" title="Permanent link">&para;</a></h3>
 <p>A key, hashed with Argon2, matched by a short non-secret prefix so a lookup does not
 walk every row. This is arklet's approach, with two changes: the prefix, and binding
 the key to a <strong>client</strong> rather than to a NAAN — arklet could only authorise at NAAN
-level, so one institution could mint into another's namespace.</p>
+level, so one organisation could mint into another's namespace.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>univ-repo<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint"</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo
 </code></pre></div>
-<h3 id="oauth2-arkhe-issues-its-own">oauth2 — arkhe issues its own<a class="headerlink" href="#oauth2-arkhe-issues-its-own" title="Permanent link">&para;</a></h3>
-<p>For an institution that cannot run an authorization server. <strong>Client credentials is
+<h3 id="oauth2--arkhe-issues-its-own">oauth2 — arkhe issues its own<a class="headerlink" href="#oauth2--arkhe-issues-its-own" title="Permanent link">&para;</a></h3>
+<p>For an organisation that cannot run an authorization server. <strong>Client credentials is
 the only grant</strong>: ARK minting is machine-to-machine, so the situation the
 authorization code flow solves — a user letting a third-party app act for them —
 never arises.</p>
@@ -1336,7 +1392,7 @@ never arises.</p>
 <p>Deliberately absent: <code>authorization_code</code> and PKCE, <code>refresh_token</code>, introspection,
 revocation. <strong>If you come to need them, moving to a real authorization server is safer
 than growing half of one here.</strong></p>
-<h3 id="oidc-validate-someone-elses-tokens">oidc — validate someone else's tokens<a class="headerlink" href="#oidc-validate-someone-elses-tokens" title="Permanent link">&para;</a></h3>
+<h3 id="oidc--validate-someone-elses-tokens">oidc — validate someone else's tokens<a class="headerlink" href="#oidc--validate-someone-elses-tokens" title="Permanent link">&para;</a></h3>
 <p>arkhe verifies the signature against the issuer's JWKS, checks <code>iss</code>, <code>aud</code> and <code>exp</code>,
 then <strong>looks the subject up in its own ledger</strong>. An identity the authorization server
 vouches for is still not permitted to touch a namespace it was never granted.</p>
@@ -1382,7 +1438,7 @@ tokens and holds no consent.</p>
 <p>The session is a single signed cookie — no server-side table, so minter, resolver and
 admin can run as separate processes without a shared store. The cookie carries an
 identifier and an expiry; <strong>reach is read from the ledger on every request</strong>, so a
-revoked key or a merged institution takes effect immediately.</p>
+revoked key or a merged organisation takes effect immediately.</p>
 <h2 id="people-and-machines">People and machines<a class="headerlink" href="#people-and-machines" title="Permanent link">&para;</a></h2>
 <p>A <code>person</code> subject cannot hold an API key. A <code>machine</code> subject cannot be named through
 an external login.</p>
@@ -1424,7 +1480,7 @@ is too sharp an edge to leave in place.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../concepts/invariants/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Invariants">
+          <a href="../onboarding/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Setting up for the first time">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1434,7 +1490,7 @@ is too sharp an edge to leave in place.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Invariants
+                Setting up for the first time
               </div>
             </div>
           </a>

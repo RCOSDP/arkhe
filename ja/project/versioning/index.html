@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#バージョン" class="md-skip">
           コンテンツにスキップ
         </a>
       
@@ -604,6 +604,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -696,6 +724,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -1036,7 +1092,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#版が何を約束するか" class="md-nav__link">
     <span class="md-ellipsis">
       
         版が何を約束するか
@@ -1047,7 +1103,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#不変条件は契約の一部" class="md-nav__link">
     <span class="md-ellipsis">
       
         不変条件は契約の一部
@@ -1058,7 +1114,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#マイグレーション" class="md-nav__link">
     <span class="md-ellipsis">
       
         マイグレーション
@@ -1069,7 +1125,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#10" class="md-nav__link">
+  <a href="#10-まで" class="md-nav__link">
     <span class="md-ellipsis">
       
         1.0 まで
@@ -1080,7 +1136,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#リリースの手順" class="md-nav__link">
     <span class="md-ellipsis">
       
         リリースの手順
@@ -1161,7 +1217,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#版が何を約束するか" class="md-nav__link">
     <span class="md-ellipsis">
       
         版が何を約束するか
@@ -1172,7 +1228,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#不変条件は契約の一部" class="md-nav__link">
     <span class="md-ellipsis">
       
         不変条件は契約の一部
@@ -1183,7 +1239,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#マイグレーション" class="md-nav__link">
     <span class="md-ellipsis">
       
         マイグレーション
@@ -1194,7 +1250,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#10" class="md-nav__link">
+  <a href="#10-まで" class="md-nav__link">
     <span class="md-ellipsis">
       
         1.0 まで
@@ -1205,7 +1261,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#リリースの手順" class="md-nav__link">
     <span class="md-ellipsis">
       
         リリースの手順
@@ -1240,11 +1296,12 @@
   
 
 
-<h1 id="_1">バージョン<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="バージョン">バージョン<a class="headerlink" href="#バージョン" title="Permanent link">&para;</a></h1>
 <p>arkhe は <a href="https://semver.org/lang/ja/">Semantic Versioning 2.0.0</a> に従う。
 <code>MAJOR.MINOR.PATCH</code>。</p>
-<p>現在: <strong>0.0.1</strong> — <a href="#10">1.0 まで</a>を参照。</p>
-<h2 id="_2">版が何を約束するか<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>版はまだ <code>0.x</code>——<a href="#10-まで">1.0 まで</a>を参照。<strong>いま出ている版は文書に書かない</strong>
+（リリースのたびに古くなるため）。<a href="../changelog/">変更履歴</a>を見ること。</p>
+<h2 id="版が何を約束するか">版が何を約束するか<a class="headerlink" href="#版が何を約束するか" title="Permanent link">&para;</a></h2>
 <p>SemVer は「公開されている面」を決めて初めて意味を持つ。ライブラリではなく<strong>基盤</strong>なので、
 その範囲は「公開している関数」より広い。</p>
 <table>
@@ -1283,7 +1340,7 @@
 </table>
 <p>含まないもの: 内部のモジュール構成、管理画面のマークアップ、ログの書式、<code>compose/</code> の
 中身（あれは見本）。</p>
-<h2 id="_3">不変条件は契約の一部<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="不変条件は契約の一部">不変条件は契約の一部<a class="headerlink" href="#不変条件は契約の一部" title="Permanent link">&para;</a></h2>
 <p><a href="../../concepts/invariants/">これらの拒否</a>こそが arkhe の存在理由である。<strong>署名が
 1 つも動かなくても、いずれかが弱まれば MAJOR</strong> とする。</p>
 <ul>
@@ -1295,23 +1352,23 @@
 </ul>
 <p>これらを黙ってやるリリースは、関数の署名を壊すリリースより悪い。<strong>壊れるのがビルド
 ではなく識別子</strong>だから。</p>
-<h2 id="_4">マイグレーション<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="マイグレーション">マイグレーション<a class="headerlink" href="#マイグレーション" title="Permanent link">&para;</a></h2>
 <p><strong>MINOR でマイグレーションを追加してよい。ただしデータを失ってはならない。</strong>
-CI では毎回 PostgreSQL に対して <code>upgrade → downgrade → upgrade</code> を通す——SQLite は
+出す前に毎回、PostgreSQL に対して <code>upgrade → downgrade → upgrade</code> を通す（<code>scripts/check.sh</code>）——SQLite は
 PostgreSQL が弾くスキーマを通してしまうため。</p>
 <p>台帳は作り直せない。NR の下では失った ARK を採り直せないので、多くのサービスが持つ
 「元のシステムから再投入する」という逃げ道が、ここには無い。</p>
-<h2 id="10">1.0 まで<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<h2 id="10-まで">1.0 まで<a class="headerlink" href="#10-まで" title="Permanent link">&para;</a></h2>
 <p>版が <code>0</code> で始まる間は、<strong>MINOR が破壊的変更を運ぶ</strong>。<code>0.1.0 → 0.2.0</code> は壊れうるが、
 <code>0.0.1 → 0.0.2</code> は壊さない。</p>
 <p>1.0 を打つのは:</p>
 <ul>
 <li>ARK の適合状況に未対応が残っていないこと、</li>
 <li>実際のマイグレーションを 1 度は越えてスキーマが安定したこと、</li>
-<li><strong>最初の 1 機関以外</strong>が動かしていること。</li>
+<li><strong>最初の 1 組織以外</strong>が動かしていること。</li>
 </ul>
 <p>それまでは版を固定して使うこと。</p>
-<h2 id="_5">リリースの手順<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="リリースの手順">リリースの手順<a class="headerlink" href="#リリースの手順" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 1. 版と変更履歴を更新</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>vim<span class="w"> </span>pyproject.toml<span class="w"> </span>CHANGELOG.md<span class="w"> </span>CHANGELOG.ja.md
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># 2. タグを打つ</span>

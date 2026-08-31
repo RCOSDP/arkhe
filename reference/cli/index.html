@@ -604,6 +604,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -696,6 +724,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -922,6 +978,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-language-of-the-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The language of the commands
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1227,6 +1294,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#the-language-of-the-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The language of the commands
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1266,35 +1344,47 @@ audit log the same way.</p>
 <tbody>
 <tr>
 <td><code>arkhe onboard</code></td>
-<td>機関を迎え入れ、名前空間を 1 つ委譲する。<strong>この 2 つは必ず対で起きる。</strong></td>
+<td>Onboard an organisation and delegate one namespace to it. <strong>The two always happen together.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe succeed</code></td>
-<td>統廃合。<strong>識別子は壊さない</strong>（名前空間ごと承継先に移す）。</td>
+<td>A merger. <strong>Identifiers are not broken</strong> — the namespace moves with them.</td>
 </tr>
 <tr>
 <td><code>arkhe depart</code></td>
-<td>機関の離脱。<strong>新規採番は止め、解決は続ける。</strong></td>
+<td>An organisation leaves. <strong>Minting stops; resolution continues.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe check</code></td>
-<td>設定を検証する。<strong>起動前に落としたいものをここで落とす。</strong></td>
+<td>Validate the configuration. <strong>Fail here rather than at startup.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe naan add</code></td>
-<td>NAAN を登録する。</td>
+<td>Register a NAAN.</td>
 </tr>
 <tr>
 <td><code>arkhe naan list</code></td>
 <td></td>
 </tr>
 <tr>
+<td><code>arkhe manager list</code></td>
+<td>List organisations. <strong>The ids are input to other commands.</strong></td>
+</tr>
+<tr>
+<td><code>arkhe manager commitment</code></td>
+<td>Restate an organisation's commitment level. <strong>Published verbatim by <code>??</code>.</strong></td>
+</tr>
+<tr>
+<td><code>arkhe manager policy</code></td>
+<td>Narrow what an organisation may do — ways in, self-registration, scope ceiling. <strong>It can only narrow what the NAAN allows</strong>, never widen it.</td>
+</tr>
+<tr>
 <td><code>arkhe shoulder add</code></td>
-<td>名前空間を切り出す。<code>--reserve</code> で将来用に確保できる。</td>
+<td>Carve out a namespace. <code>--reserve</code> holds one for later.</td>
 </tr>
 <tr>
 <td><code>arkhe shoulder status</code></td>
-<td>状態を変える。<strong>retired からは戻せない</strong>（引退した名前空間の再開は NR 違反の芽）。</td>
+<td>Change the status. <strong>There is no way back from retired.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe shoulder list</code></td>
@@ -1302,36 +1392,53 @@ audit log the same way.</p>
 </tr>
 <tr>
 <td><code>arkhe client add</code></td>
-<td>主体を登録する。</td>
+<td>Register a principal.</td>
 </tr>
 <tr>
 <td><code>arkhe client key</code></td>
-<td>資格情報を発行する。<strong>平文はこの一度しか表示されない。</strong></td>
+<td>Issue a credential. <strong>The plaintext is shown this once and never again.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe client breakglass</code></td>
-<td>NAAN 配下すべてに届く一時的な主体を作る。<strong>期限つき。</strong></td>
+<td>Create a temporary principal reaching everything under a NAAN. <strong>Time-boxed.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe client passwd</code></td>
-<td>人の主体にパスワードを設定する（管理画面へのローカルログイン用）。</td>
+<td>Set a password on a person (for local sign-in to the admin interface).</td>
 </tr>
 <tr>
 <td><code>arkhe client revoke</code></td>
-<td>失効させる。<strong>行は消さない</strong>（いつ失効したかを残す）。</td>
+<td>Revoke. <strong>The row is not deleted</strong> — when it stopped remains.</td>
+</tr>
+<tr>
+<td><code>arkhe client disable</code></td>
+<td>Stop a principal. <strong>The only way where authentication is delegated.</strong></td>
+</tr>
+<tr>
+<td><code>arkhe client enable</code></td>
+<td>Restore one (not if its organisation has left).</td>
+</tr>
+<tr>
+<td><code>arkhe ark list</code></td>
+<td>List minted ARKs. <strong>Stops at 50 by default</strong> — the ledger only grows. <code>--naan</code> and <code>--org</code> narrow it; <code>-q</code> looks at the ARK, its target and its title.</td>
 </tr>
 </tbody>
 </table>
 <p><code>--help</code> on any command gives its arguments.</p>
+<p>What the commands call a <em>principal</em> is called a <strong>user</strong> in the admin interface
+(<a href="../../guides/admin/">Admin interface</a>). They are the same thing.</p>
+<p>The whole sequence, including the steps that happen outside arkhe — requesting a NAAN
+and registering your resolver — is in <a href="../../guides/onboarding/">Setting up for the first
+time</a>.</p>
 <h2 id="common-sequences">Common sequences<a class="headerlink" href="#common-sequences" title="Permanent link">&para;</a></h2>
 <h3 id="standing-one-up">Standing one up<a class="headerlink" href="#standing-one-up" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Your organisation"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://…/policy"</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9<span class="w"> </span>--commitment<span class="w"> </span>permanent-stable
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>univ-repo<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo
 </code></pre></div>
-<p><strong>An institution and a namespace are always created together</strong> — <code>onboard</code> does both.
-One without the other is an institution that cannot mint.</p>
+<p><strong>An organisation and a namespace are always created together</strong> — <code>onboard</code> does both.
+One without the other is an organisation that cannot mint.</p>
 <h3 id="adding-a-person">Adding a person<a class="headerlink" href="#adding-a-person" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>alice@example.ac.jp<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--person
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>client<span class="w"> </span>passwd<span class="w"> </span>alice@example.ac.jp<span class="w">     </span><span class="c1"># when ARKHE_ADMIN_LOGIN=password</span>
@@ -1351,6 +1458,34 @@ does is recorded</strong>.</p>
 </code></pre></div>
 <p><strong><code>retired</code> has no way back.</strong> A reservation can only be set at creation: once a
 namespace has been mintable, it cannot be called unused again.</p>
+<h2 id="the-language-of-the-commands">The language of the commands<a class="headerlink" href="#the-language-of-the-commands" title="Permanent link">&para;</a></h2>
+<p><code>arkhe</code>'s help and output exist in Japanese and English. <strong>The language is decided
+from the environment at startup</strong> — Typer assembles its help at import time, so a
+runtime switch like <code>--lang</code> cannot work.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ARKHE_LANG</code></td>
+<td><code>ja</code> / <code>en</code>. <strong>Takes precedence over everything</strong></td>
+</tr>
+<tr>
+<td><code>LC_ALL</code> → <code>LC_MESSAGES</code> → <code>LANG</code></td>
+<td>Read in POSIX order. <code>C</code> and <code>POSIX</code> mean "no language information" and are skipped</td>
+</tr>
+<tr>
+<td>Default</td>
+<td><code>ja</code>, matching the admin interface</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
+</code></pre></div>
 
 
 

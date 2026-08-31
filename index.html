@@ -695,6 +695,34 @@
   
   
     <li class="md-nav__item">
+      <a href="guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="guides/authentication/" class="md-nav__link">
         
   
@@ -787,6 +815,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1220,7 +1276,7 @@
 <p>Infrastructure for <strong>ARK</strong> identifiers. Minting and resolution run as separate
 processes.</p>
 <pre class="mermaid"><code>flowchart LR
-    R["Institution's&lt;br/&gt;repository"] --&gt;|mint| M[minter]
+    R["Organisation's&lt;br/&gt;repository"] --&gt;|mint| M[minter]
     U[Anyone] --&gt;|ark:/99999/…| S[resolver]
     M --&gt; D[(ledger)]
     S --&gt; D
@@ -1229,18 +1285,18 @@ processes.</p>
 <p>Unlike DOI and Handle, ARK presumes no paid registration agency and no central
 infrastructure. It holds that <strong>persistence is not a property of the string but a
 matter of service</strong>. arkhe implements that position: it delegates namespaces to
-institutions and lets each of them declare, for itself, the level of commitment it is
+organisations and lets each of them declare, for itself, the level of commitment it is
 prepared to keep.</p>
 <p>The name is the Greek ἀρχή — beginning, first principle. The point at which a
 reference starts.</p>
 <h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Mints</strong> ARKs into a namespace delegated to an institution, and never re-assigns one.</li>
+<li><strong>Mints</strong> ARKs into a namespace delegated to an organisation, and never re-assigns one.</li>
 <li><strong>Resolves</strong> them, with the <code>?</code>, <code>??</code>, <code>?info</code> and <code>?json</code> inflections — and answers
   even when the object itself is gone.</li>
-<li><strong>Delegates</strong>: a NAAN holder carves out shoulders, hands them to institutions, and
+<li><strong>Delegates</strong>: a NAAN holder carves out shoulders, hands them to organisations, and
   can hand minting or resolution onward to a third party.</li>
-<li><strong>Survives reorganisation</strong>: institutions merge, split and leave, and the
+<li><strong>Survives reorganisation</strong>: organisations merge, split and leave, and the
   identifiers keep resolving.</li>
 </ul>
 <h2 id="what-it-deliberately-is-not">What it deliberately is not<a class="headerlink" href="#what-it-deliberately-is-not" title="Permanent link">&para;</a></h2>

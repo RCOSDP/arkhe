@@ -606,6 +606,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../authentication/" class="md-nav__link">
         
   
@@ -722,10 +750,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#succession-an-institution-merges-into-another" class="md-nav__link">
+  <a href="#succession--an-organisation-merges-into-another" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Succession — an institution merges into another
+        Succession — an organisation merges into another
       
     </span>
   </a>
@@ -733,10 +761,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#departure-an-institution-leaves-but-still-exists" class="md-nav__link">
+  <a href="#departure--an-organisation-leaves-but-still-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Departure — an institution leaves but still exists
+        Departure — an organisation leaves but still exists
       
     </span>
   </a>
@@ -778,6 +806,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1139,10 +1195,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#succession-an-institution-merges-into-another" class="md-nav__link">
+  <a href="#succession--an-organisation-merges-into-another" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Succession — an institution merges into another
+        Succession — an organisation merges into another
       
     </span>
   </a>
@@ -1150,10 +1206,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#departure-an-institution-leaves-but-still-exists" class="md-nav__link">
+  <a href="#departure--an-organisation-leaves-but-still-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Departure — an institution leaves but still exists
+        Departure — an organisation leaves but still exists
       
     </span>
   </a>
@@ -1197,12 +1253,12 @@
 
 
 <h1 id="succession-and-departure">Succession and departure<a class="headerlink" href="#succession-and-departure" title="Permanent link">&para;</a></h1>
-<p>Institutions merge, split and leave. <strong>The identifiers must not notice.</strong></p>
+<p>Organisations merge, split and leave. <strong>The identifiers must not notice.</strong></p>
 <p><code>ark:/99999/x9abc</code> was handed out. Under NR it cannot be reissued, so it cannot be
-replaced by a new name at a new institution — that would kill the original. What can
+replaced by a new name at a new organisation — that would kill the original. What can
 change is who mints next, and where the target points.</p>
-<h2 id="succession-an-institution-merges-into-another">Succession — an institution merges into another<a class="headerlink" href="#succession-an-institution-merges-into-another" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>arkhe<span class="w"> </span>succeed<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w">          </span><span class="c1"># institution 1 is succeeded by institution 2</span>
+<h2 id="succession--an-organisation-merges-into-another">Succession — an organisation merges into another<a class="headerlink" href="#succession--an-organisation-merges-into-another" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>arkhe<span class="w"> </span>succeed<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w">          </span><span class="c1"># organisation 1 is succeeded by organisation 2</span>
 </code></pre></div>
 <p>The shoulders move to the successor. <strong><code>Ark</code> rows are untouched</strong>, so every existing
 identifier resolves exactly as before. The predecessor is deactivated, its credentials
@@ -1212,7 +1268,7 @@ records the lineage.</p>
 mints in its own, and the old namespace becomes read-only.</p>
 <p>Succession cannot cross NAANs. Moving between NAANs would change the shape of the
 identifier, which is another way of saying it would be a different name.</p>
-<h2 id="departure-an-institution-leaves-but-still-exists">Departure — an institution leaves but still exists<a class="headerlink" href="#departure-an-institution-leaves-but-still-exists" title="Permanent link">&para;</a></h2>
+<h2 id="departure--an-organisation-leaves-but-still-exists">Departure — an organisation leaves but still exists<a class="headerlink" href="#departure--an-organisation-leaves-but-still-exists" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>depart<span class="w"> </span><span class="m">1</span><span class="w"> </span>--resolver<span class="w"> </span><span class="s1">'https://repo.univ.ac.jp/ark/${blade}'</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">               </span>--keep-update<span class="w"> </span>self-managed
 </code></pre></div>
@@ -1220,9 +1276,9 @@ identifier, which is another way of saying it would be a different name.</p>
 <code>ark:/&lt;our NAAN&gt;/…</code>, we cannot reissue those names, so the NAAN holder goes on
 answering <code>302</code> for them indefinitely.</p>
 <p><code>--resolver</code> is the part worth understanding. It rewrites every existing target to the
-institution's own resolver <strong>and</strong> sets the same delegation on the shoulder, so that
+organisation's own resolver <strong>and</strong> sets the same delegation on the shoulder, so that
 even names this ledger never saw are forwarded there. After that, <strong>nothing further is
-required of the departed institution</strong>.</p>
+required of the departed organisation</strong>.</p>
 <p>That matters more than it looks. A design that requires the leaver to keep sending us
 updates every time something moves is a design that ends in dead links, because
 eventually nobody sends them.</p>

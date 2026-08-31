@@ -573,10 +573,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#institutions-come-and-go" class="md-nav__link">
+  <a href="#organisations-come-and-go" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Institutions come and go
+        Organisations come and go
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-the-delegate-is-another-arkhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the delegate is another arkhe
       
     </span>
   </a>
@@ -686,6 +697,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -778,6 +817,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1161,10 +1228,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#institutions-come-and-go" class="md-nav__link">
+  <a href="#organisations-come-and-go" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Institutions come and go
+        Organisations come and go
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-the-delegate-is-another-arkhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the delegate is another arkhe
       
     </span>
   </a>
@@ -1202,8 +1280,8 @@ down</strong>, and at each step the recipient takes on the promise. arkhe's ledg
 record of that chain.</p>
 <pre class="mermaid"><code>flowchart TD
     RA["NAAN holder&lt;br/&gt;&lt;small&gt;e.g. a national institute&lt;/small&gt;"]
-    RA --&gt;|"carves out /x9"| I1["Institution A"]
-    RA --&gt;|"carves out /y2"| I2["Institution B"]
+    RA --&gt;|"carves out /x9"| I1["Organisation A"]
+    RA --&gt;|"carves out /y2"| I2["Organisation B"]
     RA --&gt;|"/z1 delegated onward"| EX["External minter"]
     I1 --&gt; C1["repository system"]
     I1 --&gt; C2["bulk import job"]
@@ -1235,19 +1313,19 @@ token can widen it.</strong></p>
 </tr>
 <tr>
 <td><code>manager</code></td>
-<td>One institution. Optionally pinned to a single shoulder</td>
+<td>One organisation. Optionally pinned to a single shoulder</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Nobody can grant more than they hold.</strong> A NAAN administrator cannot create a system
-administrator; an institution administrator cannot create a principal for another
-institution.</p>
+administrator; an organisation administrator cannot create a principal for another
+organisation.</p>
 <div class="admonition note">
 <p class="admonition-title">Why the shoulder is not in the request</p>
 <p>arklet took <code>{naan, shoulder}</code> from the request body and authorised at NAAN level
-only, so a misconfiguration — or a lie — reached another institution's namespace.
+only, so a misconfiguration — or a lie — reached another organisation's namespace.
 arkhe derives the shoulder <strong>from the principal</strong>, which closes that and handles
-routing among many institutions at the same time.</p>
+routing among many organisations at the same time.</p>
 </div>
 <h2 id="shoulder-states">Shoulder states<a class="headerlink" href="#shoulder-states" title="Permanent link">&para;</a></h2>
 <p>A namespace, once handed out, cannot be taken back. So "held but not usable" and "no
@@ -1269,15 +1347,20 @@ someone else already used is exactly what NR forbids.</p>
 mint must be told <strong>where to go</strong>. arkhe answers <code>307</code> with the location and <strong>does
 not proxy</strong> — proxying would mean that a lost response could leave an ARK minted over
 there that nobody here knows about.</p>
-<h2 id="institutions-come-and-go">Institutions come and go<a class="headerlink" href="#institutions-come-and-go" title="Permanent link">&para;</a></h2>
+<h2 id="organisations-come-and-go">Organisations come and go<a class="headerlink" href="#organisations-come-and-go" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Succession</strong> — an institution merges into another. The shoulders move; the ARKs
+<li><strong>Succession</strong> — an organisation merges into another. The shoulders move; the ARKs
   do not change at all. What changes is who mints next.</li>
-<li><strong>Departure</strong> — an institution leaves but continues to exist. Minting stops;
+<li><strong>Departure</strong> — an organisation leaves but continues to exist. Minting stops;
   resolution continues forever, and the targets can be redirected to the
-  institution's own resolver so that nothing further is asked of us.</li>
+  organisation's own resolver so that nothing further is asked of us.</li>
 </ul>
 <p>Both are covered in <a href="../../guides/succession/">Succession and departure</a>.</p>
+<h2 id="when-the-delegate-is-another-arkhe">When the delegate is another arkhe<a class="headerlink" href="#when-the-delegate-is-another-arkhe" title="Permanent link">&para;</a></h2>
+<p>Everything above delegates to an organisation, but <strong>the same mechanism hands a
+namespace to another arkhe</strong>: an instance per shoulder, a NAAN per site, or a closed
+instance whose namespace alone is known above. Each arrangement and what it costs is in
+<a href="../../guides/federation/">Running several arkhe</a>.</p>
 
 
 

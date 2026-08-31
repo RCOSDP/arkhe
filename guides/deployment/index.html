@@ -16,7 +16,7 @@
         <link rel="prev" href="../succession/">
       
       
-        <link rel="next" href="../../reference/configuration/">
+        <link rel="next" href="../federation/">
       
       
         
@@ -606,6 +606,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../authentication/" class="md-nav__link">
         
   
@@ -804,10 +832,60 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pinned-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pinned dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sharing-the-work-across-several-arkhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sharing the work across several arkhe
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1215,6 +1293,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pinned-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pinned dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sharing-the-work-across-several-arkhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sharing the work across several arkhe
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1243,7 +1343,7 @@
 <h1 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h1>
 <h2 id="the-two-roles">The two roles<a class="headerlink" href="#the-two-roles" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>flowchart LR
-    W[Institutions] --&gt;|mint| M["minter&lt;br/&gt;&lt;small&gt;ARKHE_RESOLVER=0&lt;/small&gt;"]
+    W[Organisations] --&gt;|mint| M["minter&lt;br/&gt;&lt;small&gt;ARKHE_RESOLVER=0&lt;/small&gt;"]
     P[The public] --&gt;|resolve| R["resolver&lt;br/&gt;&lt;small&gt;ARKHE_RESOLVER=1&lt;/small&gt;"]
     M --&gt; DB[(primary)]
     R --&gt; RO[(read replica)]
@@ -1281,6 +1381,29 @@ that a heavy read load never threatens the primary.</p>
 <p>Set <code>ARKHE_RAW_URI_HEADER</code> if the front end can pass the raw request URI. Without it a
 bare <code>?</code> — the brief-metadata inflection — cannot be distinguished from no query
 string at all. That is a protocol-level limitation, not an implementation one.</p>
+<h2 id="pinned-dependencies">Pinned dependencies<a class="headerlink" href="#pinned-dependencies" title="Permanent link">&para;</a></h2>
+<p><code>uv.lock</code> records <strong>the versions actually installed</strong>. The declarations in
+<code>pyproject.toml</code> carry only lower bounds, so without the lock <strong>the same commit builds
+into something different</strong> each time — the image changes under a rebuild, and "when did
+this break" becomes unanswerable.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># install exactly what the lock says</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># update it, deliberately</span>
+</code></pre></div>
+<p><code>--frozen</code> <strong>fails if the lock and <code>pyproject.toml</code> disagree</strong>, which is what you want:
+passing while they disagree is worse. The checks (<code>scripts/check.sh</code>) and the image
+build both use it.</p>
+<p><strong>No upper bounds.</strong> With a lock they are unnecessary, and they make the package harder
+to live with as a dependency. The declaration answers "what range does this work
+with"; the lock answers "what is it running on now" — different questions, so both are
+kept.</p>
+<p>Dependabot proposes updates weekly, grouped. <strong>Pinning is not permission to stop
+looking</strong>: left alone, a pinned tree keeps running with vulnerabilities that have
+already been fixed elsewhere.</p>
+<h2 id="sharing-the-work-across-several-arkhe">Sharing the work across several arkhe<a class="headerlink" href="#sharing-the-work-across-several-arkhe" title="Permanent link">&para;</a></h2>
+<p>Once instances are split per site or per namespace, the rules move from the code into
+the hands of the operators — <strong>no shoulder minted in two places</strong>, <strong>one authoritative
+ledger per NAAN</strong>. How to choose an arrangement, and what goes wrong, is in
+<a href="../federation/">Running several arkhe</a>.</p>
 
 
 
@@ -1333,13 +1456,13 @@ string at all. That is a protocol-level limitation, not an implementation one.</
         
         
           
-          <a href="../../reference/configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration">
+          <a href="../federation/" class="md-footer__link md-footer__link--next" aria-label="Next: Running several arkhe">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Configuration
+                Running several arkhe
               </div>
             </div>
             <div class="md-footer__button md-icon">

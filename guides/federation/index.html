@@ -1,0 +1,2250 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="ARK identifier infrastructure — minter and resolver as separate services">
+      
+      
+      
+        <link rel="canonical" href="https://rcosdp.github.io/arkhe/guides/federation/">
+      
+      
+        <link rel="prev" href="../deployment/">
+      
+      
+        <link rel="next" href="../../reference/configuration/">
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="en">
+        
+          <link rel="alternate" href="../../ja/guides/federation/" hreflang="ja">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Running several arkhe - arkhe</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#running-several-arkhe" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="arkhe" class="md-header__button md-logo" aria-label="arkhe" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            arkhe
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Running several arkhe
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../../ja/guides/federation/" hreflang="ja" class="md-select__link">
+              日本語
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/RCOSDP/arkhe" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    RCOSDP/arkhe
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="arkhe" class="md-nav__button md-logo" aria-label="arkhe" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+
+    </a>
+    arkhe
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/RCOSDP/arkhe" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    RCOSDP/arkhe
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Introduction
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/ark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What ARK is
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/delegation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Delegation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Invariants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Admin interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../succession/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Succession and departure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-four-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four shapes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-from-why-you-want-to-divide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start from why you want to divide
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-by-naan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Divide by NAAN
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-by-shoulder-one-naan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Divide by shoulder, one NAAN
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="B. Divide by shoulder, one NAAN">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-resolution-through-the-upper-instance-breaks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where resolution through the upper instance breaks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-stays-above-what-moves-below" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What stays above, what moves below
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-a-closed-arkhe-underneath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. A closed arkhe underneath
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="C. A closed arkhe underneath">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#can-the-upper-instance-say-this-identifier-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Can the upper instance say "this identifier exists"?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Closed PIDs and open PIDs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Closed PIDs and open PIDs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-shape-must-not-differ" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the shape must not differ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#three-levels-of-what-is-visible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three levels of what is visible
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-level-can-be-raised-lowering-it-does-not-undo-anything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The level can be raised; lowering it does not undo anything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-it-looks-like-to-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it looks like to build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-arkhe-does-not-do-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What arkhe does not do here
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#d-connect-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Connect nothing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-must-not-break-once-divided" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What must not break once divided
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-does-not-exist-yet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What does not exist yet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist-before-building" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist before building
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-four-shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four shapes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-from-why-you-want-to-divide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start from why you want to divide
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-by-naan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Divide by NAAN
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-by-shoulder-one-naan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Divide by shoulder, one NAAN
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="B. Divide by shoulder, one NAAN">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-resolution-through-the-upper-instance-breaks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where resolution through the upper instance breaks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-stays-above-what-moves-below" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What stays above, what moves below
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-a-closed-arkhe-underneath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. A closed arkhe underneath
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="C. A closed arkhe underneath">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#can-the-upper-instance-say-this-identifier-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Can the upper instance say "this identifier exists"?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Closed PIDs and open PIDs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Closed PIDs and open PIDs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-shape-must-not-differ" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the shape must not differ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#three-levels-of-what-is-visible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three levels of what is visible
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-level-can-be-raised-lowering-it-does-not-undo-anything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The level can be raised; lowering it does not undo anything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-it-looks-like-to-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it looks like to build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-arkhe-does-not-do-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What arkhe does not do here
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#d-connect-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Connect nothing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-must-not-break-once-divided" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What must not break once divided
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-does-not-exist-yet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What does not exist yet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checklist-before-building" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checklist before building
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/federation.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="running-several-arkhe">Running several arkhe<a class="headerlink" href="#running-several-arkhe" title="Permanent link">&para;</a></h1>
+<p>Several arkhe instances sharing one identifier scheme. <strong>What you may divide is the
+namespace, never the authority over a single namespace.</strong> The moment two ledgers can
+mint the same name, the one promise this infrastructure keeps — <strong>a name once handed
+out never comes to mean something else</strong> — is gone.</p>
+<p><strong>Giving identifiers to data that cannot be published belongs here too.</strong> How an arkhe
+inside a closed network pairs with a publicly reachable one above it is written out as
+ledgers and commands in <a href="#pid">Closed PIDs and open PIDs</a>.</p>
+<p>arkhe does not coordinate across ledgers. There is no consensus and no multi-master
+replication. <strong>Distribution is built out of namespaces cut so they do not overlap.</strong>
+That is not laziness: a mis-cut namespace shows itself in the configuration, whereas a
+failed agreement produces a silent double mint, and under NR silence is the expensive
+failure.</p>
+<h2 id="the-four-shapes">The four shapes<a class="headerlink" href="#the-four-shapes" title="Permanent link">&para;</a></h2>
+<p><strong>See the whole landscape first</strong>; each one is treated in turn below.</p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph P0["undivided"]
+        z1["arkhe"] --&gt; z2[("ledger")]
+    end
+    subgraph PA["A. by NAAN"]
+        a1["arkhe&lt;br/&gt;&lt;small&gt;99999&lt;/small&gt;"] &lt;--&gt; a2["arkhe&lt;br/&gt;&lt;small&gt;12345&lt;/small&gt;"]
+    end
+    subgraph PB["B. by shoulder"]
+        b1["upper&lt;br/&gt;&lt;small&gt;99999&lt;/small&gt;"] --&gt; b2["lower&lt;br/&gt;&lt;small&gt;/s7&lt;/small&gt;"]
+        b1 --&gt; b3["lower&lt;br/&gt;&lt;small&gt;/s8&lt;/small&gt;"]
+    end
+    subgraph PC["C. closed"]
+        c1["upper&lt;br/&gt;&lt;small&gt;allocation only&lt;/small&gt;"] -.-&gt; c2["closed arkhe&lt;br/&gt;&lt;small&gt;unreachable&lt;/small&gt;"]
+    end</code></pre>
+<p><strong>Stacked (B, C) or side by side (A).</strong> Stacking keeps a single NAAN but makes the upper
+instance a single point of failure; side by side keeps the sites independent but the
+identifiers look different per site. C is the stacked case where <strong>the lower instance
+cannot be reached</strong>.</p>
+<h2 id="start-from-why-you-want-to-divide">Start from why you want to divide<a class="headerlink" href="#start-from-why-you-want-to-divide" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th>Configuration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Resolution read load</td>
+<td><strong>Do not divide.</strong> Add resolvers, point them at read replicas</td>
+</tr>
+<tr>
+<td>Separate failure domains / separate operators</td>
+<td><a href="#a-by-naan">A. by NAAN</a> — fully independent ledgers</td>
+</tr>
+<tr>
+<td>Identifiers must look the same / no more NAANs available</td>
+<td><a href="#b-by-shoulder-one-naan">B. by shoulder</a></td>
+</tr>
+<tr>
+<td>The network is closed (sensitive material)</td>
+<td><a href="#c-a-closed-arkhe-underneath">C. a closed arkhe underneath</a></td>
+</tr>
+<tr>
+<td>No relationship with the other side</td>
+<td><a href="#d-connect-nothing">D. connect nothing</a> — unknown NAANs go to n2t</td>
+</tr>
+</tbody>
+</table>
+<pre class="mermaid"><code>flowchart TD
+    Q1{"is read load&lt;br/&gt;the only reason"} --&gt;|yes| N["do not divide&lt;br/&gt;&lt;small&gt;add resolvers&lt;/small&gt;"]
+    Q1 --&gt;|no| Q2{"is the lower side&lt;br/&gt;reachable"}
+    Q2 --&gt;|no| C["C. closed arkhe"]
+    Q2 --&gt;|yes| Q3{"can you get&lt;br/&gt;more NAANs"}
+    Q3 --&gt;|no| B["B. by shoulder"]
+    Q3 --&gt;|yes| Q4{"hold their address&lt;br/&gt;in your ledger"}
+    Q4 --&gt;|yes| A["A. by NAAN"]
+    Q4 --&gt;|no| D["D. connect nothing&lt;br/&gt;&lt;small&gt;leave it to n2t&lt;/small&gt;"]</code></pre>
+<p><strong>First check whether you can avoid dividing at all.</strong> With one ledger, listing,
+auditing and <code>?info</code> are answered in one place. Divide, and they stay divided.</p>
+<pre class="mermaid"><code>flowchart LR
+    U[The public] --&gt; R1["resolver ×n&lt;br/&gt;&lt;small&gt;ARKHE_RESOLVER=1&lt;/small&gt;"]
+    O[Organisations] --&gt; M1["minter&lt;br/&gt;&lt;small&gt;ARKHE_RESOLVER=0&lt;/small&gt;"]
+    M1 --&gt; DB[(ledger)]
+    R1 --&gt; RO[(replica)]
+    DB -.-&gt; RO</code></pre>
+<p>Read load is handled within <a href="../deployment/">Deployment</a>. What follows is about
+<strong>dividing who operates what</strong>.</p>
+<h2 id="a-by-naan">A. Divide by NAAN<a class="headerlink" href="#a-by-naan" title="Permanent link">&para;</a></h2>
+<p>Each site holds its own NAAN and is authoritative for it. Each registers the others as
+NAANs it is <em>not</em> authoritative for.</p>
+<pre class="mermaid"><code>flowchart TD
+    U[The public] --&gt; A["arkhe A&lt;br/&gt;&lt;small&gt;authoritative for 99999&lt;/small&gt;"]
+    U --&gt; B["arkhe B&lt;br/&gt;&lt;small&gt;authoritative for 12345&lt;/small&gt;"]
+    A --&gt;|"302 for ark:/12345/…"| B
+    B --&gt;|"302 for ark:/99999/…"| A
+    A -.-&gt;|"unknown NAAN"| N[n2t.net]</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># On A: register B's NAAN as "not ours, but we know where it lives"</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="s2">"Site B"</span><span class="w"> </span>--no-authoritative<span class="w"> </span>--redirect<span class="w"> </span>https://ark.b.example.ac.jp
+</code></pre></div>
+<p><strong>What you gain.</strong> Ledgers, permissions and failures separate completely. If the other
+side goes down, your own NAAN keeps answering — only the target of a <code>302</code> is dead.</p>
+<p><strong>What it costs.</strong></p>
+<ul>
+<li><strong>You need a NAAN.</strong> That happens outside arkhe; see
+  <a href="../onboarding/">Setting up for the first time</a>.</li>
+<li><strong>Identifiers look different per site</strong>, and <a href="../succession/">succession cannot cross a
+  NAAN</a> — if an organisation moves from A to B, its existing ARKs stay
+  under A's NAAN and A keeps resolving them. Moving between sites is not succession; it
+  is a departure and an intake.</li>
+<li><strong>The other side's registration is maintained by hand.</strong> If their resolver moves,
+  someone has to edit your ledger. Not registering them at all (<a href="#d-connect-nothing">D</a>)
+  is a legitimate choice; n2t then carries it.</li>
+</ul>
+<h2 id="b-by-shoulder-one-naan">B. Divide by shoulder, one NAAN<a class="headerlink" href="#b-by-shoulder-one-naan" title="Permanent link">&para;</a></h2>
+<p><strong>One NAAN, held above; shoulders cut out of it and handed to arkhe instances below.</strong>
+This is the delegation the system already has (<a href="../../concepts/delegation/">Delegation</a>),
+pointed at <strong>another arkhe</strong> rather than at an organisation.</p>
+<pre class="mermaid"><code>flowchart TD
+    U[The public] --&gt; T["upper arkhe&lt;br/&gt;&lt;small&gt;authoritative for 99999&lt;/small&gt;"]
+    T --&gt;|"302 for /s7… (shoulder.redirect)"| S1["arkhe B&lt;br/&gt;&lt;small&gt;mints 99999/s7&lt;/small&gt;"]
+    T --&gt;|"302 for /s8…"| S2["arkhe C&lt;br/&gt;&lt;small&gt;mints 99999/s8&lt;/small&gt;"]
+    O[an organisation at site B] --&gt;|mint| S1
+    O -.-&gt;|"if it asks the upper one:&lt;br/&gt;307 with the address"| T</code></pre>
+<p>The upper ledger:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/s7<span class="w"> </span>--note<span class="w"> </span><span class="s2">"delegated to site B"</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.b.example.ac.jp
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Resolution delegation (shoulder.redirect) is set from the admin interface;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># there is no CLI for it yet.</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1">#   Ledger › shoulder › delegate resolution: 303 https://ark.b.example.ac.jp/ark:/$id</span>
+</code></pre></div>
+<p>The lower ledger:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span><span class="w">     </span><span class="c1"># registered as authoritative here</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Site B organisation"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7
+</code></pre></div>
+<p>Minting and resolution differ in <strong>how many hops they take</strong>.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant O as organisation at site B
+    participant T as upper arkhe
+    participant S as arkhe B
+    O-&gt;&gt;T: POST /api/mint (shoulder=/s7)
+    T--&gt;&gt;O: 307 + minter address
+    Note over T: never called on their behalf
+    O-&gt;&gt;S: POST /api/mint
+    S--&gt;&gt;O: 201 ark:/99999/s7abc
+    Note over S: only the lower ledger creates the name</code></pre>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as outside user
+    participant T as upper arkhe
+    participant S as arkhe B
+    U-&gt;&gt;T: GET /ark:/99999/s7abc
+    T--&gt;&gt;U: 302 https://ark.b…/ark:/…
+    U-&gt;&gt;S: GET /ark:/99999/s7abc
+    S--&gt;&gt;U: 302 the target URL
+    Note over T,S: if the upper instance is down, the lower one is unreachable</code></pre>
+<p><strong>Minting is never proxied.</strong> A mint request that reaches the upper instance gets a
+<code>307</code> and an address (<code>ShoulderDelegated</code>). Calling on someone's behalf means that a
+lost response can leave <strong>an ARK that neither ledger owns</strong>. Under NR that cannot be
+undone.</p>
+<h3 id="where-resolution-through-the-upper-instance-breaks">Where resolution through the upper instance breaks<a class="headerlink" href="#where-resolution-through-the-upper-instance-breaks" title="Permanent link">&para;</a></h3>
+<p>The upper resolver decides in <a href="../../reference/data-model/">this order</a>, and <strong>the order
+is what determines the outcome</strong>, so it is worth reading before wiring a delegation.</p>
+<pre class="mermaid"><code>flowchart TD
+    R["ark:/99999/s7abc&lt;br/&gt;arrives at the upper instance"] --&gt; E{"exact match&lt;br/&gt;in the ledger"}
+    E --&gt;|yes| A1["the upper instance answers&lt;br/&gt;&lt;small&gt;② minted before the delegation&lt;/small&gt;"]
+    E --&gt;|no| P{"an ancestor"}
+    P --&gt;|yes| A2["describe / redirect from it"]
+    P --&gt;|no| CD{"check digit&lt;br/&gt;valid"}
+    CD --&gt;|no| F1["404&lt;br/&gt;&lt;small&gt;① this is where a delegate&lt;br/&gt;without check digits fails&lt;/small&gt;"]
+    CD --&gt;|yes| SR{"shoulder has&lt;br/&gt;a redirect"}
+    SR --&gt;|yes| G["302 to the lower instance&lt;br/&gt;&lt;small&gt;③ one more hop&lt;/small&gt;"]
+    SR --&gt;|no| F2["404&lt;br/&gt;&lt;small&gt;unknown name under our NAAN&lt;/small&gt;"]</code></pre>
+<ol>
+<li>Exact match — <strong>if the upper ledger has the name, the upper instance answers</strong></li>
+<li>Ancestor passthrough</li>
+<li>If <code>is_authoritative</code>, <strong>verify the check digit</strong>; a mismatch is <code>404</code></li>
+<li>If the shoulder has a <code>redirect</code>, <code>302</code> to the instance below</li>
+<li>Otherwise <code>404</code> — an unknown name under our own NAAN can be said not to exist</li>
+</ol>
+<p>Three consequences follow.</p>
+<p><strong>① Whatever mints below must also produce check digits.</strong> Step 3 precedes step 4, so a
+name minted below without a NOID check digit <strong>fails only through the upper instance</strong>,
+while requests that arrive at the lower one directly succeed — the hardest kind of
+breakage to find. Two arkhe instances share the minting rule, so this is automatic
+between them. It bites <strong>only when delegating to another implementation</strong>, and then
+there are two options: make it produce check digits, or clear <code>is_authoritative</code> on the
+NAAN above. The latter is a NAAN-wide attribute, so it <strong>gives up saying "no such
+identifier" for that whole NAAN</strong> — it cannot be cleared per shoulder.</p>
+<p><strong>② Delegating partway through splits the names across two ledgers.</strong> Step 1 precedes
+step 4: names minted above before the delegation are answered above, later ones flow
+below. Resolution stays correct, but <strong>listing and auditing split on that date</strong>. Only
+future names can be divided; names already handed out cannot be moved.</p>
+<p><strong>③ There is one more hop.</strong> If the upper instance is down, the lower one is
+unreachable from outside even while healthy. <strong>Keep the depth at two.</strong> A→B→A is a
+loop, and arkhe does not detect it.</p>
+<h3 id="what-stays-above-what-moves-below">What stays above, what moves below<a class="headerlink" href="#what-stays-above-what-moves-below" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The NAAN and <code>na_policy</code> (what <code>??</code> answers)</td>
+<td><strong>Above.</strong> The persistence statement is the NAAN holder's promise</td>
+</tr>
+<tr>
+<td>Namespace allocation — which shoulder to whom</td>
+<td><strong>Above.</strong> Exclusivity can only be created here</td>
+</tr>
+<tr>
+<td>Individual ARKs, targets, descriptions</td>
+<td><strong>Below.</strong> The upper ledger does not know them</td>
+</tr>
+<tr>
+<td>Principals and credentials</td>
+<td><strong>Per ledger.</strong> Reach is a registration attribute, so it is not shared</td>
+</tr>
+<tr>
+<td>Audit</td>
+<td><strong>Per ledger.</strong> Following the whole story means collecting it</td>
+</tr>
+</tbody>
+</table>
+<p>Not sharing principals is deliberate. If reach could be carried in from outside the
+ledger, <a href="../../concepts/invariants/">"it does not widen on request"</a> would no longer
+hold. A shared authorization server can share <strong>identity</strong>; <strong>reach</strong> is still decided
+by a registration in each ledger.</p>
+<h2 id="c-a-closed-arkhe-underneath">C. A closed arkhe underneath<a class="headerlink" href="#c-a-closed-arkhe-underneath" title="Permanent link">&para;</a></h2>
+<p>The lower arkhe sits inside a closed environment and cannot be reached from outside.
+<strong>What the upper instance holds is the namespace allocation and whatever target may be
+shown publicly</strong> — not the names inside, and not the objects.</p>
+<pre class="mermaid"><code>flowchart TD
+    P[outside user] --&gt; T["upper arkhe&lt;br/&gt;&lt;small&gt;authoritative for 99999&lt;/small&gt;"]
+    T --&gt;|"303 → public explanation page"| X["a public page:&lt;br/&gt;this namespace is closed"]
+    subgraph closed network
+      I[inside user] --&gt; C["arkhe (minter + resolver)"]
+      C --&gt; D[(closed ledger)]
+    end
+    T -.-&gt;|"namespace allocation only&lt;br/&gt;(set by a person)"| C</code></pre>
+<p><strong>In a closed setting the target itself can be confidential.</strong> That is what makes this
+pattern different from the others.</p>
+<ul>
+<li><strong>Do not put an internal URL in the upper <code>redirect</code>.</strong> A <code>302</code> hands the internal
+  hostname to people who cannot reach it. Point at a <strong>public explanation page</strong>
+  instead — <code>shoulder.redirect</code> accepts a leading status code, e.g.
+  <code>303 https://…/closed-namespace</code>.</li>
+<li><strong><code>minter</code> is published too.</strong> <code>/.well-known/ark</code> exposes delegated shoulders and
+  their <code>minter</code> in machine-readable form. An internal minter URL written there leaves
+  the closed network — and it is an address nobody outside can use anyway, so write the
+  explanation page instead.</li>
+<li><strong>A <code>307</code> delegation from above does not work here</strong>, because outside callers cannot
+  reach the closed minter. Inside users call the closed arkhe directly. Marking the
+  shoulder <code>delegated</code> above is still worth doing: it is what guarantees, in the ledger
+  and in its constraints, that <strong>the upper instance never mints in that namespace</strong>.</li>
+</ul>
+<h3 id="can-the-upper-instance-say-this-identifier-exists">Can the upper instance say "this identifier exists"?<a class="headerlink" href="#can-the-upper-instance-say-this-identifier-exists" title="Permanent link">&para;</a></h3>
+<p>Only for names <strong>it minted itself</strong>. arkhe has <strong>no endpoint for importing a name minted
+elsewhere</strong> — <code>/api/mint</code> generates the name (callers do not choose it) and
+<code>/api/register</code> only adds a qualifier to an existing base. So there are two options.</p>
+<p><strong>C-1. Mint above, hand the names down.</strong> Mint on the upper instance and leave <code>url</code>
+empty. The upper ledger then holds a name and a description but no target, and the
+resolver <strong>returns the description instead of redirecting</strong> (D6). Being able to describe
+what cannot be reached is the same shape as a tombstone, and as FAIR A2 — it expresses
+<strong>restricted access</strong> directly. The closed side keeps no ledger, only the mapping from
+the names it was given to the objects inside.</p>
+<ul>
+<li>What leaves the closed network is exactly <strong>the description an operator chose to
+  enter above</strong>.</li>
+<li>Do not build an automatic sync upward. If you do, a confidential target will
+  eventually appear in <code>?info</code>. <strong>Having no path out is stronger than having a filter
+  on the way out.</strong></li>
+</ul>
+<p><strong>C-2. The upper instance does not know the names.</strong> Delegate the whole shoulder; from
+outside, nothing beyond "that namespace is closed" is visible. <strong>All the upper ledger
+holds is the fact of the allocation</strong> — the least leaky arrangement. The cost is that
+outsiders cannot tell a valid identifier from a typo; both land on the same page.</p>
+<p>Pulling the same identifier from outside <strong>returns different things</strong>.</p>
+<pre class="mermaid"><code>flowchart LR
+    U["outside user&lt;br/&gt;ark:/99999/s7abc"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;name and description held above&lt;/small&gt;&lt;br/&gt;200, a description"]
+    U --&gt; C2["C-2&lt;br/&gt;&lt;small&gt;the name is not known above&lt;/small&gt;&lt;br/&gt;303, an explanation page"]
+    C1 --&gt; R1["existence can be stated&lt;br/&gt;no target&lt;br/&gt;&lt;small&gt;= restricted access itself&lt;/small&gt;"]
+    C2 --&gt; R2["the name does not leak&lt;br/&gt;&lt;small&gt;a typo looks the same&lt;/small&gt;"]</code></pre>
+<p>What crosses the boundary differs too. <strong>In C-1 the only thing going up is a description
+an operator typed in.</strong></p>
+<pre class="mermaid"><code>flowchart TB
+    subgraph OUT["public side"]
+        T["upper arkhe"]
+    end
+    subgraph IN["closed network"]
+        S["arkhe / mapping table"]
+        D[("the objects")]
+        S --- D
+    end
+    T --&gt;|"① namespace allocation, set by a person"| S
+    S --&gt;|"② descriptions only (C-1), entered by hand"| T
+    D -.-&gt;|"never crosses"| T</code></pre>
+<p><strong>If the sensitivity is in the object, C-1; if it extends to the existence of the name,
+C-2.</strong> When in doubt start at C-2 — you can move to C-1 later, but a description once
+published cannot be withdrawn.</p>
+<h2 id="pid">Closed PIDs and open PIDs<a class="headerlink" href="#pid" title="Permanent link">&para;</a></h2>
+<p><strong>Public and closed identifiers live side by side inside one NAAN.</strong> What is divided is
+the shoulder; <strong>the shape of the identifier is not</strong> — keeping it as <code>ark:/99999/…</code>
+either way is the whole point of this arrangement.</p>
+<h3 id="why-the-shape-must-not-differ">Why the shape must not differ<a class="headerlink" href="#why-the-shape-must-not-differ" title="Permanent link">&para;</a></h3>
+<p>Sensitive data <strong>becomes public eventually</strong>: an embargo lifts, anonymisation finishes, a
+paper comes out. If the identifier changes at that moment, <strong>every reference handed out
+while it was closed dies</strong> — and it has already been written into applications, review
+records and correspondence with collaborators.</p>
+<p>If the shape is the same, publication is <strong>one change of target</strong>. When ARK says
+persistence is a property of the service rather than of the string, this is the operation
+it means.</p>
+<pre class="mermaid"><code>flowchart TD
+    N["NAAN 99999&lt;br/&gt;&lt;small&gt;na_policy — what ?? answers — lives here&lt;/small&gt;"]
+    N --&gt; SO["shoulder /s7&lt;br/&gt;&lt;small&gt;open PIDs&lt;/small&gt;"]
+    N --&gt; SC["shoulder /c7&lt;br/&gt;&lt;small&gt;closed PIDs&lt;/small&gt;"]
+    SO --&gt; AO["ark:/99999/s7abc&lt;br/&gt;&lt;small&gt;url = the public target&lt;/small&gt;"]
+    SC --&gt; AC["ark:/99999/c7xyz&lt;br/&gt;&lt;small&gt;url = empty / an application form&lt;/small&gt;"]
+    AC --&gt;|"when it opens, only the url changes"| AC2["ark:/99999/c7xyz&lt;br/&gt;&lt;small&gt;url = the public target&lt;/small&gt;"]</code></pre>
+<p><strong>The bottom two are the same identifier.</strong> The row, the name and the shoulder are
+untouched; only the target moved, and <code>ArkChange</code> keeps the before and after — <strong>which is
+why publication is compatible with a declaration of NR</strong>: what changed was not the name.</p>
+<h3 id="three-levels-of-what-is-visible">Three levels of what is visible<a class="headerlink" href="#three-levels-of-what-is-visible" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>What the public ledger holds</th>
+<th>Pulling <code>ark:/…</code> from outside</th>
+<th>Where it fits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Invisible</strong></td>
+<td>no name at all (<a href="#c-a-closed-arkhe-underneath">C-2</a>)</td>
+<td><code>303</code> to an explanation page</td>
+<td><strong>existence itself is sensitive</strong></td>
+</tr>
+<tr>
+<td><strong>Described</strong></td>
+<td>name and description, <code>url</code> empty</td>
+<td><strong><code>200</code> and a description</strong> (D6)</td>
+<td>catalogue public, object not</td>
+</tr>
+<tr>
+<td><strong>With a door</strong></td>
+<td>name and description, <code>url</code> = application form</td>
+<td><code>302</code> to the form</td>
+<td>available on request</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The third is by far the most common in practice</strong> — the same shape as a DOI landing on
+"access on application" — and in arkhe it is built by <strong>pointing <code>url</code> at the form</strong>.
+No new capability is involved.</p>
+<p>The second works because the resolver <strong>describes an ARK that has no target</strong> (D6). That
+is the same path a tombstone takes, and the same shape as FAIR A2: <em>metadata remains
+referenceable when the data is not</em>. Restricted access is not an exception here; it is
+part of the default behaviour.</p>
+<h3 id="the-level-can-be-raised-lowering-it-does-not-undo-anything">The level can be raised; lowering it does not undo anything<a class="headerlink" href="#the-level-can-be-raised-lowering-it-does-not-undo-anything" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>stateDiagram-v2
+    [*] --&gt; closed: minted with an empty url
+    closed --&gt; with_a_door: url = application form
+    closed --&gt; open: url = the target
+    with_a_door --&gt; open: url = the target
+    open --&gt; tombstone: the object is lost
+    note right of open
+        The name never changes.
+        Only the url does.
+    end note</code></pre>
+<p>Clearing <code>url</code> removes reachability again, but <strong>a description and a target once
+published cannot be withdrawn</strong>. So <strong>start from the closed end</strong>: descriptions can be
+added later, never removed.</p>
+<h3 id="what-it-looks-like-to-build">What it looks like to build<a class="headerlink" href="#what-it-looks-like-to-build" title="Permanent link">&para;</a></h3>
+<p><strong>A. Mint on the public side and hand the names inward</strong>
+(<a href="#c-a-closed-arkhe-underneath">C-1</a>). No outbound connection is needed from the closed
+network, and the public side can state that the identifier exists.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Build the ledger (public arkhe)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Your organisation"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://…/policy"</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7<span class="w">      </span><span class="c1"># open PIDs</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/c7<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--note<span class="w"> </span><span class="s2">"closed PIDs (objects inside)"</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Mint with no url — the resolver describes instead of redirecting</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://ark.example.ac.jp/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Authorization: Bearer …'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"shoulder": "/c7",</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="s1">       "what_title": "(only what may leave the closed network)",</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="s1">       "commitment": "Restricted access; use requires an application",</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="s1">       "url": ""}'</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># → ark:/99999/c7xyz…</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># Add the door (raise it to the third level)</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="c1"># When the embargo lifts, point it at the object. **The identifier does not change**</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
+</code></pre></div>
+<p>The closed side keeps no ledger — only the mapping from the names it was given to the
+objects inside.</p>
+<p><strong>B. Mint inside the closed network</strong> (<a href="#c-a-closed-arkhe-underneath">C-2</a>). Run an arkhe
+there and mark <code>/c7</code> <code>delegated</code> on the public side. The closed side becomes autonomous,
+but <strong>the public side never learns the names that follow</strong> — there is
+<a href="#what-does-not-exist-yet">no endpoint for importing an ARK minted elsewhere</a>, which is
+the largest constraint in this design today.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Public side: record in the ledger that we do not mint in this namespace</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Resolution delegation, from the admin interface:</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">#   303 https://ark.example.ac.jp/closed-namespace</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1">#   (not an internal hostname — it is published at /.well-known/ark)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Closed side: the same NAAN and shoulder, held as authoritative here</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"The closed organisation"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
+</code></pre></div>
+<h3 id="what-arkhe-does-not-do-here">What arkhe does not do here<a class="headerlink" href="#what-arkhe-does-not-do-here" title="Permanent link">&para;</a></h3>
+<p><strong>It does not do access control.</strong> A closed PID is closed <strong>because its target is</strong>, not
+because arkhe turns anyone away. That judgement belongs to the repository holding the
+object. Moving it here would turn an identifier service into an authorization service and
+collide head-on with the premise that <strong>anyone may resolve an identifier</strong> — resolution
+requires no authentication precisely so that this stays true.</p>
+<p><strong>What goes into the description is an operational decision.</strong> <code>?info</code> is a public
+endpoint that needs no authentication, so ERC's who / what / when copied in verbatim can
+<strong>let the title give away the content</strong>. The more closed the object, the shorter the
+description.</p>
+<p><strong><code>??</code> is per NAAN.</strong> Closed and open identifiers cannot advertise different promises.
+Per-organisation levels exist (<code>arkhe manager commitment</code>), but they only ever <strong>narrow</strong>
+the NAAN's declaration.</p>
+<h2 id="d-connect-nothing">D. Connect nothing<a class="headerlink" href="#d-connect-nothing" title="Permanent link">&para;</a></h2>
+<p>Register no foreign NAANs. Unknown NAANs are forwarded with a <code>302</code> to
+<code>ARKHE_GLOBAL_RESOLVER</code> (<code>https://n2t.net</code> by default). <strong>You carry no relationship</strong>:
+when their resolver moves, nothing here needs editing.</p>
+<p>In exchange, <code>?info</code> for an unknown NAAN cannot be answered — it returns <code>404</code>, because
+inventing a description for a ledger you do not hold is not an option.</p>
+<h2 id="what-must-not-break-once-divided">What must not break once divided<a class="headerlink" href="#what-must-not-break-once-divided" title="Permanent link">&para;</a></h2>
+<p>These are not policy. <strong>Each division moves them from the code into the hands of the
+people operating it</strong> — with one ledger, arkhe enforced them.</p>
+<pre class="mermaid"><code>flowchart TD
+    X["arkhe X&lt;br/&gt;&lt;small&gt;mints 99999/s7&lt;/small&gt;"] --&gt; N["ark:/99999/s7abc"]
+    Y["arkhe Y&lt;br/&gt;&lt;small&gt;also mints 99999/s7&lt;/small&gt;"] --&gt; N
+    N --&gt; Z["✗ one name pointing at two things&lt;br/&gt;&lt;small&gt;under NR this cannot be undone&lt;/small&gt;"]</code></pre>
+<p><strong>Nothing on the far side of the split prevents this.</strong> With one ledger, "minting never
+becomes an update" was enforced by code; with two, all that remains is the operational
+rule of <strong>never handing the same shoulder out twice</strong>.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Exactly one ledger mints a given shoulder</strong></td>
+<td>Double minting is the shortest path to one name meaning two things. The upper instance marks a delegated shoulder <code>delegated</code> and then cannot mint in it</td>
+</tr>
+<tr>
+<td><strong>Exactly one ledger is authoritative for a NAAN</strong></td>
+<td>Only one place may say "no such identifier". With two, one answers <code>404</code> while the other answers</td>
+</tr>
+<tr>
+<td><strong>Delegation cannot be taken back</strong></td>
+<td><code>retired</code> does not erase what was minted below. Undoing a delegation means only <strong>no new minting</strong></td>
+</tr>
+<tr>
+<td><strong>The lower ledger is your responsibility too</strong></td>
+<td>Lose it and those names stop resolving through the upper instance as well. Every site needs backups, and <strong>overall availability is that of the weakest site</strong></td>
+</tr>
+<tr>
+<td><strong>No cycles</strong></td>
+<td>Loops are not detected. Depth two</td>
+</tr>
+<tr>
+<td><strong>Audit has to be collected</strong></td>
+<td>Each ledger records only its own operations</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-does-not-exist-yet">What does not exist yet<a class="headerlink" href="#what-does-not-exist-yet" title="Permanent link">&para;</a></h2>
+<p><strong>Things worth knowing before you build this</strong>, rather than discovering them halfway.</p>
+<ul>
+<li><strong>An endpoint for importing an ARK minted elsewhere.</strong> There is no way to put a name
+  minted below into the upper ledger — that is where the constraint in
+  <a href="#c-a-closed-arkhe-underneath">C</a> comes from. Adding one means checking, at import
+  time, that the name falls inside the delegated shoulder, that it is not a double mint,
+  and that the check digit is correct.</li>
+<li><strong>A CLI for <code>shoulder.redirect</code>.</strong> Only the admin interface and
+  <code>arkhe depart --resolver</code> set it, which is where automating a delegation snags.</li>
+<li><strong>Cross-ledger listing, audit and quota.</strong> <code>/.well-known/ark</code> publishes the namespace
+  allocation, not the individual ARKs.</li>
+<li><strong>Health of the delegate.</strong> The upper instance does not know whether the lower one is
+  alive; monitoring a delegated shoulder's redirect from outside is an operational job.</li>
+</ul>
+<h2 id="checklist-before-building">Checklist before building<a class="headerlink" href="#checklist-before-building" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] Confirmed that the undivided configuration is genuinely not enough (read load is
+      solved by replicas)</li>
+<li>[ ] The unit of division is <strong>exclusive</strong> — no shoulder is minted in two places</li>
+<li>[ ] Exactly <strong>one</strong> ledger has <code>is_authoritative</code> for the NAAN</li>
+<li>[ ] Whatever mints below produces <strong>check-digited names</strong> (automatic between arkhe
+      instances)</li>
+<li>[ ] The chain of redirects is <strong>at most two deep</strong> and has no cycle</li>
+<li>[ ] <code>/.well-known/ark</code> exposes <strong>no URL you did not want published</strong> — especially for
+      a closed site</li>
+<li>[ ] <strong>Backup and restore rehearsed at every site</strong> — a lost ledger cannot be rebuilt
+      by anyone</li>
+<li>[ ] Decided how audit is collected, or at least written down what is recorded where</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../deployment/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Deployment">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Deployment
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../reference/configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Configuration
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      MIT — National Institute of Informatics
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/RCOSDP/arkhe" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "content.action.edit", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

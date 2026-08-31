@@ -1,0 +1,2214 @@
+
+<!doctype html>
+<html lang="ja" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="ARK identifier infrastructure — minter and resolver as separate services">
+      
+      
+      
+        <link rel="canonical" href="https://rcosdp.github.io/arkhe/ja/guides/federation/">
+      
+      
+        <link rel="prev" href="../deployment/">
+      
+      
+        <link rel="next" href="../../reference/configuration/">
+      
+      
+        
+          <link rel="alternate" href="../../../guides/federation/" hreflang="en">
+        
+          <link rel="alternate" href="./" hreflang="ja">
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>分散して運用する - arkhe</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#分散して運用する" class="md-skip">
+          コンテンツにスキップ
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="ヘッダー">
+    <a href="../../" title="arkhe" class="md-header__button md-logo" aria-label="arkhe" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            arkhe
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              分散して運用する
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="言語切り替え">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="../../../guides/federation/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="ja" class="md-select__link">
+              日本語
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="検索" placeholder="検索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="検索">
+        
+        <button type="reset" class="md-search__icon md-icon" title="クリア" aria-label="クリア" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            検索を初期化
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/RCOSDP/arkhe" title="リポジトリへ" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    RCOSDP/arkhe
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="ナビゲーション" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../" title="arkhe" class="md-nav__button md-logo" aria-label="arkhe" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
+
+    </a>
+    arkhe
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/RCOSDP/arkhe" title="リポジトリへ" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    RCOSDP/arkhe
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめに
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    はじめに
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    arkhe とは
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    クイックスタート
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    考え方
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    考え方
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/ark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ARK とは何か
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/delegation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    委譲の構造
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    壊さないもの
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    手引き
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    手引き
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    認証
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    管理画面
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../succession/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    承継と離脱
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目次">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目次
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#四つの形" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四つの形
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#分ける理由から決める" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        分ける理由から決める
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-naan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. NAAN 単位で分ける
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-shoulder-naan-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. shoulder 単位で分ける（NAAN は 1 つ）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="B. shoulder 単位で分ける（NAAN は 1 つ）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#上位を通る解決がどこで落ちるか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        上位を通る解決が、どこで落ちるか
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#何が上位に残り何が下位に移るか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        何が上位に残り、何が下位に移るか
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-arkhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. 閉域の arkhe を下に置く
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="C. 閉域の arkhe を下に置く">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#上位がその識別子は存在すると言えるか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        上位が「その識別子は存在する」と言えるか
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        クローズド PID とオープン PID
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="クローズド PID とオープン PID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#なぜ形を分けないのか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        なぜ形を分けないのか
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#外から何が見えるか3-段" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        外から何が見えるか（3 段）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#段は上げられるが下げても戻らない" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        段は上げられるが、下げても戻らない
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#実装イメージ" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        実装イメージ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arkhe-がやらないこと" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arkhe がやらないこと
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#d-n2t" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. 何も繋がない
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#分散しても壊してはならないもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        分散しても壊してはならないもの
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        いま無いもの
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#組む前のチェックリスト" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        組む前のチェックリスト
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    リファレンス
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    リファレンス
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    設定
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    コマンド
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    データモデル
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    プロジェクト
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    プロジェクト
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    参加する
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    バージョン
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    変更履歴
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目次">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目次
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#四つの形" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四つの形
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#分ける理由から決める" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        分ける理由から決める
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-naan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. NAAN 単位で分ける
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-shoulder-naan-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. shoulder 単位で分ける（NAAN は 1 つ）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="B. shoulder 単位で分ける（NAAN は 1 つ）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#上位を通る解決がどこで落ちるか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        上位を通る解決が、どこで落ちるか
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#何が上位に残り何が下位に移るか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        何が上位に残り、何が下位に移るか
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-arkhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. 閉域の arkhe を下に置く
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="C. 閉域の arkhe を下に置く">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#上位がその識別子は存在すると言えるか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        上位が「その識別子は存在する」と言えるか
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        クローズド PID とオープン PID
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="クローズド PID とオープン PID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#なぜ形を分けないのか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        なぜ形を分けないのか
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#外から何が見えるか3-段" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        外から何が見えるか（3 段）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#段は上げられるが下げても戻らない" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        段は上げられるが、下げても戻らない
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#実装イメージ" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        実装イメージ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arkhe-がやらないこと" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arkhe がやらないこと
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#d-n2t" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. 何も繋がない
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#分散しても壊してはならないもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        分散しても壊してはならないもの
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        いま無いもの
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#組む前のチェックリスト" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        組む前のチェックリスト
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/federation.ja.md" title="編集" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="分散して運用する">分散して運用する<a class="headerlink" href="#分散して運用する" title="Permanent link">&para;</a></h1>
+<p>複数の arkhe を並べて、1 つの体系を分担する構成。<strong>分けてよいのは名前空間であって、
+1 つの名前空間の権威ではない。</strong> 同じ名前を 2 か所が採番できる形にした時点で、この基盤が
+守っている唯一の約束——<strong>一度配った名前が別のものを指さない</strong>——が壊れる。</p>
+<p><strong>公開できないデータに識別子を付ける構成も、ここに含まれる。</strong> 閉じた環境に置いた arkhe と、
+外から見える上位の arkhe をどう組むか——<a href="#pid">クローズド PID とオープン PID</a> は、その
+実装のかたちを台帳とコマンドの形で書いてある。</p>
+<p>arkhe は台帳をまたいだ調整をしない。合意も、レプリケーションによる多重書き込みも
+持たない。<strong>分散は「排他的に切り分けた名前空間」だけで作る。</strong> これは実装の手抜きでは
+なく、分散合意で採番の一意性を守る設計よりも、切り分けのほうが<strong>壊れ方が浅い</strong>からである
+——切り分けは設定の誤りが見えるが、合意の失敗は静かに二重採番になる。</p>
+<h2 id="四つの形">四つの形<a class="headerlink" href="#四つの形" title="Permanent link">&para;</a></h2>
+<p><strong>先に全体を見ておく。</strong> 詳しくは下で 1 つずつ扱う。</p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph P0["分けない"]
+        z1["arkhe"] --&gt; z2[("台帳")]
+    end
+    subgraph PA["A. NAAN 単位"]
+        a1["arkhe&lt;br/&gt;&lt;small&gt;99999&lt;/small&gt;"] &lt;--&gt; a2["arkhe&lt;br/&gt;&lt;small&gt;12345&lt;/small&gt;"]
+    end
+    subgraph PB["B. shoulder 単位"]
+        b1["上位&lt;br/&gt;&lt;small&gt;99999&lt;/small&gt;"] --&gt; b2["下位&lt;br/&gt;&lt;small&gt;/s7&lt;/small&gt;"]
+        b1 --&gt; b3["下位&lt;br/&gt;&lt;small&gt;/s8&lt;/small&gt;"]
+    end
+    subgraph PC["C. 閉域"]
+        c1["上位&lt;br/&gt;&lt;small&gt;割当だけ&lt;/small&gt;"] -.-&gt; c2["閉じた arkhe&lt;br/&gt;&lt;small&gt;外から届かない&lt;/small&gt;"]
+    end</code></pre>
+<p><strong>縦に並ぶ（B・C）か、横に並ぶ（A）か。</strong> 縦は NAAN を 1 つに保てるが上位が単一障害点になり、
+横は互いに独立だが識別子の見た目が拠点で変わる。C は縦のうち、<strong>下位に届かない</strong>場合である。</p>
+<h2 id="分ける理由から決める">分ける理由から決める<a class="headerlink" href="#分ける理由から決める" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>分けたい理由</th>
+<th>取る構成</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>解決の読み負荷が重い</td>
+<td><strong>分けない。</strong> resolver を増やして読み取りレプリカに向ける</td>
+</tr>
+<tr>
+<td>障害を分けたい／運用主体が別</td>
+<td><a href="#a-naan">A. NAAN 単位</a>。台帳が完全に独立する</td>
+</tr>
+<tr>
+<td>識別子の見た目を揃えたい／NAAN を増やせない</td>
+<td><a href="#b-shoulder-naan-1">B. shoulder 単位</a></td>
+</tr>
+<tr>
+<td>ネットワークが閉じている（機微なデータ）</td>
+<td><a href="#c-arkhe">C. 閉域の arkhe を下に置く</a></td>
+</tr>
+<tr>
+<td>相手と関係を持たない</td>
+<td><a href="#d-n2t">D. 何も繋がない</a>。未知 NAAN は n2t に任せる</td>
+</tr>
+</tbody>
+</table>
+<pre class="mermaid"><code>flowchart TD
+    Q1{"分けたいのは&lt;br/&gt;読み負荷だけか"} --&gt;|はい| N["分けない&lt;br/&gt;&lt;small&gt;resolver を増やす&lt;/small&gt;"]
+    Q1 --&gt;|いいえ| Q2{"下位に外から&lt;br/&gt;届くか"}
+    Q2 --&gt;|届かない| C["C. 閉域の arkhe"]
+    Q2 --&gt;|届く| Q3{"NAAN を&lt;br/&gt;増やせるか"}
+    Q3 --&gt;|増やせない| B["B. shoulder 単位"]
+    Q3 --&gt;|増やせる| Q4{"相手の場所を&lt;br/&gt;台帳で持つか"}
+    Q4 --&gt;|持つ| A["A. NAAN 単位"]
+    Q4 --&gt;|持たない| D["D. 繋がない&lt;br/&gt;&lt;small&gt;n2t に任せる&lt;/small&gt;"]</code></pre>
+<p><strong>最初に確かめるのは「分けないで済むか」である。</strong> 台帳が 1 つなら、一覧も監査も
+<code>?info</code> も 1 か所で答えられる。分けた瞬間に、それらは分かれたまま戻らない。</p>
+<pre class="mermaid"><code>flowchart LR
+    U[誰でも] --&gt; R1["resolver ×n&lt;br/&gt;&lt;small&gt;ARKHE_RESOLVER=1&lt;/small&gt;"]
+    O[組織] --&gt; M1["minter&lt;br/&gt;&lt;small&gt;ARKHE_RESOLVER=0&lt;/small&gt;"]
+    M1 --&gt; DB[(台帳)]
+    R1 --&gt; RO[(レプリカ)]
+    DB -.-&gt; RO</code></pre>
+<p>読み負荷は<a href="../deployment/">デプロイ</a>の範囲で片づく。以下は<strong>運用の主体を分けたいとき</strong>の話。</p>
+<h2 id="a-naan">A. NAAN 単位で分ける<a class="headerlink" href="#a-naan" title="Permanent link">&para;</a></h2>
+<p>拠点ごとに NAAN を持ち、それぞれが自分の NAAN に権威を持つ。互いは
+<code>is_authoritative=false</code> の NAAN として登録し合う。</p>
+<pre class="mermaid"><code>flowchart TD
+    U[誰でも] --&gt; A["arkhe A&lt;br/&gt;&lt;small&gt;99999 に権威&lt;/small&gt;"]
+    U --&gt; B["arkhe B&lt;br/&gt;&lt;small&gt;12345 に権威&lt;/small&gt;"]
+    A --&gt;|"ark:/12345/… を 302"| B
+    B --&gt;|"ark:/99999/… を 302"| A
+    A -.-&gt;|"未知 NAAN"| N[n2t.net]</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># A 側。B の NAAN を「権威は持たないが行き先は知っている」として登録する</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="s2">"拠点 B"</span><span class="w"> </span>--no-authoritative<span class="w"> </span>--redirect<span class="w"> </span>https://ark.b.example.ac.jp
+</code></pre></div>
+<p><strong>利点。</strong> 台帳も権限も障害も完全に分かれる。相手が落ちても自分の NAAN は答え続ける
+（相手の NAAN は 302 の先が死ぬだけで、こちらの解決は成立している）。</p>
+<p><strong>代償。</strong></p>
+<ul>
+<li><strong>NAAN の取得が要る。</strong> これは arkhe の外の手続きで、<a href="../onboarding/">はじめて立ち上げるとき</a>にある。</li>
+<li><strong>識別子の見た目が拠点で変わる。</strong> そして<a href="../succession/">承継は NAAN を跨げない</a>
+  ——組織が拠点 A から B へ移っても、既存の ARK は A の NAAN のまま A が解決し続ける。
+  拠点をまたぐ組織の移動は、承継ではなく<strong>離脱と受け入れ</strong>になる。</li>
+<li><strong>相手の登録は手で保つ。</strong> 相手のリゾルバの URL が変わったら、こちらの台帳を直す人が要る。
+  登録しない選択（<a href="#d-n2t">D</a>）もあり、そのときは n2t が引き受ける。</li>
+</ul>
+<h2 id="b-shoulder-naan-1">B. shoulder 単位で分ける（NAAN は 1 つ）<a class="headerlink" href="#b-shoulder-naan-1" title="Permanent link">&para;</a></h2>
+<p><strong>NAAN は上位が 1 つ保有し、shoulder を切り出して下位の arkhe に渡す。</strong> 委譲の構造を
+組織ではなく<strong>別の arkhe</strong>に対して行う、というだけのことである
+（<a href="../../concepts/delegation/">委譲の構造</a>）。</p>
+<pre class="mermaid"><code>flowchart TD
+    U[誰でも] --&gt; T["上位 arkhe&lt;br/&gt;&lt;small&gt;99999 に権威&lt;/small&gt;"]
+    T --&gt;|"/s7… を 302（shoulder.redirect）"| S1["下位 arkhe B&lt;br/&gt;&lt;small&gt;99999/s7 を採番&lt;/small&gt;"]
+    T --&gt;|"/s8… を 302"| S2["下位 arkhe C&lt;br/&gt;&lt;small&gt;99999/s8 を採番&lt;/small&gt;"]
+    O[拠点 B の組織] --&gt;|採番| S1
+    O -.-&gt;|"上位に投げた場合&lt;br/&gt;307 で行き先を返す"| T</code></pre>
+<p>上位の台帳:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/s7<span class="w"> </span>--note<span class="w"> </span><span class="s2">"拠点 B へ委譲"</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.b.example.ac.jp
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># 解決の委譲（shoulder.redirect）は管理画面から設定する。CLI にはまだ無い</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">#   → 台帳 › shoulder › 解決の委譲: 303 https://ark.b.example.ac.jp/ark:/$id</span>
+</code></pre></div>
+<p>下位の台帳:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"（上位と同じ NAAN）"</span><span class="w">      </span><span class="c1"># 権威を持つ側として登録する</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"拠点 B の組織"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7
+</code></pre></div>
+<p>採番と解決は、<strong>別のホップの数</strong>になる。</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant O as 拠点 B の組織
+    participant T as 上位 arkhe
+    participant S as 下位 arkhe B
+    O-&gt;&gt;T: POST /api/mint (shoulder=/s7)
+    T--&gt;&gt;O: 307 + 行き先（minter）
+    Note over T: 代理では呼ばない
+    O-&gt;&gt;S: POST /api/mint
+    S--&gt;&gt;O: 201 ark:/99999/s7abc
+    Note over S: 名前を作るのは下位の台帳だけ</code></pre>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as 外の利用者
+    participant T as 上位 arkhe
+    participant S as 下位 arkhe B
+    U-&gt;&gt;T: GET /ark:/99999/s7abc
+    T--&gt;&gt;U: 302 https://ark.b…/ark:/…
+    U-&gt;&gt;S: GET /ark:/99999/s7abc
+    S--&gt;&gt;U: 302 対象の URL
+    Note over T,S: 上位が落ちると、下位が生きていても外から届かない</code></pre>
+<p><strong>採番はプロキシしない。</strong> 上位に来た採番要求は <code>307</code> と行き先だけを返す
+（<code>ShoulderDelegated</code>）。代理で呼ぶと、応答が失われたときに<strong>どちらの台帳にも
+持ち主のいない ARK</strong> が残りうる。NR を宣言する体系でそれは取り返しがつかない。</p>
+<h3 id="上位を通る解決がどこで落ちるか">上位を通る解決が、どこで落ちるか<a class="headerlink" href="#上位を通る解決がどこで落ちるか" title="Permanent link">&para;</a></h3>
+<p>上位のリゾルバは<a href="../../reference/data-model/">この順</a>で判断する。<strong>順序が結論を決める</strong>ので、
+委譲を組む前に見ておく価値がある。</p>
+<pre class="mermaid"><code>flowchart TD
+    R["ark:/99999/s7abc が&lt;br/&gt;上位に届く"] --&gt; E{"上位の台帳に&lt;br/&gt;完全一致"}
+    E --&gt;|ある| A1["上位が答える&lt;br/&gt;&lt;small&gt;② 委譲前に採った名前&lt;/small&gt;"]
+    E --&gt;|ない| P{"祖先が&lt;br/&gt;ある"}
+    P --&gt;|ある| A2["祖先から記述・転送"]
+    P --&gt;|ない| CD{"検査桁が&lt;br/&gt;合う"}
+    CD --&gt;|合わない| F1["404&lt;br/&gt;&lt;small&gt;① 委譲先が検査桁を&lt;br/&gt;作らないとここ&lt;/small&gt;"]
+    CD --&gt;|合う| SR{"shoulder に&lt;br/&gt;redirect"}
+    SR --&gt;|ある| G["302 で下位へ&lt;br/&gt;&lt;small&gt;③ ホップが 1 つ増える&lt;/small&gt;"]
+    SR --&gt;|ない| F2["404&lt;br/&gt;&lt;small&gt;自 NAAN の未知名&lt;/small&gt;"]</code></pre>
+<ol>
+<li>完全一致 — <strong>上位の台帳にその名前があれば、上位が答える</strong></li>
+<li>祖先 passthrough</li>
+<li><code>is_authoritative</code> なら<strong>検査桁の検証</strong>。合わなければ <code>404</code></li>
+<li>shoulder の <code>redirect</code> があれば <code>302</code> で下位へ</li>
+<li>無ければ <code>404</code>（自 NAAN の未知名は「無い」と言える）</li>
+</ol>
+<p>ここから 3 つ出てくる。</p>
+<p><strong>① 委譲先も検査桁を作らなければならない。</strong> 3 が 4 より先にあるので、下位が
+NOID＋検査桁でない名前を採ると、<strong>上位経由の解決だけが 404 になる</strong>（下位に直接来た
+要求は通る——いちばん見つけにくい壊れ方である）。arkhe 同士なら採番規則が同じなので
+自動的に満たす。<strong>他実装に委譲するときだけ</strong>問題になり、そのときの選択肢は
+「相手に検査桁を作らせる」か「上位の NAAN の <code>is_authoritative</code> を落とす」の 2 つ。
+後者は NAAN 全体の属性なので、<strong>その NAAN について「無い」と言う力を全部失う</strong>
+——shoulder ごとには落とせない。</p>
+<p><strong>② 途中から委譲すると、名前が 2 か所に分かれる。</strong> 1 が 4 より先なので、委譲前に
+上位で採った名前は上位が答え、それ以降の名前は下位へ流れる。解決は正しく続くが、
+<strong>一覧と監査はその日を境に割れる</strong>。分けるのは未来の名前だけで、既に配った名前は
+移せない。</p>
+<p><strong>③ ホップは増える。</strong> 上位が落ちれば、下位が生きていても外からは解決できない。
+<strong>深さは 2 まで</strong>にする。A→B→A のような循環はループになり、arkhe は検知しない。</p>
+<h3 id="何が上位に残り何が下位に移るか">何が上位に残り、何が下位に移るか<a class="headerlink" href="#何が上位に残り何が下位に移るか" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NAAN・<code>na_policy</code>（<code>??</code> の答え）</td>
+<td><strong>上位。</strong> 永続性の宣言は NAAN の保有者の約束である</td>
+</tr>
+<tr>
+<td>名前空間の割当（どの shoulder を誰に）</td>
+<td><strong>上位。</strong> 排他はここでしか作れない</td>
+</tr>
+<tr>
+<td>個々の ARK・行き先・記述</td>
+<td><strong>下位。</strong> 上位は知らない</td>
+</tr>
+<tr>
+<td>主体と資格情報</td>
+<td><strong>各台帳。</strong> 到達範囲は登録の属性なので共有されない</td>
+</tr>
+<tr>
+<td>監査</td>
+<td><strong>各台帳。</strong> 全体を辿るには集める</td>
+</tr>
+</tbody>
+</table>
+<p>主体が共有されないのは意図的である。到達範囲を台帳の外から持ち込めるようにすると、
+<a href="../../concepts/invariants/">「リクエストで広がらない」</a>が成立しなくなる。共通の認可サーバを
+置けば<strong>身元</strong>は共有できるが、<strong>届く範囲</strong>は各台帳への登録で決まる。</p>
+<h2 id="c-arkhe">C. 閉域の arkhe を下に置く<a class="headerlink" href="#c-arkhe" title="Permanent link">&para;</a></h2>
+<p>下位の arkhe が閉じた環境にあり、外から届かない構成。<strong>上位が把握するのは名前空間の
+割当と、外に見せてよい行き先だけ</strong>で、中の名前も対象も知らない。</p>
+<pre class="mermaid"><code>flowchart TD
+    P[外の利用者] --&gt; T["上位 arkhe&lt;br/&gt;&lt;small&gt;99999 に権威&lt;/small&gt;"]
+    T --&gt;|"303 → 公開の説明ページ"| X["「この名前空間は閉じている」"]
+    subgraph 閉域
+      I[中の利用者] --&gt; C["arkhe（minter＋resolver）"]
+      C --&gt; D[(閉じた台帳)]
+    end
+    T -.-&gt;|"名前空間の割当だけ&lt;br/&gt;（人が設定する）"| C</code></pre>
+<p><strong>閉域では、行き先そのものが機密になりうる。</strong> ここが他のパターンと違う。</p>
+<ul>
+<li><strong>上位の <code>redirect</code> に内部 URL を書かない。</strong> <code>302</code> で内部ホスト名を返すと、
+  到達できない相手にもホスト名は届く。<code>303 https://…/closed-namespace</code> のように
+  <strong>公開の説明ページ</strong>へ向ける（<code>shoulder.redirect</code> は先頭にステータスコードを書ける）。</li>
+<li><strong><code>minter</code> も公開される。</strong> <code>/.well-known/ark</code> は委譲した shoulder とその <code>minter</code> を
+  機械可読で出す。閉域の minter URL をそのまま書けば、それも外に出る。
+  外から使えない案内でもあるので、書くなら<strong>説明ページの URL</strong>にする。</li>
+<li><strong>上位からの <code>307</code> 委譲は成立しない。</strong> 外の利用者が閉域の minter に到達できないため。
+  閉域の利用者は閉域の arkhe を直接叩く。上位の shoulder を <code>delegated</code> にする意味は、
+  <strong>上位でその名前空間が採番されないこと</strong>を台帳と制約で保証する点にある。</li>
+</ul>
+<h3 id="上位がその識別子は存在すると言えるか">上位が「その識別子は存在する」と言えるか<a class="headerlink" href="#上位がその識別子は存在すると言えるか" title="Permanent link">&para;</a></h3>
+<p>言えるのは、<strong>上位で採番した場合だけ</strong>である。arkhe には<strong>外で採番された名前を取り込む
+口が無い</strong>——<code>/api/mint</code> は名前を生成し（呼び出し側は名前を選べない）、<code>/api/register</code> は
+<strong>既存 base の修飾子</strong>を足すためのものだから。したがって選択肢は 2 つ。</p>
+<p><strong>C-1. 上位で先に採り、閉域に払い出す。</strong> 上位で <code>ark:mint</code> して <code>url</code> を空のままにする。
+上位は名前と記述を持ち、行き先は持たない——リゾルバは転送ではなく<strong>記述を返す</strong>（D6）。
+対象に到達できなくても記述は答えられるという形は、tombstone や FAIR A2 と同じで、
+<strong>制限公開そのものを表現できる</strong>。閉域側は台帳を持たず、払い出された名前と中の対象の
+対応だけを持つ。</p>
+<ul>
+<li>外に出る情報は、<strong>運用者が明示的に選んで上位に入れた記述だけ</strong>になる。</li>
+<li>閉域から上位への自動同期を作らないこと。作れば、いつか機微な行き先が上位の
+  <code>?info</code> に出る。<strong>出ない仕組みではなく、出す道が無い状態</strong>を保つほうが強い。</li>
+</ul>
+<p><strong>C-2. 上位は名前を知らない。</strong> shoulder ごと委譲し、外からは「その名前空間は閉じている」
+以上のことは分からない。<strong>上位が持つのは割当の事実だけ</strong>で、いちばん漏れない。
+代わりに、外からは正当な識別子と誤記の区別がつかない（どちらも同じ説明ページに着く）。</p>
+<p>外から同じ識別子を引いたとき、<strong>返るものが違う</strong>。</p>
+<pre class="mermaid"><code>flowchart LR
+    U["外の利用者&lt;br/&gt;ark:/99999/s7abc"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;上位が名前と記述を持つ&lt;/small&gt;&lt;br/&gt;200 記述を返す"]
+    U --&gt; C2["C-2&lt;br/&gt;&lt;small&gt;上位は名前を知らない&lt;/small&gt;&lt;br/&gt;303 説明ページ"]
+    C1 --&gt; R1["存在は言える&lt;br/&gt;行き先は無い&lt;br/&gt;&lt;small&gt;＝制限公開そのもの&lt;/small&gt;"]
+    C2 --&gt; R2["名前の存在も漏れない&lt;br/&gt;&lt;small&gt;誤記と区別がつかない&lt;/small&gt;"]</code></pre>
+<p>境界を越えるものも違う。<strong>C-1 で上へ渡るのは、運用者が手で入れた記述だけ</strong>である。</p>
+<pre class="mermaid"><code>flowchart TB
+    subgraph OUT["公開側"]
+        T["上位 arkhe"]
+    end
+    subgraph IN["閉域"]
+        S["arkhe／対応表"]
+        D[("対象そのもの")]
+        S --- D
+    end
+    T --&gt;|"① 名前空間の割当（人が設定する）"| S
+    S --&gt;|"② 記述だけ（C-1。人が選んで上位に入れる）"| T
+    D -.-&gt;|"越えない"| T</code></pre>
+<p><strong>機微さが「対象」にあるなら C-1、「名前が存在すること」にもあるなら C-2。</strong>
+迷ったら C-2 から始める——後から C-1 に寄せることはできるが、一度外に出した記述は
+取り消せない。</p>
+<h2 id="pid">クローズド PID とオープン PID<a class="headerlink" href="#pid" title="Permanent link">&para;</a></h2>
+<p><strong>同じ NAAN の中に、公開の識別子と閉じた識別子を並べて置く。</strong> 分けるのは shoulder であって、
+<strong>識別子の形は分けない</strong>——<code>ark:/99999/…</code> のままにしておくことが、この構成の目的そのものである。</p>
+<h3 id="なぜ形を分けないのか">なぜ形を分けないのか<a class="headerlink" href="#なぜ形を分けないのか" title="Permanent link">&para;</a></h3>
+<p>機微なデータは、<strong>いつか公開になる</strong>。禁止期間が明け、匿名化が済み、論文が出る。そのときに
+識別子が変わる設計だと、<strong>閉じていた間に配った参照が全部死ぬ</strong>——申請書にも、審査の記録にも、
+共同研究者との連絡にも、その識別子は既に書かれている。</p>
+<p>形が同じなら、公開は<strong>行き先の付け替え 1 回</strong>で済む。ARK が「永続性は文字列の性質ではなく
+サービスの問題」と言っているのは、まさにこの操作ができることを指している。</p>
+<pre class="mermaid"><code>flowchart TD
+    N["NAAN 99999&lt;br/&gt;&lt;small&gt;na_policy（?? の答え）はここ&lt;/small&gt;"]
+    N --&gt; SO["shoulder /s7&lt;br/&gt;&lt;small&gt;オープン PID&lt;/small&gt;"]
+    N --&gt; SC["shoulder /c7&lt;br/&gt;&lt;small&gt;クローズド PID&lt;/small&gt;"]
+    SO --&gt; AO["ark:/99999/s7abc&lt;br/&gt;&lt;small&gt;url = 公開の対象&lt;/small&gt;"]
+    SC --&gt; AC["ark:/99999/c7xyz&lt;br/&gt;&lt;small&gt;url = 空／申請窓口&lt;/small&gt;"]
+    AC --&gt;|"公開になったら url だけ付け替える"| AC2["ark:/99999/c7xyz&lt;br/&gt;&lt;small&gt;url = 公開の対象&lt;/small&gt;"]</code></pre>
+<p><strong>右下の 2 つは同じ識別子である。</strong> 行も、名前も、shoulder も変わっていない。変わったのは
+行き先だけで、それは <code>ArkChange</code> に before/after が残る——<strong>NR を宣言したまま公開に移せる</strong>
+のは、変えたのが名前ではないからである。</p>
+<h3 id="外から何が見えるか3-段">外から何が見えるか（3 段）<a class="headerlink" href="#外から何が見えるか3-段" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>公開側の台帳が持つもの</th>
+<th>外から <code>ark:/…</code> を引くと</th>
+<th>使いどころ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>見せない</strong></td>
+<td>名前を持たない（<a href="#c-arkhe">C-2</a>）</td>
+<td><code>303</code> 説明ページ</td>
+<td><strong>存在すること自体が機微</strong></td>
+</tr>
+<tr>
+<td><strong>記述だけ</strong></td>
+<td>名前と記述、<code>url</code> は空</td>
+<td><strong><code>200</code> 記述を返す</strong>（D6）</td>
+<td>目録は公開、実体は非公開</td>
+</tr>
+<tr>
+<td><strong>窓口つき</strong></td>
+<td>名前と記述、<code>url</code> = 申請ページ</td>
+<td><code>302</code> 申請ページ</td>
+<td>申請すれば使える</td>
+</tr>
+</tbody>
+</table>
+<p><strong>現場でいちばん多いのは 3 段目</strong>である。DOI で「データは申請制」と書かれた着地先と同じ形で、
+arkhe では <strong><code>url</code> を申請フォームに向けるだけ</strong>で作れる——新しい機能を要さない。</p>
+<p>2 段目（<code>url</code> が空）が成立するのは、リゾルバが<strong>転送先の無い ARK に対して記述を返す</strong>（D6）
+から。これは tombstone と同じ経路で、<strong>「対象に到達できなくても記述は参照できる」</strong>という
+FAIR A2 の形そのものである。制限公開は、この基盤にとって例外ではなく既定の一部にあたる。</p>
+<h3 id="段は上げられるが下げても戻らない">段は上げられるが、下げても戻らない<a class="headerlink" href="#段は上げられるが下げても戻らない" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>stateDiagram-v2
+    state "閉じている" as closed
+    state "窓口つき" as door
+    state "公開" as open
+    state "tombstone" as dead
+    [*] --&gt; closed: 採番（url は空）
+    closed --&gt; door: url = 申請ページ
+    closed --&gt; open: url = 対象
+    door --&gt; open: url = 対象
+    open --&gt; dead: 対象が失われた
+    note right of open
+        名前は一度も変わらない。
+        変わるのは url だけ。
+    end note</code></pre>
+<p><code>url</code> を戻せば到達性は落とせるが、<strong>一度公開した記述と行き先は取り消せない</strong>。だから
+<strong>閉じている側から始める</strong>——記述は後から足せるが、消せない。</p>
+<h3 id="実装イメージ">実装イメージ<a class="headerlink" href="#実装イメージ" title="Permanent link">&para;</a></h3>
+<p><strong>A. 公開側で採番し、名前を閉域に払い出す</strong>（<a href="#c-arkhe">C-1</a>）。閉域から外向きの通信が要らず、
+公開側が「その識別子は存在する」と言える。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># 台帳を組む（公開側の arkhe）</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"あなたの組織"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://…/policy"</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"例示大学"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7<span class="w">          </span><span class="c1"># オープン PID</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/c7<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--note<span class="w"> </span><span class="s2">"クローズド PID（閉域の対象）"</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># 採番する。url を入れない——リゾルバは転送ではなく記述を返す</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://ark.example.ac.jp/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Authorization: Bearer …'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"shoulder": "/c7",</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="s1">       "what_title": "（外に出してよい範囲の題）",</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="s1">       "commitment": "制限公開。利用には申請が要る",</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="s1">       "url": ""}'</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># → ark:/99999/c7xyz…</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="c1"># 申請窓口を付ける（3 段目に上げる）</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="c1"># 禁止期間が明けたら、実体へ向け替える。**識別子は変わらない**</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
+</code></pre></div>
+<p>閉域側は台帳を持たず、<strong>払い出された名前と中の対象の対応だけ</strong>を持つ。</p>
+<p><strong>B. 閉域で採番する</strong>（<a href="#c-arkhe">C-2</a>）。閉域に arkhe を建て、公開側は <code>/c7</code> を <code>delegated</code> に
+する。閉域が自律する代わりに、<strong>公開側はその後の名前を知らない</strong>——<a href="#gaps">外部で採番された ARK を
+取り込む口が無い</a>ためで、ここが現状のいちばん大きな制約である。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 公開側: この名前空間では自分は採番しない、と台帳に刻む</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># 解決の委譲は管理画面から: 303 https://ark.example.ac.jp/closed-namespace</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">#   （内部ホスト名を書かない。/.well-known/ark に載る）</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># 閉域側: 同じ NAAN・同じ shoulder を、権威を持つ側として持つ</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"（上位と同じ NAAN）"</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"閉域の組織"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
+</code></pre></div>
+<h3 id="arkhe-がやらないこと">arkhe がやらないこと<a class="headerlink" href="#arkhe-がやらないこと" title="Permanent link">&para;</a></h3>
+<p><strong>アクセス制御はしない。</strong> クローズド PID が「閉じている」のは<strong>行き先が閉じているから</strong>で
+あって、arkhe が誰かを拒んでいるからではない。判定は対象側（リポジトリ）の仕事である。
+ここに持ち込むと識別子基盤が認可基盤になり、<strong>識別子は誰でも解決できるべき</strong>という前提と
+正面から衝突する——解決に認証を要さない設計は、そのために選んである。</p>
+<p><strong>記述に何を書くかは運用が決める。</strong> <code>?info</code> は認証を要さない公開の口なので、ERC の
+who / what / when をそのまま入れると、<strong>題名から中身が推測できる</strong>ことがある。
+<strong>閉じた対象ほど、記述は短くする。</strong></p>
+<p><strong><code>??</code>（永続性宣言）は NAAN 単位である。</strong> クローズドとオープンで別の約束を掲げることは
+できない。組織ごとの水準は <code>arkhe manager commitment</code> で言い分けられるが、それは NAAN の
+宣言を<strong>狭める</strong>方向にしか働かない。</p>
+<h2 id="d-n2t">D. 何も繋がない<a class="headerlink" href="#d-n2t" title="Permanent link">&para;</a></h2>
+<p>他所の NAAN を登録しない。未知の NAAN は <code>ARKHE_GLOBAL_RESOLVER</code>（既定 <code>https://n2t.net</code>）へ
+<code>302</code> で取り次ぐ。<strong>相手との関係を持たずに済む</strong>のが利点で、相手のリゾルバが移っても
+こちらに作業が発生しない。</p>
+<p>代わりに、<strong>未知 NAAN の <code>?info</code> は答えられない</strong>（<code>404</code> を返す）。持っていない台帳の
+記述を作り出すわけにはいかないため。</p>
+<h2 id="分散しても壊してはならないもの">分散しても壊してはならないもの<a class="headerlink" href="#分散しても壊してはならないもの" title="Permanent link">&para;</a></h2>
+<p>これは方針ではなく、<strong>分けた数だけ人が守ることになる</strong>規則である。台帳が 1 つなら
+コードが守っていたものが、分けた瞬間に運用の側に移る。</p>
+<pre class="mermaid"><code>flowchart TD
+    X["arkhe X&lt;br/&gt;&lt;small&gt;99999/s7 を採番&lt;/small&gt;"] --&gt; N["ark:/99999/s7abc"]
+    Y["arkhe Y&lt;br/&gt;&lt;small&gt;99999/s7 も採番&lt;/small&gt;"] --&gt; N
+    N --&gt; Z["✗ 同じ名前が 2 つの対象を指す&lt;br/&gt;&lt;small&gt;NR の下では取り返しがつかない&lt;/small&gt;"]</code></pre>
+<p><strong>これを防ぐ仕掛けは、分けた先には無い。</strong> 1 つの台帳なら「採番が更新に化けない」は
+コードが守っていたが、台帳が 2 つになると、<strong>同じ shoulder を渡さない</strong>という運用だけが
+残る。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1 つの shoulder を採番する台帳は 1 つだけ</strong></td>
+<td>二重採番は同じ名前が別のものを指す最短経路。上位は委譲した shoulder を <code>delegated</code> にして、自分では採らない</td>
+</tr>
+<tr>
+<td><strong>1 つの NAAN に権威を持つ台帳は 1 つだけ</strong></td>
+<td>「無い」と言えるのは 1 か所。2 か所が <code>is_authoritative</code> だと、片方が <code>404</code> と言い、もう片方が答える</td>
+</tr>
+<tr>
+<td><strong>委譲は取り消せない</strong></td>
+<td><code>retired</code> に落とせても、下位が既に作った名前は消えない。解除が意味するのは<strong>新規採番の停止</strong>だけ</td>
+</tr>
+<tr>
+<td><strong>下位の台帳も上位の責任範囲</strong></td>
+<td>下位が失われれば、その名前は上位からも解決できない。バックアップは拠点ごとに要り、<strong>全体の可用性は最弱の拠点で決まる</strong></td>
+</tr>
+<tr>
+<td><strong>循環を作らない</strong></td>
+<td>ループは検知しない。深さ 2 まで</td>
+</tr>
+<tr>
+<td><strong>監査は集めないと辿れない</strong></td>
+<td>各台帳は自分の操作しか記録しない</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gaps">いま無いもの<a class="headerlink" href="#gaps" title="Permanent link">&para;</a></h2>
+<p><strong>この構成を組むときに、無いと分かっていたほうがよいもの。</strong> 隠して驚かせるより、
+先に書く。</p>
+<ul>
+<li><strong>外部で採番された ARK を取り込む口。</strong> 下位が採った名前を上位の台帳に載せる方法が
+  ない（<a href="#c-arkhe">C</a> の制約はここから来ている）。入れるなら、名前が委譲した shoulder の
+  内側にあること・二重採番でないこと・検査桁が合っていることを、取り込みの時点で
+  確かめる必要がある。</li>
+<li><strong><code>shoulder.redirect</code> を設定する CLI。</strong> 管理画面と <code>arkhe depart --resolver</code> からのみ。
+  委譲の設定を自動化で組むなら、ここが引っかかる。</li>
+<li><strong>台帳をまたぐ一覧・監査・quota。</strong> <code>/.well-known/ark</code> が公開するのは名前空間の割当までで、
+  個々の ARK は含まない。</li>
+<li><strong>委譲先の健全性の監視。</strong> 上位は下位が生きているかを知らない。委譲した shoulder の
+  redirect 先を外形監視するのは運用の仕事になる。</li>
+</ul>
+<h2 id="組む前のチェックリスト">組む前のチェックリスト<a class="headerlink" href="#組む前のチェックリスト" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[ ] <strong>分けない構成で足りないことを確かめた</strong>（読み負荷ならレプリカで済む）</li>
+<li>[ ] 分けた単位が<strong>排他</strong>である（同じ shoulder を 2 か所が採らない）</li>
+<li>[ ] <code>is_authoritative</code> を立てている台帳が、その NAAN について<strong>1 つだけ</strong></li>
+<li>[ ] 委譲先が<strong>検査桁つきの名前</strong>を作る（arkhe 同士なら自動的に満たす）</li>
+<li>[ ] 上位から下位への <code>redirect</code> が<strong>深さ 2 以内</strong>で、循環していない</li>
+<li>[ ] <code>/.well-known/ark</code> に<strong>出したくない URL が載っていない</strong>（閉域なら特に）</li>
+<li>[ ] <strong>各拠点でバックアップと復元を試した</strong>——失った台帳は誰にも作り直せない</li>
+<li>[ ] 監査を集める手立てを決めた（少なくとも、どこに何が残るかを書いた）</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  ページトップへ戻る
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="フッター" >
+        
+          
+          <a href="../deployment/" class="md-footer__link md-footer__link--prev" aria-label="前: デプロイ">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                前
+              </span>
+              <div class="md-ellipsis">
+                デプロイ
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../reference/configuration/" class="md-footer__link md-footer__link--next" aria-label="次: 設定">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                次
+              </span>
+              <div class="md-ellipsis">
+                設定
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      MIT — National Institute of Informatics
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/RCOSDP/arkhe" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "content.action.edit", "search.suggest", "search.highlight"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f", "clipboard.copy": "\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u3078\u30b3\u30d4\u30fc", "search.result.more.one": "\u3053\u306e\u30da\u30fc\u30b8\u5185\u306b\u3082\u30461\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.more.other": "\u3053\u306e\u30da\u30fc\u30b8\u5185\u306b\u3042\u3068#\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.none": "\u4f55\u3082\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3067\u3057\u305f", "search.result.one": "1\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.other": "#\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.placeholder": "\u691c\u7d22\u30ad\u30fc\u30ef\u30fc\u30c9\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044", "search.result.term.missing": "\u691c\u7d22\u306b\u542b\u307e\u308c\u306a\u3044", "select.version": "\u30d0\u30fc\u30b8\u30e7\u30f3\u5207\u308a\u66ff\u3048"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

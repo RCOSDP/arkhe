@@ -606,6 +606,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../authentication/" class="md-nav__link">
         
   
@@ -727,6 +755,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#changing-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#internationalisation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -789,6 +828,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1183,6 +1250,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#changing-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#internationalisation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1228,14 +1306,48 @@ value is in what it will not do.</p>
 <p>Every page calls <code>domain.admin_ops</code> or <code>domain.minting</code> — the same functions the CLI
 uses. There is no path through the interface that skips an invariant.</p>
 <h2 id="what-it-shows">What it shows<a class="headerlink" href="#what-it-shows" title="Permanent link">&para;</a></h2>
-<p><strong>Delegation</strong> — the ledger itself, as a nesting: NAAN → institution → shoulder. ARK
-is a scheme of handed-down namespaces, so the shape of the delegation <em>is</em> the
-content.</p>
+<p><strong>Organisations</strong> — the ledger itself, as a nesting: organisation number (NAAN) → organisation →
+namespace. ARK is a scheme of handed-down namespaces, so the shape of what was handed
+down <em>is</em> the content.</p>
+<p>The page is called "Organisations" rather than "Delegation". It is the first page
+someone opens, so <strong>its heading is not a word the reader does not have yet</strong>.</p>
+<p>The terms are kept, in parentheses: "namespace (shoulder)", "number (the NAAN)",
+"Permanent; content may change (permanent-dynamic)". The plain wording comes first and
+the term follows, so a newcomer can read it as it stands and someone who knows the
+term can line it up with <a href="../../concepts/ark/">the specification</a>, the CLI and the API.
+<strong>Drop the terms and this page ends up speaking a different language from everything
+else.</strong></p>
 <p><strong>Mint an ARK</strong> — for the times one is needed by hand: a migration edge case, a
-physical object, a smoke test. Institutions normally mint through the API.</p>
-<p><strong>Principals and credentials</strong> — who may mint, with which key, reaching how far.</p>
+physical object, a smoke test. Organisations normally mint through the API.</p>
+<p><strong>Users and keys</strong> — who may mint, with which key, reaching how far. What is listed
+is <strong>not the organisations themselves</strong> but their systems and their people.</p>
+<div class="admonition note">
+<p class="admonition-title">"Users" on screen is "principals" in the API and CLI</p>
+<p><strong>The readers differ, so the words do.</strong> The interface is read by whoever operates
+the service; the API and the CLI are read by whoever writes against them.</p>
+<table>
+<thead>
+<tr>
+<th>Interface</th>
+<th>API, CLI, data model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User</td>
+<td>Principal (<code>Client</code>)</td>
+</tr>
+<tr>
+<td>Key</td>
+<td>Credential</td>
+</tr>
+</tbody>
+</table>
+<p>"Principal" is the access-control term, which is also where the <code>Subject</code> column
+(machine / person) comes from.</p>
+</div>
 <p><strong>Audit log</strong> — restricted to NAAN scope and wider. Who did what is information
-belonging to whoever holds the namespace; an institution's administrator has no
+belonging to whoever holds the namespace; an organisation's administrator has no
 business reading another's.</p>
 <h2 id="reach-shapes-the-page">Reach shapes the page<a class="headerlink" href="#reach-shapes-the-page" title="Permanent link">&para;</a></h2>
 <p><strong>The same decision drives what is displayed and what is permitted.</strong> Splitting them
@@ -1256,12 +1368,12 @@ creates the hole where a button is hidden but the URL still works.</p>
 </tr>
 <tr>
 <td>NAAN administrator</td>
-<td>one NAAN, all its institutions</td>
+<td>one NAAN, all its organisations</td>
 <td>yes</td>
 </tr>
 <tr>
-<td>institution administrator</td>
-<td>one institution</td>
+<td>organisation administrator</td>
+<td>one organisation</td>
 <td><strong>403</strong></td>
 </tr>
 </tbody>
@@ -1271,6 +1383,51 @@ creates the hole where a button is hidden but the URL still works.</p>
 there is no login screen at all — that is the choice "no browser access".</p>
 <p>Irreversible actions are marked as such in the interface, because they are: an ARK
 cannot be un-minted, and a retired namespace cannot be revived.</p>
+<h2 id="changing-settings">Changing settings<a class="headerlink" href="#changing-settings" title="Permanent link">&para;</a></h2>
+<p><strong>Only declarations and operational settings can be changed here.</strong> Neither an ARK
+row nor a shoulder's spelling can be edited from the interface — if they could, names
+could be reissued in a system that declares <code>NR</code>.</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Who</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NAA policy (the NAAN's declaration)</td>
+<td>NAAN scope or wider</td>
+</tr>
+<tr>
+<td>Where minting happens (<code>/.well-known/ark</code>)</td>
+<td>System administrator</td>
+</tr>
+<tr>
+<td>Commitment level (the organisation's declaration)</td>
+<td><strong>The organisation itself</strong>, and wider</td>
+</tr>
+<tr>
+<td>Minting limit per day</td>
+<td>NAAN scope or wider</td>
+</tr>
+<tr>
+<td>Shoulder status and delegation</td>
+<td>NAAN scope or wider</td>
+</tr>
+</tbody>
+</table>
+<p>This split is not a permissions table; it is <strong>ARK's delegation structure showing
+through</strong>. The NAA policy is the declaration of the side handing namespaces out and
+covers every organisation beneath it, so one organisation's administrator cannot change
+it. The commitment level is what the receiving side states about itself, and <strong>a
+declaration nobody can make is not a declaration</strong> — so an organisational administrator
+can change theirs.</p>
+<p>The minting limit is the exception an organisation cannot change itself: a limit
+imposed by the side handing the namespace out means nothing if the side receiving it
+can lift it.</p>
+<p>The decisions live only in <code>domain.admin_ops</code>. The interface calls the same
+functions, so <strong>there is no case where a button is hidden but the URL still works.</strong></p>
 <h2 id="internationalisation">Internationalisation<a class="headerlink" href="#internationalisation" title="Permanent link">&para;</a></h2>
 <p>Japanese and English, switched from the globe in the header. The language is decided
 by <code>?lang=</code>, then a cookie, then <code>Accept-Language</code>.</p>

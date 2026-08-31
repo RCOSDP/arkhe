@@ -697,6 +697,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -789,6 +817,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1231,7 +1287,7 @@ most of what follows comes from it.</p>
 <pre class="mermaid"><code>flowchart TB
     subgraph H["Handle System (CNRI / DONA)"]
         DOI["10.xxxx — DOI&lt;br/&gt;&lt;small&gt;registration agencies manage the namespace;&lt;br/&gt;records live with the RA&lt;/small&gt;"]
-        HDL["20.500.xxxxx — CNRI Handle&lt;br/&gt;&lt;small&gt;a prefix an institution buys&lt;/small&gt;"]
+        HDL["20.500.xxxxx — CNRI Handle&lt;br/&gt;&lt;small&gt;a prefix an organisation buys&lt;/small&gt;"]
     end
     ARK["ark:/99999/…&lt;br/&gt;&lt;small&gt;plain HTTP and DNS. No substructure beneath it.&lt;/small&gt;"]</code></pre>
 <p><strong>DOI is built on Handle.</strong> <code>doi.org</code> is a Handle resolver, and a DOI is a name in
@@ -1259,6 +1315,11 @@ claims. <strong>ARK makes the claim explicit and checkable</strong> rather than 
 physical specimen, a concept. There is no requirement that the thing be online, or
 even that it exist any more — the resolver can still return a description
 (<a href="../invariants/">FAIR A2</a>).</p>
+<p><strong>The same holds for things that cannot be published.</strong> When the reason it is out of
+reach is "closed" rather than "lost", the identifier can be handed out first — and when
+the embargo lifts, <strong>changing the target is all that publication takes</strong>. Holding closed
+and open identifiers in the same shape is covered in
+<a href="../../guides/federation/#pid">Closed PIDs and open PIDs</a>.</p>
 <h2 id="the-promise-the-design-turns-on">The promise the design turns on<a class="headerlink" href="#the-promise-the-design-turns-on" title="Permanent link">&para;</a></h2>
 <p>ARK declares <strong>NR — no re-assignment</strong>. A name, once given out, never comes to mean
 something else.</p>
@@ -1286,7 +1347,7 @@ than left to discipline.</p>
 </tr>
 <tr>
 <td><strong>shoulder</strong></td>
-<td>A sub-namespace within a NAAN, such as <code>/x9</code>. What gets delegated to an institution</td>
+<td>A sub-namespace within a NAAN, such as <code>/x9</code>. What gets delegated to an organisation</td>
 </tr>
 <tr>
 <td><strong>blade</strong></td>

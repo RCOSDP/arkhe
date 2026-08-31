@@ -406,7 +406,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#できること" class="md-nav__link">
     <span class="md-ellipsis">
       
         できること
@@ -417,7 +417,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#意図的にやらないこと" class="md-nav__link">
     <span class="md-ellipsis">
       
         意図的にやらないこと
@@ -428,7 +428,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#どこから読むか" class="md-nav__link">
     <span class="md-ellipsis">
       
         どこから読むか
@@ -439,7 +439,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#現状" class="md-nav__link">
     <span class="md-ellipsis">
       
         現状
@@ -695,6 +695,34 @@
   
   
     <li class="md-nav__item">
+      <a href="guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="guides/authentication/" class="md-nav__link">
         
   
@@ -787,6 +815,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -1148,7 +1204,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#できること" class="md-nav__link">
     <span class="md-ellipsis">
       
         できること
@@ -1159,7 +1215,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#意図的にやらないこと" class="md-nav__link">
     <span class="md-ellipsis">
       
         意図的にやらないこと
@@ -1170,7 +1226,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#どこから読むか" class="md-nav__link">
     <span class="md-ellipsis">
       
         どこから読むか
@@ -1181,7 +1237,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#現状" class="md-nav__link">
     <span class="md-ellipsis">
       
         現状
@@ -1219,27 +1275,27 @@
 <h1 id="arkhe">arkhe<a class="headerlink" href="#arkhe" title="Permanent link">&para;</a></h1>
 <p><strong>ARK</strong> 識別子の基盤。採番と解決を別プロセスで動かす。</p>
 <pre class="mermaid"><code>flowchart LR
-    R["機関の&lt;br/&gt;リポジトリ"] --&gt;|採番| M[minter]
+    R["組織の&lt;br/&gt;リポジトリ"] --&gt;|採番| M[minter]
     U[誰でも] --&gt;|ark:/99999/…| S[resolver]
     M --&gt; D[(台帳)]
     S --&gt; D
     S --&gt;|302| T[対象]
     S --&gt;|"?? "| P[永続性宣言]</code></pre>
-<p>ARK は DOI / Handle と違い、有償の登録機関と中央基盤を前提としない識別子体系で、
+<p>ARK は DOI / Handle と違い、有償の登録組織と中央基盤を前提としない識別子体系で、
 <strong>永続性は文字列の性質ではなく、サービスの問題</strong>という立場を取る。arkhe はその立場の
-まま、機関へ名前空間を委譲し、永続性の水準を各機関が自己申告できる形で運用するための
+まま、組織へ名前空間を委譲し、永続性の水準を各組織が自己申告できる形で運用するための
 実装。</p>
 <p>名前の由来はギリシャ語 ἀρχή（始原・原理）。参照が始まる点、という意味。</p>
-<h2 id="_1">できること<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h2 id="できること">できること<a class="headerlink" href="#できること" title="Permanent link">&para;</a></h2>
 <ul>
-<li>機関に委譲した名前空間で <strong>ARK を採番</strong>し、<strong>二度と振り直さない</strong>。</li>
+<li>組織に委譲した名前空間で <strong>ARK を採番</strong>し、<strong>二度と振り直さない</strong>。</li>
 <li><code>?</code> / <code>??</code> / <code>?info</code> / <code>?json</code> の inflection つきで<strong>解決</strong>する。<strong>対象が失われても
   記述は答えられる</strong>。</li>
-<li><strong>委譲する</strong>。NAAN の保有者が shoulder を切り出して機関に渡し、採番や解決を
+<li><strong>委譲する</strong>。NAAN の保有者が shoulder を切り出して組織に渡し、採番や解決を
   さらに外へ委ねることもできる。</li>
-<li><strong>組織の改編に耐える</strong>。機関が統合しても分割しても離脱しても、識別子は解決し続ける。</li>
+<li><strong>組織の改編に耐える</strong>。組織が統合しても分割しても離脱しても、識別子は解決し続ける。</li>
 </ul>
-<h2 id="_2">意図的にやらないこと<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="意図的にやらないこと">意図的にやらないこと<a class="headerlink" href="#意図的にやらないこと" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>リポジトリではない。</strong> 識別子と行き先を持つだけで、対象そのものは持たない。</li>
 <li><strong>認可サーバにならない。</strong> トークンは検証する。自前で発行するのは機械向けの 1 種類
@@ -1247,7 +1303,7 @@
 <li><strong>メタデータの器ではない。</strong> 対象に到達できないときに記述を返せるよう、ERC の
   kernel と少数の Dublin Core 項目だけを持つ。</li>
 </ul>
-<h2 id="_3">どこから読むか<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="どこから読むか">どこから読むか<a class="headerlink" href="#どこから読むか" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
 <li>
@@ -1268,7 +1324,7 @@
 </li>
 </ul>
 </div>
-<h2 id="_4">現状<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="現状">現状<a class="headerlink" href="#現状" title="Permanent link">&para;</a></h2>
 <p>FastAPI / SQLAlchemy 2.0 / PostgreSQL。<code>arkspec/</code>（ARK 仕様の純関数層）と
 <code>domain/resolution.py</code> は <strong>stdlib しか使わない</strong>ので、仕様適合に関わる部分は
 何もインストールせずに読めるし試せる。</p>

@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#クイックスタート" class="md-skip">
           コンテンツにスキップ
         </a>
       
@@ -436,7 +436,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#docker" class="md-nav__link">
+  <a href="#docker-で" class="md-nav__link">
     <span class="md-ellipsis">
       
         Docker で
@@ -447,7 +447,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#lan-の別の端末から見る" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LAN の別の端末から見る
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ローカルで" class="md-nav__link">
     <span class="md-ellipsis">
       
         ローカルで
@@ -458,7 +469,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#いま何が起きたか" class="md-nav__link">
     <span class="md-ellipsis">
       
         いま何が起きたか
@@ -469,7 +480,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#次に読む" class="md-nav__link">
     <span class="md-ellipsis">
       
         次に読む
@@ -697,6 +708,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guides/authentication/" class="md-nav__link">
         
   
@@ -789,6 +828,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -1150,7 +1217,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#docker" class="md-nav__link">
+  <a href="#docker-で" class="md-nav__link">
     <span class="md-ellipsis">
       
         Docker で
@@ -1161,7 +1228,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#lan-の別の端末から見る" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LAN の別の端末から見る
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ローカルで" class="md-nav__link">
     <span class="md-ellipsis">
       
         ローカルで
@@ -1172,7 +1250,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#いま何が起きたか" class="md-nav__link">
     <span class="md-ellipsis">
       
         いま何が起きたか
@@ -1183,7 +1261,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#次に読む" class="md-nav__link">
     <span class="md-ellipsis">
       
         次に読む
@@ -1218,14 +1296,41 @@
   
 
 
-<h1 id="_1">クイックスタート<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="クイックスタート">クイックスタート<a class="headerlink" href="#クイックスタート" title="Permanent link">&para;</a></h1>
 <p>入口は 2 つ。<strong>見る</strong>なら compose、<strong>触る</strong>ならローカル導入が早い。</p>
-<h2 id="docker">Docker で<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h2>
+<h2 id="docker-で">Docker で<a class="headerlink" href="#docker-で" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/RCOSDP/arkhe.git
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>arkhe/compose/oidc
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
 </code></pre></div>
-<p>Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。</p>
+<p>Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。arkhe は本番と同じく
+<strong>採番／管理と解決の 2 プロセスに分かれている</strong>。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>管理画面・採番 API</td>
+<td><a href="http://localhost:8057/admin/">http://localhost:8057/admin/</a></td>
+</tr>
+<tr>
+<td>解決（<strong>認証不要</strong>）</td>
+<td><a href="http://localhost:8058/ark:/…">http://localhost:8058/ark:/…</a></td>
+</tr>
+<tr>
+<td>API ドキュメント</td>
+<td><a href="http://localhost:8057/api/docs">http://localhost:8057/api/docs</a></td>
+</tr>
+<tr>
+<td>Keycloak 管理コンソール</td>
+<td><a href="http://localhost:8080/">http://localhost:8080/</a>（<code>admin</code> / <code>admin</code>）</td>
+</tr>
+</tbody>
+</table>
 <p><strong><a href="http://localhost:8057/admin/">http://localhost:8057/admin/</a></strong> を開き、次のいずれかでログインする。</p>
 <table>
 <thead>
@@ -1247,52 +1352,107 @@
 <td>NAAN 管理者・99999 配下すべて</td>
 </tr>
 <tr>
-<td><code>nibb</code></td>
+<td><code>org-admin</code></td>
 <td><code>arkhe-demo-2026</code></td>
-<td>機関管理者・1 機関のみ</td>
+<td>組織管理者・1 組織のみ</td>
 </tr>
 </tbody>
 </table>
-<p><strong>順に入り比べるのが、<a href="../concepts/delegation/">到達範囲</a>を理解する近道</strong>。<code>nibb</code> では
-他機関が見えず、監査ログは 403 になる。</p>
+<p><strong>順に入り比べるのが、<a href="../concepts/delegation/">到達範囲</a>を理解する近道</strong>。<code>org-admin</code> では
+他組織が見えず、監査ログは 403 になる。</p>
+<p>続けて、採番して解決してみる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>http://keycloak.localhost:8080/realms/arkhe/protocol/openid-connect/token<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>client_credentials<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span>example-invenio<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span>example-invenio-secret-for-demo-only<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token<span class="k">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nv">ARK</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8057/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "最初の一件"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.ark<span class="k">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://localhost:8058/</span><span class="nv">$ARK</span><span class="s2">"</span><span class="w">     </span><span class="c1"># 302 で元の URL へ</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>curl<span class="w"> </span><span class="s2">"http://localhost:8058/</span><span class="nv">$ARK</span><span class="s2">??"</span><span class="w">      </span><span class="c1"># 記述と、その背後の方針</span>
+</code></pre></div>
+<p>認可サーバを止めて、もう一度両方やってみる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>stop<span class="w"> </span>keycloak
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># 採番は 401 になる——解決は 302 のまま</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>start<span class="w"> </span>keycloak
+</code></pre></div>
+<p><strong>採番は止まるが、解決は止まらない。</strong> 解決に認証は要らないので、resolver は
+認証の設定を一切持たない。既に配った識別子が、別のものの障害で解決できなくなる
+という事態を構造で避けている。</p>
+<h2 id="lan-の別の端末から見る">LAN の別の端末から見る<a class="headerlink" href="#lan-の別の端末から見る" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">ARKHE_DEMO_HOST</span><span class="o">=</span><span class="m">192</span>.168.1.20<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>lan.yml<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p><strong>公開先を <code>0.0.0.0</code> にするだけでは足りない。</strong> issuer と redirect_uri は
+<strong>ブラウザが実際に打つ URL</strong> でなければならないので、具体的なアドレスが要る
+（<code>0.0.0.0</code> は「未指定のアドレス」で宛先には使えず、ブラウザはこれを localhost と
+解釈するため、別の端末から開くとその端末自身に接続しに行く）。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>待ち受け</td>
+<td><code>0.0.0.0</code> — どの NIC でも受ける</td>
+</tr>
+<tr>
+<td>issuer</td>
+<td><code>${ARKHE_DEMO_HOST}:8080</code> — ブラウザが打つ URL</td>
+</tr>
+<tr>
+<td>redirect_uri</td>
+<td><code>${ARKHE_DEMO_HOST}:8057</code> — Keycloak が照合する文字列</td>
+</tr>
+</tbody>
+</table>
+<p>redirect_uri は <code>lan-redirect</code> が起動時に足す。<strong>realm JSON には焼き込まない</strong>——
+公開されるファイルに特定の LAN アドレスを書くことになるため。</p>
+<p>既定（<code>lan.yml</code> なし）が <code>127.0.0.1</code> なのは、この一式が<strong>デモ用の秘密値を平文で
+持ち、Keycloak が dev モード</strong>で、利用者のパスワードを上に公開しているから。
+LAN に出すのは明示的な操作にしてある。</p>
 <div class="admonition warning">
 <p class="admonition-title">この構成は見るためのもので、動かすためのものではない</p>
 <p>秘密値が compose に平文で書いてあり、Keycloak は dev モードで、デモ用の
 パスワードは上に公開されている。<a href="../guides/deployment/">デプロイ</a>を参照。</p>
 </div>
-<h2 id="_2">ローカルで<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/RCOSDP/arkhe.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>arkhe
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s1">'.[app,dev]'</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w">          </span><span class="c1"># 209 tests</span>
+<h2 id="ローカルで">ローカルで<a class="headerlink" href="#ローカルで" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/RCOSDP/arkhe.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>arkhe
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s1">'.[app,dev]'</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-q
 </code></pre></div>
 <p>SQLite に最小の台帳を作る。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span><span class="s2">"sqlite:///</span><span class="nv">$PWD</span><span class="s2">/arkhe.db"</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_AUTH</span><span class="o">=</span>apikey
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"あなたの組織"</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"例大学"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>univ-repo<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo<span class="w">          </span><span class="c1"># 平文はこの一度だけ表示される</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span><span class="s2">"sqlite:///</span><span class="nv">$PWD</span><span class="s2">/arkhe.db"</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_AUTH</span><span class="o">=</span>apikey
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"あなたの組織"</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"例大学"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>univ-repo<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo<span class="w">          </span><span class="c1"># 平文はこの一度だけ表示される</span>
 </code></pre></div>
 <p>起動して、1 本採番して、解決する。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "最初の対象"}'</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># → {"ark": "ark:/99999/x9…", …}</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…"</span><span class="w">        </span><span class="c1"># 302 で対象へ</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…??"</span><span class="w">      </span><span class="c1"># 永続性宣言</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "最初の対象"}'</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># → {"ark": "ark:/99999/x9…", …}</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…"</span><span class="w">        </span><span class="c1"># 302 で対象へ</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…??"</span><span class="w">      </span><span class="c1"># 永続性宣言</span>
 </code></pre></div>
-<h2 id="_3">いま何が起きたか<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="いま何が起きたか">いま何が起きたか<a class="headerlink" href="#いま何が起きたか" title="Permanent link">&para;</a></h2>
 <p><strong>取り消せない識別子</strong>を 1 本作った。ARK は再割当てしないと宣言する体系なので、
 arkhe に削除は無い。対象が失われたときは削除ではなく
 <a href="../concepts/invariants/">tombstone</a> にする。</p>
 <p>末尾の <code>??</code> は、その識別子について<strong>何を約束しているか</strong>をリゾルバに尋ねたもの。
 <strong>対象が失われていても答えられる</strong>問いである。</p>
-<h2 id="_4">次に読む<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="次に読む">次に読む<a class="headerlink" href="#次に読む" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../concepts/ark/">ARK とは何か</a> — 設計全体が組み立てられている約束</li>
 <li><a href="../guides/authentication/">認証</a> — API に 3 機構、人の入口に 3 種類</li>

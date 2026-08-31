@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ark" class="md-skip">
+        <a href="#ark-とは何か" class="md-skip">
           コンテンツにスキップ
         </a>
       
@@ -523,7 +523,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ark-doi-handle" class="md-nav__link">
+  <a href="#ark-は-doi-や-handle-と横並びではない" class="md-nav__link">
     <span class="md-ellipsis">
       
         ARK は DOI や Handle と横並びではない
@@ -534,7 +534,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3" class="md-nav__link">
+  <a href="#効いてくる違いは-3-つ" class="md-nav__link">
     <span class="md-ellipsis">
       
         効いてくる違いは 3 つ
@@ -545,7 +545,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#設計の軸になっている約束" class="md-nav__link">
     <span class="md-ellipsis">
       
         設計の軸になっている約束
@@ -556,7 +556,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#用語" class="md-nav__link">
     <span class="md-ellipsis">
       
         用語
@@ -697,6 +697,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -789,6 +817,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -1150,7 +1206,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ark-doi-handle" class="md-nav__link">
+  <a href="#ark-は-doi-や-handle-と横並びではない" class="md-nav__link">
     <span class="md-ellipsis">
       
         ARK は DOI や Handle と横並びではない
@@ -1161,7 +1217,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3" class="md-nav__link">
+  <a href="#効いてくる違いは-3-つ" class="md-nav__link">
     <span class="md-ellipsis">
       
         効いてくる違いは 3 つ
@@ -1172,7 +1228,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#設計の軸になっている約束" class="md-nav__link">
     <span class="md-ellipsis">
       
         設計の軸になっている約束
@@ -1183,7 +1239,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#用語" class="md-nav__link">
     <span class="md-ellipsis">
       
         用語
@@ -1218,7 +1274,7 @@
   
 
 
-<h1 id="ark">ARK とは何か<a class="headerlink" href="#ark" title="Permanent link">&para;</a></h1>
+<h1 id="ark-とは何か">ARK とは何か<a class="headerlink" href="#ark-とは何か" title="Permanent link">&para;</a></h1>
 <p><strong>ARK</strong>（Archival Resource Key）は、こういう形の永続識別子である。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ark:/99999/x9abc1234
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    └──┬─┘ └────┬───┘
@@ -1226,21 +1282,21 @@
 </code></pre></div>
 <p><strong>HTTP と DNS の上に直接建っている。</strong> この一点が DOI や Handle との違いを生み、
 以下のほとんどはそこから出てくる。</p>
-<h2 id="ark-doi-handle">ARK は DOI や Handle と横並びではない<a class="headerlink" href="#ark-doi-handle" title="Permanent link">&para;</a></h2>
+<h2 id="ark-は-doi-や-handle-と横並びではない">ARK は DOI や Handle と横並びではない<a class="headerlink" href="#ark-は-doi-や-handle-と横並びではない" title="Permanent link">&para;</a></h2>
 <p>ここが誤解されやすいので、はっきり書いておく。</p>
 <pre class="mermaid"><code>flowchart TB
     subgraph H["Handle System（CNRI / DONA）"]
-        DOI["10.xxxx — DOI&lt;br/&gt;&lt;small&gt;登録機関が名前空間を管理し、&lt;br/&gt;レコードは RA 側に置かれる&lt;/small&gt;"]
-        HDL["20.500.xxxxx — CNRI Handle&lt;br/&gt;&lt;small&gt;機関が購入する prefix&lt;/small&gt;"]
+        DOI["10.xxxx — DOI&lt;br/&gt;&lt;small&gt;登録組織が名前空間を管理し、&lt;br/&gt;レコードは RA 側に置かれる&lt;/small&gt;"]
+        HDL["20.500.xxxxx — CNRI Handle&lt;br/&gt;&lt;small&gt;組織が購入する prefix&lt;/small&gt;"]
     end
     ARK["ark:/99999/…&lt;br/&gt;&lt;small&gt;HTTP と DNS の上に直接。下部構造を持たない。&lt;/small&gt;"]</code></pre>
 <p><strong>DOI は Handle の上に建っている。</strong> <code>doi.org</code> は Handle のリゾルバであり、DOI は
 Handle の <code>10.x</code> 名前空間の名前である。<strong>ARK だけが別系統</strong>で、購入したり加入したり
 誰かに運用してもらったりする土台を、下に持たない。</p>
-<h2 id="3">効いてくる違いは 3 つ<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
-<p><strong>無償で、名前空間も無償。</strong> NAAN は ARK Alliance から無償で交付される。支払う登録機関も、
+<h2 id="効いてくる違いは-3-つ">効いてくる違いは 3 つ<a class="headerlink" href="#効いてくる違いは-3-つ" title="Permanent link">&para;</a></h2>
+<p><strong>無償で、名前空間も無償。</strong> NAAN は ARK Alliance から無償で交付される。支払う登録組織も、
 維持する会員資格も無い。</p>
-<p><strong>誰も代わりに永続性を保証しない。</strong> DOI では登録機関が約束の一部だが、ARK では
+<p><strong>誰も代わりに永続性を保証しない。</strong> DOI では登録組織が約束の一部だが、ARK では
 <strong>約束はあなたのもので、その中身も自分で述べる</strong>。だからこそ<strong>尋ねる手段</strong>が用意されている。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:/99999/x9abc1234??"</span>
 </code></pre></div>
@@ -1257,7 +1313,11 @@ ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して�
 <p><strong>何でも、どの粒度でも指せる。</strong> データセット、写本の 1 ページ、実物の標本、概念。
 オンラインである必要も、<strong>今も存在している必要もない</strong>——対象が失われても、リゾルバは
 記述を返せる（<a href="../invariants/">FAIR A2</a>）。</p>
-<h2 id="_1">設計の軸になっている約束<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p><strong>公開できない対象にも同じことが言える。</strong> 到達できない理由が「失われた」ではなく
+「閉じている」だけなら、識別子は先に配っておける——そして禁止期間が明けたときに
+<strong>行き先を付け替えるだけで公開になる</strong>。閉じた識別子と公開の識別子を同じ形で持つ
+組み方は<a href="../../guides/federation/#pid">クローズド PID とオープン PID</a>にある。</p>
+<h2 id="設計の軸になっている約束">設計の軸になっている約束<a class="headerlink" href="#設計の軸になっている約束" title="Permanent link">&para;</a></h2>
 <p>ARK は <strong>NR（No Re-assignment、再割当てしない）</strong> を宣言する。一度配った名前が、
 別のものを指すようになることはない。</p>
 <p>この 1 つの約束のために、arkhe は:</p>
@@ -1268,7 +1328,7 @@ ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して�
 <li>統合・分割・離脱を跨いで<strong>解決し続ける</strong>。</li>
 </ul>
 <p>それぞれを規律ではなくコードでどう守っているかは<a href="../invariants/">壊さないもの</a>に書いた。</p>
-<h2 id="_2">用語<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="用語">用語<a class="headerlink" href="#用語" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1283,7 +1343,7 @@ ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して�
 </tr>
 <tr>
 <td><strong>shoulder</strong></td>
-<td>NAAN の下位名前空間（<code>/x9</code> など）。<strong>機関に委譲される単位</strong></td>
+<td>NAAN の下位名前空間（<code>/x9</code> など）。<strong>組織に委譲される単位</strong></td>
 </tr>
 <tr>
 <td><strong>blade</strong></td>

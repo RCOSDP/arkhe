@@ -447,6 +447,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#viewing-it-from-another-machine-on-the-lan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing it from another machine on the LAN
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#locally" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -697,6 +708,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guides/authentication/" class="md-nav__link">
         
   
@@ -789,6 +828,34 @@
     
   
     Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running several arkhe
   
 
     
@@ -1161,6 +1228,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#viewing-it-from-another-machine-on-the-lan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Viewing it from another machine on the LAN
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#locally" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1226,7 +1304,34 @@ the way to <em>work</em> on it.</p>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>arkhe/compose/oidc
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--build
 </code></pre></div>
-<p>That brings up Keycloak, PostgreSQL and arkhe, with a ledger already populated.</p>
+<p>That brings up Keycloak, PostgreSQL and arkhe — split into a minter/admin process and
+a resolver process, the same way it runs in production — with a ledger already populated.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Admin UI and minting API</td>
+<td><a href="http://localhost:8057/admin/">http://localhost:8057/admin/</a></td>
+</tr>
+<tr>
+<td>Resolution (<strong>no authentication</strong>)</td>
+<td><a href="http://localhost:8058/ark:/…">http://localhost:8058/ark:/…</a></td>
+</tr>
+<tr>
+<td>API reference</td>
+<td><a href="http://localhost:8057/api/docs">http://localhost:8057/api/docs</a></td>
+</tr>
+<tr>
+<td>Keycloak console</td>
+<td><a href="http://localhost:8080/">http://localhost:8080/</a> (<code>admin</code> / <code>admin</code>)</td>
+</tr>
+</tbody>
+</table>
 <p>Open <strong><a href="http://localhost:8057/admin/">http://localhost:8057/admin/</a></strong> and sign in as one of:</p>
 <table>
 <thead>
@@ -1248,45 +1353,100 @@ the way to <em>work</em> on it.</p>
 <td>NAAN administrator, everything under 99999</td>
 </tr>
 <tr>
-<td><code>nibb</code></td>
+<td><code>org-admin</code></td>
 <td><code>arkhe-demo-2026</code></td>
-<td>institution administrator, one institution</td>
+<td>organisation administrator, one organisation</td>
 </tr>
 </tbody>
 </table>
 <p>Signing in as each in turn is the quickest way to understand what
-<a href="../concepts/delegation/">reach</a> means: <code>nibb</code> cannot see the other institutions, and
+<a href="../concepts/delegation/">reach</a> means: <code>org-admin</code> cannot see the other organisations, and
 the audit log answers 403.</p>
+<p>Then mint one and resolve it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>http://keycloak.localhost:8080/realms/arkhe/protocol/openid-connect/token<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>client_credentials<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span>example-invenio<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span>example-invenio-secret-for-demo-only<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.access_token<span class="k">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nv">ARK</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8057/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "First object"}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span>.ark<span class="k">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://localhost:8058/</span><span class="nv">$ARK</span><span class="s2">"</span><span class="w">     </span><span class="c1"># 302 to the URL</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>curl<span class="w"> </span><span class="s2">"http://localhost:8058/</span><span class="nv">$ARK</span><span class="s2">??"</span><span class="w">      </span><span class="c1"># the record and the policy behind it</span>
+</code></pre></div>
+<p>Stop the authorization server and try both again:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>stop<span class="w"> </span>keycloak
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># minting is now 401 — resolution still answers 302</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>start<span class="w"> </span>keycloak
+</code></pre></div>
+<p><strong>Minting stops; resolution does not.</strong> Resolution needs no authentication, so the
+resolver holds no authentication configuration at all. Identifiers you have already
+handed out do not become unresolvable because something else broke.</p>
+<h2 id="viewing-it-from-another-machine-on-the-lan">Viewing it from another machine on the LAN<a class="headerlink" href="#viewing-it-from-another-machine-on-the-lan" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">ARKHE_DEMO_HOST</span><span class="o">=</span><span class="m">192</span>.168.1.20<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.yml<span class="w"> </span>-f<span class="w"> </span>lan.yml<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p><strong>Publishing on <code>0.0.0.0</code> is not enough on its own.</strong> The issuer and the redirect_uri
+have to be <strong>the URL the browser actually types</strong>, so they need a concrete address
+(<code>0.0.0.0</code> is the unspecified address, unusable as a destination; browsers read it as
+localhost, so a remote browser would connect to itself).</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Listening on</td>
+<td><code>0.0.0.0</code> — accept on any interface</td>
+</tr>
+<tr>
+<td>issuer</td>
+<td><code>${ARKHE_DEMO_HOST}:8080</code> — the URL the browser types</td>
+</tr>
+<tr>
+<td>redirect_uri</td>
+<td><code>${ARKHE_DEMO_HOST}:8057</code> — the string Keycloak matches against</td>
+</tr>
+</tbody>
+</table>
+<p>The redirect_uri is added at startup by <code>lan-redirect</code>. <strong>It is not baked into the
+realm JSON</strong> — that would put one particular LAN address into a published file.</p>
+<p>The default (without <code>lan.yml</code>) is <code>127.0.0.1</code> because this stack <strong>carries its
+secrets in the clear and runs Keycloak in dev mode</strong>, with the users' passwords
+published above. Putting it on a network is a deliberate act.</p>
 <div class="admonition warning">
 <p class="admonition-title">This stack is for looking at, not for running</p>
 <p>The secrets are in the compose file in the clear, Keycloak runs in dev mode, and
 the demo passwords are published above. See <a href="../guides/deployment/">Deployment</a>.</p>
 </div>
 <h2 id="locally">Locally<a class="headerlink" href="#locally" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/RCOSDP/arkhe.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>arkhe
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s1">'.[app,dev]'</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w">          </span><span class="c1"># 209 tests</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/RCOSDP/arkhe.git<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>arkhe
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>uv<span class="w"> </span>venv<span class="w"> </span>--python<span class="w"> </span><span class="m">3</span>.12<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s1">'.[app,dev]'</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-q
 </code></pre></div>
 <p>Stand up a minimal ledger against SQLite:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span><span class="s2">"sqlite:///</span><span class="nv">$PWD</span><span class="s2">/arkhe.db"</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_AUTH</span><span class="o">=</span>apikey
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Your organisation"</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>univ-repo<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo<span class="w">          </span><span class="c1"># the plaintext is shown once and never again</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span><span class="s2">"sqlite:///</span><span class="nv">$PWD</span><span class="s2">/arkhe.db"</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ARKHE_AUTH</span><span class="o">=</span>apikey
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>alembic<span class="w"> </span>upgrade<span class="w"> </span>head
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Your organisation"</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>univ-repo<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo<span class="w">          </span><span class="c1"># the plaintext is shown once and never again</span>
 </code></pre></div>
 <p>Run it, mint one, resolve it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "First object"}'</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># → {"ark": "ark:/99999/x9…", …}</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…"</span><span class="w">        </span><span class="c1"># 302 to the object</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…??"</span><span class="w">      </span><span class="c1"># the persistence statement</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "First object"}'</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># → {"ark": "ark:/99999/x9…", …}</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…"</span><span class="w">        </span><span class="c1"># 302 to the object</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…??"</span><span class="w">      </span><span class="c1"># the persistence statement</span>
 </code></pre></div>
 <h2 id="what-just-happened">What just happened<a class="headerlink" href="#what-just-happened" title="Permanent link">&para;</a></h2>
 <p>You minted an identifier that <strong>cannot be taken back</strong>. ARK declares that names are

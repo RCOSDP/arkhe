@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#管理画面" class="md-skip">
           コンテンツにスキップ
         </a>
       
@@ -606,6 +606,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../authentication/" class="md-nav__link">
         
   
@@ -694,7 +722,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#何を見せるか" class="md-nav__link">
     <span class="md-ellipsis">
       
         何を見せるか
@@ -705,7 +733,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#到達範囲が画面を決める" class="md-nav__link">
     <span class="md-ellipsis">
       
         到達範囲が画面を決める
@@ -716,7 +744,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#入り方" class="md-nav__link">
     <span class="md-ellipsis">
       
         入り方
@@ -727,7 +755,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#設定を変える" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        設定を変える
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#国際化" class="md-nav__link">
     <span class="md-ellipsis">
       
         国際化
@@ -789,6 +828,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -1150,7 +1217,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#何を見せるか" class="md-nav__link">
     <span class="md-ellipsis">
       
         何を見せるか
@@ -1161,7 +1228,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#到達範囲が画面を決める" class="md-nav__link">
     <span class="md-ellipsis">
       
         到達範囲が画面を決める
@@ -1172,7 +1239,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#入り方" class="md-nav__link">
     <span class="md-ellipsis">
       
         入り方
@@ -1183,7 +1250,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#設定を変える" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        設定を変える
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#国際化" class="md-nav__link">
     <span class="md-ellipsis">
       
         国際化
@@ -1218,7 +1296,7 @@
   
 
 
-<h1 id="_1">管理画面<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="管理画面">管理画面<a class="headerlink" href="#管理画面" title="Permanent link">&para;</a></h1>
 <p>管理画面は<strong>操作の形</strong>をしている。テーブルの行編集は無い。</p>
 <p>これは意図的な拒否である。行を直接編集できると、ドメインが禁じていることが画面から
 できてしまう——<code>retired</code> の shoulder を戻す、<code>ark</code> の主キーを書き換える、名前空間を消す。
@@ -1226,15 +1304,49 @@
 「やらないこと」に価値がある台帳には向かない。</p>
 <p>どのページも <code>domain.admin_ops</code> か <code>domain.minting</code> を呼ぶ。CLI と同じ関数なので、
 <strong>画面から不変条件を迂回する道は無い。</strong></p>
-<h2 id="_2">何を見せるか<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p><strong>委譲の構造</strong> — 台帳そのものを入れ子で見せる。NAAN → 機関 → shoulder。ARK は
-名前空間を受け渡す体系なので、<strong>委譲の形がそのまま中身</strong>である。</p>
+<h2 id="何を見せるか">何を見せるか<a class="headerlink" href="#何を見せるか" title="Permanent link">&para;</a></h2>
+<p><strong>組織管理</strong> — 台帳そのものを入れ子で見せる。組織番号（NAAN）→ 組織 → 名前空間。
+ARK は名前空間を受け渡す体系なので、<strong>渡した形がそのまま中身</strong>である。</p>
+<p>画面の言葉は「委譲の構造」ではなく「組織管理」にしてある。台帳を初めて見る人が
+最初に開く画面なので、<strong>その人がまだ持っていない語を見出しにしない</strong>。</p>
+<p>ただし<strong>用語は捨てず、括弧で残す</strong>——「名前空間（shoulder）」「組織番号（NAAN）」
+「永続・内容は変わりうる（permanent-dynamic）」のように、平易な言い方を先に置いて
+用語を添える。初めての人はそのまま読め、用語を知っている人は
+<a href="../../concepts/ark/">仕様</a>・CLI・API との対応が取れる。<strong>用語を消すと、この画面
+だけが他と違う言葉を話すことになる。</strong></p>
 <p><strong>ARK を採番</strong> — 手作業で 1 本要るとき用（移行時の個別対応、物理オブジェクト、動作確認）。
-機関は通常 API から採番する。</p>
-<p><strong>主体と資格情報</strong> — 誰が、どの鍵で、どこまで届くか。</p>
+組織は通常 API から採番する。</p>
+<p><strong>利用者と鍵</strong> — 誰が、どの鍵で、どこまで届くか。ここに並ぶのは<strong>組織そのもの
+ではなく</strong>、組織のシステムと、その組織に属する人である。</p>
+<div class="admonition note">
+<p class="admonition-title">画面の「利用者」＝ API と CLI の「主体（principal）」</p>
+<p><strong>読み手が違うので、呼び方も分けてある。</strong> 画面を読むのは運用の担当者で、
+API と CLI を読むのは開発者である。</p>
+<table>
+<thead>
+<tr>
+<th>画面</th>
+<th>API・CLI・データモデル</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>利用者</td>
+<td>主体 / principal（<code>Client</code>）</td>
+</tr>
+<tr>
+<td>鍵</td>
+<td>資格情報 / credential</td>
+</tr>
+</tbody>
+</table>
+<p>「主体」はアクセス制御で subject を訳した語で（対になる object は「客体」）、
+<code>Subject</code>（machine / person）という列名もここから来ている。クラウド事業者の
+文書では「プリンシパル」とカタカナで書かれることが多い。</p>
+</div>
 <p><strong>監査ログ</strong> — NAAN 単位以上にしか見せない。誰が何をしたかは<strong>その名前空間を預かる側の
-情報</strong>で、機関の担当者が他機関の履歴を読む筋合いは無い。</p>
-<h2 id="_3">到達範囲が画面を決める<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+情報</strong>で、組織の担当者が他組織の履歴を読む筋合いは無い。</p>
+<h2 id="到達範囲が画面を決める">到達範囲が画面を決める<a class="headerlink" href="#到達範囲が画面を決める" title="Permanent link">&para;</a></h2>
 <p><strong>画面の出し分けと実際の認可に、同じ判定を使う。</strong> 別々にすると「ボタンは出ないが
 URL を直接叩けば通る」穴ができる。</p>
 <table>
@@ -1253,22 +1365,64 @@ URL を直接叩けば通る」穴ができる。</p>
 </tr>
 <tr>
 <td>NAAN 管理者</td>
-<td>1 NAAN 配下の全機関</td>
+<td>1 NAAN 配下の全組織</td>
 <td>○</td>
 </tr>
 <tr>
-<td>機関管理者</td>
-<td>1 機関</td>
+<td>組織管理者</td>
+<td>1 組織</td>
 <td><strong>403</strong></td>
 </tr>
 </tbody>
 </table>
-<h2 id="_4">入り方<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h2 id="入り方">入り方<a class="headerlink" href="#入り方" title="Permanent link">&para;</a></h2>
 <p><code>ARKHE_ADMIN_LOGIN</code> で決める。<a href="../authentication/">認証</a>を参照。<code>bearer</code> では
 ログイン画面そのものが無い——「ブラウザからは入れない」という選択である。</p>
 <p><strong>引き返せない操作は、見た目でそう分かるようにしてある。</strong> 実際に引き返せないから——
 採番した ARK は取り消せず、引退した名前空間は戻らない。</p>
-<h2 id="_5">国際化<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="設定を変える">設定を変える<a class="headerlink" href="#設定を変える" title="Permanent link">&para;</a></h2>
+<p><strong>画面から変えられるのは、宣言と運用の設定だけ。</strong> ARK の行も shoulder の綴りも
+画面からは変えられない——変えられると、<code>NR</code> を宣言しているはずの体系で名前が
+振り直せることになる。</p>
+<table>
+<thead>
+<tr>
+<th>何を</th>
+<th>誰が</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NAA ポリシー（NAAN の宣言）</td>
+<td>NAAN 単位以上</td>
+</tr>
+<tr>
+<td>採番の案内先（<code>/.well-known/ark</code>）</td>
+<td>システム管理者</td>
+</tr>
+<tr>
+<td>約束の水準（組織の宣言）</td>
+<td><strong>その組織自身</strong>と、それ以上</td>
+</tr>
+<tr>
+<td>1 日あたりの採番上限</td>
+<td>NAAN 単位以上</td>
+</tr>
+<tr>
+<td>shoulder の状態・委譲先</td>
+<td>NAAN 単位以上</td>
+</tr>
+</tbody>
+</table>
+<p>この分かれ方は権限表ではなく、<strong>ARK の委譲の構造がそのまま出たもの</strong>である。
+NAA ポリシーは名前空間を配る側の宣言で、配下の全組織にかかる——だから 1 組織の
+管理者には変えられない。約束の水準は配られた側が自分について述べるもので、
+<strong>述べる主体が述べられなければ意味がない</strong>——だから組織管理者が変えられる。</p>
+<p>採番上限だけは組織自身では変えられない。上限は配った側が課すものなので、
+課された側が外せては意味がない。</p>
+<p>判定は <code>domain.admin_ops</code> にしかない。画面は同じ関数を呼ぶので、<strong>ボタンが
+出ないのに URL を直接叩けば通る、ということが起きない。</strong></p>
+<h2 id="国際化">国際化<a class="headerlink" href="#国際化" title="Permanent link">&para;</a></h2>
 <p>日本語と英語。ヘッダーの地球儀から切り替える。言語は <code>?lang=</code> → cookie →
 <code>Accept-Language</code> の順で決まる。</p>
 <p>カタログは gettext ではなく素の辞書なので、言語の追加は<strong>モジュール 1 つ</strong>で済み、

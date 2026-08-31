@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#委譲の構造" class="md-skip">
           コンテンツにスキップ
         </a>
       
@@ -551,7 +551,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#到達範囲" class="md-nav__link">
     <span class="md-ellipsis">
       
         到達範囲
@@ -562,7 +562,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shoulder" class="md-nav__link">
+  <a href="#shoulder-の状態" class="md-nav__link">
     <span class="md-ellipsis">
       
         shoulder の状態
@@ -573,10 +573,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#組織は現れ去る" class="md-nav__link">
     <span class="md-ellipsis">
       
-        機関は現れ、去る
+        組織は現れ、去る
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#委譲の先が別の-arkhe-のとき" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        委譲の先が、別の arkhe のとき
       
     </span>
   </a>
@@ -686,6 +697,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -778,6 +817,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -1139,7 +1206,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#到達範囲" class="md-nav__link">
     <span class="md-ellipsis">
       
         到達範囲
@@ -1150,7 +1217,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#shoulder" class="md-nav__link">
+  <a href="#shoulder-の状態" class="md-nav__link">
     <span class="md-ellipsis">
       
         shoulder の状態
@@ -1161,10 +1228,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#組織は現れ去る" class="md-nav__link">
     <span class="md-ellipsis">
       
-        機関は現れ、去る
+        組織は現れ、去る
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#委譲の先が別の-arkhe-のとき" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        委譲の先が、別の arkhe のとき
       
     </span>
   </a>
@@ -1196,13 +1274,13 @@
   
 
 
-<h1 id="_1">委譲の構造<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="委譲の構造">委譲の構造<a class="headerlink" href="#委譲の構造" title="Permanent link">&para;</a></h1>
 <p>ARK に、保証を配る中央の権威は無い。あるのは<strong>受け渡される名前空間</strong>で、受け取った側が
 その都度、約束を引き受ける。arkhe の台帳は、その連鎖の記録である。</p>
 <pre class="mermaid"><code>flowchart TD
-    RA["NAAN の保有者&lt;br/&gt;&lt;small&gt;例: 国の研究機関&lt;/small&gt;"]
-    RA --&gt;|"/x9 を切り出す"| I1["機関 A"]
-    RA --&gt;|"/y2 を切り出す"| I2["機関 B"]
+    RA["NAAN の保有者&lt;br/&gt;&lt;small&gt;例: 国の研究組織&lt;/small&gt;"]
+    RA --&gt;|"/x9 を切り出す"| I1["組織 A"]
+    RA --&gt;|"/y2 を切り出す"| I2["組織 B"]
     RA --&gt;|"/z1 は外部へ委譲"| EX["外部 minter"]
     I1 --&gt; C1["リポジトリ"]
     I1 --&gt; C2["一括投入バッチ"]
@@ -1212,7 +1290,7 @@
 <li><strong>名前空間</strong> — どの名前を作ってよいか</li>
 <li><strong>約束</strong> — 作ったものについて何を保つか</li>
 </ul>
-<h2 id="_2">到達範囲<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="到達範囲">到達範囲<a class="headerlink" href="#到達範囲" title="Permanent link">&para;</a></h2>
 <p>主体（ログインする人も、鍵を持つシステムも）は必ず<strong>到達範囲</strong>を持つ。これは
 <strong>登録の属性</strong>であって、<strong>リクエストやトークンでは広がらない</strong>。</p>
 <table>
@@ -1233,19 +1311,19 @@
 </tr>
 <tr>
 <td><code>manager</code></td>
-<td>1 機関ぶん。1 つの shoulder に固定することもできる</td>
+<td>1 組織ぶん。1 つの shoulder に固定することもできる</td>
 </tr>
 </tbody>
 </table>
 <p><strong>配られた側が、配った側より広く届くことはない。</strong> NAAN 管理者はシステム管理者を
-作れないし、機関管理者は他機関の主体を作れない。</p>
+作れないし、組織管理者は他組織の主体を作れない。</p>
 <div class="admonition note">
 <p class="admonition-title">なぜ shoulder をリクエストで受け取らないか</p>
 <p>arklet は <code>{naan, shoulder}</code> を本文で受けて NAAN 単位でしか認可しておらず、
-<strong>設定ミスでも詐称でも他機関の名前空間に届いた</strong>。arkhe は shoulder を
-<strong>主体から引く</strong>。これで越境が塞がり、同時に多数機関の振り分けも片づく。</p>
+<strong>設定ミスでも詐称でも他組織の名前空間に届いた</strong>。arkhe は shoulder を
+<strong>主体から引く</strong>。これで越境が塞がり、同時に多数組織の振り分けも片づく。</p>
 </div>
-<h2 id="shoulder">shoulder の状態<a class="headerlink" href="#shoulder" title="Permanent link">&para;</a></h2>
+<h2 id="shoulder-の状態">shoulder の状態<a class="headerlink" href="#shoulder-の状態" title="Permanent link">&para;</a></h2>
 <p>一度配った名前空間は取り戻せない。だから「押さえてあるが使わせない」「もう新規は
 採らない」を、削除ではなく<strong>状態</strong>として持つ必要がある。</p>
 <pre class="mermaid"><code>stateDiagram-v2
@@ -1265,14 +1343,19 @@
 <strong>どこへ行けばよいか</strong>を返さなければならない。arkhe は <code>307</code> に行き先を添えて返し、
 <strong>プロキシはしない</strong>——代理で呼ぶと、応答が失われたときに「向こうでは採番されたが
 こちらは知らない ARK」が生まれる。</p>
-<h2 id="_3">機関は現れ、去る<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="組織は現れ去る">組織は現れ、去る<a class="headerlink" href="#組織は現れ去る" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>承継</strong> — 機関が別の機関に統合される。shoulder が移り、<strong>ARK は何も変わらない</strong>。
+<li><strong>承継</strong> — 組織が別の組織に統合される。shoulder が移り、<strong>ARK は何も変わらない</strong>。
   変わるのは「今後誰が採番するか」だけ。</li>
-<li><strong>離脱</strong> — 機関は存続するが、この基盤を離れる。<strong>新規採番は止め、解決は永久に続ける。</strong>
-  転送先を機関自身のリゾルバへ向け直せば、以後こちらに作業を求めずに済む。</li>
+<li><strong>離脱</strong> — 組織は存続するが、この基盤を離れる。<strong>新規採番は止め、解決は永久に続ける。</strong>
+  転送先を組織自身のリゾルバへ向け直せば、以後こちらに作業を求めずに済む。</li>
 </ul>
 <p>どちらも<a href="../../guides/succession/">承継と離脱</a>で扱う。</p>
+<h2 id="委譲の先が別の-arkhe-のとき">委譲の先が、別の arkhe のとき<a class="headerlink" href="#委譲の先が別の-arkhe-のとき" title="Permanent link">&para;</a></h2>
+<p>ここまでの委譲先は組織だったが、<strong>同じ仕組みで別の arkhe に渡せる</strong>。shoulder ごとに
+下位の arkhe を置く構成、拠点ごとに NAAN を分ける構成、閉域に置いた arkhe を上位が
+名前空間だけ把握する構成——それぞれの成り立ちと代償は
+<a href="../../guides/federation/">分散して運用する</a>にある。</p>
 
 
 

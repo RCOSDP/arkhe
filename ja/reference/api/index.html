@@ -604,6 +604,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -696,6 +724,34 @@
     
   
     デプロイ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/federation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    分散して運用する
   
 
     
@@ -921,7 +977,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#役割ごとに開く口" class="md-nav__link">
     <span class="md-ellipsis">
       
         役割ごとに開く口
@@ -932,7 +988,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#スキーマからは読み取れないこと" class="md-nav__link">
     <span class="md-ellipsis">
       
         スキーマからは読み取れないこと
@@ -943,7 +999,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#解決" class="md-nav__link">
     <span class="md-ellipsis">
       
         解決
@@ -1139,7 +1195,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#役割ごとに開く口" class="md-nav__link">
     <span class="md-ellipsis">
       
         役割ごとに開く口
@@ -1150,7 +1206,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#スキーマからは読み取れないこと" class="md-nav__link">
     <span class="md-ellipsis">
       
         スキーマからは読み取れないこと
@@ -1161,7 +1217,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#解決" class="md-nav__link">
     <span class="md-ellipsis">
       
         解決
@@ -1201,7 +1257,7 @@
 ない。</p>
 <p>稼働中のインスタンスも同じものを出す。Swagger UI は <code>/api/docs</code>、ReDoc は
 <code>/api/redoc</code>、生の文書は <code>/api/openapi.json</code>。</p>
-<h2 id="_1">役割ごとに開く口<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h2 id="役割ごとに開く口">役割ごとに開く口<a class="headerlink" href="#役割ごとに開く口" title="Permanent link">&para;</a></h2>
 <p><strong>minter に解決の口は無く、resolver に採番の口も無い。</strong> 別プロセスなので別々に
 スケールでき、resolver は読み取り専用のレプリカに向けられる。</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">minter + 管理画面</label><label for="__tabbed_1_2">resolver</label></div>
@@ -1220,12 +1276,12 @@
 </div>
 </div>
 </div>
-<h2 id="_2">スキーマからは読み取れないこと<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="スキーマからは読み取れないこと">スキーマからは読み取れないこと<a class="headerlink" href="#スキーマからは読み取れないこと" title="Permanent link">&para;</a></h2>
 <p><strong>採番は、頼めば冪等になる。</strong> <code>request_id</code> を付けて送れば、同じ要求の再送には
 <strong>前回と同じ ARK</strong> が返り、新しくは採らない。万オーダーの投入では途中で接続が切れる
 ほうが普通で、控えが無いまま再送すると<strong>誰も指していない識別子</strong>が増える——ARK は
 それを回収できない。</p>
-<p><strong>リクエストの shoulder は範囲を広げない。</strong> 省略すれば機関の既定が使われ、名指した
+<p><strong>リクエストの shoulder は範囲を広げない。</strong> 省略すれば組織の既定が使われ、名指した
 場合に問われるのは「それが自分の範囲の内側かどうか」だけ。</p>
 <p><strong>委譲された shoulder は 307 を返す。プロキシはしない。</strong> その名前空間の採番が外で
 行われるなら、行き先を教える。代理で呼ばないのは、応答が失われたときに
@@ -1233,7 +1289,7 @@
 <p><strong>一括操作は部分適用しない。</strong> 一括更新の 1 件でも欠けるか範囲外なら、全体が失敗する。
 arklet は順序不定の問い合わせ結果を入力と <code>zip</code> しており、<strong>別のレコードの値を書き込み
 うる</strong>バグがあった。</p>
-<h2 id="_3">解決<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h2 id="解決">解決<a class="headerlink" href="#解決" title="Permanent link">&para;</a></h2>
 <p>解決は OpenAPI では十分に表せない——1 本の経路で、接尾によって振る舞いが変わるため。</p>
 <table>
 <thead>
