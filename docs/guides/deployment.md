@@ -76,3 +76,10 @@ kept.
 Dependabot proposes updates weekly, grouped. **Pinning is not permission to stop
 looking**: left alone, a pinned tree keeps running with vulnerabilities that have
 already been fixed elsewhere.
+
+## Sharing the work across several arkhe
+
+Once instances are split per site or per namespace, the rules move from the code into
+the hands of the operators — **no shoulder minted in two places**, **one authoritative
+ledger per NAAN**. How to choose an arrangement, and what goes wrong, is in
+[Running several arkhe](federation.md).

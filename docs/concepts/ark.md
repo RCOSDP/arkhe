@@ -59,6 +59,12 @@ physical specimen, a concept. There is no requirement that the thing be online, 
 even that it exist any more — the resolver can still return a description
 ([FAIR A2](invariants.md)).
 
+**The same holds for things that cannot be published.** When the reason it is out of
+reach is "closed" rather than "lost", the identifier can be handed out first — and when
+the embargo lifts, **changing the target is all that publication takes**. Holding closed
+and open identifiers in the same shape is covered in
+[Closed PIDs and open PIDs](../guides/federation.md#pid).
+
 ## The promise the design turns on
 
 ARK declares **NR — no re-assignment**. A name, once given out, never comes to mean

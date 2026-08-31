@@ -69,6 +69,7 @@ plugins:
             Admin interface: 管理画面
             Succession and departure: 承継と離脱
             Deployment: デプロイ
+            Running several arkhe: 分散して運用する
             Reference: リファレンス
             Configuration: 設定
             CLI: コマンド
@@ -135,6 +136,7 @@ nav:
       - Admin interface: guides/admin.md
       - Succession and departure: guides/succession.md
       - Deployment: guides/deployment.md
+      - Running several arkhe: guides/federation.md
   - Reference:
       - Configuration: reference/configuration.md
       - CLI: reference/cli.md

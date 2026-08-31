@@ -78,3 +78,10 @@ there that nobody here knows about.
   organisation's own resolver so that nothing further is asked of us.
 
 Both are covered in [Succession and departure](../guides/succession.md).
+
+## When the delegate is another arkhe
+
+Everything above delegates to an organisation, but **the same mechanism hands a
+namespace to another arkhe**: an instance per shoulder, a NAAN per site, or a closed
+instance whose namespace alone is known above. Each arrangement and what it costs is in
+[Running several arkhe](../guides/federation.md).
