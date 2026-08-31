@@ -40,7 +40,7 @@ SemVer は「公開されている面」を決めて初めて意味を持つ。�
 ## マイグレーション
 
 **MINOR でマイグレーションを追加してよい。ただしデータを失ってはならない。**
-CI では毎回 PostgreSQL に対して `upgrade → downgrade → upgrade` を通す——SQLite は
+出す前に毎回、PostgreSQL に対して `upgrade → downgrade → upgrade` を通す（`scripts/check.sh`）——SQLite は
 PostgreSQL が弾くスキーマを通してしまうため。
 
 台帳は作り直せない。NR の下では失った ARK を採り直せないので、多くのサービスが持つ

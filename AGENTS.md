@@ -29,18 +29,23 @@ uv run ruff check src tests
 ```
 
 `--frozen` は lock と `pyproject.toml` がずれていたら落ちる。**依存を足したら
-`uv lock` を実行する**（忘れると CI で落ちる。それが狙い）。
+`uv lock` を実行する**（忘れると `check.sh` で落ちる。それが狙い）。
 
-出す前に、**CI と同じものを手元で通す**:
+### CI は無い。検査も公開も手元で走る
 
 ```bash
-./scripts/ci.sh          # sync/ruff/pytest/マイグレーション往復/OpenAPI/mkdocs --strict
-./scripts/ci.sh --no-db  # docker が無いとき（**CI と同じにはならない**）
+bash scripts/check.sh          # 検査ぜんぶ
+bash scripts/deploy-docs.sh    # ドキュメントサイトを gh-pages へ
+bash scripts/release.sh vX.Y.Z # 版を出す（--publish を付けたときだけ実際に出る）
 ```
 
-`ci.yml` と `docs.yml` の写しである。**落ちるのが push の後だと往復が要る**ので、
-先に同じ検査を通す。使い捨ての PostgreSQL を立てて往復させるところまでやる
-（デモの DB には当たらない）。ワークフローを触ったらこちらも触ること。
+**系統は 1 つにする。** 手元と CI の 2 系統があると「片方では通る」変更が生まれ、
+やがて誰も片方を見なくなる。GitHub Actions は置いていない——`.github/` に残して
+あるのは issue と PR のテンプレート、そして依存の更新（Dependabot）だけ。
+
+`check.sh` は sync（`--frozen`）→ ruff → pytest → **使い捨ての PostgreSQL を立てて
+マイグレーションを往復**（デモの DB には当たらない）→ OpenAPI のずれ → `mkdocs --strict`。
+**道具が無い項目は黙って通さず SKIP と出す**——「入っていないから通った」がいちばん危ない。
 
 ## 3. 地図
 
@@ -52,8 +57,8 @@ tests/         ファイル名が対象を表す
 alembic/       マイグレーション。**PostgreSQL で検証する**
 docs/          MkDocs。`page.md` が英語、`page.ja.md` が日本語
 compose/oidc/  Keycloak つきの体験環境。**見本であって手本ではない**
-scripts/       ci.sh / release.sh（CI とリリースの写し）、export_openapi.py
-.github/       ci / docs / release の 3 つのワークフロー
+scripts/       check.sh / deploy-docs.sh / release.sh（**CI の代わり**）、export_openapi.py
+.github/       issue と PR のテンプレート、Dependabot。**ワークフローは持たない**
 AGENTS.md      これ。手順と罠
 STATUS.md      現在地と、分かっている穴
 CHANGELOG{,.ja}.md  版ごとの変更。**未リリースの節に足す**
@@ -182,29 +187,29 @@ uv run python scripts/export_openapi.py   # API 仕様はここだけ生成物
 コミットメッセージは**変更ではなく理由**を書く。将来の読者が知りたいのは、
 何を知っていたからそれが正解だったのか——特に答えが奇妙に見えるところで。
 
-**タグを打つ前に、リリースを手元で通しておく。** タグの後に落ちると、世に出ている版の
-検査が赤いという始末の悪い状態になる。
+リリースも手元で回る。**既定は「出さない」**——確かめるのは安く何度でもできるが、
+タグと GitHub のリリースはそうではない。
 
 ```bash
-./scripts/release.sh v0.0.9          # 版の一致・CHANGELOG・CI 相当・dist の作成
-./scripts/release.sh v0.0.9 --tag    # 通ったら注釈つきタグを手元に作る（push はしない）
+bash scripts/release.sh v0.0.9              # 検査と dist の作成だけ
+bash scripts/release.sh v0.0.9 --publish    # タグ → push → GitHub のリリース
 ```
 
-`release.yml` の写しに、**手順そのものの検査**を足してある——版の一致（`pyproject` と
-タグ）、CHANGELOG にその版の節とリンク定義が**日英とも**あること、「未リリース」の比較
-リンクが新しい版を指していること。どれも実際に間違えたことのある場所である。
+**手順そのものも検査する**——版の一致（`pyproject` とタグ）、CHANGELOG にその版の節と
+リンク定義が**日英とも**あること、「未リリース」の比較リンクが新しい版を指していること。
+どれも実際に間違えたことのある場所である。
 
-版は `pyproject.toml` だけで決まる。`release.yml` がタグと突き合わせて、ずれて
-いれば落とす——**「v0.0.2 と名乗る 0.0.1」を世に出さないため**。手順:
+版は `pyproject.toml` だけで決まる。ずれていれば `release.sh` が落とす
+——**「v0.0.2 と名乗る 0.0.1」を世に出さないため**。手順:
 
 1. `pyproject.toml` の `version` を上げる → `uv lock`
 2. CHANGELOG の「未リリース / Unreleased」の下に版の節を作る（**リリース済みの
-   節に追記しない**）。末尾のリンク定義も 2 言語ぶん
-3. `./scripts/release.sh vX.Y.Z --tag` が緑になること
-4. コミット → `git push origin main && git push origin vX.Y.Z`
-5. `weko4` 側のサブモジュールポインタを進める
-
-**push は script がしない。** 出したものは取り消せないので、最後の一手は人が打つ。
+   節に追記しない**）。末尾のリンク定義も 2 言語ぶん、「未リリース」の比較リンクも
+   新しい版に置き換える
+3. コミット
+4. `bash scripts/release.sh vX.Y.Z` が緑 → `--publish` を付けて出す
+5. `bash scripts/deploy-docs.sh`（変更履歴のページを追随させる）
+6. `weko4` 側のサブモジュールポインタを進める
 
 0.x のあいだはプレリリースとして出る。
 

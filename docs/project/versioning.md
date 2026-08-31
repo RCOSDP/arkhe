@@ -41,7 +41,8 @@ signature, because the damage would be to identifiers rather than to a build.
 ## Migrations
 
 **A minor release may add a migration; it must never lose data.** Every migration is
-run `upgrade → downgrade → upgrade` against PostgreSQL in CI, because SQLite accepts
+run `upgrade → downgrade → upgrade` against PostgreSQL before every release
+(`scripts/check.sh`), because SQLite accepts
 schemas PostgreSQL rejects.
 
 The ledger cannot be rebuilt. Under NR a lost ARK cannot be minted again, so "restore

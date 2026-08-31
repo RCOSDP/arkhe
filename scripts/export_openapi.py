@@ -1,7 +1,7 @@
 """OpenAPI をドキュメントへ書き出す。**API 仕様を手で二重に書かないため。**
 
 minter と resolver は役割ごとに口が違うので、両方を出す。
-mkdocs のビルド前に走らせる（CI がそうしている）。
+mkdocs のビルド前に走らせる（`scripts/check.sh` と `deploy-docs.sh` がそうしている）。
 """
 
 from __future__ import annotations

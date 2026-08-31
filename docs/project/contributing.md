@@ -13,20 +13,29 @@ uv run pytest -q
 uv run ruff check src tests
 ```
 
-## Run CI locally before you push
+## There is no CI. The checks run on your machine
 
 ```bash
-./scripts/ci.sh          # everything CI checks
-./scripts/ci.sh --no-db  # without docker — **not the same thing**
+bash scripts/check.sh          # every check
+bash scripts/check.sh --no-db  # without docker — **not the same thing**
 ```
 
-It mirrors `.github/workflows/ci.yml` and `docs.yml`, down to **starting a disposable
-PostgreSQL and round-tripping the migrations** (it never touches the demo database).
-Finding out after the push only costs a round trip.
+Sync (`--frozen`) → ruff → pytest → **a disposable PostgreSQL with the migrations
+round-tripped** → the OpenAPI spec still matching the implementation → `mkdocs build
+--strict`. It never touches the demo database, and **a check whose tooling is missing
+prints SKIP rather than passing quietly** — "it passed because it wasn't installed" is
+the dangerous outcome.
 
-If you are cutting a release, `./scripts/release.sh vX.Y.Z` checks that the tag matches
-the version, that the CHANGELOG has that section and its link definition in both
-languages, runs the CI equivalent and builds `dist/`. **It does not push.**
+**One system, not two.** Split between a laptop and CI, a change that "passes on one
+side" appears, and before long nobody looks at the other side.
+
+Two more, for publishing:
+
+```bash
+bash scripts/deploy-docs.sh                 # this site, to gh-pages
+bash scripts/release.sh vX.Y.Z              # checks and dist/ only (the default)
+bash scripts/release.sh vX.Y.Z --publish    # tag, push, GitHub release
+```
 
 ## What the review will ask
 

@@ -26,11 +26,5 @@ updates:
         patterns: ["*"]
     commit-message: {prefix: "chore(deps)"}
 
-  # ワークフローの action も同じ理由で古びる。
-  - package-ecosystem: github-actions
-    directory: /
-    schedule: {interval: monthly}
-    groups:
-      actions:
-        patterns: ["*"]
-    commit-message: {prefix: "chore(ci)"}
+# ワークフローの action は見ない——**ワークフローを持っていない**。
+# 検査と公開は scripts/ の 3 本で、走らせるのは手元である（AGENTS.md）。

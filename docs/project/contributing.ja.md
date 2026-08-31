@@ -13,19 +13,28 @@ uv run pytest -q
 uv run ruff check src tests
 ```
 
-## 出す前に、CI を手元で回す
+## CI は無い。検査は手元で走る
 
 ```bash
-./scripts/ci.sh          # CI と同じ検査を全部
-./scripts/ci.sh --no-db  # docker が無いとき（**同じにはならない**）
+bash scripts/check.sh          # 検査ぜんぶ
+bash scripts/check.sh --no-db  # docker が無いとき（**同じにはならない**）
 ```
 
-`.github/workflows/ci.yml` と `docs.yml` の写しで、**使い捨ての PostgreSQL を立てて
-マイグレーションを往復させる**ところまでやる（デモの DB には当たらない）。
-落ちるのが push の後だと往復が要るだけで、得るものが無い。
+sync（`--frozen`）→ ruff → pytest → **使い捨ての PostgreSQL を立ててマイグレーションを
+往復** → OpenAPI が実装からずれていないか → `mkdocs build --strict`。デモの DB には
+当たらない。**道具が無い項目は黙って通さず SKIP と出す**——「入っていないから通った」が
+いちばん危ない。
 
-リリースを出す側なら `./scripts/release.sh vX.Y.Z`——版の一致、CHANGELOG の節と
-リンク定義（日英）、CI 相当、`dist/` の作成まで通す。**push はしない。**
+**系統を 2 つ持たないため**にこうしてある。手元と CI に分かれると、「片方では通る」
+変更が生まれ、やがて誰も片方を見なくなる。
+
+出す側の 2 本:
+
+```bash
+bash scripts/deploy-docs.sh                 # このサイトを gh-pages へ
+bash scripts/release.sh vX.Y.Z              # 検査と dist の作成だけ（既定）
+bash scripts/release.sh vX.Y.Z --publish    # タグ → push → GitHub のリリース
+```
 
 ## レビューで見ること
 

@@ -66,7 +66,8 @@ uv lock                                    # update it, deliberately
 ```
 
 `--frozen` **fails if the lock and `pyproject.toml` disagree**, which is what you want:
-passing while they disagree is worse. CI and the image build both use it.
+passing while they disagree is worse. The checks (`scripts/check.sh`) and the image
+build both use it.
 
 **No upper bounds.** With a lock they are unnecessary, and they make the package harder
 to live with as a dependency. The declaration answers "what range does this work

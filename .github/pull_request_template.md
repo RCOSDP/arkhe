@@ -5,8 +5,9 @@
 
 **Checks**
 
-- [ ] `pytest -q` passes
-- [ ] `ruff check src tests` passes
+<!-- There is no CI. The checks run on your machine. -->
+
+- [ ] `bash scripts/check.sh` passes (or the SKIPs are explained below)
 - [ ] New behaviour has a test that fails without it
 - [ ] If it touches authorisation, the negative case is tested too
 - [ ] If it touches the schema, the migration was run against PostgreSQL

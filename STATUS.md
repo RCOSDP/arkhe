@@ -19,7 +19,7 @@
 | テスト | **403 件すべて green**（`uv run pytest -q`、約 13 秒） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語で 18 ページ |
-| マイグレーション | head は単一（`b65e77b221ac`）。CI が PostgreSQL 17 で up→down→up→check を回す |
+| マイグレーション | head は単一（`b65e77b221ac`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回す |
 | 実装規模 | `src/arkhe/` 51 ファイル・約 8,400 行 |
 | Python | 3.12 以上。本体の依存は **optional**（`arkspec` と `domain.resolution` は何も入れずに import できる） |
 
@@ -106,8 +106,9 @@ test_cli_i18n.py     訳の抜け             test_docs.py        参照ペー�
 - ローカルの `dist/`（0.0.5〜0.0.8 のビルド成果物）、`db.sqlite3`、`site/`、`.venv/` は
   **すべて `.gitignore` 済み**で追跡されていない。消して困るものは無い。
 - `compose/oidc` は **見本であって手本ではない**——秘密値が平文、Keycloak は dev モード。
-- CI は push と PR で走る（`ruff` → `pytest` → PostgreSQL でのマイグレーション往復）。
-  文書は `docs.yml`、リリースは `release.yml` がタグと版の一致を検査する。
-- **同じ検査は手元でも回せる。** `./scripts/ci.sh`（CI と docs の写し。使い捨ての
-  PostgreSQL を立てて往復させる）と `./scripts/release.sh vX.Y.Z`（版の一致・
-  CHANGELOG・CI 相当・`dist/` の作成。**push はしない**）。
+- **CI は無い。** 検査も公開も `scripts/` の 3 本で、走らせるのは手元である
+  ——`check.sh`（検査ぜんぶ）、`deploy-docs.sh`（gh-pages へ）、`release.sh`
+  （版を出す。`--publish` のときだけ実際に出る）。**系統を 2 つ持たない**ため。
+- ドキュメントサイトは **gh-pages ブランチを配信**している（Settings → Pages →
+  Deploy from a branch）。書き手は `deploy-docs.sh` だけで、**gh-pages は手で触らない**。
+- `.github/` に残っているのは issue と PR のテンプレート、Dependabot（uv lock を毎週）。
