@@ -30,6 +30,16 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **Bulk minting returned a 500 when one request carried the same `request_id` twice.**
+  A receipt is unique per (client, request_id), so writing the second one raised an
+  IntegrityError and **nothing was minted at all**. The same `request_id` means the same
+  single request, so one ARK is now minted and returned for both rows — the promise that
+  covers resends now holds inside a batch too.
+
+- **Response codes were missing from the specification.** The 200 returned on a resend
+  (`POST /api/mint` and `/api/mint/bulk`) and resolution's 302, 400 and 404 were not
+  declared, so generated clients treated them as unknown responses.
+
 - **The published API specification had no description for minting or resolution.**
   FastAPI turns a handler's docstring into the OpenAPI `description`, and three
   handlers had none — `POST /api/mint`, `POST /api/mint/bulk` and `GET /ark:…` (four

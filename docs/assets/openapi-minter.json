@@ -79,6 +79,16 @@
               }
             }
           },
+          "200": {
+            "description": "以前の採番を返した（再送）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -106,7 +116,7 @@
           "ark"
         ],
         "summary": "Bulk Mint",
-        "description": "**まとめて採番する。** `ark:mint` が要る。1 リクエストの上限は\n`ARKHE_BULK_LIMIT`（既定 1000）。\n\n**1 件でも範囲外なら、何も作らない。** 到達範囲と shoulder の検証を全件先に済ませて\nから採番するので、途中まで採番された状態は残らない。\n\n**応答は入力の順序で返す。** 再送ぶん（`request_id` が既知の行）と新規ぶんが混ざる\nので、並びを保って呼び出し側が突き合わせられるようにしてある。`created` と\n`replayed` にそれぞれの件数が出る。全件が再送なら 200、1 件でも採番していれば 201。\n\n行ごとに `request_id` を付けておけば、**切れた塊をそのまま送り直せる**——\n採番済みの行は飛ばされる。",
+        "description": "**まとめて採番する。** `ark:mint` が要る。1 リクエストの上限は\n`ARKHE_BULK_LIMIT`（既定 1000）。\n\n**1 件でも範囲外なら、何も作らない。** 到達範囲と shoulder の検証を全件先に済ませて\nから採番するので、途中まで採番された状態は残らない。\n\n**応答は入力の順序で返す。** 再送ぶん（`request_id` が既知の行）と新規ぶんが混ざる\nので、並びを保って呼び出し側が突き合わせられるようにしてある。`created` と\n`replayed` にそれぞれの件数が出る。全件が再送なら 200、1 件でも採番していれば 201。\n\n行ごとに `request_id` を付けておけば、**切れた塊をそのまま送り直せる**——\n採番済みの行は飛ばされる。**同じ `request_id` が 1 回の要求に複数あるときも\n1 件にまとめる**（同じ依頼を 2 度書いたのだから、番号も 1 つ）。",
         "operationId": "bulk_mint_api_mint_bulk_post",
         "requestBody": {
           "content": {
@@ -121,6 +131,16 @@
         "responses": {
           "201": {
             "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkMintOut"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "全件が再送だった",
             "content": {
               "application/json": {
                 "schema": {

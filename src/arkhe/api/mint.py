@@ -77,7 +77,14 @@ def _apply(ark: Ark, data: dict, principal) -> Ark:
 # ------------------------------------------------------------------- 採番
 
 
-@router.post("/mint", response_model=ArkOut, status_code=201)
+@router.post(
+    "/mint",
+    response_model=ArkOut,
+    status_code=201,
+    # **再送は 201 では返らない。** 宣言しないと、生成クライアントが 200 を
+    # 「知らない応答」として扱う。
+    responses={200: {"model": ArkOut, "description": "以前の採番を返した（再送）"}},
+)
 def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Response):
     """**新しい ARK を 1 つ発行する。** `ark:mint` が要る。
 
@@ -110,7 +117,12 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
     return ArkOut.of(ark)
 
 
-@router.post("/mint/bulk", response_model=BulkMintOut, status_code=201)
+@router.post(
+    "/mint/bulk",
+    response_model=BulkMintOut,
+    status_code=201,
+    responses={200: {"model": BulkMintOut, "description": "全件が再送だった"}},
+)
 def bulk_mint(
     body: BulkMintIn, principal: CurrentPrincipal, session: Db, cfg: Config, response: Response
 ):
@@ -125,7 +137,8 @@ def bulk_mint(
     `replayed` にそれぞれの件数が出る。全件が再送なら 200、1 件でも採番していれば 201。
 
     行ごとに `request_id` を付けておけば、**切れた塊をそのまま送り直せる**——
-    採番済みの行は飛ばされる。
+    採番済みの行は飛ばされる。**同じ `request_id` が 1 回の要求に複数あるときも
+    1 件にまとめる**（同じ依頼を 2 度書いたのだから、番号も 1 つ）。
     """
     authz.require_scope(principal, "ark:mint")
     rows = body.data
@@ -144,7 +157,17 @@ def bulk_mint(
         ).all():
             replayed[rid] = session.get(Ark, key)
 
-    fresh = [r for r in rows if r.request_id not in replayed]
+    # **同じ塊のなかの重複も、再送と同じ扱いにする。** 控えは (client, request_id) で
+    # 一意なので、同じ `request_id` の行を 2 つ採番すると控えを 2 度書くことになり、
+    # commit で IntegrityError——500 で落ち、1 件も採番されない。同じ `request_id` は
+    # 「同じ 1 つの依頼」という意味なのだから、**1 件だけ採番して両方に同じ ARK を返す。**
+    fresh, seen = [], set()
+    for r in rows:
+        if r.request_id in replayed or r.request_id in seen:
+            continue
+        if r.request_id:
+            seen.add(r.request_id)
+        fresh.append(r)
     # 到達範囲の検証を**先に全件済ませる**（1 件でも範囲外なら何も作らない）。
     shoulders = [authz.shoulder_for(session, principal, r.shoulder or None) for r in fresh]
     for sh in shoulders:
@@ -163,7 +186,11 @@ def bulk_mint(
 
     # **入力の順序で返す。** 再送ぶんと新規ぶんが混ざるので、呼び出し側が
     # 突き合わせられるように並びを保つ。
-    made = [replayed.get(r.request_id) or minted[id(r)] for r in rows]
+    by_request = {r.request_id: minted[id(r)] for r in fresh if r.request_id}
+    made = [
+        replayed.get(r.request_id) or by_request.get(r.request_id) or minted[id(r)]
+        for r in rows
+    ]
     if not minted:
         response.status_code = 200
     return BulkMintOut(
