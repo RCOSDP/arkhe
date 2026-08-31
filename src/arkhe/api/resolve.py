@@ -177,19 +177,31 @@ def well_known_ark(session: Db, cfg: Config):
     )
 
 
-@router.get("/ark:/{rest:path}")
-@router.get("/ark:{rest:path}")
+#: **転送だけの口ではない。** 宣言しておかないと、生成クライアントは 200 だけを
+#: 想定して組まれ、302 / 404 / 400 を異常として扱う。
+_RESOLVE_RESPONSES = {
+    200: {"description": "記述を返す（`?info` / `??`、開けない行き先、墓碑、保留、"
+                         "NAAN だけの ARK）"},
+    302: {"description": "行き先へ転送する（委譲テンプレートが指定していれば別の 3xx）"},
+    400: {"description": "ARK として読めない"},
+    404: {"description": "この台帳に無く、取次先も無い"},
+}
+
+
+@router.get("/ark:/{rest:path}", responses=_RESOLVE_RESPONSES)
+@router.get("/ark:{rest:path}", responses=_RESOLVE_RESPONSES)
 def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
     """**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の
     どちらの表記でも受ける。
 
     返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:
 
-      302  行き先へ転送する（通常）
+      302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に `303 ` 等を
+           書いていれば、その符号になる）
       200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない
            とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき
-      307  その shoulder の採番が委譲されているとき、案内する
-      404  この台帳に無く、取次先も無いとき
+      404  この台帳に無く、取次先も無いとき。**`?info` でも 404 は 404**
+           ——知らない名前について述べられることは無い
       400  ARK として読めない文字列
 
     **保留（hold）でも 404 にしない。** その識別子は存在していて、我々が今は転送

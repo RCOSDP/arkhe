@@ -37,6 +37,26 @@ def test_F4_request_idは主体ごとに独立(world, principal_of, as_principal
     assert a.json()["ark"] != b.json()["ark"]
 
 
+def test_F4_同じrequest_idが一塊のなかで重複しても壊れない(world, principal_of, as_principal):
+    """**控えは (client, request_id) で一意。** 同じ `request_id` が 1 回の要求に
+    2 行あると、控えを 2 度書こうとして IntegrityError になり 500 で落ちていた。
+
+    同じ `request_id` は「同じ 1 つの依頼」という意味なので、**1 件だけ採番して
+    両方の行に同じ ARK を返す**——再送の扱いと同じ約束を、塊の内側にも通す。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    r = c.post("/api/mint/bulk", json={"data": [
+        {"request_id": "same", "url": "https://example.org/1"},
+        {"request_id": "same", "url": "https://example.org/2"},
+        {"url": "https://example.org/3"},
+    ]})
+    assert r.status_code == 201
+    body = r.json()
+    assert body["minted"][0]["ark"] == body["minted"][1]["ark"]   # 同じ番号
+    assert body["minted"][2]["ark"] != body["minted"][0]["ark"]   # 無印は独立
+    assert (body["created"], body["replayed"]) == (2, 1)
+
+
 def test_一括採番は入力の順序で返す(world, principal_of, as_principal):
     """再送ぶんと新規ぶんが混ざるので、呼び出し側が突き合わせられるように並びを保つ。"""
     c = as_principal(principal_of(manager=world["a"]))
