@@ -8,6 +8,15 @@
 
 ## [未リリース]
 
+## [0.0.9] — 2026-08-31
+
+**行き先が信用できなくなったときに、識別子を殺さずに止められるようになった版。**
+委譲先のリゾルバが落ちた、間違った URL を配ってしまった、取り下げを求められた
+——どれも急いで止めたいが、`404` は嘘であり `503` は識別子が壊れて見える。止まるのは
+**転送だけ**で、解決も記述も続く。あわせて、複数の arkhe で分担する構成
+（クローズド PID とオープン PID を含む）を文書に起こし、CI を廃して検査と公開を
+手元のスクリプトに一本化した。
+
 ### 追加
 
 - **複数の arkhe で分担する構成の手引き**（[分散して運用する](https://rcosdp.github.io/arkhe/ja/guides/federation/)）。
@@ -402,7 +411,8 @@
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.8...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.9...HEAD
+[0.0.9]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.9
 [0.0.8]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.8
 [0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7
 [0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6

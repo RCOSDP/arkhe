@@ -9,6 +9,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.0.9] — 2026-08-31
+
+**The release that can stop a redirect without killing the identifier.** A delegate's
+resolver goes down, a wrong URL goes out, a takedown is requested — each wants stopping
+quickly, and yet `404` would be a lie and `503` makes a permanent identifier look broken.
+What stops is **redirection only**; resolution and descriptions carry on. It also
+documents running several arkhe instances together (closed PIDs and open PIDs included),
+and replaces CI with local scripts for checking and publishing.
+
 ### Added
 
 - **A guide to running several arkhe instances**
@@ -438,7 +447,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.8...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.9...HEAD
+[0.0.9]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.9
 [0.0.8]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.8
 [0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7
 [0.0.6]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.6

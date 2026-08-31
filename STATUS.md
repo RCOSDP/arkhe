@@ -15,12 +15,12 @@
 
 | | |
 | --- | --- |
-| 版 | **0.0.8**（2026-08-29 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
-| テスト | **403 件すべて green**（`uv run pytest -q`、約 13 秒） |
+| 版 | **0.0.9**（2026-08-31 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
+| テスト | **427 件すべて green**（`uv run pytest -q`、約 14 秒） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語で 18 ページ |
-| マイグレーション | head は単一（`b65e77b221ac`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回す |
-| 実装規模 | `src/arkhe/` 51 ファイル・約 8,400 行 |
+| マイグレーション | head は単一（`a3f1c9e2d570`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回す |
+| 実装規模 | `src/arkhe/` 51 ファイル・約 9,000 行 |
 | Python | 3.12 以上。本体の依存は **optional**（`arkspec` と `domain.resolution` は何も入れずに import できる） |
 
 ## 何が動くか
@@ -40,7 +40,7 @@
 | 認可 | 3 段の到達範囲。**判断は 1 か所**、リクエストで広がらない | `domain/authz.py` |
 | 管理画面 | 台帳・主体・ARK 一覧・監査・未登録主体。日英切替、画面ごとの i18n | `api/admin/`, `api/i18n/` |
 | 記録 | `AuditEvent`（NAAN 以上の操作）と `ArkChange`（行き先の変更は全件） | `db/models.py` |
-| 運用コマンド | 20 コマンド。**画面と同じ `domain` を通る** | `cli.py` |
+| 運用コマンド | 24 コマンド。**画面と同じ `domain` を通る** | `cli.py` |
 | 観測性 | `/healthz` `/readyz`、構造化ログ、`/.well-known/ark` | `observability.py`, `api/resolve.py` |
 | 体験環境 | Keycloak ＋ PostgreSQL ＋ minter/resolver の compose | `compose/oidc/` |
 
