@@ -18,32 +18,15 @@
         ],
         "summary": "Mint",
         "operationId": "mint_api_mint_post",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/MintIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
@@ -66,7 +49,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/mint/bulk": {
@@ -76,32 +64,15 @@
         ],
         "summary": "Bulk Mint",
         "operationId": "bulk_mint_api_mint_bulk_post",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BulkMintIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
@@ -124,7 +95,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/register": {
@@ -135,32 +111,15 @@
         "summary": "Register",
         "description": "B4: **既存 ARK に修飾子を付けた行を登録する。**\n\n既定では suffix passthrough が任意の深さを賄う。この口は**その既定を 1 点だけ\n上書きする**ためにある——「このサブツリーだけ別ストレージ」「この変換版だけ別の所在」。\n\n**`ark:mint` を要求する。** 採番ではないが、**新しく解決可能な識別子が増える**\nので、更新権限しか持たない主体に渡してはいけない。",
         "operationId": "register_api_register_post",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RegisterIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
@@ -183,7 +142,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/update": {
@@ -194,32 +158,15 @@
         "summary": "Update",
         "description": "既存 ARK を更新する。**対象の shoulder の manager を照合する**（M3）。",
         "operationId": "update_api_update_put",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -242,7 +189,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/update/bulk": {
@@ -253,32 +205,15 @@
         "summary": "Bulk Update",
         "description": "M5: **辞書で引き当て、部分適用しない。**",
         "operationId": "bulk_update_api_update_bulk_put",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BulkUpdateIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -301,7 +236,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/tombstone": {
@@ -312,32 +252,15 @@
         "summary": "Tombstone",
         "description": "**対象が失われたと宣言する。** ARK は削除しない。\n\n`NR`（No Re-assignment）を宣言している以上、識別子は消せない。消せるのは\n対象への到達性だけで、**識別子とメタデータは残る**。\n\n**scope を `ark:update` と分けてある。** 墓碑化は「どこにあるか」ではなく\n「もう無い」という宣言で、意味も影響も違う。取り消しにくく、公開されると\n信頼に関わるので、投入バッチのような日常の書き手には渡さない。",
         "operationId": "tombstone_api_tombstone_put",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TombstoneIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -360,7 +283,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/hold": {
@@ -371,32 +299,15 @@
         "summary": "Hold",
         "description": "**転送を一時的に止める。** 解決は止めない——記述は返り続ける。\n\n委譲先が落ちた、間違った行き先を配ってしまった、対象が移動中——急いで\n止めたいが、識別子は殺したくない場面のためのもの。`404` は嘘（その識別子は\n存在する）で、`503` は識別子が壊れて見えるので、**`200` と記述**を返す\n経路（D6・tombstone と同じ）に乗せる。\n\n**scope を `ark:update` と分けてある。** 止めるのは「どこにあるか」を書き換える\nのとは別の判断で、公開の口に理由が出る。tombstone とも分ける——あちらは\n「もう無い」という恒久の宣言で、こちらは**期限つきで、元の行き先を残す**。",
         "operationId": "hold_api_hold_put",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/HoldIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -419,7 +330,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/hold/release": {
@@ -430,32 +346,15 @@
         "summary": "Hold Release",
         "description": "期限を待たずに保留を外す。**期限切れは時計が勝手に外す**ので、これは前倒し。",
         "operationId": "hold_release_api_hold_release_put",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/HoldReleaseIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -478,7 +377,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/query": {
@@ -489,32 +393,15 @@
         "summary": "Bulk Query",
         "description": "M4: **読み取りも到達範囲に絞る**（arklet は認可を一切していなかった）。",
         "operationId": "bulk_query_api_query_post",
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BulkQueryIn"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -537,7 +424,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/oauth/token": {
@@ -548,18 +440,6 @@
         "summary": "アクセストークンを発行する（client_credentials）",
         "description": "RFC 6749 §4.4 の client_credentials。\n\n資格情報は **本文でも Basic 認証でも**受ける（§2.3.1 は Basic を推奨し、\n本文も認めている。既存のクライアントライブラリはどちらも使う）。",
         "operationId": "token_oauth_token_post",
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {

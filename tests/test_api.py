@@ -263,3 +263,55 @@ def test_開ける行き先は転送する(world, principal_of, as_principal):
     ).json()["ark"].removeprefix("ark:/")
     r = c.get(f"/ark:/{key}")
     assert r.status_code == 302 and r.headers["location"] == "https://ok.example/1"
+
+
+@pytest.mark.parametrize("resolver", [False, True], ids=["minter", "resolver"])
+def test_内部のつまみがクエリに漏れない(resolver):
+    """**FastAPI は依存の引数をクエリパラメータとして公開する。**
+
+    `get_session(*, read_only=…)` を依存に置いていたころ、`?read_only=true` が
+    **全パスに生えていた**——`POST /api/mint?read_only=true` で、採番の書き込みを
+    外からレプリカへ向けられる。接続先を決めるのは役割であって、要求ではない。
+    """
+    from arkhe.app import create_app
+    from arkhe.settings import Settings
+
+    spec = create_app(
+        Settings(
+            resolver=resolver, database_url="sqlite://", auth=["apikey"],
+            admin_login="bearer",
+        )
+    ).openapi()
+
+    leaked = [
+        f"{method.upper()} {path} ?{q['name']}"
+        for path, ops in spec["paths"].items()
+        for method, op in ops.items()
+        for q in op.get("parameters", [])
+        if q.get("in") == "query" and q["name"] == "read_only"
+    ]
+    assert not leaked, leaked
+
+
+def test_解決は読み取り側の接続を使う(monkeypatch):
+    """**`ARKHE_READ_DATABASE_URL` を効かせる。** 設定を読むだけで誰も使っていな
+    かったので、resolver は書き込みエンジンから読んでいた——レプリカを立てても
+    向かない。参照リファレンスに載っている以上、設定は効かなければならない。
+    """
+    from arkhe.db import session as session_mod
+    from arkhe.settings import Settings
+
+    cfg = Settings(
+        resolver=True,
+        database_url="sqlite:///primary.sqlite3",
+        read_database_url="sqlite:///replica.sqlite3",
+    )
+    monkeypatch.setattr(session_mod, "get_settings", lambda: cfg)
+    write, read = session_mod.engines(cfg)
+    assert write is not read  # 前提が崩れていたら以下は何も確かめていない
+
+    gen = session_mod.get_session()
+    try:
+        assert next(gen).get_bind() is read
+    finally:
+        gen.close()

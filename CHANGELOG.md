@@ -9,6 +9,19 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **An internal knob, `read_only`, was exposed as a query parameter on every endpoint.**
+  FastAPI publishes a dependency's arguments as query parameters, so declaring
+  `get_session(*, read_only=…)` as a dependency meant a caller could send
+  `POST /api/mint?read_only=true` and **point a minting write at the read replica**
+  (only harmful where `ARKHE_READ_DATABASE_URL` is set). The argument is gone; the
+  connection is now chosen by the **process's role** (`ARKHE_RESOLVER`).
+
+  With it, `ARKHE_READ_DATABASE_URL` **takes effect for the first time**. The setting
+  was read, but nothing ever passed `read_only=True`, so the resolver was reading from
+  the write engine — a replica was never actually used.
+
 ## [0.0.9] — 2026-08-31
 
 **The release that can stop a redirect without killing the identifier.** A delegate's

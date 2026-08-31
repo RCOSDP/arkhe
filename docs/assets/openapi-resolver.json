@@ -19,34 +19,12 @@
         "summary": "Well Known Ark",
         "description": "このリゾルバが何を預かっているかを機械可読で公開する。\n\n**採番を外に委ねている NAAN があるとき、クライアントがどこへ行けばよいか**を\nここで分かるようにする（`Naan.minter` / `Shoulder.minter`）。",
         "operationId": "well_known_ark__well_known_ark_get",
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }
@@ -68,16 +46,6 @@
             "schema": {
               "type": "string",
               "title": "Rest"
-            }
-          },
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
             }
           }
         ],
@@ -118,16 +86,6 @@
             "schema": {
               "type": "string",
               "title": "Rest"
-            }
-          },
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
             }
           }
         ],
