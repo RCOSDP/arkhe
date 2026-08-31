@@ -41,7 +41,11 @@ breaking in a system whose identifiers cannot be reissued.
   `get_session(*, read_only=…)` as a dependency meant a caller could send
   `POST /api/mint?read_only=true` and **point a minting write at the read replica**
   (only harmful where `ARKHE_READ_DATABASE_URL` is set). The argument is gone; the
-  connection is now chosen by the **process's role** (`ARKHE_RESOLVER`).
+  connection is now chosen by the **process's role** (`ARKHE_RESOLVER`), read from
+  **the settings the app was actually built with** — reading the cached
+  `get_settings()` directly would let it diverge from what `create_app(settings=…)`
+  was given, so router mounting and connection routing would consult different
+  configuration.
 
   With it, `ARKHE_READ_DATABASE_URL` **takes effect for the first time**. The setting
   was read, but nothing ever passed `read_only=True`, so the resolver was reading from
