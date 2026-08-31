@@ -11,6 +11,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **The `ark:hold` scope had no label in either language, so the admin interface showed
+  the raw key `sc.ark:hold`.** It was missed when the scope was added in 0.0.9. The
+  existing check for missing translations compares the two catalogues against each
+  other, so a term absent from **both** passes it. The labels are in, and a check now
+  requires every entry of `SCOPES` to have one.
+
 - **An internal knob, `read_only`, was exposed as a query parameter on every endpoint.**
   FastAPI publishes a dependency's arguments as query parameters, so declaring
   `get_session(*, read_only=…)` as a dependency meant a caller could send
