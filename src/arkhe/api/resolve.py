@@ -177,14 +177,31 @@ def well_known_ark(session: Db, cfg: Config):
     )
 
 
-#: **転送だけの口ではない。** 宣言しておかないと、生成クライアントは 200 だけを
-#: 想定して組まれ、302 / 404 / 400 を異常として扱う。
+_TEXT = {"text/plain": {"schema": {"type": "string"}}}
+
+#: **転送だけの口ではない。** 宣言しておかないと、生成クライアントは 200 の JSON だけを
+#: 想定して組まれ、転送も記述も 404 も異常として扱う。
+#:
+#: **媒体も 1 つではない。** 同じ 200 でも、`?json` と NAAN だけの ARK は JSON、
+#: `?` と `??` と保留は ANVL（text/plain）、`?info` は人が読む HTML を返す。
+#: 3xx が 4 通りあるのは、shoulder の委譲テンプレートが先頭に符号を書けるため
+#: （`_STATUS_PREFIX`。N2T に合わせて 301 / 302 / 303 / 307 だけ受ける）。
 _RESOLVE_RESPONSES = {
-    200: {"description": "記述を返す（`?info` / `??`、開けない行き先、墓碑、保留、"
-                         "NAAN だけの ARK）"},
-    302: {"description": "行き先へ転送する（委譲テンプレートが指定していれば別の 3xx）"},
-    400: {"description": "ARK として読めない"},
-    404: {"description": "この台帳に無く、取次先も無い"},
+    200: {
+        "description": "記述を返す（`?info` / `?` / `??` / `?json`、開けない行き先、"
+                       "墓碑、保留、NAAN だけの ARK）",
+        "content": {
+            "application/json": {"schema": {"type": "object"}},
+            "text/plain": {"schema": {"type": "string"}},   # ANVL
+            "text/html": {"schema": {"type": "string"}},
+        },
+    },
+    301: {"description": "行き先へ転送する（委譲テンプレートが `301 ` を指定）"},
+    302: {"description": "行き先へ転送する（既定）"},
+    303: {"description": "行き先へ転送する（委譲テンプレートが `303 ` を指定）"},
+    307: {"description": "行き先へ転送する（委譲テンプレートが `307 ` を指定）"},
+    400: {"description": "ARK として読めない", "content": _TEXT},
+    404: {"description": "この台帳に無く、取次先も無い", "content": _TEXT},
 }
 
 
@@ -196,8 +213,8 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
 
     返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:
 
-      302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に `303 ` 等を
-           書いていれば、その符号になる）
+      302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に符号を
+           書いていれば **301 / 303 / 307** にもなる）
       200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない
            とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき
       404  この台帳に無く、取次先も無いとき。**`?info` でも 404 は 404**

@@ -37,7 +37,7 @@
           "resolve"
         ],
         "summary": "Resolve Ark",
-        "description": "**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の\nどちらの表記でも受ける。\n\n返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:\n\n  302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に `303 ` 等を\n       書いていれば、その符号になる）\n  200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない\n       とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき\n  404  この台帳に無く、取次先も無いとき。**`?info` でも 404 は 404**\n       ——知らない名前について述べられることは無い\n  400  ARK として読めない文字列\n\n**保留（hold）でも 404 にしない。** その識別子は存在していて、我々が今は転送\nしないだけなので、理由と期限を添えて 200 で返す。**墓碑（tombstone）も同じ**\n——「失われた」と述べることと、「無かった」と言うことは違う。\n\nNAAN だけの ARK（`ark:/12345`）には、その NAAN について答えられることを返す。\n知らない NAAN は上位のリゾルバ（`ARKHE_GLOBAL_RESOLVER`、既定 n2t.net）へ取り次ぐ。",
+        "description": "**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の\nどちらの表記でも受ける。\n\n返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:\n\n  302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に符号を\n       書いていれば **301 / 303 / 307** にもなる）\n  200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない\n       とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき\n  404  この台帳に無く、取次先も無いとき。**`?info` でも 404 は 404**\n       ——知らない名前について述べられることは無い\n  400  ARK として読めない文字列\n\n**保留（hold）でも 404 にしない。** その識別子は存在していて、我々が今は転送\nしないだけなので、理由と期限を添えて 200 で返す。**墓碑（tombstone）も同じ**\n——「失われた」と述べることと、「無かった」と言うことは違う。\n\nNAAN だけの ARK（`ark:/12345`）には、その NAAN について答えられることを返す。\n知らない NAAN は上位のリゾルバ（`ARKHE_GLOBAL_RESOLVER`、既定 n2t.net）へ取り次ぐ。",
         "operationId": "resolve_ark_ark__rest__get",
         "parameters": [
           {
@@ -52,21 +52,56 @@
         ],
         "responses": {
           "200": {
-            "description": "記述を返す（`?info` / `??`、開けない行き先、墓碑、保留、NAAN だけの ARK）",
+            "description": "記述を返す（`?info` / `?` / `??` / `?json`、開けない行き先、墓碑、保留、NAAN だけの ARK）",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
+          "301": {
+            "description": "行き先へ転送する（委譲テンプレートが `301 ` を指定）"
+          },
           "302": {
-            "description": "行き先へ転送する（委譲テンプレートが指定していれば別の 3xx）"
+            "description": "行き先へ転送する（既定）"
+          },
+          "303": {
+            "description": "行き先へ転送する（委譲テンプレートが `303 ` を指定）"
+          },
+          "307": {
+            "description": "行き先へ転送する（委譲テンプレートが `307 ` を指定）"
           },
           "400": {
-            "description": "ARK として読めない"
+            "description": "ARK として読めない",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "404": {
-            "description": "この台帳に無く、取次先も無い"
+            "description": "この台帳に無く、取次先も無い",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -87,7 +122,7 @@
           "resolve"
         ],
         "summary": "Resolve Ark",
-        "description": "**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の\nどちらの表記でも受ける。\n\n返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:\n\n  302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に `303 ` 等を\n       書いていれば、その符号になる）\n  200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない\n       とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき\n  404  この台帳に無く、取次先も無いとき。**`?info` でも 404 は 404**\n       ——知らない名前について述べられることは無い\n  400  ARK として読めない文字列\n\n**保留（hold）でも 404 にしない。** その識別子は存在していて、我々が今は転送\nしないだけなので、理由と期限を添えて 200 で返す。**墓碑（tombstone）も同じ**\n——「失われた」と述べることと、「無かった」と言うことは違う。\n\nNAAN だけの ARK（`ark:/12345`）には、その NAAN について答えられることを返す。\n知らない NAAN は上位のリゾルバ（`ARKHE_GLOBAL_RESOLVER`、既定 n2t.net）へ取り次ぐ。",
+        "description": "**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の\nどちらの表記でも受ける。\n\n返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:\n\n  302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に符号を\n       書いていれば **301 / 303 / 307** にもなる）\n  200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない\n       とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき\n  404  この台帳に無く、取次先も無いとき。**`?info` でも 404 は 404**\n       ——知らない名前について述べられることは無い\n  400  ARK として読めない文字列\n\n**保留（hold）でも 404 にしない。** その識別子は存在していて、我々が今は転送\nしないだけなので、理由と期限を添えて 200 で返す。**墓碑（tombstone）も同じ**\n——「失われた」と述べることと、「無かった」と言うことは違う。\n\nNAAN だけの ARK（`ark:/12345`）には、その NAAN について答えられることを返す。\n知らない NAAN は上位のリゾルバ（`ARKHE_GLOBAL_RESOLVER`、既定 n2t.net）へ取り次ぐ。",
         "operationId": "resolve_ark_ark___rest__get",
         "parameters": [
           {
@@ -102,21 +137,56 @@
         ],
         "responses": {
           "200": {
-            "description": "記述を返す（`?info` / `??`、開けない行き先、墓碑、保留、NAAN だけの ARK）",
+            "description": "記述を返す（`?info` / `?` / `??` / `?json`、開けない行き先、墓碑、保留、NAAN だけの ARK）",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
+          "301": {
+            "description": "行き先へ転送する（委譲テンプレートが `301 ` を指定）"
+          },
           "302": {
-            "description": "行き先へ転送する（委譲テンプレートが指定していれば別の 3xx）"
+            "description": "行き先へ転送する（既定）"
+          },
+          "303": {
+            "description": "行き先へ転送する（委譲テンプレートが `303 ` を指定）"
+          },
+          "307": {
+            "description": "行き先へ転送する（委譲テンプレートが `307 ` を指定）"
           },
           "400": {
-            "description": "ARK として読めない"
+            "description": "ARK として読めない",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "404": {
-            "description": "この台帳に無く、取次先も無い"
+            "description": "この台帳に無く、取次先も無い",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
