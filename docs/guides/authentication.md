@@ -57,9 +57,17 @@ curl -X POST http://localhost:8000/oauth/token \
 (3600 seconds by default) runs out; **do not fetch one per API call** — issuing a token
 verifies `client_secret` with Argon2, so fetching per call pays the same cost as
 `apikey` and adds a round trip on top. An hour of minting is one token fetch, however
-many identifiers it covers. Standard client libraries (`requests-oauthlib`'s
-`BackendApplicationClient`, `authlib`'s `OAuth2Session`) do this holding and
-re-fetching for you.
+many identifiers it covers.
+
+**Renewing is just the same request again** — there is no `refresh_token` (see below).
+A token can also stop working early, through clock skew or a principal being disabled,
+so it is worth **re-fetching on a 401 and retrying once**.
+
+Client libraries do not do this part for you. `requests-oauthlib` wants a
+`BackendApplicationClient` and an explicit `fetch_token()` call, and does not re-fetch
+on expiry for this grant. `authlib`'s `OAuth2Session` will notice the expiry and fetch
+again if you give it `token_endpoint` and `grant_type="client_credentials"`, and needs
+an `update_token` callback if the token must outlive the process.
 
 Deliberately absent: `authorization_code` and PKCE, `refresh_token`, introspection,
 revocation. **If you come to need them, moving to a real authorization server is safer

@@ -55,9 +55,17 @@ curl -X POST http://localhost:8000/oauth/token \
 **トークンは保ち回して使う。** 応答の `expires_in`（既定 3600 秒）が尽きる手前で
 取り直せばよく、**API 1 回ごとに取り直してはいけない**——発行のたびに `client_secret` を
 Argon2 で照合するので、そうすると apikey と同じ重さを払ったうえに往復が 1 回増える。
-1 時間のあいだに何万件採番しても、取得は 1 回でよい。標準的なクライアントライブラリ
-（`requests-oauthlib` の `BackendApplicationClient`、`authlib` の `OAuth2Session`）は、
-この保持と取り直しを自分で持っている。
+1 時間のあいだに何万件採番しても、取得は 1 回でよい。
+
+**取り直しは、同じ要求をもう一度出すだけ**（`refresh_token` は無い——下記）。時計の
+ずれや主体の停止で早く効かなくなることもあるので、**401 を受けたら取り直して 1 度だけ
+やり直す**まで入れておくと確実。
+
+クライアントライブラリを使う場合も、**そこは自分で組む**。`requests-oauthlib` は
+`BackendApplicationClient` を渡したうえで `fetch_token()` を明示的に呼ぶ形で、この
+grant では期限切れの再取得を自動ではしない。`authlib` の `OAuth2Session` は
+`token_endpoint` と `grant_type="client_credentials"` を与えておけば期限切れに
+気づいて取り直すが、取ったトークンをプロセスの外に残すなら `update_token` が要る。
 
 意図的に持たないもの: `authorization_code` と PKCE、`refresh_token`、introspection、
 revocation。**これらが要るようになったら、中途半端な認可サーバを育てるより、

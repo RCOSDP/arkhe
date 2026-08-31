@@ -150,6 +150,11 @@ def _install_security_headers(app: FastAPI) -> None:
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
+    """app を 1 つ組む。**役割（`ARKHE_RESOLVER`）で持つ口が変わる。**
+
+    `settings` を渡さないときは環境変数から引く（本番の起動はこちら——
+    `uvicorn arkhe.app:create_app --factory`）。
+    """
     s = settings or get_settings()
     s.check()
 
@@ -164,6 +169,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
     )
+    # **この app が使う設定を、要求の層にも通す。** `Config` も `get_session` も
+    # `Depends(get_settings)` で受けるが、それは環境変数のキャッシュであって、
+    # `create_app(settings=…)` に渡されたものとは限らない。食い違うと、**ルータの
+    # 出し分けと接続先の判断が別々の設定を見る**——resolver として建てたつもりの
+    # app が書き込み DB に繋ぎ、minter が読み取り専用の複製へ書きにいく。
+    app.dependency_overrides[get_settings] = lambda: s
+
     _install_handlers(app)
     _install_security_headers(app)
     observability.configure(s.log_level)

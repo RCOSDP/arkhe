@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from arkhe.auth.deps import Db
 from arkhe.db.models import Authority
 
 
@@ -293,31 +294,45 @@ def test_内部のつまみがクエリに漏れない(resolver):
     assert not leaked, leaked
 
 
-def test_解決は読み取り側の接続を使う(monkeypatch):
-    """**`ARKHE_READ_DATABASE_URL` を効かせる。** 設定を読むだけで誰も使っていな
-    かったので、resolver は書き込みエンジンから読んでいた——レプリカを立てても
-    向かない。参照リファレンスに載っている以上、設定は効かなければならない。
+@pytest.mark.parametrize(
+    "resolver,want", [(True, "replica"), (False, "primary")], ids=["resolver", "minter"]
+)
+def test_接続先はこのappの設定で決まる(resolver, want):
+    """**`ARKHE_READ_DATABASE_URL` を効かせる。** 設定は読まれるだけで誰も使って
+    おらず、resolver は書き込みエンジンから読んでいた——レプリカを立てても向かない。
+
+    **見るのは `create_app` に渡した設定のほう。** 役割を `get_settings()`（環境変数の
+    キャッシュ）から引くと、`create_app(settings=…)` で建てた app とは別の設定を
+    見ることになり、**ルータの出し分けと接続先が食い違う**。ここで渡す URL は環境変数に
+    無いので、環境から引いていれば下の照合は通らない。
     """
-    from arkhe.db import session as session_mod
+    from fastapi.testclient import TestClient
+
+    from arkhe.app import create_app
     from arkhe.settings import Settings
 
-    cfg = Settings(
-        resolver=True,
-        database_url="sqlite:///primary.sqlite3",
-        read_database_url="sqlite:///replica.sqlite3",
+    app = create_app(
+        Settings(
+            resolver=resolver, auth=["apikey"], admin_login="bearer",
+            database_url="sqlite:///primary.sqlite3",
+            read_database_url="sqlite:///replica.sqlite3",
+        )
     )
-    monkeypatch.setattr(session_mod, "get_settings", lambda: cfg)
-    write, read = session_mod.engines(cfg)
-    assert write is not read  # 前提が崩れていたら以下は何も確かめていない
 
-    gen = session_mod.get_session()
-    try:
-        assert next(gen).get_bind() is read
-    finally:
-        gen.close()
+    # **本物の依存をそのまま通す。** 差し替えると、確かめたい配線が消える。
+    # `Db` を冒頭で import してあるのは、`from __future__ import annotations` の下では
+    # 注釈が文字列になり、関数内 import だと FastAPI が解決できないため。
+    @app.get("/_bind", include_in_schema=False)
+    def _bind(session: Db):
+        return {"url": str(session.get_bind().url)}
+
+    assert TestClient(app).get("/_bind").json()["url"].endswith(f"{want}.sqlite3")
+
 
 
 def _spec(**over):
+    """その構成の OpenAPI を起こす。**本番と同じ `create_app` を通す**
+    ——仕様書は口の出し分けの結果なので、app を組まずに確かめても意味がない。"""
     from arkhe.app import create_app
     from arkhe.settings import Settings
 

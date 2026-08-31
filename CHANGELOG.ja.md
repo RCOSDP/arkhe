@@ -37,6 +37,9 @@
   依存に置いた結果、`POST /api/mint?read_only=true` のように**採番の書き込みを外から
   読み取りレプリカへ向けられた**（`ARKHE_READ_DATABASE_URL` を設定した構成でのみ実害）。
   引数を外し、接続先は**プロセスの役割**（`ARKHE_RESOLVER`）から決めるようにした。
+  役割は**その app が実際に使っている設定**から引く——`get_settings()`（環境変数の
+  キャッシュ）を直に読むと、`create_app(settings=…)` に渡したものと食い違い、
+  ルータの出し分けと接続先が別々の設定を見ることになる。
 
   あわせて `ARKHE_READ_DATABASE_URL` が**初めて効くようになった**。設定は読まれて
   いたが `read_only=True` を渡す箇所がどこにも無く、resolver は書き込みエンジンから
