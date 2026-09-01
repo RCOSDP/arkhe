@@ -23,8 +23,6 @@ breaking in a system whose identifiers cannot be reissued.
   **does not allow scopes on anything but oauth2** (the array must be empty). A test
   holds each declaration to the check performed in the handler.
 
-### Added
-
 - **The OpenAPI document now says how to get a token.** There was no
   `clientCredentials` flow in `securitySchemes` — no `tokenUrl`, no scope list — so
   nothing stated in machine-readable form that this is OAuth 2.0. The endpoint's URL

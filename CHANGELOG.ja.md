@@ -22,8 +22,6 @@
   oauth2 以外のスキームに scope を書くことを許さない**（空配列でなければならない）。
   宣言と本体の検査が一致することは、検査で固定してある。
 
-### 追加
-
 - **トークンの取り方が OpenAPI に載るようになった。** `securitySchemes` に
   `clientCredentials` フロー（`tokenUrl` と scope の一覧）が無く、「これは OAuth 2.0
   である」と機械可読な形では言っていなかった——エンドポイントの URL は README と
