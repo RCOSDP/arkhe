@@ -194,6 +194,135 @@ def test_F1_名前は仕様の下限まで受け_超えたら理由を返す(wor
     assert bad.json()["detail"] == {"length": 256, "limit": 255}
 
 
+def _delegate(db, root, shoulder):
+    """shoulder を委譲状態にする（取り込みの前提）。"""
+    from arkhe.domain import admin_ops as ops
+
+    ops.set_shoulder_status(
+        db, root, shoulder_id=shoulder.id, status="delegated",
+        minter="https://closed.example/api",
+    )
+    db.commit()
+
+
+def _valid_name(naan: str, stem: str) -> str:
+    """検査桁の正しい名前を組む（外の minter が採ったつもりの名前）。"""
+    from arkhe.arkspec.betanumeric import check_digit_base, noid_check_digit
+
+    return stem + noid_check_digit(check_digit_base(naan, stem))
+
+
+def test_取り込みは委譲した名前空間にしか入らない(db, world, root, principal_of, as_principal):
+    """**閉じた側で採番した名前を、あとから公開側に出すための口**（C-2 → C-1）。
+
+    採番と分けてあるのは、**名前を呼び出し側が選ぶ**から——`mint` が構造で守って
+    いた「衝突しない」「検査桁が正しい」「自分の名前空間の内側」が、全部検査に移る。
+    """
+    _delegate(db, root, world["sh_a"])
+    c = as_principal(principal_of(manager=world["a"], scopes={"ark:import"}))
+    name = _valid_name("99999", "a1closed01")
+
+    r = c.post("/api/import", json={
+        "ark": f"ark:99999/{name}", "title": "閉域で採番したもの",
+        "url": "https://repo.example/records/9",
+    })
+    assert r.status_code == 201 and r.json()["ark"] == f"ark:99999/{name}"
+
+    # **二度は入らない。** 採番と同じで、既に在るものを黙って上書きしない（E1）。
+    again = c.post("/api/import", json={"ark": f"ark:99999/{name}"})
+    assert again.status_code == 400 and again.json()["code"] == "ARKHE-1005"
+
+    # 検査桁が合わなければ入らない——**外から来た名前を信じる唯一の手立て**。
+    bad = c.post("/api/import", json={"ark": f"ark:99999/{name[:-1]}z"})
+    assert bad.status_code == 400 and bad.json()["code"] == "ARKHE-1012"
+
+    # 委譲していない shoulder には入らない（自分の採番と衝突しうる）。
+    other = _valid_name("99999", "b2closed01")
+    r2 = c.post("/api/import", json={"ark": f"ark:99999/{other}"})
+    assert r2.status_code in (400, 403)
+
+
+def test_取り込みの範囲は上位が下位を覆う(db, world, root, principal_of, as_principal):
+    """**上位の権威は下位を覆い、下位は上位に届かない。** 採番の到達範囲と同じ判定。"""
+    _delegate(db, root, world["sh_a"])
+    _delegate(db, root, world["sh_b"])
+    n_a = _valid_name("99999", "a1reach001")
+    n_b = _valid_name("99999", "b2reach001")
+
+    # 組織 A の主体は、B の shoulder には届かない。
+    a = as_principal(principal_of(manager=world["a"], scopes={"ark:import"}))
+    assert a.post("/api/import", json={"ark": f"ark:99999/{n_b}"}).status_code == 403
+    assert a.post("/api/import", json={"ark": f"ark:99999/{n_a}"}).status_code == 201
+
+    # NAAN 単位の主体は、その NAAN の下ならどの shoulder にも届く（上位が下位を覆う）。
+    naan_wide = as_principal(
+        principal_of(authority=Authority.NAAN, naan="99999", scopes={"ark:import"})
+    )
+    assert naan_wide.post("/api/import", json={"ark": f"ark:99999/{n_b}"}).status_code == 201
+
+    # 他 NAAN には届かない。
+    n_c = _valid_name("88888", "c3reach001")
+    assert naan_wide.post("/api/import", json={"ark": f"ark:88888/{n_c}"}).status_code == 403
+
+
+def test_取り込みは権威を持たないNAANには入らない(db, world, root, principal_of, as_principal):
+    """**取り次いでいるだけの NAAN の保管者を名乗らない。** 主体の到達範囲とは別の話。"""
+    from arkhe.db.models import Naan
+
+    # 権威を持たない（取り次ぐだけの）NAAN にする
+    naan = db.get(Naan, "88888")
+    naan.is_authoritative = False
+    naan.redirect = "https://elsewhere.example"
+    db.commit()
+    _delegate(db, root, world["sh_c"])
+    sysadmin = as_principal(
+        principal_of(authority=Authority.SYSTEM, naan="", scopes={"ark:import"})
+    )
+    name = _valid_name("88888", "c3notours1")
+    r = sysadmin.post("/api/import", json={"ark": f"ark:88888/{name}"})
+    assert r.status_code == 403 and r.json()["code"] == "ARKHE-1308"
+
+
+def test_一括の取り込みは一件でも落ちれば何も作らない(db, world, root, principal_of, as_principal):
+    """**中途半端に入った名前は引っ込められない。** 部分適用は採番より重い事故になる。"""
+    _delegate(db, root, world["sh_a"])
+    c = as_principal(principal_of(manager=world["a"], scopes={"ark:import", "ark:read"}))
+    ok1 = _valid_name("99999", "a1bulk0001")
+    ok2 = _valid_name("99999", "a1bulk0002")
+
+    bad = c.post("/api/import/bulk", json={"data": [
+        {"ark": f"ark:99999/{ok1}"},
+        {"ark": f"ark:99999/{ok2[:-1]}z"},   # 検査桁が壊れている
+    ]})
+    assert bad.status_code == 400
+    assert c.post("/api/query", json={"data": [f"ark:99999/{ok1}"]}).json()["data"] == []
+
+    good = c.post("/api/import/bulk", json={"data": [
+        {"ark": f"ark:99999/{ok1}", "title": "1"},
+        {"ark": f"ark:99999/{ok2}", "title": "2"},
+    ]})
+    assert good.status_code == 201 and good.json()["count"] == 2
+
+
+def test_取り込んだARKは同じ名前のまま公開できる(db, world, root, principal_of, as_principal):
+    """**これが口を足した理由。** 閉じた期間に配った名前が、そのまま公開に使える。"""
+    _delegate(db, root, world["sh_a"])
+    c = as_principal(principal_of(manager=world["a"], scopes={"ark:import", "ark:update"}))
+    name = _valid_name("99999", "a1embargo1")
+
+    # 記述だけ（行き先なし）で取り込む＝「存在は言えるが、対象には行けない」
+    c.post("/api/import", json={"ark": f"ark:99999/{name}", "title": "禁輸中"})
+    assert c.get(f"/ark:99999/{name}", follow_redirects=False).status_code == 200
+
+    # 禁輸が明けたら url を入れるだけ。**識別子は変わらない。**
+    c.patch("/api/update", json={
+        "ark": f"ark:99999/{name}", "url": "https://repo.example/records/9",
+    })
+    moved = c.get(f"/ark:99999/{name}", follow_redirects=False)
+    assert moved.status_code == 302
+    assert moved.headers["location"] == "https://repo.example/records/9"
+
+
 def test_PATCHは送った項目だけ書き換える(world, principal_of, as_principal):
     """**`PUT` は置き換え、`PATCH` は差分。** 実際に多いのは「行き先だけ動かす」で、
     そこで `PUT` を使うと記述が既定値で消える。

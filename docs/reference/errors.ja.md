@@ -40,6 +40,8 @@ ARKHE-1403 ark:99999/x9abcd — Check digit mismatch: the identifier looks mistr
 | `ARKHE-1009` | 400 | 同じ shoulder が複数の NAAN にある。**どれか 1 つを勝手に選ばない** | Shoulder {shoulder} exists under more than one NAAN; name the naan as well. |
 | `ARKHE-1010` | 400 | 組織に default_shoulder が設定されていない | The organisation has no default shoulder. |
 | `ARKHE-1011` | 400 | 1 リクエストの件数上限（`ARKHE_BULK_LIMIT`）を超えた | A request holds at most {limit} rows. |
+| `ARKHE-1012` | 400 | 取り込もうとした名前の検査桁が合わない。**外で採番された名前を信じる唯一の手段**なので、ここは緩めない | Check digit mismatch: {ark} was not minted by a NOID minter, or was mistyped. |
+| `ARKHE-1013` | 400 | 取り込む名前が、その NAAN のどの shoulder にも属していない | The name {name} does not fall inside a shoulder of NAAN {naan}. |
 | `ARKHE-1201` | 401 | 資格情報が無い。**公開情報の読取には要らない**ので、これは書き込みの口 | No credentials. |
 | `ARKHE-1202` | 401 | 資格情報が受け付けられない。有効な機構は `ARKHE_AUTH` で決まる | Invalid credentials. |
 | `ARKHE-1203` | 404 | この構成は自前でトークンを発行しない。**口の無い構成で広告しない**ため 404 | This deployment does not issue tokens itself (see ARKHE_AUTH). |
@@ -50,6 +52,8 @@ ARKHE-1403 ark:99999/x9abcd — Check digit mismatch: the identifier looks mistr
 | `ARKHE-1304` | 403 | その shoulder は今の状態では採番できない（`retired` / `reserved` など） | Shoulder {shoulder} has status={status} and cannot be minted into. |
 | `ARKHE-1305` | 403 | そのクライアントに許可されていない scope を要求した。**本文は RFC 6749 §5.2 の形**（`error` / `error_description`）で、符号は併記 | Scopes not allowed for this client: {scopes} |
 | `ARKHE-1306` | 307 | その shoulder の採番は外に委譲されている。**代理では呼ばない**——応答が失われると「向こうにはあるがこちらは知らない ARK」が生まれる | Minting for shoulder {shoulder} is delegated; go to the minter in Location. |
+| `ARKHE-1307` | 403 | 委譲していない shoulder には取り込めない。**自分で採番している名前空間に外から名前を入れると、採番と衝突しうる**——委譲したからこそ、外で採られた名前がある | Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into. |
+| `ARKHE-1308` | 403 | 取り次いでいるだけの NAAN には取り込めない。**他所の名前空間の保管者を名乗ることになる** | This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it. |
 | `ARKHE-1401` | 404 | 台帳にその ARK が無い（一括操作では 1 件でも欠ければ全体が失敗する） | No such ARK in this ledger. |
 | `ARKHE-1402` | 404 | その NAAN はこのリゾルバが権威を持つ。**だから「無い」と言い切れる** | This resolver is authoritative for the NAAN and has no such name. |
 | `ARKHE-1403` | 404 | 検査桁が合わない。**打ち間違い・転記ミスの疑い**（NOID の NCDA が単一文字誤りと隣接転置を検出する） | Check digit mismatch: the identifier looks mistranscribed. |

@@ -120,6 +120,25 @@ class RegisterIn(ArkFields):
     qualifier: str = Field(description="Begins with `/` (a part) or `.` (a variant).")
 
 
+class ImportIn(ArkFields):
+    """外で採番された ARK を取り込む。
+
+    **`ark` は呼び出し側が持ってくる名前**——ここが `mint` との唯一にして
+    決定的な違いで、`mint` が構造で守っていたものが検査に移る。詳しくは
+    `domain.minting.import_minted`。
+    """
+
+    model_config = _spec(
+        "An ARK minted elsewhere, to be recorded here. Unlike minting, **the caller "
+        "brings the name**; it must fall inside a delegated shoulder of this ledger and "
+        "its check digit must verify."
+    )
+
+    ark: str = Field(
+        description="The ARK as it was minted elsewhere (`ark:99999/c7xyz1`)."
+    )
+
+
 class HoldIn(BaseModel):
     """転送の一時停止。**解決は止めない**（記述は返り続ける）。
 
@@ -208,6 +227,23 @@ class BulkMintIn(BaseModel):
 
 class BulkUpdateIn(BaseModel):
     data: list[UpdateIn]
+
+
+class BulkImportIn(BaseModel):
+    """まとめて取り込む。**1 件でも通らなければ何も作らない。**"""
+
+    model_config = _spec(
+        "Import in bulk. **One row that fails any check and nothing is created** — a "
+        "half-imported namespace is worse than none, because the names that did land "
+        "cannot be taken back."
+    )
+
+    data: list[ImportIn]
+
+
+class BulkImportOut(BaseModel):
+    imported: list[ArkOut]
+    count: int
 
 
 class BulkQueryIn(BaseModel):

@@ -22,6 +22,7 @@ from arkhe.db.models import (
     ArkChange,
     AuditEvent,
     Manager,
+    Naan,
     Shoulder,
     ShoulderStatus,
     UnknownSubject,
@@ -62,7 +63,7 @@ class ShoulderDelegated(Forbidden):
 #: arkhe が実際に検査する scope。**ここが語彙の全体。**
 #: 画面の選択肢も認可サーバに登録する client scope も、これに揃える——
 #: 散らばると「登録できるのに検査されない scope」が生まれる。
-SCOPES = ("ark:mint", "ark:update", "ark:read", "ark:tombstone", "ark:hold")
+SCOPES = ("ark:mint", "ark:update", "ark:read", "ark:tombstone", "ark:hold", "ark:import")
 
 
 def require_scope(principal: Principal, scope: str) -> None:
@@ -130,6 +131,47 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
         # **他組織の shoulder を指定しても、存在の有無を漏らさず一律に拒む。**
         raise Forbidden(errors.OUT_OF_REACH, target=requested)
     return found
+
+
+def assert_reaches_shoulder(session: Session, principal: Principal, shoulder: Shoulder) -> None:
+    """**既に特定できている shoulder**に、この主体が手を入れてよいか。
+
+    `shoulder_for` は「名前から shoulder を選ぶ」口で、こちらは「選ばれた
+    shoulder を認可する」口。**判定の中身は同じ**——上位の権威は下位を覆う:
+
+      system  … 全 NAAN・全 shoulder
+      naan    … その NAAN の下の全 shoulder
+      manager … 自組織の shoulder だけ
+      shoulder に固定された主体 … その 1 つだけ
+
+    分けてあるのは、取り込み（`import_minted`）が**名前から shoulder を決める**
+    ため。`shoulder_for` の探し方（shoulder 文字列で全 NAAN を検索）だと、
+    同じ綴りの shoulder が複数 NAAN にあるときに曖昧になる——取り込みは ARK が
+    NAAN を持っているので、**曖昧になりようがない引き方**をしてから認可する。
+    """
+    if not principal.reaches_naan(shoulder.naan):
+        raise Forbidden(errors.OUT_OF_REACH, target=shoulder.naan)
+    if principal.is_naan_wide:
+        return
+    if principal.shoulder_id is not None:
+        if principal.shoulder_id != shoulder.id:
+            raise Forbidden(errors.OUT_OF_REACH, target=shoulder.shoulder)
+        return
+    if principal.manager_id is None or shoulder.manager_id != principal.manager_id:
+        # **存在の有無を漏らさず一律に拒む**（`shoulder_for` と同じ扱い）。
+        raise Forbidden(errors.OUT_OF_REACH, target=shoulder.shoulder)
+
+
+def assert_naan_is_ours(session: Session, naan: str) -> None:
+    """**この台帳が権威を持つ NAAN か。**
+
+    取り込みは「この名前の記録を引き受ける」と宣言する操作なので、
+    **取り次いでいるだけの NAAN に対して行ってはいけない**——他所の名前空間の
+    保管者を名乗ることになる。主体の到達範囲とは別の話で、両方要る。
+    """
+    row = session.get(Naan, naan)
+    if row is None or not row.is_authoritative:
+        raise Forbidden(errors.IMPORT_NAAN_NOT_AUTHORITATIVE, naan=naan)
 
 
 def assert_shoulder_mintable(shoulder: Shoulder) -> None:

@@ -160,6 +160,10 @@ JA: dict[str, str] = {
     "sc.ark:tombstone": "失われたと宣言する",
     "sc.ark:tombstone.d": "対象が失われたことを述べる。<b>転送先の付け替えとは意味が違う</b>"
                           "ので、権限も分けてある。",
+    "sc.ark:import": "外で採られた名前を取り込む",
+    "sc.ark:import.d": "<b>委譲した shoulder</b> の内側で他所が採番した ARK を、"
+                       "この台帳に登録する。<b>名前を呼び出し側が選ぶ</b>ので、"
+                       "採番とは別に扱う。",
     "sc.ark:hold": "転送を止める",
     "sc.ark:hold.d": "行き先への転送を一時的に止める。<b>解決そのものは止まらない</b>"
                      "——識別子は生きたまま、記述を返す。",
@@ -318,6 +322,10 @@ EN: dict[str, str] = {
     "sc.ark:tombstone": "Declare it lost",
     "sc.ark:tombstone.d": "State that the object is gone. <b>That means something other "
                           "than repointing</b>, so the permission is separate.",
+    "sc.ark:import": "Import a name minted elsewhere",
+    "sc.ark:import.d": "Record an ARK minted by someone else inside a <b>delegated "
+                       "shoulder</b>. <b>The caller chooses the name</b>, which is why "
+                       "it is separate from minting.",
     "sc.ark:hold": "Suspend forwarding",
     "sc.ark:hold.d": "Temporarily stop forwarding to the target. <b>Resolution itself does "
                      "not stop</b> — the identifier stays alive and returns a description.",

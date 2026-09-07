@@ -11,7 +11,12 @@ from __future__ import annotations
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from arkhe.arkspec.betanumeric import check_digit_base, generate_noid, noid_check_digit
+from arkhe.arkspec.betanumeric import (
+    check_digit_base,
+    generate_noid,
+    noid_check_digit,
+    verify_ark_check_digit,
+)
 from arkhe.arkspec.naming import (
     MAX_NAME_LENGTH,
     ark_key,
@@ -20,7 +25,7 @@ from arkhe.arkspec.naming import (
     normalize_structural,
     strip_hyphens,
 )
-from arkhe.db.models import Ark, Shoulder
+from arkhe.db.models import Ark, Shoulder, ShoulderStatus
 
 MINT_COLLISION_RETRIES = 10
 NOID_LENGTH = 8
@@ -82,6 +87,94 @@ def mint(
             continue
         return ark, collisions
     raise RuntimeError(f"gave up minting after {collisions} collision(s)")
+
+
+class NotDelegated(Exception):
+    """委譲していない shoulder に取り込もうとした。"""
+
+    def __init__(self, shoulder: str, status: str):
+        self.shoulder, self.status = shoulder, status
+        super().__init__(f"shoulder {shoulder} is {status}, not delegated")
+
+
+class BadCheckDigit(ValueError):
+    """取り込む名前の検査桁が合わない。"""
+
+
+class OutsideShoulder(ValueError):
+    """取り込む名前が、その shoulder の内側に無い。"""
+
+    def __init__(self, name: str, naan: str):
+        self.name, self.naan = name, naan
+        super().__init__(f"{name} is outside the shoulder of {naan}")
+
+
+def check_importable(shoulder: Shoulder, name: str) -> str:
+    """取り込んでよい名前か。**書く前に済む検査はここに集める。**
+
+    一括の取り込みが「1 件でも通らなければ何も作らない」と言えるのは、
+    **衝突以外の検査が書き込み無しで済む**からである（衝突だけは INSERT に
+    しか分からない）。正規化した名前を返す。
+    """
+    if shoulder.status != ShoulderStatus.DELEGATED:
+        raise NotDelegated(shoulder.shoulder, shoulder.status)
+    name = strip_hyphens(normalize_structural(normalize_percent(name)))
+    if len(name) > MAX_NAME_LENGTH:
+        raise NameTooLong(len(name), MAX_NAME_LENGTH)
+    if not name.startswith(shoulder.shoulder.lstrip("/")):
+        raise OutsideShoulder(name, shoulder.naan)
+    # N7: 検査桁は base name に対して計算される。修飾子付きは `register` の仕事。
+    if not verify_ark_check_digit(shoulder.naan, name):
+        raise BadCheckDigit(name)
+    return name
+
+
+def import_minted(
+    session: Session, *, shoulder: Shoulder, name: str, created_by: str = "", **fields
+) -> Ark:
+    """**外で採番された名前を、この台帳に取り込む。**
+
+    `mint` との違いは 1 点だけ——**名前を呼び出し側が持ってくる**こと。それが
+    どれだけ違うかというと、`mint` が構造で守っていた「衝突しない」「検査桁が
+    正しい」「自分の名前空間の内側」が、**全部この関数の検査に移る**。だから
+    scope も `ark:mint` とは分けてある。
+
+    要るのは、閉じた側で採番した ARK を後から公開側に出せるようにするため
+    （`federation.md` の C-2 → C-1）。**これが無いと、閉じた期間に配った名前を
+    そのまま公開する道が無く、別の名前を採り直すしかなくなる**——それは
+    「閉じた対象にも同じ形の PID を配る」という設計の目的そのものを壊す。
+
+    検査は 3 つ。どれも**緩めてはいけない**:
+
+    1. **委譲した shoulder であること。** 自分で採番している名前空間に外から
+       名前を入れると、こちらの採番と衝突しうる。委譲したからこそ、外に採られた
+       名前が存在する
+    2. **名前がその shoulder の内側にあること。** 委譲した範囲の外を書ける口に
+       してはいけない
+    3. **検査桁が合うこと。** 外から来た名前を信じる唯一の手立てである
+       （N7: base name に対して計算する。修飾子は含めない）
+
+    衝突は `mint` と同じく **1 本の INSERT** で弾く（E1）。既に在る名前は
+    黙って上書きしない。
+    """
+    name = check_importable(shoulder, name)
+
+    ark = Ark(
+        ark=ark_key(shoulder.naan, name),
+        naan=shoulder.naan,
+        shoulder_id=shoulder.id,
+        assigned_name=name,
+        created_by=created_by,
+        updated_by=created_by,
+        **fields,
+    )
+    try:
+        with session.begin_nested():
+            session.add(ark)
+            session.flush()
+    except IntegrityError as exc:
+        raise AlreadyRegistered(compact_ark(ark_key(shoulder.naan, name))) from exc
+    return ark
 
 
 def register_qualified(

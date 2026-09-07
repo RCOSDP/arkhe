@@ -11,6 +11,8 @@ from sqlalchemy import select
 from arkhe import errors
 from arkhe.api.schemas import (
     ArkOut,
+    BulkImportIn,
+    BulkImportOut,
     BulkMintIn,
     BulkMintOut,
     BulkQueryIn,
@@ -19,6 +21,7 @@ from arkhe.api.schemas import (
     BulkUpdateOut,
     HoldIn,
     HoldReleaseIn,
+    ImportIn,
     MintIn,
     PatchIn,
     RegisterIn,
@@ -26,8 +29,10 @@ from arkhe.api.schemas import (
     UpdateIn,
 )
 from arkhe.api.token import scheme as oauth2_scheme
+from arkhe.arkspec.naming import ArkParseError, parse_ark
+from arkhe.arkspec.shoulder import split_shoulder
 from arkhe.auth.deps import Config, CurrentPrincipal, Db
-from arkhe.db.models import Ark, MintReceipt
+from arkhe.db.models import Ark, MintReceipt, Shoulder
 from arkhe.domain import admin_ops, authz, minting
 from arkhe.domain.queries import ark_key_from_input
 
@@ -97,6 +102,41 @@ derivative sits elsewhere".
 
 **It requires `ark:mint`.** Nothing is minted, but a new resolvable identifier does
 appear, so it must not be handed to a principal that holds update rights alone.
+"""
+
+E_IMPORT = """\
+**Record an ARK that was minted elsewhere.** Requires `ark:import`.
+
+Minting does not let a caller choose the name; this does, and that single difference is
+why it has its own scope and its own checks. It exists so that **a name minted inside a
+closed network can later be published under the same identifier** — without it, opening
+an embargoed object means issuing a different ARK, and every reference handed out while
+it was closed dies.
+
+Three things are checked, and none of them can be waived:
+
+* the shoulder is **delegated** — importing into a namespace this ledger mints in could
+  collide with its own minter, and a name minted elsewhere only exists because the
+  namespace was delegated in the first place;
+* the name falls **inside that shoulder**;
+* the **check digit verifies** — for a name that arrives from outside, that is the only
+  evidence there is that it was not mistyped.
+
+A name already in the ledger is refused rather than overwritten, exactly as minting is.
+"""
+
+E_IMPORT_BULK = """\
+**Import a whole delegated namespace at once.** Requires `ark:import`. One request holds
+at most `ARKHE_BULK_LIMIT` rows.
+
+This is the shape the closed-network case actually needs: a delegate hands over the
+names it minted, and they arrive together. Each row goes through exactly the same checks
+as a single import, and **one row that fails any of them means nothing is created** — a
+half-imported namespace is worse than none, because the names that did land cannot be
+taken back.
+
+Rows may span several shoulders, as long as every one of them is delegated and within
+the caller's reach.
 """
 
 E_PATCH = """\
@@ -183,6 +223,94 @@ def _qualifier_error(exc: Exception) -> authz.Invalid:
     if isinstance(exc, minting.NameTooLong):
         return authz.Invalid(errors.NAME_TOO_LONG, length=exc.length, limit=exc.limit)
     return authz.Invalid(errors.ARK_UNREADABLE, reason=str(exc))
+
+
+
+
+def _parse(raw: str):
+    try:
+        return parse_ark(raw)
+    except ArkParseError as exc:
+        raise authz.Invalid(errors.ARK_UNREADABLE, reason=str(exc)) from exc
+
+
+def _check_importable(shoulder, name: str) -> None:
+    """**書かずに済む検査を、書く前に済ませる。**
+
+    委譲されているか・名前がその内側か・検査桁が合うか。ここを通らない行が
+    1 つでもあれば、一括は 1 件も入れない。
+    """
+    try:
+        minting.check_importable(shoulder, name)
+    except minting.NotDelegated as exc:
+        raise authz.Forbidden(
+            errors.IMPORT_SHOULDER_NOT_DELEGATED, shoulder=exc.shoulder, status=exc.status
+        ) from exc
+    except minting.BadCheckDigit as exc:
+        raise authz.Invalid(errors.IMPORT_CHECK_DIGIT, ark=str(exc)) from exc
+    except minting.OutsideShoulder as exc:
+        raise authz.Invalid(
+            errors.IMPORT_NAME_OUTSIDE_SHOULDER, name=exc.name, naan=exc.naan
+        ) from exc
+    except minting.NameTooLong as exc:
+        raise authz.Invalid(errors.NAME_TOO_LONG, length=exc.length, limit=exc.limit) from exc
+
+
+def _insert_import(session, principal, shoulder, row) -> Ark:
+    """検査を通した 1 件を入れる。衝突だけはここでしか分からない（E1）。"""
+    authz.assert_within_quota(session, principal)
+    try:
+        return minting.import_minted(
+            session,
+            shoulder=shoulder,
+            name=_parse(row.ark).name,
+            created_by=principal.client_id,
+            **row.writable(),
+        )
+    except minting.AlreadyRegistered as exc:
+        raise authz.Invalid(errors.ALREADY_REGISTERED, ark=str(exc)) from exc
+
+
+def _import_one(session, principal, row) -> Ark:
+    """取り込み 1 件。**単体でも一括でも、通る検査は同じ。**
+
+    ドメイン側の例外を符号に写すのはここ。`domain/` は HTTP も API の語彙も
+    知らない層なので、対応表を上に置く。
+    """
+    parsed = _parse(row.ark)
+    shoulder = _shoulder_holding(session, principal, parsed)
+    _check_importable(shoulder, parsed.name)
+    return _insert_import(session, principal, shoulder, row)
+
+
+def _shoulder_holding(session, principal, parsed):
+    """取り込む名前が属する shoulder を、**主体の到達範囲の内側から**選ぶ。
+
+    first-digit 規約で名前から shoulder を切り出し、その 1 つだけを見る
+    ——**総当たりで「入る shoulder」を探さない**。探すと、委譲していない
+    名前空間に名前を滑り込ませる余地ができる。
+    """
+    prefix = split_shoulder(parsed.name)[0]
+    if not prefix:
+        raise authz.Invalid(
+            errors.IMPORT_NAME_OUTSIDE_SHOULDER, name=parsed.name, naan=parsed.naan
+        )
+    shoulder = session.scalar(
+        select(Shoulder).where(
+            Shoulder.naan == parsed.naan, Shoulder.shoulder == f"/{prefix}"
+        )
+    )
+    if shoulder is None:
+        raise authz.Invalid(
+            errors.IMPORT_NAME_OUTSIDE_SHOULDER, name=parsed.name, naan=parsed.naan
+        )
+    # **2 つ別のことを確かめる。**
+    #   1. この台帳がその NAAN の権威を持つか（取り次いでいるだけの名前空間に
+    #      名前を引き受けてはいけない）
+    #   2. この主体がその shoulder に届くか（**上位の権威は下位を覆う**)
+    authz.assert_naan_is_ours(session, parsed.naan)
+    authz.assert_reaches_shoulder(session, principal, shoulder)
+    return shoulder
 
 
 def _replay(session, principal, request_id: str) -> Ark | None:
@@ -381,6 +509,61 @@ def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
 
 
 # ------------------------------------------------------------------- 更新
+
+
+@router.post(
+    "/import",
+    dependencies=needs("ark:import"),
+    response_model=ArkOut,
+    status_code=201,
+    description=E_IMPORT,
+)
+def import_ark(body: ImportIn, principal: CurrentPrincipal, session: Db):
+    """**外で採番された ARK を、この台帳に取り込む。**
+
+    `federation.md` の C-2（閉じた側で採番）から C-1（公開側が名前と記述を持つ）
+    へ移るための口。**これが無いと、閉じた期間に配った名前をそのまま公開できない。**
+
+    scope を `ark:mint` と分けてあるのは、**名前を呼び出し側が選ぶ**から。採番は
+    「番号をもらう」操作で、取り込みは「この番号だと言い張る」操作である。
+    """
+    authz.require_scope(principal, "ark:import")
+    ark = _import_one(session, principal, body)
+    # **採番とは別の語で記録する。** あとから「どれが外から来たか」を追えるように。
+    authz.audit(session, principal, "import", ark.ark)
+    session.commit()
+    return ArkOut.of(ark)
+
+
+@router.post(
+    "/import/bulk",
+    dependencies=needs("ark:import"),
+    response_model=BulkImportOut,
+    status_code=201,
+    description=E_IMPORT_BULK,
+)
+def bulk_import(body: BulkImportIn, principal: CurrentPrincipal, session: Db, cfg: Config):
+    """**shoulder ごと引き取る。** 閉じた側が採った名前を、まとめて渡してもらう形。
+
+    **1 件でも通らなければ何も作らない**（M5 と同じ）。中途半端に入った名前は
+    引っ込められないので、部分適用は採番より重い事故になる。
+    """
+    authz.require_scope(principal, "ark:import")
+    rows = body.data
+    if len(rows) > cfg.bulk_limit:
+        raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
+
+    # **全件の検査を先に済ませてから入れる**（採番の一括と同じ順序）。途中で
+    # 落ちるとロールバックには任せられる形でも、**入れてから気づく**のは避ける
+    # ——取り込みは名前を増やす操作で、増えた名前は引っ込められない。
+    checked = [(_shoulder_holding(session, principal, _parse(row.ark)), row) for row in rows]
+    for shoulder, row in checked:
+        _check_importable(shoulder, _parse(row.ark).name)
+
+    out: list[Ark] = [_insert_import(session, principal, sh, row) for sh, row in checked]
+    authz.audit(session, principal, "bulk_import", count=len(out))
+    session.commit()
+    return BulkImportOut(imported=[ArkOut.of(a) for a in out], count=len(out))
 
 
 @router.put(

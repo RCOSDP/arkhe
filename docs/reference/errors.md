@@ -40,6 +40,8 @@ alongside. **The admin interface** answers from its own catalogue, in the langua
 | `ARKHE-1009` | 400 | Shoulder {shoulder} exists under more than one NAAN; name the naan as well. |
 | `ARKHE-1010` | 400 | The organisation has no default shoulder. |
 | `ARKHE-1011` | 400 | A request holds at most {limit} rows. |
+| `ARKHE-1012` | 400 | Check digit mismatch: {ark} was not minted by a NOID minter, or was mistyped. |
+| `ARKHE-1013` | 400 | The name {name} does not fall inside a shoulder of NAAN {naan}. |
 | `ARKHE-1201` | 401 | No credentials. |
 | `ARKHE-1202` | 401 | Invalid credentials. |
 | `ARKHE-1203` | 404 | This deployment does not issue tokens itself (see ARKHE_AUTH). |
@@ -50,6 +52,8 @@ alongside. **The admin interface** answers from its own catalogue, in the langua
 | `ARKHE-1304` | 403 | Shoulder {shoulder} has status={status} and cannot be minted into. |
 | `ARKHE-1305` | 403 | Scopes not allowed for this client: {scopes} |
 | `ARKHE-1306` | 307 | Minting for shoulder {shoulder} is delegated; go to the minter in Location. |
+| `ARKHE-1307` | 403 | Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into. |
+| `ARKHE-1308` | 403 | This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it. |
 | `ARKHE-1401` | 404 | No such ARK in this ledger. |
 | `ARKHE-1402` | 404 | This resolver is authoritative for the NAAN and has no such name. |
 | `ARKHE-1403` | 404 | Check digit mismatch: the identifier looks mistranscribed. |

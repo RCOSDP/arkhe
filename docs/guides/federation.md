@@ -447,9 +447,10 @@ objects inside.
 
 **B. Mint inside the closed network** ([C-2](#c-a-closed-arkhe-underneath)). Run an arkhe
 there and mark `/c7` `delegated` on the public side. The closed side becomes autonomous,
-but **the public side never learns the names that follow** — there is
-[no endpoint for importing an ARK minted elsewhere](#what-does-not-exist-yet), which is
-the largest constraint in this design today.
+and the public side learns nothing until you hand a name over — **which you now can**:
+`POST /api/import` takes an ARK minted elsewhere into the public ledger, one at a time or
+a whole delegated shoulder at once. That is what turns C-2 into C-1 **without changing
+the identifier**, so a name handed out while it was closed keeps working when it opens.
 
 ```bash
 # Public side: record in the ledger that we do not mint in this namespace
@@ -461,6 +462,32 @@ arkhe shoulder redirect <id> '303 https://ark.example.ac.jp/closed-namespace'
 arkhe naan add 99999 "(the same NAAN as above)"
 arkhe onboard 99999 "The closed organisation" --shoulder /c7
 ```
+
+### Handing the names over
+
+```bash
+# One at a time
+curl -X POST …/api/import -H "Authorization: Bearer $KEY" \
+  -d '{"ark": "ark:99999/c7xyz1", "title": "(only what may leave the closed network)"}'
+
+# Or the whole delegated shoulder at once — all or nothing
+curl -X POST …/api/import/bulk -H "Authorization: Bearer $KEY" \
+  -d '{"data": [{"ark": "ark:99999/c7xyz1"}, {"ark": "ark:99999/c7abc2"}]}'
+```
+
+**Import is not minting, and its scope is separate** (`ark:import`): minting hands you a
+name, importing asserts one. Three things are checked and none can be waived — the
+shoulder is **delegated**, the name falls inside it, and the **check digit verifies**,
+which for a name arriving from outside is the only evidence there is that it was not
+mistyped. The ledger must also be **authoritative for the NAAN**: taking custody of names
+in a namespace you merely forward would be claiming to be its keeper.
+
+Reach follows the same rule as everywhere else — **higher authority covers lower**. A
+system administrator may import anywhere, a NAAN administrator anywhere under that NAAN,
+an organisation only into its own shoulder.
+
+Once imported, publication is [the same single change of target](#pid) as C-1: the name
+does not move.
 
 ### What arkhe does not do here
 
@@ -517,11 +544,6 @@ rule of **never handing the same shoulder out twice**.
 
 **Things worth knowing before you build this**, rather than discovering them halfway.
 
-- **An endpoint for importing an ARK minted elsewhere.** There is no way to put a name
-  minted below into the upper ledger — that is where the constraint in
-  [C](#c-a-closed-arkhe-underneath) comes from. Adding one means checking, at import
-  time, that the name falls inside the delegated shoulder, that it is not a double mint,
-  and that the check digit is correct.
 - **A CLI for `shoulder.redirect`.** Only the admin interface and
   `arkhe depart --resolver` set it, which is where automating a delegation snags.
 - **Cross-ledger listing, audit and quota.** `/.well-known/ark` publishes the namespace

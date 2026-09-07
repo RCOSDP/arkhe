@@ -24,6 +24,22 @@ migration only widens columns.
 
 ### Added
 
+- **`POST /api/import` and `/api/import/bulk` take in an ARK minted elsewhere**, one at a
+  time or a whole delegated shoulder at once. This was the largest gap in running a closed
+  arkhe underneath a public one: names minted inside the closed network could never reach
+  the public ledger, so opening an embargoed object meant issuing a *different* ARK — and
+  every reference handed out while it was closed died. Now the same identifier is
+  published by [one change of target](https://rcosdp.github.io/arkhe/guides/federation/#pid).
+
+  **Importing is not minting**, and it carries its own scope (`ark:import`): minting hands
+  you a name, importing asserts one. Three checks, none waivable — the shoulder is
+  **delegated**, the name falls inside it, and the **check digit verifies**, which for a
+  name arriving from outside is the only evidence that it was not mistyped. The ledger
+  must also be **authoritative for the NAAN**; taking custody of names in a namespace you
+  merely forward would be claiming to be its keeper. Reach follows the usual rule —
+  **higher authority covers lower** — and the bulk form creates nothing at all if any row
+  fails, because names that did land cannot be taken back.
+
 - **`PATCH /api/update` writes only the fields you send.** `PUT` on that path is a
   replacement — omit `title` and it is emptied — which is correct for a replacement and
   wrong for what people do most: move an object. Repointing an ARK no longer costs it

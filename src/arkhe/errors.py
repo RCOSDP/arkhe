@@ -131,6 +131,18 @@ NO_DEFAULT_SHOULDER = Code(
     "The organisation has no default shoulder.",
     "組織に default_shoulder が設定されていない",
 )
+IMPORT_CHECK_DIGIT = Code(
+    "ARKHE-1012", 400,
+    "Check digit mismatch: {ark} was not minted by a NOID minter, or was mistyped.",
+    "取り込もうとした名前の検査桁が合わない。**外で採番された名前を信じる唯一の手段**"
+    "なので、ここは緩めない",
+)
+IMPORT_NAME_OUTSIDE_SHOULDER = Code(
+    "ARKHE-1013", 400,
+    "The name {name} does not fall inside a shoulder of NAAN {naan}.",
+    "取り込む名前が、その NAAN のどの shoulder にも属していない",
+)
+
 BULK_LIMIT = Code(
     "ARKHE-1011", 400,
     "A request holds at most {limit} rows.",
@@ -187,6 +199,20 @@ INVALID_SCOPE = Code(
     "そのクライアントに許可されていない scope を要求した。"
     "**本文は RFC 6749 §5.2 の形**（`error` / `error_description`）で、符号は併記",
 )
+IMPORT_NAAN_NOT_AUTHORITATIVE = Code(
+    "ARKHE-1308", 403,
+    "This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it.",
+    "取り次いでいるだけの NAAN には取り込めない。**他所の名前空間の保管者を"
+    "名乗ることになる**",
+)
+
+IMPORT_SHOULDER_NOT_DELEGATED = Code(
+    "ARKHE-1307", 403,
+    "Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into.",
+    "委譲していない shoulder には取り込めない。**自分で採番している名前空間に外から"
+    "名前を入れると、採番と衝突しうる**——委譲したからこそ、外で採られた名前がある",
+)
+
 SHOULDER_DELEGATED = Code(
     "ARKHE-1306", 307,
     "Minting for shoulder {shoulder} is delegated; go to the minter in Location.",
