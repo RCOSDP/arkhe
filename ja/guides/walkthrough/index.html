@@ -793,6 +793,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#10-非公開の台帳とあとからの公開" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 非公開の台帳と、あとからの公開
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 非公開の台帳と、あとからの公開">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#閉域で採番する" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        閉域で採番する
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#記述だけを引き取る" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        記述だけを引き取る
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#段を上げる" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        段を上げる
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#名前空間ごとまとめて" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        名前空間ごとまとめて
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#断られるもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        断られるもの
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#全体の形" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1438,6 +1510,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#10-非公開の台帳とあとからの公開" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 非公開の台帳と、あとからの公開
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 非公開の台帳と、あとからの公開">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#閉域で採番する" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        閉域で採番する
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#記述だけを引き取る" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        記述だけを引き取る
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#段を上げる" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        段を上げる
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#名前空間ごとまとめて" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        名前空間ごとまとめて
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#断られるもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        断られるもの
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#全体の形" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1727,6 +1871,111 @@ inflection だから——ので、言語は <code>&amp;</code> の後ろに書�
 <a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go"> "delegated_shoulders": [],</span>
 <a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="go"> "held": []}</span>
 </code></pre></div>
+<h2 id="10-非公開の台帳とあとからの公開">10. 非公開の台帳と、あとからの公開<a class="headerlink" href="#10-非公開の台帳とあとからの公開" title="Permanent link">&para;</a></h2>
+<p>ここまでは台帳 1 つの話だった。この設計が存在する理由の場面は 2 つある——<strong>到達できない
+網の中の閉じた arkhe</strong>と、<strong>世界に答える公開の arkhe</strong>。<strong>識別子は両側で同じ</strong>である。
+それがすべてで、閉じているあいだに配った名前は、公開されたときにも効かなければならない。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$C</code></td>
+<td>閉域の minter</td>
+<td>網の内側。<code>/c7</code> の権威をここが持つ</td>
+</tr>
+<tr>
+<td><code>$P</code></td>
+<td>公開の minter</td>
+<td>ここでは <code>/c7</code> は <code>delegated</code></td>
+</tr>
+<tr>
+<td><code>$PR</code></td>
+<td>公開の resolver</td>
+<td>世界が尋ねる先</td>
+</tr>
+</tbody>
+</table>
+<h3 id="閉域で採番する">閉域で採番する<a class="headerlink" href="#閉域で採番する" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$C</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$CK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"url"</span>:<span class="w"> </span><span class="s2">"https://inside.closed.example/dataset/42"</span>,
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">            "title": "（閉域の中にしか無い題名）"}'</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="go">{"ark": "ark:99999/c7j89qtb3fc", …}</span>
+</code></pre></div>
+<p>外から見ると、この名前はまだ何も語らない。委譲された shoulder は「その名前空間は
+閉じている」という説明ページで答える——<strong>内部の住所は返さない</strong>。外の人には
+どのみち届かないからである。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/c7j89qtb3fc
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">303 https://ark.example.ac.jp/closed-namespace</span>
+</code></pre></div>
+<p>打ち間違いも同じページに着く。<strong>名前が漏れない</strong>というのがこの段の意味である。</p>
+<h3 id="記述だけを引き取る">記述だけを引き取る<a class="headerlink" href="#記述だけを引き取る" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w">   </span><span class="s2">"ark:99999/c7j89qtb3fc"</span>,
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">            "title": "関東平野の土壌水分（利用制限あり）",</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">            "who":   "山田 太郎",</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="go">            "when":  "2026",</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="go">            "commitment": "利用は申請による"}'</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="go">{"ark": "ark:99999/c7j89qtb3fc", "url": "", …}</span>
+</code></pre></div>
+<p><strong><code>url</code> は空のまま</strong>。これは書き忘れではなく、<strong>そう述べている</strong>のである。公開の
+リゾルバは、誰も送り込めない識別子について記述を返すようになる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: text/plain'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$PR</span><span class="s2">/ark:99999/c7j89qtb3fc?info"</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">erc:</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="go">who: 山田 太郎</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="go">what: 関東平野の土壌水分（利用制限あり）</span>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="go">when: 2026</span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="go">where: ark:99999/c7j89qtb3fc</span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="go">about: ark:99999/c7j89qtb3fc</span>
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="go">policy: NP | NR, OP, CC | 2026</span>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="go">commitment: 利用は申請による</span>
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="go">commitment-level: permanent-dynamic</span>
+</code></pre></div>
+<p><strong>境界を越えたのは、運用者がこの要求に打ち込んだ内容そのものだけ</strong>である。上りの
+自動同期は作らないこと——いずれ機微な題名が <code>?info</code> に出る。<strong>出口に濾過器を置く
+より、出口が無いほうが強い。</strong></p>
+<h3 id="段を上げる">段を上げる<a class="headerlink" href="#段を上げる" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PATCH<span class="w"> </span><span class="nv">$P</span>/api/update<span class="w"> </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"…c7j89qtb3fc"</span>,
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">                                   "url": "https://apply.example.ac.jp/dataset/42"}'</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">→ 302 https://apply.example.ac.jp/dataset/42          # 申請すれば使える</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PATCH<span class="w"> </span><span class="nv">$P</span>/api/update<span class="w"> </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"…c7j89qtb3fc"</span>,
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="go">                                   "url": "https://repo.example.ac.jp/records/42"}'</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="go">→ 302 https://repo.example.ac.jp/records/42           # 禁輸が明けた</span>
+</code></pre></div>
+<p>どちらの付け替えでも記述は残り（<code>what</code> も <code>who</code> もそのまま）、<strong>名前はどの段でも
+同じ</strong>だった。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>ark:99999/c7j89qtb3fc
+</code></pre></div>
+<p>使うのは <code>PUT</code> ではなく <code>PATCH</code>。<a href="#5-対象が移る">5 節</a>のとおりで、<strong>ここで失いたく
+ないものがまさに記述</strong>だからである。</p>
+<h3 id="名前空間ごとまとめて">名前空間ごとまとめて<a class="headerlink" href="#名前空間ごとまとめて" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import/bulk<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"data"</span>:<span class="w"> </span><span class="o">[{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"ark:99999/c7xk7vtb226"</span>,<span class="w"> </span><span class="s2">"title"</span>:<span class="w"> </span><span class="s2">"batch 1"</span><span class="o">}</span>,
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">                     {"ark": "ark:99999/c7zjft7mcxq", "title": "batch 2"}]}'</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="go">{"count": 2, "imported": [...]}</span>
+</code></pre></div>
+<p><strong>1 件でも検査に落ちれば、1 件も作らない。</strong> 入ってしまった名前は引っ込められないので、
+中途半端に取り込まれた名前空間は、何もしないより悪い。</p>
+<h3 id="断られるもの">断られるもの<a class="headerlink" href="#断られるもの" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/s7abc1234"}'</span><span class="w">      </span><span class="c1"># 委譲していない</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="go">ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7j89qtb3fz"}'</span><span class="w">    </span><span class="c1"># 検査桁</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="go">ARKHE-1012  Check digit mismatch: ark:99999/c7j89qtb3fz was not minted by a NOID minter, or was mistyped.</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7j89qtb3fc"}'</span><span class="w">    </span><span class="c1"># 既に在る</span>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="go">ARKHE-1005  ark:99999/c7j89qtb3fc is already registered.</span>
+</code></pre></div>
+<p>検査桁は、<strong>外から来た名前が打ち間違いでないことを公開台帳が確かめる唯一の手立て</strong>
+なので、緩めない。到達範囲はほかと同じ規則で<strong>上位が下位を覆い</strong>、その NAAN の権威を
+この台帳が持っていることも要る——取り次いでいるだけの名前空間の名前を引き受けるのは、
+その保管者を名乗ることだからである。</p>
 <h2 id="全体の形">全体の形<a class="headerlink" href="#全体の形" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>flowchart LR
     M["POST /api/mint&lt;br/&gt;&lt;small&gt;ark:mint&lt;/small&gt;"] --&gt; A(["ark:99999/x9tn1qkq2g7"])
@@ -1743,6 +1992,7 @@ inflection だから——ので、言語は <code>&amp;</code> の後ろに書�
 <li><a href="../../reference/api/">API リファレンス</a> — 全部の口と、解決が返すもの</li>
 <li><a href="../../reference/errors/">エラー</a> — 全部の符号</li>
 <li><a href="../../concepts/invariants/">壊さないもの</a> — なぜ削除の口が無いのか</li>
+<li><a href="../federation/">分散して運用する</a> — 10 節の公開／非公開の構成をひととおり</li>
 </ul>
 
 

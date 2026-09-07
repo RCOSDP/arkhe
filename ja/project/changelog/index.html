@@ -2100,13 +2100,22 @@
 「修正」に挙げてある。台帳そのものは触っておらず、マイグレーションは列幅の拡大だけ。</p>
 <h3 id="追加">追加<a class="headerlink" href="#追加" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong><code>POST /api/import</code> と <code>/api/import/bulk</code> で、外で採番された ARK を取り込める</strong>
+<li>
+<p><strong>閉じたまま配って、あとで公開する例</strong>を
+  <a href="https://rcosdp.github.io/arkhe/ja/guides/walkthrough/">手引きの 10 節</a>に足した。
+  閉域で採番し、公開のリゾルバが引き取り前後で何を答えるかを見て、記述だけで取り込み、
+  申請窓口へ、そして対象へと段を上げる。断られる例も。台帳 2 つ・プロセス 4 つで、
+  <strong>応答はすべて実際に動かした対から写した</strong>。</p>
+</li>
+<li>
+<p><strong><code>POST /api/import</code> と <code>/api/import/bulk</code> で、外で採番された ARK を取り込める</strong>
   ようになった（1 本ずつでも、委譲した shoulder ごとまとめてでも）。公開側の下に閉じた
   arkhe を置く構成で、これが最大の穴だった——閉域で採った名前は公開台帳に載せられず、
   禁輸が明けたときに<strong>別の ARK を採り直す</strong>しかなかった。閉じている間に配った参照が
   そこで全部死ぬ。これからは
   <a href="https://rcosdp.github.io/arkhe/ja/guides/federation/#pid">行き先を 1 回書き換えるだけ</a>
-  で、同じ識別子のまま公開できる。</li>
+  で、同じ識別子のまま公開できる。</p>
+</li>
 </ul>
 <p><strong>取り込みは採番ではない</strong>ので scope も別（<code>ark:import</code>）。採番は「番号をもらう」
   操作、取り込みは「この番号だと言い張る」操作である。検査は 3 つでどれも緩めない

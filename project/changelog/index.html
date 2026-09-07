@@ -2104,12 +2104,22 @@ listed under Changed and Fixed below; the ledger itself is untouched, and the on
 migration only widens columns.</p>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong><code>POST /api/import</code> and <code>/api/import/bulk</code> take in an ARK minted elsewhere</strong>, one at a
+<li>
+<p><strong>A worked closed-then-published example</strong>, as section 10 of
+  <a href="https://rcosdp.github.io/arkhe/guides/walkthrough/">the walkthrough</a>: mint inside a
+  closed network, see what the public resolver says before and after, import the name
+  with a description and no target, raise it to an application form and then to the
+  object, and the refusals. Two ledgers, four processes, <strong>every response copied from a
+  running pair</strong>.</p>
+</li>
+<li>
+<p><strong><code>POST /api/import</code> and <code>/api/import/bulk</code> take in an ARK minted elsewhere</strong>, one at a
   time or a whole delegated shoulder at once. This was the largest gap in running a closed
   arkhe underneath a public one: names minted inside the closed network could never reach
   the public ledger, so opening an embargoed object meant issuing a <em>different</em> ARK — and
   every reference handed out while it was closed died. Now the same identifier is
-  published by <a href="https://rcosdp.github.io/arkhe/guides/federation/#pid">one change of target</a>.</li>
+  published by <a href="https://rcosdp.github.io/arkhe/guides/federation/#pid">one change of target</a>.</p>
+</li>
 </ul>
 <p><strong>Importing is not minting</strong>, and it carries its own scope (<code>ark:import</code>): minting hands
   you a name, importing asserts one. Three checks, none waivable — the shoulder is
