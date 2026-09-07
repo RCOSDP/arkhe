@@ -137,6 +137,12 @@ migration only widens columns.
 
 ### Fixed
 
+- **"A typo lands on the same page" was wrong.** The check digit is verified *before* the
+  shoulder is consulted, so a mistyped identifier under a delegated shoulder answers
+  `404 ARKHE-1403`, not the explanation page. What is actually indistinguishable is a name
+  that exists from one that never did — which is the property that matters, and the guides
+  now say that instead.
+
 - **`arkhe shoulder add` and `arkhe onboard` now print the id they created.** Every other
   shoulder command — `status`, `redirect`, `hold add shoulder` — takes that id, and the
   command that made the thing was the one place not telling you it. Finding it meant

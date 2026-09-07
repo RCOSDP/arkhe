@@ -315,8 +315,14 @@ the names it was given to the objects inside.
 
 **C-2. The upper instance does not know the names.** Delegate the whole shoulder; from
 outside, nothing beyond "that namespace is closed" is visible. **All the upper ledger
-holds is the fact of the allocation** — the least leaky arrangement. The cost is that
-outsiders cannot tell a valid identifier from a typo; both land on the same page.
+holds is the fact of the allocation** — the least leaky arrangement. The cost is that a
+name that exists and one that never did are answered identically: the upper instance
+cannot tell them apart, so it cannot state that any particular one exists.
+
+A **mistyped** identifier is still caught, though. The check digit is verified before the
+shoulder is consulted, so a broken string answers `404 ARKHE-1403` rather than the
+explanation page — well-formed names are indistinguishable from one another, malformed
+ones are told they are malformed.
 
 Pulling the same identifier from outside **returns different things**.
 
@@ -325,7 +331,7 @@ flowchart LR
     U["outside user<br/>ark:99999/s7abc"] --> C1["C-1<br/><small>name and description held above</small><br/>200, a description"]
     U --> C2["C-2<br/><small>the name is not known above</small><br/>303, an explanation page"]
     C1 --> R1["existence can be stated<br/>no target<br/><small>= restricted access itself</small>"]
-    C2 --> R2["the name does not leak<br/><small>a typo looks the same</small>"]
+    C2 --> R2["existence does not leak<br/><small>real and never-minted look alike;<br/>a typo gets 404</small>"]
 ```
 
 What crosses the boundary differs too. **In C-1 the only thing going up is a description

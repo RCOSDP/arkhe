@@ -424,8 +424,13 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7w545sj4z
 303 https://ark.example.ac.jp/closed-namespace    # outside: "this namespace is closed"
 ```
 
-A typo lands on that same page, which is the point of this level: **the names do not
-leak**, and nothing was configured per identifier.
+**A name that exists and one that does not are answered identically** — the public side
+does not hold the names, so it cannot tell them apart. That is the point of this level:
+existence does not leak, and nothing was configured per identifier.
+
+A *typo* is a different matter. The check digit is verified before the shoulder is
+consulted, so a mistyped string answers `404 ARKHE-1403` rather than the explanation
+page. Well-formed names all look alike; malformed ones are told they are malformed.
 
 ### Hand it over, description only
 
