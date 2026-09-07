@@ -62,12 +62,24 @@ PostgreSQL が弾くスキーマを通してしまうため。
 ## リリースの手順
 
 ```bash
-# 1. 版と変更履歴を更新
-vim pyproject.toml CHANGELOG.md CHANGELOG.ja.md
-# 2. タグを打つ
-git tag -a v0.0.2 -m "v0.0.2" && git push origin v0.0.2
+# 1. 版と変更履歴（その版の節と、両方のリンク定義）
+vim pyproject.toml CHANGELOG.md CHANGELOG.ja.md && uv lock
+
+# 2. 確かめるだけ。**何も出さない**（こちらが既定）
+bash scripts/release.sh v0.1.0
+
+# 3. 出す。タグ → push → GitHub のリリース
+bash scripts/release.sh v0.1.0 --publish
+
+# 4. 変更履歴のページを追随させる
+bash scripts/deploy-docs.sh
 ```
 
-タグでリリースのワークフローが走り、テスト・成果物の作成・その版のドキュメント公開まで
-行う。**版は `pyproject.toml` だけで決まる**——パッケージも OpenAPI も管理画面もそこから
-読むので、他に更新を覚えておく場所は無い。
+**確かめる作業と出す作業を分けてある。** 2 は安く何度でもできるが、タグと
+GitHub のリリースは取り消せない。`--publish` を付けない限り何も出ない。
+
+スクリプトは、タグと `pyproject.toml` が一致すること、両方の変更履歴にその版の節と
+リンク定義があること、未リリースの比較リンクが新しい版を起点にしていることを
+確かめてから先へ進む。**それ以外は `pyproject.toml` から決まる**——パッケージも
+OpenAPI も管理画面もそこから読む。`0.x` は GitHub 上でプレリリースとして出す
+（版の番号を安定性の主張と取り違えさせないため）。

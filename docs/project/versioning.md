@@ -64,13 +64,26 @@ Until then, pin an exact version.
 ## Releasing
 
 ```bash
-# 1. Update the version and the changelog
-vim pyproject.toml CHANGELOG.md CHANGELOG.ja.md
-# 2. Tag
-git tag -a v0.0.2 -m "v0.0.2" && git push origin v0.0.2
+# 1. The version and the changelog (the section for it, and both link definitions)
+vim pyproject.toml CHANGELOG.md CHANGELOG.ja.md && uv lock
+
+# 2. Check, without releasing anything. This is the default
+bash scripts/release.sh v0.1.0
+
+# 3. Release: tag, push, and create the GitHub release
+bash scripts/release.sh v0.1.0 --publish
+
+# 4. Publish the documentation, so the changelog page catches up
+bash scripts/deploy-docs.sh
 ```
 
-The tag triggers the release workflow, which runs the tests, builds the artefacts and
-publishes the documentation for that version. The version reaches the code from
-`pyproject.toml` alone — the package, the OpenAPI document and the admin footer all
-read it from there, so there is nothing else to remember to update.
+**Checking and releasing are separate on purpose.** Step 2 is cheap and can be repeated;
+a tag and a GitHub release cannot be taken back, so nothing is published without
+`--publish`.
+
+The script refuses to go on unless the tag matches `pyproject.toml`, both changelogs
+carry a section and a link definition for the version, and the unreleased comparison
+link has moved to the new one. **Everything else follows from `pyproject.toml`** — the
+package, the OpenAPI document and the admin footer all read the version from there. A
+`0.x` release is marked as a prerelease on GitHub, so the version number is not mistaken
+for a stability claim.

@@ -8,6 +8,16 @@
 
 ## [未リリース]
 
+## [0.1.0] — 2026-09-07
+
+**仕様との差を埋め、外に向かって日本語で話すのをやめた版。** `draft-kunze-ark-42` に
+対する既知の不適合——MUST 4 件と SHOULD 3 件——がすべて無くなり、arkhe が自分の台帳の
+外に出すものは英語になった。OpenAPI と、**符号を持つ誤りの本文**（文面ではなく符号で
+判定できる）である。管理画面と `?info` のページは、代わりに**画面の言語**で答える。
+
+**公開している出力の形が変わる、最初の版でもある。** 変わった形は下の「変更」と
+「修正」に挙げてある。台帳そのものは触っておらず、マイグレーションは列幅の拡大だけ。
+
 ### 追加
 
 - **`PATCH /api/update` は送った項目だけを書く。** 同じパスの `PUT` は置き換えで、
@@ -668,7 +678,8 @@
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.0.9...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.1.0
 [0.0.9]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.9
 [0.0.8]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.8
 [0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7

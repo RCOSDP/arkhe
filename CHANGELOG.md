@@ -9,6 +9,19 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-09-07
+
+**The release that closes the gap with the specification, and stops speaking Japanese to
+the outside.** Every known deviation from `draft-kunze-ark-42` is gone — four MUSTs and
+three SHOULDs — and everything arkhe publishes beyond its own ledger is now English:
+the OpenAPI document, and error bodies that carry a stable code so a client never has to
+match on a sentence. The admin interface and the `?info` page answer in the language of
+the screen instead.
+
+**This is the first release that breaks published output.** The shapes that changed are
+listed under Changed and Fixed below; the ledger itself is untouched, and the one
+migration only widens columns.
+
 ### Added
 
 - **`PATCH /api/update` writes only the fields you send.** `PUT` on that path is a
@@ -722,7 +735,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.0.9...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.1.0
 [0.0.9]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.9
 [0.0.8]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.8
 [0.0.7]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.7
