@@ -103,6 +103,11 @@ migration only widens columns.
 
 ### Fixed
 
+- **The federation guide still listed holds as missing.** "A way to suspend redirection
+  temporarily" sat under *What does not exist yet* — it shipped in 0.0.9, per ARK, per
+  shoulder and per NAAN, with the reason and the expiry published and the clock lifting
+  it. The bullet was simply not removed at the time.
+
 - **The ARK concept page said too little, and pointed nowhere.** Its diagram labelled
   only "NAAN" and "name", which leaves out the label, the shoulder, the blade and the
   qualifiers — the parts that make the string readable without fetching anything. The
