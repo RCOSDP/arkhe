@@ -1980,13 +1980,13 @@ pattern different from the others.</p>
   hostname to people who cannot reach it. Point at a <strong>public explanation page</strong>
   instead — <code>shoulder.redirect</code> accepts a leading status code, e.g.
   <code>303 https://…/closed-namespace</code>.</li>
-<li><strong>Leave <code>minter</code> empty and set <code>about</code> instead.</strong> <code>/.well-known/ark</code> and the <code>307</code>
-  that answers a minting request both say "call this to mint" — a machine-readable claim.
-  An internal minter URL there leaks the closed network <em>and</em> is useless to anyone
-  outside; a human explanation page there makes the claim false, because a client will
-  <code>POST</code> to it. <code>about</code> is the field for a page people read, and a shoulder that has only
-  <code>about</code> answers a minting request with <strong><code>403</code> and that URL in the body</strong> rather than a
-  <code>307</code> nobody can follow.</li>
+<li><strong>Leave <code>minter</code> empty.</strong> <code>/.well-known/ark</code> and the <code>307</code> that answers a minting
+  request both say "call this to mint" — a machine-readable claim. An internal minter URL
+  there leaks the closed network <em>and</em> is useless to anyone outside; a human explanation
+  page there makes the claim false, because a client will <code>POST</code> to it. <strong>Delegation does
+  not require a destination at all</strong>: it records that this ledger does not mint here, and
+  a minting request is answered <code>403 ARKHE-1309</code>. If there is a page worth pointing at,
+  put it in <code>about</code> and it comes back in the body — never in <code>Location</code>.</li>
 <li><strong>A <code>307</code> delegation from above does not work here</strong>, because outside callers cannot
   reach the closed minter. Inside users call the closed arkhe directly. Marking the
   shoulder <code>delegated</code> above is still worth doing: it is what guarantees, in the ledger

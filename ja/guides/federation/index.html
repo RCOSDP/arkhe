@@ -1962,12 +1962,13 @@ application/json</code> を付けて求める）。<strong>下位から見て、
 <li><strong>上位の <code>redirect</code> に内部 URL を書かない。</strong> <code>302</code> で内部ホスト名を返すと、
   到達できない相手にもホスト名は届く。<code>303 https://…/closed-namespace</code> のように
   <strong>公開の説明ページ</strong>へ向ける（<code>shoulder.redirect</code> は先頭にステータスコードを書ける）。</li>
-<li><strong><code>minter</code> は空にして、<code>about</code> を使う。</strong> <code>/.well-known/ark</code> も、採番要求に返す
-  <code>307</code> も、「ここを叩けば採番できる」と<strong>機械可読で言う</strong>契約である。そこに閉域の
-  minter URL を書けば構成が漏れるうえ外の誰にも使えず、人向けの説明ページを書けば
-  <strong>契約が嘘になる</strong>——クライアントはそこへ <code>POST</code> しにいく。人が読むページは
-  <code>about</code> に置く。<code>about</code> だけを持つ shoulder は、採番要求に <strong><code>403</code> と本文の案内</strong>
-  を返す（追えない <code>307</code> を返さない）。</li>
+<li><strong><code>minter</code> は空にする。</strong> <code>/.well-known/ark</code> も、採番要求に返す <code>307</code> も、
+  「ここを叩けば採番できる」と<strong>機械可読で言う</strong>契約である。そこに閉域の minter URL を
+  書けば構成が漏れるうえ外の誰にも使えず、人向けの説明ページを書けば<strong>契約が嘘になる</strong>
+  ——クライアントはそこへ <code>POST</code> しにいく。<strong>委譲に行き先は要らない</strong>。委譲とは
+  「この台帳では採番しない」と刻むことで、採番要求には <code>403 ARKHE-1309</code> が返る。
+  指し示す価値のあるページがあるなら <code>about</code> に置く——本文に載り、<code>Location</code> には
+  決して入らない。</li>
 <li><strong>上位からの <code>307</code> 委譲は成立しない。</strong> 外の利用者が閉域の minter に到達できないため。
   閉域の利用者は閉域の arkhe を直接叩く。上位の shoulder を <code>delegated</code> にする意味は、
   <strong>上位でその名前空間が採番されないこと</strong>を台帳と制約で保証する点にある。</li>
