@@ -74,7 +74,7 @@ JA: dict[str, str] = {
     "onboard.shoulder": "委譲する名前空間（例 /x9）",
     "onboard.quota": "1 日あたりの採番上限。省略で無制限",
     "onboard.commitment": "約束の水準。`arkhe manager commitment --list` で一覧",
-    "onboard.done": "組織 {name} を迎え、{naan}{shoulder} を委譲しました",
+    "onboard.done": "組織 {name} を迎え、{naan}{shoulder} を委譲しました（shoulder id {id}）",
     "onboard.level": "約束の水準: {level}",
     "onboard.default_warning": "↑ 既定のままです。組織に確かめて "
                                "`arkhe manager commitment` で言い直してください。",
@@ -82,7 +82,7 @@ JA: dict[str, str] = {
     "shoulder.list.help": "shoulder を並べる。**id は他のコマンドの入力になる。**",
     "shoulder.add.help": "名前空間を切り出す。`--reserve` で将来用に確保できる。",
     "shoulder.add.reserve": "押さえるだけで採番させない",
-    "shoulder.add.done": "{naan}{shoulder} を切り出しました",
+    "shoulder.add.done": "{naan}{shoulder} を切り出しました（id {id}）",
     "shoulder.status.help": "状態を変える。**retired からは戻せない**"
                             "（引退した名前空間の再開は NR 違反の芽）。",
     "shoulder.status.arg": "active / reserved / delegated / retired",
@@ -221,14 +221,14 @@ EN: dict[str, str] = {
     "onboard.shoulder": "the namespace to delegate (e.g. /x9)",
     "onboard.quota": "minting limit per day; unlimited if omitted",
     "onboard.commitment": "commitment level; `arkhe manager commitment --list` to see them",
-    "onboard.done": "Onboarded {name} and delegated {naan}{shoulder}",
+    "onboard.done": "Onboarded {name} and delegated {naan}{shoulder} (shoulder id {id})",
     "onboard.level": "Commitment level: {level}",
     "onboard.default_warning": "↑ Left at the default. Confirm it with the organisation "
                                "and restate it with `arkhe manager commitment`.",
     "shoulder.list.help": "List shoulders. **The id is the input to the other commands.**",
     "shoulder.add.help": "Carve out a namespace. `--reserve` holds one for later.",
     "shoulder.add.reserve": "hold it without allowing minting",
-    "shoulder.add.done": "Carved out {naan}{shoulder}",
+    "shoulder.add.done": "Carved out {naan}{shoulder} (id {id})",
     "shoulder.status.help": "Change the status. **There is no way back from retired** "
                             "(reopening a retired namespace is the seed of an NR violation).",
     "shoulder.status.arg": "active / reserved / delegated / retired",

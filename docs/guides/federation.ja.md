@@ -123,9 +123,14 @@ flowchart TD
 
 ```bash
 arkhe shoulder add 99999 /s7 --note "拠点 B へ委譲"
+#   → 99999/s7 を切り出しました（id 3）   ← 次の 2 行が取る id
 arkhe shoulder status <id> delegated --minter https://ark.b.example.ac.jp
 arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:$id'
 ```
+
+`shoulder add` も `onboard` も、作った id を表示する。`arkhe shoulder list` でも引ける
+——**shoulder のコマンドが取るのは id であって `/s7` という文字列ではない**。同じ文字列は
+複数の NAAN の下に在りうるからである。
 
 下位の台帳:
 

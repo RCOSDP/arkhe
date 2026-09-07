@@ -15,7 +15,7 @@ audit log the same way.
 | `arkhe manager list` | List organisations. **The ids are input to other commands.** |
 | `arkhe manager commitment` | Restate an organisation's commitment level. **Published verbatim by `??`.** |
 | `arkhe manager policy` | Narrow what an organisation may do — ways in, self-registration, scope ceiling. **It can only narrow what the NAAN allows**, never widen it. |
-| `arkhe shoulder add` | Carve out a namespace. `--reserve` holds one for later. |
+| `arkhe shoulder add` | Carve out a namespace. `--reserve` holds one for later. **Prints the id the other shoulder commands take.** |
 | `arkhe shoulder status` | Change the status. **There is no way back from retired.** |
 | `arkhe shoulder redirect` | Delegate resolution for a shoulder (`$id` / `${blade}` / a leading `303 `). **An empty value clears it.** |
 | `arkhe shoulder list` | List shoulders. **The id is the input to the other commands.** |

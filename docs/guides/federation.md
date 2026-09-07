@@ -131,9 +131,14 @@ The upper ledger:
 
 ```bash
 arkhe shoulder add 99999 /s7 --note "delegated to site B"
+#   → Carved out 99999/s7 (id 3)   ← the id the next two commands take
 arkhe shoulder status <id> delegated --minter https://ark.b.example.ac.jp
 arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:$id'
 ```
+
+`shoulder add` and `onboard` both print the id they created, and `arkhe shoulder list`
+shows it again — every other shoulder command takes it, not the `/s7` string, because the
+same string can exist under more than one NAAN.
 
 The lower ledger:
 

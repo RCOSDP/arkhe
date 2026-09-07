@@ -99,7 +99,9 @@ def onboard(
             commitment_level=commitment,
         )
         s.commit()
-        typer.echo(t("onboard.done", name=m.name, naan=sh.naan, shoulder=sh.shoulder))
+        # **id をここで言う。** 以降の `shoulder status` / `redirect` / `hold` は
+        # すべて id を入力に取るのに、作った瞬間に分からないと `list` を引く手間が要る。
+        typer.echo(t("onboard.done", name=m.name, naan=sh.naan, shoulder=sh.shoulder, id=sh.id))
         typer.echo(t("onboard.level", level=m.commitment_level))
         if not commitment:
             typer.echo(t("onboard.default_warning"), err=True)
@@ -119,7 +121,8 @@ def shoulder_add(
             status="reserved" if reserve else "active", note=note,
         )
         s.commit()
-        typer.echo(t("shoulder.add.done", naan=sh.naan, shoulder=sh.shoulder))
+        # **id をここで言う**（作った当人が、次に使う値を知らないのはおかしい）。
+        typer.echo(t("shoulder.add.done", naan=sh.naan, shoulder=sh.shoulder, id=sh.id))
 
 
 @shoulder_app.command("status", help=t("shoulder.status.help"))

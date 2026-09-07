@@ -335,11 +335,12 @@ $ arkhe naan add 99999 "Example RA" --policy "NP | NR, OP, CC | 2026"
 Registered NAAN 99999 (Example RA)
 
 $ arkhe onboard 99999 "Example University" --shoulder /s7        # 公開の PID
-Onboarded Example University and delegated 99999/s7
+Onboarded Example University and delegated 99999/s7 (shoulder id 1)
 
 $ arkhe shoulder add 99999 /c7 --manager 1 --note "closed PIDs"  # 非公開の PID
-Carved out 99999/c7
+Carved out 99999/c7 (id 2)
 
+# この id が、以降の shoulder コマンドの入力になる（`arkhe shoulder list` でも引ける）
 # /c7 は外で採番する。台帳にそう刻み、外向きには説明を用意する
 $ arkhe shoulder status 2 delegated --minter https://ark.closed.example.ac.jp
 99999/c7 → delegated

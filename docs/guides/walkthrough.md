@@ -343,12 +343,13 @@ $ arkhe naan add 99999 "Example RA" --policy "NP | NR, OP, CC | 2026"
 Registered NAAN 99999 (Example RA)
 
 $ arkhe onboard 99999 "Example University" --shoulder /s7        # open PIDs
-Onboarded Example University and delegated 99999/s7
+Onboarded Example University and delegated 99999/s7 (shoulder id 1)
 
 $ arkhe shoulder add 99999 /c7 --manager 1 --note "closed PIDs"  # closed PIDs
-Carved out 99999/c7
+Carved out 99999/c7 (id 2)
 
-# /c7 is minted elsewhere. Record that, and give the outside an explanation
+# That id is what the other shoulder commands take. `arkhe shoulder list` shows it again.
+# /c7 is minted elsewhere: record that, and give the outside an explanation
 $ arkhe shoulder status 2 delegated --minter https://ark.closed.example.ac.jp
 99999/c7 → delegated
 $ arkhe shoulder redirect 2 '303 https://ark.example.ac.jp/closed-namespace'

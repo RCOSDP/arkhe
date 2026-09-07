@@ -125,6 +125,11 @@
 
 ### 修正
 
+- **`arkhe shoulder add` と `arkhe onboard` が、作った id を表示するようになった。**
+  ほかの shoulder コマンド——`status` / `redirect` / `hold add shoulder`——はすべて
+  その id を取るのに、**作った当人だけが教えてくれなかった**。知るには後から
+  `shoulder list` を引くしかなく、文書の例もそれを黙ってやっていた。
+
 - **英語版の分散の手引きが、`shoulder.redirect` の CLI をまだ「無いもの」に挙げていた。**
   `arkhe shoulder redirect` は在り、コマンドの参照ページにも載っている——日本語版だけ
   直っていて英語版が残っていた（済んだ項目は消す。取り消し線では残さない）。

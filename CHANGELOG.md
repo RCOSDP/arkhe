@@ -137,6 +137,11 @@ migration only widens columns.
 
 ### Fixed
 
+- **`arkhe shoulder add` and `arkhe onboard` now print the id they created.** Every other
+  shoulder command — `status`, `redirect`, `hold add shoulder` — takes that id, and the
+  command that made the thing was the one place not telling you it. Finding it meant
+  running `shoulder list` afterwards, which the documentation's own examples quietly did.
+
 - **The English federation guide still listed a CLI for `shoulder.redirect` as missing.**
   `arkhe shoulder redirect` exists and is in the CLI reference; the Japanese page had
   been corrected and the English one had not.
