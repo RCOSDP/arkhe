@@ -16,7 +16,7 @@
         <link rel="prev" href="../data-model/">
       
       
-        <link rel="next" href="../../project/contributing/">
+        <link rel="next" href="../errors/">
       
       
         
@@ -1007,12 +1007,79 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="解決">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thump-のヘッダと-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        THUMP のヘッダと where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-エンコードされた文字" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        %-エンコードされた文字
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#well-knownark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /.well-known/ark
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    エラー
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1225,6 +1292,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="解決">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thump-のヘッダと-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        THUMP のヘッダと where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-エンコードされた文字" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        %-エンコードされた文字
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#well-knownark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /.well-known/ark
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1300,41 +1406,92 @@ arklet は順序不定の問い合わせ結果を入力と <code>zip</code> し�
 </thead>
 <tbody>
 <tr>
-<td><code>/ark:/99999/x9abc</code></td>
+<td><code>/ark:99999/x9abc</code></td>
 <td><code>302</code> で対象へ。行き先が無ければ記述を返す</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc/page/3</code></td>
+<td><code>/ark:99999/x9abc/page/3</code></td>
 <td><code>302</code> で <em>対象</em><code>/page/3</code> へ。<strong>suffix passthrough。子に識別子は要らない</strong></td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc?</code></td>
+<td><code>/ark:99999/x9abc?</code></td>
 <td>ERC/ANVL の kernel（who / what / when / where）</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc??</code></td>
+<td><code>/ark:99999/x9abc??</code></td>
 <td>上に加えて<strong>永続性宣言</strong></td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc?info</code></td>
+<td><code>/ark:99999/x9abc?info</code></td>
 <td>同じ内容を人に向けて</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc?json</code></td>
+<td><code>/ark:99999/x9abc?json</code></td>
 <td>同じ内容を機械に向けて</td>
 </tr>
 <tr>
-<td><code>/ark:/12345/…</code>（未知 NAAN）</td>
+<td><code>/ark:12345/…</code>（未知 NAAN）</td>
 <td><code>302</code> でグローバルリゾルバへ</td>
 </tr>
 <tr>
 <td><code>/.well-known/ark</code></td>
+<td><code>text/plain</code>。リゾルバのルートパス（末尾は <code>/</code>）</td>
+</tr>
+<tr>
+<td><code>/.well-known/ark</code>＋<code>Accept: application/json</code></td>
 <td>このリゾルバが何を預かっているか。採番を外に委ねているならその案内先</td>
 </tr>
 </tbody>
 </table>
 <p>裸の <code>?</code> は、プロトコルの層でクエリ文字列なしと区別できない（<strong>ASGI でも同じ</strong>）。
 前段が生の URI を渡せるなら <code>ARKHE_RAW_URI_HEADER</code> を設定する。</p>
+<p>誤りには符号（<code>ARKHE-1011</code>）と英語の <code>message</code>、構造化された <code>detail</code> が付く。
+<strong>文面ではなく符号で判定すること</strong>——一覧は<a href="../errors/">エラー</a>にある。</p>
+<h3 id="thump-のヘッダと-where">THUMP のヘッダと <code>where</code><a class="headerlink" href="#thump-のヘッダと-where" title="Permanent link">&para;</a></h3>
+<p>識別子について<strong>リゾルバ自身が答える</strong>応答——<code>?</code> <code>??</code> <code>?info</code> <code>?json</code>、行き先の無い
+記述、保留、<code>404</code>——には §5.2 の 2 つのヘッダが付く。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>THUMP-Status: 0.6 404 Not Found
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Link: &lt;/ark:99999/x9abc&gt;; rel="describes"
+</code></pre></div>
+<p><code>Link</code> は、inflection を知らない受信者に対して「この応答は取得した URL の表現では
+なく、<strong>修飾の付いていない ARK を記述したもの</strong>である」と示すためにある。仕様の
+応答例は <code>&lt;…&gt; rel="describes";</code> と書いているが、これは
+<a href="https://www.rfc-editor.org/rfc/rfc8288">RFC 8288</a> のリンク値として不正なので、
+arkhe は <code>&lt;…&gt;; rel="describes"</code> を出す——<strong>同じことを、標準のパーサが読める形で
+言う</strong>。転送にはどちらも付けない。転送は識別子についての答えではなく、対象への誘導
+だからである。</p>
+<p>ERC の <strong><code>where</code> は ARK であって、転送先ではない</strong>。§5.1.2 が「一時的な転送先では
+なく長期的な識別子」と定めている要素で、<strong>行き先を付け替えても <code>where</code> は動かない</strong>
+——それがこの要素の価値そのものである。今の行き先は kernel の外の <code>redirect</code> として、
+あるときだけ出す。</p>
+<h3 id="-エンコードされた文字">%-エンコードされた文字<a class="headerlink" href="#-エンコードされた文字" title="Permanent link">&para;</a></h3>
+<p>予約文字（<code>%</code> <code>-</code> <code>.</code> <code>/</code>）は、<strong>その予約された意味を隠す目的でなら</strong> %-エンコード
+してよい——<code>%2F</code> は「ここに <code>/</code> はあるが成分の区切りではない」と書く唯一の方法である。
+したがって <code>ark:99999/x54%2Fc2</code> と <code>ark:99999/x54/c2</code> は<strong>別の識別子</strong>で、仕様は
+エンコードされた文字が復号形で現れることを禁じている（<code>draft-kunze-ark-42</code> §3.2）。
+arkhe は ASGI の <code>raw_path</code> から<strong>エンコードを保ったまま</strong>経路を読み、16 進の大小
+だけ揃える（<code>%2f</code> → <code>%2F</code>。手順5）。復号はしない。</p>
+<p><strong>前段もエンコードを素通しにすること。</strong> nginx なら <code>proxy_pass</code> にパスを書かない
+（<code>proxy_pass http://backend;</code>。書くと復号済みのものを再エンコードする）。Apache なら
+<code>AllowEncodedSlashes NoDecode</code>。前段が <code>%2F</code> を潰す構成では復元できず、その種の名前は
+解決できない。</p>
+<h3 id="well-knownark"><code>/.well-known/ark</code><a class="headerlink" href="#well-knownark" title="Permanent link">&para;</a></h3>
+<p><code>draft-kunze-ark-42</code> §5.6 は <code>ark</code> を Well-Known URIs レジストリ
+（<a href="https://www.rfc-editor.org/rfc/rfc8615">RFC 8615</a>）に登録し、応答を
+<strong>「リゾルバのルートパスを含む plain text、末尾は <code>/</code>」</strong>と定めた——そこに
+compact ARK を継ぎ足すと解決の要求になる、という約束である。<strong><code>Accept</code> を
+送らない相手にも <code>*/*</code> の相手にもこれを返す</strong>。ここで JSON を返すと、仕様どおりに
+読む発見クライアントからは「このホストに ARK リゾルバは無い」に見える。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>curl<span class="w"> </span>https://ark.example.ac.jp/.well-known/ark
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">/</span>
+</code></pre></div>
+<p>arkhe 独自の在庫——預かっている名前空間、委譲した shoulder とその <code>minter</code>、
+止めている名前空間——は同じ URL の JSON 表現なので、名指しで求める:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span>https://ark.example.ac.jp/.well-known/ark
+</code></pre></div>
+<p>どちらにも <code>Vary: Accept</code> が付く。パスは ASGI の <code>root_path</code> から採るので、
+プレフィクス付きでマウントするなら設定すること（<code>uvicorn --root-path /pid</code>）
+——さもないと、無い口を案内することになる。</p>
 
 
 
@@ -1387,13 +1544,13 @@ arklet は順序不定の問い合わせ結果を入力と <code>zip</code> し�
         
         
           
-          <a href="../../project/contributing/" class="md-footer__link md-footer__link--next" aria-label="次: 参加する">
+          <a href="../errors/" class="md-footer__link md-footer__link--next" aria-label="次: エラー">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 次
               </span>
               <div class="md-ellipsis">
-                参加する
+                エラー
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -1073,6 +1073,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1374,7 +1402,7 @@ broken identifier. <code>Ark</code> refuses deletion at the ORM level.</p>
 <p>When an object is genuinely gone, you <strong>tombstone</strong> it: the identifier and its
 description stay, only reachability goes.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>arkhe<span class="w"> </span>…<span class="w"> </span><span class="c1"># or</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>/api/tombstone<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/x9…", "commitment": "withdrawn"}'</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>/api/tombstone<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…", "commitment": "withdrawn"}'</span>
 </code></pre></div>
 <p>The resolver then returns the description instead of a redirect — which is
 <a href="https://www.go-fair.org/fair-principles/">FAIR A2</a>: <em>metadata should be accessible
@@ -1386,7 +1414,7 @@ takedown was requested — <strong>it has to stop quickly, and the identifier mu
 identifier still looks broken. arkhe answers <code>200</code> with a <strong>description</strong> instead — the
 same path as <a href="#an-ark-is-never-deleted">An ARK is never deleted</a>, so the identifier stays
 alive while only the redirect stops.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:/99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">7</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the delegate's resolver is down"</span>
 </code></pre></div>
 <p>Do not confuse this with a tombstone. <strong>That is a permanent declaration that the object

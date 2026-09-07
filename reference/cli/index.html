@@ -1068,6 +1068,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1386,7 +1414,7 @@ audit log the same way.</p>
 </tr>
 <tr>
 <td><code>arkhe naan list</code></td>
-<td></td>
+<td>List NAANs. Shows <strong>which it holds authority for, and where the rest are delegated</strong>.</td>
 </tr>
 <tr>
 <td><code>arkhe manager list</code></td>
@@ -1414,7 +1442,7 @@ audit log the same way.</p>
 </tr>
 <tr>
 <td><code>arkhe shoulder list</code></td>
-<td></td>
+<td>List shoulders. <strong>The id is the input to the other commands.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe client add</code></td>
@@ -1497,7 +1525,7 @@ does is recorded</strong>.</p>
 <p><strong><code>retired</code> has no way back.</strong> A reservation can only be set at creation: once a
 namespace has been mintable, it cannot be called unused again.</p>
 <h3 id="holding-a-redirect">Holding a redirect<a class="headerlink" href="#holding-a-redirect" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:/99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:99999/x9abc<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">3</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the delegate's resolver is down"</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>list
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>release<span class="w"> </span>shoulder<span class="w"> </span><span class="m">3</span>

@@ -968,6 +968,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="On capacity">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#field-widths-come-from-the-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field widths come from the specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -994,6 +1011,34 @@
     
   
     API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
   
 
     
@@ -1202,6 +1247,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="On capacity">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#field-widths-come-from-the-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field widths come from the specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1417,8 +1479,18 @@ record the easy way out.</p>
 </table>
 <h2 id="on-capacity">On capacity<a class="headerlink" href="#on-capacity" title="Permanent link">&para;</a></h2>
 <p><strong>Child resources are never minted.</strong> Suffix passthrough covers a reference of any
-depth — <code>ark:/99999/x9abc/page/3</code> needs no row of its own — so <strong>one record per
+depth — <code>ark:99999/x9abc/page/3</code> needs no row of its own — so <strong>one record per
 minting</strong> is enough. Nothing else matters as much for capacity.</p>
+<h3 id="field-widths-come-from-the-specification">Field widths come from the specification<a class="headerlink" href="#field-widths-come-from-the-specification" title="Permanent link">&para;</a></h3>
+<p>Two of them are not ours to choose. <code>draft-kunze-ark-42</code> obliges a <em>receiving</em>
+implementation to support <strong>a NAAN of at least 16 octets</strong> (§2.3) and <strong>at least 255
+octets of Base Name plus Qualifier</strong> (§3.1), so <code>naan.naan</code> is <code>varchar(16)</code>,
+<code>ark.assigned_name</code> is <code>varchar(255)</code>, and the ledger key <code>ark.ark</code> — <code>&lt;naan&gt;/&lt;name&gt;</code> —
+is <code>varchar(272)</code>. Every column that holds a NAAN or an ARK follows those, because a
+value that fits on one path and not another is worse than a value that never fits.</p>
+<p>A longer name is refused with a <code>400</code> naming the limit, not with a database error:
+being unable to index it is our constraint, and the specification already warns anyone
+generating such strings that receivers may not handle them.</p>
 
 
 

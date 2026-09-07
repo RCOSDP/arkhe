@@ -1018,6 +1018,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    エラー
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1254,7 +1282,7 @@
 
 <h1 id="承継と離脱">承継と離脱<a class="headerlink" href="#承継と離脱" title="Permanent link">&para;</a></h1>
 <p>組織は統合し、分割し、去る。<strong>識別子はそれに気づいてはならない。</strong></p>
-<p><code>ark:/99999/x9abc</code> は既に配ってしまった。NR の下では振り直せないので、新しい組織で
+<p><code>ark:99999/x9abc</code> は既に配ってしまった。NR の下では振り直せないので、新しい組織で
 新しい名前に置き換えることはできない——元の識別子を殺すことになる。変えられるのは
 <strong>今後誰が採番するか</strong>と<strong>どこへ転送するか</strong>だけである。</p>
 <h2 id="承継--組織が別の組織に統合される">承継 — 組織が別の組織に統合される<a class="headerlink" href="#承継--組織が別の組織に統合される" title="Permanent link">&para;</a></h2>
@@ -1270,7 +1298,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>depart<span class="w"> </span><span class="m">1</span><span class="w"> </span>--resolver<span class="w"> </span><span class="s1">'https://repo.univ.ac.jp/ark/${blade}'</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">               </span>--keep-update<span class="w"> </span>self-managed
 </code></pre></div>
-<p><strong>新規採番は止め、解決は永久に続ける。</strong> <code>ark:/&lt;こちらの NAAN&gt;/…</code> という形で配って
+<p><strong>新規採番は止め、解決は永久に続ける。</strong> <code>ark:&lt;こちらの NAAN&gt;/…</code> という形で配って
 しまった以上その名前は振り直せないので、NAAN の保有者が <code>302</code> を返し続けるしかない。</p>
 <p>要点は <code>--resolver</code> である。既存の転送先を組織自身のリゾルバへ一括で向け直し、
 <strong>同時に shoulder にも同じ委譲を設定する</strong>ので、この台帳が見たことのない名前まで

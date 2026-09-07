@@ -1027,6 +1027,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    エラー
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1276,7 +1304,7 @@
 <p><strong>ARK</strong> 識別子の基盤。採番と解決を別プロセスで動かす。</p>
 <pre class="mermaid"><code>flowchart LR
     R["組織の&lt;br/&gt;リポジトリ"] --&gt;|採番| M[minter]
-    U[誰でも] --&gt;|ark:/99999/…| S[resolver]
+    U[誰でも] --&gt;|ark:99999/…| S[resolver]
     M --&gt; D[(台帳)]
     S --&gt; D
     S --&gt;|302| T[対象]

@@ -1057,6 +1057,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    エラー
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1388,6 +1416,18 @@ ARK の採番は機械同士のやりとりで、認可コードフローが解�
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/oauth/token<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>client_credentials<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span>univ-repo<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span>…
 </code></pre></div>
+<p><strong>トークンは保ち回して使う。</strong> 応答の <code>expires_in</code>（既定 3600 秒）が尽きる手前で
+取り直せばよく、<strong>API 1 回ごとに取り直してはいけない</strong>——発行のたびに <code>client_secret</code> を
+Argon2 で照合するので、そうすると apikey と同じ重さを払ったうえに往復が 1 回増える。
+1 時間のあいだに何万件採番しても、取得は 1 回でよい。</p>
+<p><strong>取り直しは、同じ要求をもう一度出すだけ</strong>（<code>refresh_token</code> は無い——下記）。時計の
+ずれや主体の停止で早く効かなくなることもあるので、<strong>401 を受けたら取り直して 1 度だけ
+やり直す</strong>まで入れておくと確実。</p>
+<p>クライアントライブラリを使う場合も、<strong>そこは自分で組む</strong>。<code>requests-oauthlib</code> は
+<code>BackendApplicationClient</code> を渡したうえで <code>fetch_token()</code> を明示的に呼ぶ形で、この
+grant では期限切れの再取得を自動ではしない。<code>authlib</code> の <code>OAuth2Session</code> は
+<code>token_endpoint</code> と <code>grant_type="client_credentials"</code> を与えておけば期限切れに
+気づいて取り直すが、取ったトークンをプロセスの外に残すなら <code>update_token</code> が要る。</p>
 <p>意図的に持たないもの: <code>authorization_code</code> と PKCE、<code>refresh_token</code>、introspection、
 revocation。<strong>これらが要るようになったら、中途半端な認可サーバを育てるより、
 本物に寄せるほうが安全。</strong></p>

@@ -3,7 +3,7 @@
   "info": {
     "title": "arkhe",
     "summary": "ARK identifier infrastructure — minter and resolver as separate services",
-    "description": "ARK 識別子の採番と解決。\n\n**ARK は再割当てしない（NR）。** この一点が API の形をほぼ決めている。\n\n* **採番した ARK は取り消せない。** 削除の口は無く、対象が失われたときは\n  `tombstone`（記述は残り、到達性だけが落ちる）。\n* **再送で番号を増やさない。** `request_id` を付けて送れば、同じ値の再送には\n  前回と同じ ARK が返る。万オーダーの投入は途中で切れる方が普通なので、\n  切れた塊はそのまま再送してよい。\n* **shoulder はリクエストで指定しても広がらない。** 到達範囲は資格情報の\n  登録属性で決まる。省略すれば組織の既定が使われる。\n* **子リソースは採番しない。** `ark:/99999/x9abc/page/3` のような深い参照は\n  suffix passthrough が賄うので、1 レコード 1 採番で足りる。\n\n### 認証\n\n`Authorize` から Bearer トークンを入れる。受け付ける資格情報は起動時の\n`ARKHE_AUTH` で決まり、API キー・arkhe が発行したトークン・外部の認可サーバが\n発行した JWT のいずれか（併用可）。\n\n**公開情報の読取に認証は要らない。** リポジトリは公開レコードを誰にでも見せる\nものだから。\n",
+    "description": "Minting and resolution of ARK identifiers.\n\n**An ARK is never re-assigned (NR).** That one commitment shapes most of this API.\n\n* **A minted ARK cannot be withdrawn.** There is no delete; when an object is lost you\n  `tombstone` it (the description stays, only reachability goes).\n* **A resend does not mint again.** Send a `request_id` and the same value resent\n  returns the same ARK. Batches of tens of thousands are interrupted more often than\n  not, so an interrupted batch can simply be sent again.\n* **Naming a shoulder in a request does not widen anything.** Reach comes from the\n  credential's registration; omit it and the organisation's default is used.\n* **Child resources are not minted.** A deep reference such as\n  `ark:99999/x9abc/page/3` is covered by suffix passthrough, so one record per minting\n  is enough.\n\n### Authentication\n\nPut a bearer token in via `Authorize`. Which credentials are accepted is set at start-up\nby `ARKHE_AUTH`: an API key, a token arkhe issued, or a JWT from an external\nauthorisation server (any combination).\n\n**Reading public information needs no authentication**, because a repository shows its\npublic records to anyone.\n",
     "license": {
       "name": "MIT",
       "identifier": "MIT"
@@ -17,35 +17,20 @@
           "resolve"
         ],
         "summary": "Well Known Ark",
-        "description": "このリゾルバが何を預かっているかを機械可読で公開する。\n\n**採番を外に委ねている NAAN があるとき、クライアントがどこへ行けばよいか**を\nここで分かるようにする（`Naan.minter` / `Shoulder.minter`）。",
+        "description": "**Tells a client that this host has an ARK resolver** (draft-kunze-ark-42 §5.6).\n\n§5.6 registers `ark` in the Well-Known URIs registry (RFC 8615) and defines the answer\nas **plain text holding the resolver's root path, ending in `/`** — append a compact ARK\nto it and you have a resolution request. **A client that sends no `Accept`, or `*/*`,\ngets that**; answering such a client with JSON would make the host look, to anyone\nreading the specification, as though it had no ARK resolver at all.\n\n`Accept: application/json` returns arkhe's own inventory instead: **where to go when a\nNAAN's minting happens elsewhere** (`Naan.minter` / `Shoulder.minter`), and any\nnamespace whose redirection is on hold.\n\nBoth representations carry `Vary: Accept`.",
         "operationId": "well_known_ark__well_known_ark_get",
-        "parameters": [
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
+            "description": "`text/plain` by default: the resolver's root path, one line (draft-kunze-ark-42 §5.6). `Accept: application/json` returns the namespaces this ledger holds.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "type": "object"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -59,6 +44,7 @@
           "resolve"
         ],
         "summary": "Resolve Ark",
+        "description": "**Resolve an ARK. No authentication.** Both `ark:99999/xyz` and the older\n`ark:/99999/xyz` are accepted, in any letter case.\n\nThere is more than one way to answer, and **keeping the identifier alive comes first on\nevery path**:\n\n    302  redirect to the target (the usual case; a shoulder's delegation template may\n         name 301, 303 or 307 instead)\n    200  return a description — for `?info` and `??`, for a target a browser cannot\n         open (`urn:isbn:…`), for an empty target, for a tombstone, and while a hold\n         is on\n    404  not in this ledger and nowhere to forward to. **`?info` on an unknown name is\n         still a 404** — there is nothing to say about a name we do not know\n    400  not readable as an ARK\n\n**A hold is not a 404.** The identifier exists; we are only declining to hand out its\naddress for now, so the reason and the expiry come back with a 200. **The same holds for\na tombstone** — saying \"it was lost\" is not the same as saying \"it never was\".\n\nAn ARK that is only a NAAN (`ark:12345`) answers with what can be said about that NAAN.\nAn unknown NAAN is forwarded to the global resolver (`ARKHE_GLOBAL_RESOLVER`, n2t.net by\ndefault).\n\nEvery answer this resolver gives about an identifier carries the THUMP headers of §5.2\n(`THUMP-Status` and `Link: <…>; rel=\"describes\"`); redirects carry neither.",
         "operationId": "resolve_ark_ark__rest__get",
         "parameters": [
           {
@@ -69,24 +55,58 @@
               "type": "string",
               "title": "Rest"
             }
-          },
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "a description (`?info` / `?` / `??` / `?json`, a target that cannot be opened, a tombstone, a hold, an ARK that is only a NAAN)",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "301": {
+            "description": "redirect to the target (a delegation template named `301 `)"
+          },
+          "302": {
+            "description": "redirect to the target (the default)"
+          },
+          "303": {
+            "description": "redirect to the target (a delegation template named `303 `)"
+          },
+          "307": {
+            "description": "redirect to the target (a delegation template named `307 `)"
+          },
+          "400": {
+            "description": "not readable as an ARK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not in this ledger, and nowhere to forward to",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -109,6 +129,7 @@
           "resolve"
         ],
         "summary": "Resolve Ark",
+        "description": "**Resolve an ARK. No authentication.** Both `ark:99999/xyz` and the older\n`ark:/99999/xyz` are accepted, in any letter case.\n\nThere is more than one way to answer, and **keeping the identifier alive comes first on\nevery path**:\n\n    302  redirect to the target (the usual case; a shoulder's delegation template may\n         name 301, 303 or 307 instead)\n    200  return a description — for `?info` and `??`, for a target a browser cannot\n         open (`urn:isbn:…`), for an empty target, for a tombstone, and while a hold\n         is on\n    404  not in this ledger and nowhere to forward to. **`?info` on an unknown name is\n         still a 404** — there is nothing to say about a name we do not know\n    400  not readable as an ARK\n\n**A hold is not a 404.** The identifier exists; we are only declining to hand out its\naddress for now, so the reason and the expiry come back with a 200. **The same holds for\na tombstone** — saying \"it was lost\" is not the same as saying \"it never was\".\n\nAn ARK that is only a NAAN (`ark:12345`) answers with what can be said about that NAAN.\nAn unknown NAAN is forwarded to the global resolver (`ARKHE_GLOBAL_RESOLVER`, n2t.net by\ndefault).\n\nEvery answer this resolver gives about an identifier carries the THUMP headers of §5.2\n(`THUMP-Status` and `Link: <…>; rel=\"describes\"`); redirects carry neither.",
         "operationId": "resolve_ark_ark___rest__get",
         "parameters": [
           {
@@ -119,24 +140,58 @@
               "type": "string",
               "title": "Rest"
             }
-          },
-          {
-            "name": "read_only",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Read Only"
-            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "a description (`?info` / `?` / `??` / `?json`, a target that cannot be opened, a tombstone, a hold, an ARK that is only a NAAN)",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "301": {
+            "description": "redirect to the target (a delegation template named `301 `)"
+          },
+          "302": {
+            "description": "redirect to the target (the default)"
+          },
+          "303": {
+            "description": "redirect to the target (a delegation template named `303 `)"
+          },
+          "307": {
+            "description": "redirect to the target (a delegation template named `307 `)"
+          },
+          "400": {
+            "description": "not readable as an ARK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not in this ledger, and nowhere to forward to",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -214,11 +269,11 @@
   "tags": [
     {
       "name": "ark",
-      "description": "採番と更新。**書き込みは到達範囲の内側にしか届かない。**"
+      "description": "Minting and updating. **A write never reaches outside the caller's registered reach.**"
     },
     {
       "name": "resolve",
-      "description": "解決。`?`（簡潔な記述）・`??`（永続性宣言）・`?info`（人間向け）・`?json`（機械可読）の inflection を持つ。**対象に到達できなくても記述は答えられる**（FAIR A2）。`ARKHE_RESOLVER=1` で起動したときだけ現れる。"
+      "description": "Resolution, with the `?` (a brief description), `??` (the persistence statement), `?info` (for a person) and `?json` (for a program) inflections. **A description can be answered even when the object cannot be reached** (FAIR A2). Present only when started with `ARKHE_RESOLVER=1`."
     }
   ]
 }

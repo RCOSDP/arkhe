@@ -1040,6 +1040,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    エラー
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1319,7 +1347,7 @@
 </tr>
 <tr>
 <td>解決（<strong>認証不要</strong>）</td>
-<td><a href="http://localhost:8058/ark:/…">http://localhost:8058/ark:/…</a></td>
+<td><a href="http://localhost:8058/ark:…">http://localhost:8058/ark:…</a></td>
 </tr>
 <tr>
 <td>API ドキュメント</td>
@@ -1441,10 +1469,10 @@ LAN に出すのは明示的な操作にしてある。</p>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "最初の対象"}'</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># → {"ark": "ark:/99999/x9…", …}</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># → {"ark": "ark:99999/x9…", …}</span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…"</span><span class="w">        </span><span class="c1"># 302 で対象へ</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:/99999/x9…??"</span><span class="w">      </span><span class="c1"># 永続性宣言</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:99999/x9…"</span><span class="w">        </span><span class="c1"># 302 で対象へ</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:99999/x9…??"</span><span class="w">      </span><span class="c1"># 永続性宣言</span>
 </code></pre></div>
 <h2 id="いま何が起きたか">いま何が起きたか<a class="headerlink" href="#いま何が起きたか" title="Permanent link">&para;</a></h2>
 <p><strong>取り消せない識別子</strong>を 1 本作った。ARK は再割当てしないと宣言する体系なので、

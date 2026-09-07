@@ -1212,6 +1212,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    エラー
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1724,8 +1752,8 @@
 <pre class="mermaid"><code>flowchart TD
     U[誰でも] --&gt; A["arkhe A&lt;br/&gt;&lt;small&gt;99999 に権威&lt;/small&gt;"]
     U --&gt; B["arkhe B&lt;br/&gt;&lt;small&gt;12345 に権威&lt;/small&gt;"]
-    A --&gt;|"ark:/12345/… を 302"| B
-    B --&gt;|"ark:/99999/… を 302"| A
+    A --&gt;|"ark:12345/… を 302"| B
+    B --&gt;|"ark:99999/… を 302"| A
     A -.-&gt;|"未知 NAAN"| N[n2t.net]</code></pre>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># A 側。B の NAAN を「権威は持たないが行き先は知っている」として登録する</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="s2">"拠点 B"</span><span class="w"> </span>--no-authoritative<span class="w"> </span>--redirect<span class="w"> </span>https://ark.b.example.ac.jp
@@ -1754,7 +1782,7 @@
 <p>上位の台帳:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/s7<span class="w"> </span>--note<span class="w"> </span><span class="s2">"拠点 B へ委譲"</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.b.example.ac.jp
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.b.example.ac.jp/ark:/$id'</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.b.example.ac.jp/ark:$id'</span>
 </code></pre></div>
 <p>下位の台帳:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"（上位と同じ NAAN）"</span><span class="w">      </span><span class="c1"># 権威を持つ側として登録する</span>
@@ -1769,15 +1797,15 @@
     T--&gt;&gt;O: 307 + 行き先（minter）
     Note over T: 代理では呼ばない
     O-&gt;&gt;S: POST /api/mint
-    S--&gt;&gt;O: 201 ark:/99999/s7abc
+    S--&gt;&gt;O: 201 ark:99999/s7abc
     Note over S: 名前を作るのは下位の台帳だけ</code></pre>
 <pre class="mermaid"><code>sequenceDiagram
     participant U as 外の利用者
     participant T as 上位 arkhe
     participant S as 下位 arkhe B
-    U-&gt;&gt;T: GET /ark:/99999/s7abc
-    T--&gt;&gt;U: 302 https://ark.b…/ark:/…
-    U-&gt;&gt;S: GET /ark:/99999/s7abc
+    U-&gt;&gt;T: GET /ark:99999/s7abc
+    T--&gt;&gt;U: 302 https://ark.b…/ark:…
+    U-&gt;&gt;S: GET /ark:99999/s7abc
     S--&gt;&gt;U: 302 対象の URL
     Note over T,S: 上位が落ちると、下位が生きていても外から届かない</code></pre>
 <p><strong>採番はプロキシしない。</strong> 上位に来た採番要求は <code>307</code> と行き先だけを返す
@@ -1787,7 +1815,7 @@
 <p>上位のリゾルバは<a href="../../reference/data-model/">この順</a>で判断する。<strong>順序が結論を決める</strong>ので、
 委譲を組む前に見ておく価値がある。</p>
 <pre class="mermaid"><code>flowchart TD
-    R["ark:/99999/s7abc が&lt;br/&gt;上位に届く"] --&gt; E{"上位の台帳に&lt;br/&gt;完全一致"}
+    R["ark:99999/s7abc が&lt;br/&gt;上位に届く"] --&gt; E{"上位の台帳に&lt;br/&gt;完全一致"}
     E --&gt;|ある| A1["上位が答える&lt;br/&gt;&lt;small&gt;② 委譲前に採った名前&lt;/small&gt;"]
     E --&gt;|ない| P{"祖先が&lt;br/&gt;ある"}
     P --&gt;|ある| A2["祖先から記述・転送"]
@@ -1827,7 +1855,8 @@ NOID＋検査桁でない名前を採ると、<strong>上位経由の解決だ�
 <p>保留中、上位は <code>302</code> を出さず <code>200</code> と理由を返す。<strong>識別子は生きている</strong>——
 <code>?info</code> も <code>??</code> も答え続けるので、永続性の宣言を引っ込めることにはならない。
 期限は必須で、切れれば時計だけで元に戻る（<a href="../../concepts/invariants/">壊さないもの</a>）。</p>
-<p>止めている名前空間は <code>/.well-known/ark</code> の <code>held</code> に出る。<strong>下位から見て、上位が
+<p>止めている名前空間は <code>/.well-known/ark</code> の <code>held</code> に出る（JSON 表現。<code>Accept:
+application/json</code> を付けて求める）。<strong>下位から見て、上位が
 止めたことを機械的に確かめられる</strong>——連絡が付かないときに効く。</p>
 <h3 id="何が上位に残り何が下位に移るか">何が上位に残り、何が下位に移るか<a class="headerlink" href="#何が上位に残り何が下位に移るか" title="Permanent link">&para;</a></h3>
 <table>
@@ -1905,7 +1934,7 @@ NOID＋検査桁でない名前を採ると、<strong>上位経由の解決だ�
 代わりに、外からは正当な識別子と誤記の区別がつかない（どちらも同じ説明ページに着く）。</p>
 <p>外から同じ識別子を引いたとき、<strong>返るものが違う</strong>。</p>
 <pre class="mermaid"><code>flowchart LR
-    U["外の利用者&lt;br/&gt;ark:/99999/s7abc"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;上位が名前と記述を持つ&lt;/small&gt;&lt;br/&gt;200 記述を返す"]
+    U["外の利用者&lt;br/&gt;ark:99999/s7abc"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;上位が名前と記述を持つ&lt;/small&gt;&lt;br/&gt;200 記述を返す"]
     U --&gt; C2["C-2&lt;br/&gt;&lt;small&gt;上位は名前を知らない&lt;/small&gt;&lt;br/&gt;303 説明ページ"]
     C1 --&gt; R1["存在は言える&lt;br/&gt;行き先は無い&lt;br/&gt;&lt;small&gt;＝制限公開そのもの&lt;/small&gt;"]
     C2 --&gt; R2["名前の存在も漏れない&lt;br/&gt;&lt;small&gt;誤記と区別がつかない&lt;/small&gt;"]</code></pre>
@@ -1927,7 +1956,7 @@ NOID＋検査桁でない名前を採ると、<strong>上位経由の解決だ�
 取り消せない。</p>
 <h2 id="pid">クローズド PID とオープン PID<a class="headerlink" href="#pid" title="Permanent link">&para;</a></h2>
 <p><strong>同じ NAAN の中に、公開の識別子と閉じた識別子を並べて置く。</strong> 分けるのは shoulder であって、
-<strong>識別子の形は分けない</strong>——<code>ark:/99999/…</code> のままにしておくことが、この構成の目的そのものである。</p>
+<strong>識別子の形は分けない</strong>——<code>ark:99999/…</code> のままにしておくことが、この構成の目的そのものである。</p>
 <h3 id="なぜ形を分けないのか">なぜ形を分けないのか<a class="headerlink" href="#なぜ形を分けないのか" title="Permanent link">&para;</a></h3>
 <p>機微なデータは、<strong>いつか公開になる</strong>。禁止期間が明け、匿名化が済み、論文が出る。そのときに
 識別子が変わる設計だと、<strong>閉じていた間に配った参照が全部死ぬ</strong>——申請書にも、審査の記録にも、
@@ -1938,9 +1967,9 @@ NOID＋検査桁でない名前を採ると、<strong>上位経由の解決だ�
     N["NAAN 99999&lt;br/&gt;&lt;small&gt;na_policy（?? の答え）はここ&lt;/small&gt;"]
     N --&gt; SO["shoulder /s7&lt;br/&gt;&lt;small&gt;オープン PID&lt;/small&gt;"]
     N --&gt; SC["shoulder /c7&lt;br/&gt;&lt;small&gt;クローズド PID&lt;/small&gt;"]
-    SO --&gt; AO["ark:/99999/s7abc&lt;br/&gt;&lt;small&gt;url = 公開の対象&lt;/small&gt;"]
-    SC --&gt; AC["ark:/99999/c7xyz&lt;br/&gt;&lt;small&gt;url = 空／申請窓口&lt;/small&gt;"]
-    AC --&gt;|"公開になったら url だけ付け替える"| AC2["ark:/99999/c7xyz&lt;br/&gt;&lt;small&gt;url = 公開の対象&lt;/small&gt;"]</code></pre>
+    SO --&gt; AO["ark:99999/s7abc&lt;br/&gt;&lt;small&gt;url = 公開の対象&lt;/small&gt;"]
+    SC --&gt; AC["ark:99999/c7xyz&lt;br/&gt;&lt;small&gt;url = 空／申請窓口&lt;/small&gt;"]
+    AC --&gt;|"公開になったら url だけ付け替える"| AC2["ark:99999/c7xyz&lt;br/&gt;&lt;small&gt;url = 公開の対象&lt;/small&gt;"]</code></pre>
 <p><strong>右下の 2 つは同じ識別子である。</strong> 行も、名前も、shoulder も変わっていない。変わったのは
 行き先だけで、それは <code>ArkChange</code> に before/after が残る——<strong>NR を宣言したまま公開に移せる</strong>
 のは、変えたのが名前ではないからである。</p>
@@ -1950,7 +1979,7 @@ NOID＋検査桁でない名前を採ると、<strong>上位経由の解決だ�
 <tr>
 <th>段</th>
 <th>公開側の台帳が持つもの</th>
-<th>外から <code>ark:/…</code> を引くと</th>
+<th>外から <code>ark:…</code> を引くと</th>
 <th>使いどころ</th>
 </tr>
 </thead>
@@ -2012,14 +2041,14 @@ FAIR A2 の形そのものである。制限公開は、この基盤にとって
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="s1">       "what_title": "（外に出してよい範囲の題）",</span>
 <a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="s1">       "commitment": "制限公開。利用には申請が要る",</span>
 <a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="s1">       "url": ""}'</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># → ark:/99999/c7xyz…</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># → ark:99999/c7xyz…</span>
 <a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
 <a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># 申請窓口を付ける（3 段目に上げる）</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7xyz…",</span>
 <a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
 <a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
 <a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="c1"># 禁止期間が明けたら、実体へ向け替える。**識別子は変わらない**</span>
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:/99999/c7xyz…",</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7xyz…",</span>
 <a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
 </code></pre></div>
 <p>閉域側は台帳を持たず、<strong>払い出された名前と中の対象の対応だけ</strong>を持つ。</p>
@@ -2056,7 +2085,7 @@ who / what / when をそのまま入れると、<strong>題名から中身が推
 <p>これは方針ではなく、<strong>分けた数だけ人が守ることになる</strong>規則である。台帳が 1 つなら
 コードが守っていたものが、分けた瞬間に運用の側に移る。</p>
 <pre class="mermaid"><code>flowchart TD
-    X["arkhe X&lt;br/&gt;&lt;small&gt;99999/s7 を採番&lt;/small&gt;"] --&gt; N["ark:/99999/s7abc"]
+    X["arkhe X&lt;br/&gt;&lt;small&gt;99999/s7 を採番&lt;/small&gt;"] --&gt; N["ark:99999/s7abc"]
     Y["arkhe Y&lt;br/&gt;&lt;small&gt;99999/s7 も採番&lt;/small&gt;"] --&gt; N
     N --&gt; Z["✗ 同じ名前が 2 つの対象を指す&lt;br/&gt;&lt;small&gt;NR の下では取り返しがつかない&lt;/small&gt;"]</code></pre>
 <p><strong>これを防ぐ仕掛けは、分けた先には無い。</strong> 1 つの台帳なら「採番が更新に化けない」は

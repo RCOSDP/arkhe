@@ -1029,6 +1029,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    エラー
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1276,7 +1304,7 @@
 
 <h1 id="ark-とは何か">ARK とは何か<a class="headerlink" href="#ark-とは何か" title="Permanent link">&para;</a></h1>
 <p><strong>ARK</strong>（Archival Resource Key）は、こういう形の永続識別子である。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ark:/99999/x9abc1234
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ark:99999/x9abc1234
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    └──┬─┘ └────┬───┘
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>     NAAN     name
 </code></pre></div>
@@ -1289,7 +1317,7 @@
         DOI["10.xxxx — DOI&lt;br/&gt;&lt;small&gt;登録組織が名前空間を管理し、&lt;br/&gt;レコードは RA 側に置かれる&lt;/small&gt;"]
         HDL["20.500.xxxxx — CNRI Handle&lt;br/&gt;&lt;small&gt;組織が購入する prefix&lt;/small&gt;"]
     end
-    ARK["ark:/99999/…&lt;br/&gt;&lt;small&gt;HTTP と DNS の上に直接。下部構造を持たない。&lt;/small&gt;"]</code></pre>
+    ARK["ark:99999/…&lt;br/&gt;&lt;small&gt;HTTP と DNS の上に直接。下部構造を持たない。&lt;/small&gt;"]</code></pre>
 <p><strong>DOI は Handle の上に建っている。</strong> <code>doi.org</code> は Handle のリゾルバであり、DOI は
 Handle の <code>10.x</code> 名前空間の名前である。<strong>ARK だけが別系統</strong>で、購入したり加入したり
 誰かに運用してもらったりする土台を、下に持たない。</p>
@@ -1298,15 +1326,16 @@ Handle の <code>10.x</code> 名前空間の名前である。<strong>ARK だけ
 維持する会員資格も無い。</p>
 <p><strong>誰も代わりに永続性を保証しない。</strong> DOI では登録組織が約束の一部だが、ARK では
 <strong>約束はあなたのもので、その中身も自分で述べる</strong>。だからこそ<strong>尋ねる手段</strong>が用意されている。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:/99999/x9abc1234??"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:99999/x9abc1234??"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>erc:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>who: 山田太郎
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>what: あるデータセット
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>when: 2026
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: https://repo.example.ac.jp/records/1
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>policy: NP | NR, OP, CC | 2026 | https://example.org/policy
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>commitment-level: permanent-dynamic
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: ark:99999/x9abc1234
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>redirect: https://repo.example.ac.jp/records/1
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>policy: NP | NR, OP, CC | 2026 | https://example.org/policy
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>commitment-level: permanent-dynamic
 </code></pre></div>
 <p>何も名乗らない識別子より、<strong>何を名乗っているかが言える識別子</strong>のほうが価値がある。
 ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して検証可能にする</strong>。</p>

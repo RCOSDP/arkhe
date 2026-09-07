@@ -1057,6 +1057,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1389,6 +1417,19 @@ never arises.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/oauth/token<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-d<span class="w"> </span><span class="nv">grant_type</span><span class="o">=</span>client_credentials<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span>univ-repo<span class="w"> </span>-d<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span>…
 </code></pre></div>
+<p><strong>Hold on to the token and reuse it.</strong> Fetch a new one shortly before <code>expires_in</code>
+(3600 seconds by default) runs out; <strong>do not fetch one per API call</strong> — issuing a token
+verifies <code>client_secret</code> with Argon2, so fetching per call pays the same cost as
+<code>apikey</code> and adds a round trip on top. An hour of minting is one token fetch, however
+many identifiers it covers.</p>
+<p><strong>Renewing is just the same request again</strong> — there is no <code>refresh_token</code> (see below).
+A token can also stop working early, through clock skew or a principal being disabled,
+so it is worth <strong>re-fetching on a 401 and retrying once</strong>.</p>
+<p>Client libraries do not do this part for you. <code>requests-oauthlib</code> wants a
+<code>BackendApplicationClient</code> and an explicit <code>fetch_token()</code> call, and does not re-fetch
+on expiry for this grant. <code>authlib</code>'s <code>OAuth2Session</code> will notice the expiry and fetch
+again if you give it <code>token_endpoint</code> and <code>grant_type="client_credentials"</code>, and needs
+an <code>update_token</code> callback if the token must outlive the process.</p>
 <p>Deliberately absent: <code>authorization_code</code> and PKCE, <code>refresh_token</code>, introspection,
 revocation. <strong>If you come to need them, moving to a real authorization server is safer
 than growing half of one here.</strong></p>

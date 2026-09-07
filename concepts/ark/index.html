@@ -1029,6 +1029,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1276,7 +1304,7 @@
 
 <h1 id="what-ark-is">What ARK is<a class="headerlink" href="#what-ark-is" title="Permanent link">&para;</a></h1>
 <p>An <strong>ARK</strong> (Archival Resource Key) is a persistent identifier that looks like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ark:/99999/x9abc1234
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ark:99999/x9abc1234
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    └──┬─┘ └────┬───┘
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>     NAAN     name
 </code></pre></div>
@@ -1289,7 +1317,7 @@ most of what follows comes from it.</p>
         DOI["10.xxxx — DOI&lt;br/&gt;&lt;small&gt;registration agencies manage the namespace;&lt;br/&gt;records live with the RA&lt;/small&gt;"]
         HDL["20.500.xxxxx — CNRI Handle&lt;br/&gt;&lt;small&gt;a prefix an organisation buys&lt;/small&gt;"]
     end
-    ARK["ark:/99999/…&lt;br/&gt;&lt;small&gt;plain HTTP and DNS. No substructure beneath it.&lt;/small&gt;"]</code></pre>
+    ARK["ark:99999/…&lt;br/&gt;&lt;small&gt;plain HTTP and DNS. No substructure beneath it.&lt;/small&gt;"]</code></pre>
 <p><strong>DOI is built on Handle.</strong> <code>doi.org</code> is a Handle resolver, and a DOI is a name in
 Handle's <code>10.x</code> namespace. <strong>ARK alone is a separate lineage</strong> — nothing sits beneath
 it that has to be bought, joined or operated by someone else.</p>
@@ -1299,15 +1327,16 @@ ARK Alliance. There is no registration agency to pay and no membership to mainta
 <p><strong>Nobody guarantees persistence on your behalf.</strong> With a DOI, the registration agency
 is part of the promise. With an ARK, <strong>the promise is yours and you say what it is</strong>
 — which is why the scheme has a way to <em>ask</em>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:/99999/x9abc1234??"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:99999/x9abc1234??"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>erc:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>who: 山田太郎
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>what: A dataset
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>when: 2026
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: https://repo.example.ac.jp/records/1
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>policy: NP | NR, OP, CC | 2026 | https://example.org/policy
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>commitment-level: permanent-dynamic
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: ark:99999/x9abc1234
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>redirect: https://repo.example.ac.jp/records/1
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>policy: NP | NR, OP, CC | 2026 | https://example.org/policy
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>commitment-level: permanent-dynamic
 </code></pre></div>
 <p>An identifier that claims nothing is worth less than one that says exactly what it
 claims. <strong>ARK makes the claim explicit and checkable</strong> rather than implied by a logo.</p>

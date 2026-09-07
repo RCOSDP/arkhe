@@ -16,7 +16,7 @@
         <link rel="prev" href="../data-model/">
       
       
-        <link rel="next" href="../../project/contributing/">
+        <link rel="next" href="../errors/">
       
       
         
@@ -1007,12 +1007,79 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Resolution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thump-headers-and-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        THUMP headers and where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-encoded-characters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        %-encoded characters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#well-knownark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /.well-known/ark
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1225,6 +1292,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Resolution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thump-headers-and-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        THUMP headers and where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-encoded-characters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        %-encoded characters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#well-knownark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        /.well-known/ark
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1305,41 +1411,94 @@ behaviour that depends on the suffix.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>/ark:/99999/x9abc</code></td>
+<td><code>/ark:99999/x9abc</code></td>
 <td><code>302</code> to the target, or a description if there is none</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc/page/3</code></td>
+<td><code>/ark:99999/x9abc/page/3</code></td>
 <td><code>302</code> to <em>target</em><code>/page/3</code> — suffix passthrough, no record of its own</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc?</code></td>
+<td><code>/ark:99999/x9abc?</code></td>
 <td>ERC/ANVL kernel — who, what, when, where</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc??</code></td>
+<td><code>/ark:99999/x9abc??</code></td>
 <td>The above plus the persistence statement</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc?info</code></td>
+<td><code>/ark:99999/x9abc?info</code></td>
 <td>The same for a human being</td>
 </tr>
 <tr>
-<td><code>/ark:/99999/x9abc?json</code></td>
+<td><code>/ark:99999/x9abc?json</code></td>
 <td>The same for a program</td>
 </tr>
 <tr>
-<td><code>/ark:/12345/…</code> (unknown NAAN)</td>
+<td><code>/ark:12345/…</code> (unknown NAAN)</td>
 <td><code>302</code> to the global resolver</td>
 </tr>
 <tr>
 <td><code>/.well-known/ark</code></td>
+<td><code>text/plain</code>: the resolver's root path, ending in <code>/</code></td>
+</tr>
+<tr>
+<td><code>/.well-known/ark</code> with <code>Accept: application/json</code></td>
 <td>What this resolver holds, and where minting happens if elsewhere</td>
 </tr>
 </tbody>
 </table>
 <p>A bare <code>?</code> cannot be distinguished from no query string at the protocol level — even
 in ASGI. Set <code>ARKHE_RAW_URI_HEADER</code> if something in front passes the raw URI.</p>
+<p>Every error carries a code (<code>ARKHE-1011</code>), an English <code>message</code>, and a structured
+<code>detail</code>. <strong>Match on the code, not on the wording</strong> — see
+<a href="../errors/">Errors</a> for the full list.</p>
+<h3 id="thump-headers-and-where">THUMP headers and <code>where</code><a class="headerlink" href="#thump-headers-and-where" title="Permanent link">&para;</a></h3>
+<p>Every answer the resolver gives about an identifier — <code>?</code>, <code>??</code>, <code>?info</code>, <code>?json</code>, a
+description with no target, a hold, a <code>404</code> — carries the two headers from §5.2:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>THUMP-Status: 0.6 404 Not Found
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Link: &lt;/ark:99999/x9abc&gt;; rel="describes"
+</code></pre></div>
+<p>The <code>Link</code> is what tells a recipient who knows nothing about inflections that the
+response <em>describes</em> the uninflected ARK rather than being a representation of the URL
+it fetched. The specification's own example writes it <code>&lt;…&gt; rel="describes";</code>; that is
+not a valid <a href="https://www.rfc-editor.org/rfc/rfc8288">RFC 8288</a> link value, so arkhe
+emits the well-formed <code>&lt;…&gt;; rel="describes"</code> — the same assertion, in a form standard
+parsers can read. Redirects carry neither header: a redirect is the access service, not
+an answer about the identifier.</p>
+<p>In the ERC, <strong><code>where</code> is the ARK, not the target</strong> — §5.1.2 defines it as "the
+long-term identifier as opposed to a transient redirect target". Changing where an ARK
+points does not change its <code>where</code>; that is the whole value of the element. The current
+target is published as <code>redirect</code>, outside the kernel, and only when there is one.</p>
+<h3 id="-encoded-characters"><code>%</code>-encoded characters<a class="headerlink" href="#-encoded-characters" title="Permanent link">&para;</a></h3>
+<p>A reserved character (<code>%</code>, <code>-</code>, <code>.</code>, <code>/</code>) may be <code>%</code>-encoded <strong>to conceal its reserved
+meaning</strong> — <code>%2F</code> is the only way to write "there is a slash here, but it does not
+separate components". So <code>ark:99999/x54%2Fc2</code> and <code>ark:99999/x54/c2</code> are <strong>different
+identifiers</strong>, and the specification forbids the encoded form from ever appearing
+decoded (<code>draft-kunze-ark-42</code> §3.2). arkhe reads the still-encoded path from the ASGI
+<code>raw_path</code> and normalises only the hex case (<code>%2f</code> → <code>%2F</code>, step 5); it never decodes.</p>
+<p><strong>Anything in front must pass the encoding through.</strong> With nginx, <code>proxy_pass</code> without
+a URI part (<code>proxy_pass http://backend;</code>) — adding a path makes nginx re-encode the
+decoded one. With Apache, <code>AllowEncodedSlashes NoDecode</code>. Where a proxy normalises
+<code>%2F</code> anyway, the encoding cannot be recovered and such names will not resolve.</p>
+<h3 id="well-knownark"><code>/.well-known/ark</code><a class="headerlink" href="#well-knownark" title="Permanent link">&para;</a></h3>
+<p><code>draft-kunze-ark-42</code> §5.6 registers <code>ark</code> in the Well-Known URIs registry
+(<a href="https://www.rfc-editor.org/rfc/rfc8615">RFC 8615</a>) and defines the answer as <strong>plain
+text containing the resolver's root path, ending in <code>/</code></strong> — append a compact ARK to it
+and you have a resolution request. <strong>A client that sends no <code>Accept</code>, or <code>*/*</code>, gets
+that</strong>; answering such a client with JSON would make the host look like it has no ARK
+resolver at all.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>curl<span class="w"> </span>https://ark.example.ac.jp/.well-known/ark
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">/</span>
+</code></pre></div>
+<p>arkhe's own inventory — the namespaces it holds, delegated shoulders and their
+<code>minter</code>, and any held namespace — is the JSON representation of the same URL, so ask
+for it by name:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span>https://ark.example.ac.jp/.well-known/ark
+</code></pre></div>
+<p>Both carry <code>Vary: Accept</code>. The path comes from the ASGI <code>root_path</code>, so if you mount
+arkhe under a prefix, set it (<code>uvicorn --root-path /pid</code>) or the answer will point at a
+door that is not there.</p>
 
 
 
@@ -1392,13 +1551,13 @@ in ASGI. Set <code>ARKHE_RAW_URI_HEADER</code> if something in front passes the 
         
         
           
-          <a href="../../project/contributing/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing">
+          <a href="../errors/" class="md-footer__link md-footer__link--next" aria-label="Next: Errors">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Contributing
+                Errors
               </div>
             </div>
             <div class="md-footer__button md-icon">

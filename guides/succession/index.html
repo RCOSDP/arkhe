@@ -1018,6 +1018,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1254,7 +1282,7 @@
 
 <h1 id="succession-and-departure">Succession and departure<a class="headerlink" href="#succession-and-departure" title="Permanent link">&para;</a></h1>
 <p>Organisations merge, split and leave. <strong>The identifiers must not notice.</strong></p>
-<p><code>ark:/99999/x9abc</code> was handed out. Under NR it cannot be reissued, so it cannot be
+<p><code>ark:99999/x9abc</code> was handed out. Under NR it cannot be reissued, so it cannot be
 replaced by a new name at a new organisation — that would kill the original. What can
 change is who mints next, and where the target points.</p>
 <h2 id="succession--an-organisation-merges-into-another">Succession — an organisation merges into another<a class="headerlink" href="#succession--an-organisation-merges-into-another" title="Permanent link">&para;</a></h2>
@@ -1273,7 +1301,7 @@ identifier, which is another way of saying it would be a different name.</p>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">               </span>--keep-update<span class="w"> </span>self-managed
 </code></pre></div>
 <p><strong>Minting stops; resolution continues forever.</strong> Having handed out
-<code>ark:/&lt;our NAAN&gt;/…</code>, we cannot reissue those names, so the NAAN holder goes on
+<code>ark:&lt;our NAAN&gt;/…</code>, we cannot reissue those names, so the NAAN holder goes on
 answering <code>302</code> for them indefinitely.</p>
 <p><code>--resolver</code> is the part worth understanding. It rewrites every existing target to the
 organisation's own resolver <strong>and</strong> sets the same delegation on the shoulder, so that

@@ -1,6 +1,6 @@
 
 <!doctype html>
-<html lang="ja" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
@@ -10,35 +10,35 @@
       
       
       
-        <link rel="canonical" href="https://rcosdp.github.io/arkhe/ja/project/versioning/">
+        <link rel="canonical" href="https://rcosdp.github.io/arkhe/reference/errors/">
       
       
-        <link rel="prev" href="../contributing/">
+        <link rel="prev" href="../api/">
       
       
-        <link rel="next" href="../changelog/">
+        <link rel="next" href="../../project/contributing/">
       
       
         
-          <link rel="alternate" href="../../../project/versioning/" hreflang="en">
+          <link rel="alternate" href="./" hreflang="en">
         
-          <link rel="alternate" href="./" hreflang="ja">
+          <link rel="alternate" href="../../ja/reference/errors/" hreflang="ja">
         
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>バージョン - arkhe</title>
+        <title>Errors - arkhe</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -57,9 +57,9 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/extra.css">
+      <link rel="stylesheet" href="../../assets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -84,8 +84,8 @@
     <div data-md-component="skip">
       
         
-        <a href="#バージョン" class="md-skip">
-          コンテンツにスキップ
+        <a href="#errors" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -99,8 +99,8 @@
   
 
 <header class="md-header md-header--shadow" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="ヘッダー">
-    <a href="../../" title="arkhe" class="md-header__button md-logo" aria-label="arkhe" data-md-component="logo">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="arkhe" class="md-header__button md-logo" aria-label="arkhe" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              バージョン
+              Errors
             
           </span>
         </div>
@@ -160,20 +160,20 @@
       <div class="md-header__option">
   <div class="md-select">
     
-    <button class="md-header__button md-icon" aria-label="言語切り替え">
+    <button class="md-header__button md-icon" aria-label="Select language">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
     </button>
     <div class="md-select__inner">
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="../../../project/versioning/" hreflang="en" class="md-select__link">
+            <a href="./" hreflang="en" class="md-select__link">
               English
             </a>
           </li>
         
           <li class="md-select__item">
-            <a href="./" hreflang="ja" class="md-select__link">
+            <a href="../../ja/reference/errors/" hreflang="ja" class="md-select__link">
               日本語
             </a>
           </li>
@@ -194,16 +194,16 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="検索" placeholder="検索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="検索">
+      <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" title="クリア" aria-label="クリア" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
@@ -216,7 +216,7 @@
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            検索を初期化
+            Initializing search
           </div>
           <ol class="md-search-result__list" role="presentation"></ol>
         </div>
@@ -228,7 +228,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/RCOSDP/arkhe" title="リポジトリへ" class="md-source" data-md-component="source">
+        <a href="https://github.com/RCOSDP/arkhe" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -262,9 +262,9 @@
 
 
 
-<nav class="md-nav md-nav--primary" aria-label="ナビゲーション" data-md-level="0">
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../" title="arkhe" class="md-nav__button md-logo" aria-label="arkhe" data-md-component="logo">
+    <a href="../.." title="arkhe" class="md-nav__button md-logo" aria-label="arkhe" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.67 13.67c-.47.46-1.04.83-1.67 1.06V23H8v-2H5v-3h3v-3.28c-1.74-.62-3-2.26-3-4.22C5 8 7 6 9.5 6h.1c-.47.95-.68 2-.57 3.08-.59.2-1.03.76-1.03 1.42 0 .83.67 1.5 1.5 1.5.23 0 .45-.06.65-.15.64.84 1.52 1.47 2.52 1.82m8.06 5.77-2.76 1.16-.78-1.84-2.76 1.17-1.17-2.77L16.03 16l-1.27-3c-1.85.08-3.65-.95-4.41-2.75-.96-2.29.12-4.93 2.41-5.9.24-.1.5-.17.74-.23C12.84 2.87 11.5 2 10 2 7.79 2 6 3.79 6 6v.24c-.3.26-.6.58-.85.91C5.06 6.78 5 6.4 5 6c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.42-.6 2.67-1.55 3.57.42.43 1.05.56 1.63.31.77-.32 1.12-1.2.8-1.96a1 1 0 0 0-.14-.26C15.9 7.13 16 6.58 16 6c0-.63-.1-1.24-.28-1.81 1.28.36 2.38 1.25 2.93 2.57.76 1.8.24 3.81-1.15 5.05zM13 8.6c.37-.41.65-.89.82-1.42-.54.27-.85.82-.82 1.42"/></svg>
@@ -274,7 +274,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/RCOSDP/arkhe" title="リポジトリへ" class="md-source" data-md-component="source">
+      <a href="https://github.com/RCOSDP/arkhe" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
@@ -317,7 +317,7 @@
   <span class="md-ellipsis">
     
   
-    はじめに
+    Introduction
   
 
     
@@ -333,7 +333,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    はじめに
+    Introduction
   
 
           </label>
@@ -346,14 +346,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../" class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    arkhe とは
+    Overview
   
 
     
@@ -381,7 +381,7 @@
   <span class="md-ellipsis">
     
   
-    クイックスタート
+    Quickstart
   
 
     
@@ -432,7 +432,7 @@
   <span class="md-ellipsis">
     
   
-    考え方
+    Concepts
   
 
     
@@ -448,7 +448,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    考え方
+    Concepts
   
 
           </label>
@@ -468,7 +468,7 @@
   <span class="md-ellipsis">
     
   
-    ARK とは何か
+    What ARK is
   
 
     
@@ -496,7 +496,7 @@
   <span class="md-ellipsis">
     
   
-    委譲の構造
+    Delegation
   
 
     
@@ -524,7 +524,7 @@
   <span class="md-ellipsis">
     
   
-    壊さないもの
+    Invariants
   
 
     
@@ -575,7 +575,7 @@
   <span class="md-ellipsis">
     
   
-    手引き
+    Guides
   
 
     
@@ -591,7 +591,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    手引き
+    Guides
   
 
           </label>
@@ -611,7 +611,7 @@
   <span class="md-ellipsis">
     
   
-    はじめて立ち上げるとき
+    Setting up for the first time
   
 
     
@@ -639,7 +639,7 @@
   <span class="md-ellipsis">
     
   
-    認証
+    Authentication
   
 
     
@@ -667,7 +667,7 @@
   <span class="md-ellipsis">
     
   
-    管理画面
+    Admin interface
   
 
     
@@ -695,7 +695,7 @@
   <span class="md-ellipsis">
     
   
-    承継と離脱
+    Succession and departure
   
 
     
@@ -723,7 +723,7 @@
   <span class="md-ellipsis">
     
   
-    デプロイ
+    Deployment
   
 
     
@@ -751,206 +751,7 @@
   <span class="md-ellipsis">
     
   
-    分散して運用する
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    リファレンス
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    リファレンス
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../reference/configuration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    設定
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../reference/cli/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    コマンド
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../reference/data-model/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    データモデル
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../reference/api/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    API
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../reference/errors/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    エラー
+    Running several arkhe
   
 
     
@@ -993,17 +794,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    プロジェクト
+    Reference
   
 
     
@@ -1014,12 +815,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
-    プロジェクト
+    Reference
   
 
           </label>
@@ -1032,14 +833,98 @@
   
   
     <li class="md-nav__item">
-      <a href="../contributing/" class="md-nav__link">
+      <a href="../configuration/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    参加する
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
   
 
     
@@ -1069,24 +954,6 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    バージョン
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1094,7 +961,7 @@
   <span class="md-ellipsis">
     
   
-    バージョン
+    Errors
   
 
     
@@ -1104,80 +971,93 @@
 
       </a>
       
-        
+    </li>
+  
 
-<nav class="md-nav md-nav--secondary" aria-label="目次">
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
   
   
   
     
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目次
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#版が何を約束するか" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        版が何を約束するか
-      
-    </span>
-  </a>
+  <span class="md-ellipsis">
+    
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#不変条件は契約の一部" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        不変条件は契約の一部
-      
-    </span>
-  </a>
+    Project
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#マイグレーション" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        マイグレーション
-      
-    </span>
-  </a>
+
+    
+  </span>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#10-まで" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1.0 まで
-      
-    </span>
-  </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#リリースの手順" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        リリースの手順
-      
-    </span>
-  </a>
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
   
-</li>
-      
-    </ul>
+    Project
   
-</nav>
-      
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1190,14 +1070,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../project/versioning/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    変更履歴
+    Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../project/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
   
 
     
@@ -1231,75 +1139,12 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="目次">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
     
   
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目次
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#版が何を約束するか" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        版が何を約束するか
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#不変条件は契約の一部" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        不変条件は契約の一部
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#マイグレーション" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        マイグレーション
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#10-まで" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1.0 まで
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#リリースの手順" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        リリースの手順
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1316,7 +1161,7 @@
 
 
   
-    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/project/versioning.ja.md" title="編集" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/reference/errors.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1324,87 +1169,167 @@
   
 
 
-<h1 id="バージョン">バージョン<a class="headerlink" href="#バージョン" title="Permanent link">&para;</a></h1>
-<p>arkhe は <a href="https://semver.org/lang/ja/">Semantic Versioning 2.0.0</a> に従う。
-<code>MAJOR.MINOR.PATCH</code>。</p>
-<p>版はまだ <code>0.x</code>——<a href="#10-まで">1.0 まで</a>を参照。<strong>いま出ている版は文書に書かない</strong>
-（リリースのたびに古くなるため）。<a href="../changelog/">変更履歴</a>を見ること。</p>
-<h2 id="版が何を約束するか">版が何を約束するか<a class="headerlink" href="#版が何を約束するか" title="Permanent link">&para;</a></h2>
-<p>SemVer は「公開されている面」を決めて初めて意味を持つ。ライブラリではなく<strong>基盤</strong>なので、
-その範囲は「公開している関数」より広い。</p>
+<h1 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h1>
+<p>Every error this API returns carries a <strong>code</strong>. The wording of a message can change —
+it gets clearer, it gets translated — but the code does not, so <strong>match on the code, not
+on the text</strong>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"code"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ARKHE-1011"</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A request holds at most 1000 rows."</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"detail"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"limit"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">}</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>detail</code> carries the values that filled the message, <strong>still structured</strong>, so a client
+never has to cut a number back out of a sentence.</p>
+<p>Resolution answers in <code>text/plain</code> (a person reads it too), with the code first:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ARKHE-1403 ark:99999/x9abcd — Check digit mismatch: the identifier looks mistranscribed.
+</code></pre></div>
+<p>Two places keep a different shape on purpose. <strong><code>/oauth/token</code> follows
+<a href="https://www.rfc-editor.org/rfc/rfc6749">RFC 6749</a> §5.2</strong> — <code>error</code> and
+<code>error_description</code>, which is what OAuth client libraries read — and adds <code>code</code>
+alongside. <strong>The admin interface</strong> answers from its own catalogue, in the language of the screen
+(<code>?lang=</code> → cookie → <code>Accept-Language</code>); it is a browser surface, not this API.</p>
 <table>
 <thead>
 <tr>
-<th>約束に含まれるもの</th>
-<th>破壊的変更の例</th>
+<th>Code</th>
+<th>Status</th>
+<th>Message</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>解決の振る舞い</strong></td>
-<td>inflection が答えなくなる。ステータスコードが変わる。suffix passthrough が祖先で解決しなくなる</td>
+<td><code>ARKHE-1001</code></td>
+<td>400</td>
+<td reason="reason">Not readable as an ARK:</td>
 </tr>
 <tr>
-<td><strong>REST API</strong></td>
-<td>項目の削除・改名。今まで通っていた要求が通らなくなる</td>
+<td><code>ARKHE-1002</code></td>
+<td>400</td>
+<td>A qualifier must begin with '/' (a part) or '.' (a variant).</td>
 </tr>
 <tr>
-<td><strong>環境変数</strong></td>
-<td>設定項目の改名・削除。既定値の変更が振る舞いを変える</td>
+<td><code>ARKHE-1003</code></td>
+<td>400</td>
+<td qualifier="qualifier">The qualifier does not point inside the base name:</td>
 </tr>
 <tr>
-<td><strong>CLI</strong></td>
-<td>コマンドやオプションの削除・改名。スクリプトが読む出力の形が変わる</td>
+<td><code>ARKHE-1004</code></td>
+<td>400</td>
+<td>The name is {length} octets; at most {limit} are indexed (Base Name plus Qualifier, draft-kunze-ark-42 §3.1).</td>
 </tr>
 <tr>
-<td><strong>DB スキーマ</strong></td>
-<td>既存の台帳に適用できない、あるいはデータを失うマイグレーション</td>
+<td><code>ARKHE-1005</code></td>
+<td>400</td>
+<td>{ark} is already registered.</td>
 </tr>
 <tr>
-<td><strong>不変条件</strong></td>
-<td>いずれかが弱まること（下記）</td>
+<td><code>ARKHE-1006</code></td>
+<td>400</td>
+<td>A target must not use a scheme a browser would execute ({schemes}).</td>
+</tr>
+<tr>
+<td><code>ARKHE-1007</code></td>
+<td>400</td>
+<td>A principal with authority={authority} must name a shoulder.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1008</code></td>
+<td>400</td>
+<td shoulder="shoulder">No such shoulder:</td>
+</tr>
+<tr>
+<td><code>ARKHE-1009</code></td>
+<td>400</td>
+<td>Shoulder {shoulder} exists under more than one NAAN; name the naan as well.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1010</code></td>
+<td>400</td>
+<td>The organisation has no default shoulder.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1011</code></td>
+<td>400</td>
+<td>A request holds at most {limit} rows.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1201</code></td>
+<td>401</td>
+<td>No credentials.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1202</code></td>
+<td>401</td>
+<td>Invalid credentials.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1203</code></td>
+<td>404</td>
+<td>This deployment does not issue tokens itself (see ARKHE_AUTH).</td>
+</tr>
+<tr>
+<td><code>ARKHE-1204</code></td>
+<td>400</td>
+<td>Only client_credentials is supported.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1301</code></td>
+<td>403</td>
+<td scope="scope">The token does not carry the required scope:</td>
+</tr>
+<tr>
+<td><code>ARKHE-1302</code></td>
+<td>403</td>
+<td target="target">Outside this principal's registered reach:</td>
+</tr>
+<tr>
+<td><code>ARKHE-1303</code></td>
+<td>403</td>
+<td>The principal has no active organisation.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1304</code></td>
+<td>403</td>
+<td>Shoulder {shoulder} has status={status} and cannot be minted into.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1305</code></td>
+<td>403</td>
+<td scopes="scopes">Scopes not allowed for this client:</td>
+</tr>
+<tr>
+<td><code>ARKHE-1306</code></td>
+<td>307</td>
+<td>Minting for shoulder {shoulder} is delegated; go to the minter in Location.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1401</code></td>
+<td>404</td>
+<td>No such ARK in this ledger.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1402</code></td>
+<td>404</td>
+<td>This resolver is authoritative for the NAAN and has no such name.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1403</code></td>
+<td>404</td>
+<td>Check digit mismatch: the identifier looks mistranscribed.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1404</code></td>
+<td>404</td>
+<td>Metadata for an unknown NAAN is not held by this resolver.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1601</code></td>
+<td>429</td>
+<td>Daily quota exhausted: {used} of {quota} used in the last 24 hours.</td>
 </tr>
 </tbody>
 </table>
-<p>含まないもの: 内部のモジュール構成、管理画面のマークアップ、ログの書式、<code>compose/</code> の
-中身（あれは見本）。</p>
-<h2 id="不変条件は契約の一部">不変条件は契約の一部<a class="headerlink" href="#不変条件は契約の一部" title="Permanent link">&para;</a></h2>
-<p><a href="../../concepts/invariants/">これらの拒否</a>こそが arkhe の存在理由である。<strong>署名が
-1 つも動かなくても、いずれかが弱まれば MAJOR</strong> とする。</p>
-<ul>
-<li>ARK や名前空間が削除できるようになる</li>
-<li><code>retired</code> から戻せるようになる</li>
-<li>採番が黙って更新に化けうるようになる</li>
-<li>到達範囲がリクエストで広がるようになる</li>
-<li>人の主体が API キーを持てる、機械の主体が外部ログインで名乗れる</li>
-</ul>
-<p>これらを黙ってやるリリースは、関数の署名を壊すリリースより悪い。<strong>壊れるのがビルド
-ではなく識別子</strong>だから。</p>
-<h2 id="マイグレーション">マイグレーション<a class="headerlink" href="#マイグレーション" title="Permanent link">&para;</a></h2>
-<p><strong>MINOR でマイグレーションを追加してよい。ただしデータを失ってはならない。</strong>
-出す前に毎回、PostgreSQL に対して <code>upgrade → downgrade → upgrade</code> を通す（<code>scripts/check.sh</code>）——SQLite は
-PostgreSQL が弾くスキーマを通してしまうため。</p>
-<p>台帳は作り直せない。NR の下では失った ARK を採り直せないので、多くのサービスが持つ
-「元のシステムから再投入する」という逃げ道が、ここには無い。</p>
-<h2 id="10-まで">1.0 まで<a class="headerlink" href="#10-まで" title="Permanent link">&para;</a></h2>
-<p>版が <code>0</code> で始まる間は、<strong>MINOR が破壊的変更を運ぶ</strong>。<code>0.1.0 → 0.2.0</code> は壊れうるが、
-<code>0.0.1 → 0.0.2</code> は壊さない。</p>
-<p>1.0 を打つのは:</p>
-<ul>
-<li>ARK の適合状況に未対応が残っていないこと、</li>
-<li>実際のマイグレーションを 1 度は越えてスキーマが安定したこと、</li>
-<li><strong>最初の 1 組織以外</strong>が動かしていること。</li>
-</ul>
-<p>それまでは版を固定して使うこと。</p>
-<h2 id="リリースの手順">リリースの手順<a class="headerlink" href="#リリースの手順" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 1. 版と変更履歴を更新</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>vim<span class="w"> </span>pyproject.toml<span class="w"> </span>CHANGELOG.md<span class="w"> </span>CHANGELOG.ja.md
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># 2. タグを打つ</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.0.2<span class="w"> </span>-m<span class="w"> </span><span class="s2">"v0.0.2"</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.0.2
-</code></pre></div>
-<p>タグでリリースのワークフローが走り、テスト・成果物の作成・その版のドキュメント公開まで
-行う。<strong>版は <code>pyproject.toml</code> だけで決まる</strong>——パッケージも OpenAPI も管理画面もそこから
-読むので、他に更新を覚えておく場所は無い。</p>
 
 
 
@@ -1428,7 +1353,7 @@ PostgreSQL が弾くスキーマを通してしまうため。</p>
           <button type="button" class="md-top md-icon" data-md-component="top" hidden>
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
-  ページトップへ戻る
+  Back to top
 </button>
         
       </main>
@@ -1437,33 +1362,33 @@ PostgreSQL が弾くスキーマを通してしまうため。</p>
   
     
       
-      <nav class="md-footer__inner md-grid" aria-label="フッター" >
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../contributing/" class="md-footer__link md-footer__link--prev" aria-label="前: 参加する">
+          <a href="../api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: API">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
             </div>
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                前
+                Previous
               </span>
               <div class="md-ellipsis">
-                参加する
+                API
               </div>
             </div>
           </a>
         
         
           
-          <a href="../changelog/" class="md-footer__link md-footer__link--next" aria-label="次: 変更履歴">
+          <a href="../../project/contributing/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributing">
             <div class="md-footer__title">
               <span class="md-footer__direction">
-                次
+                Next
               </span>
               <div class="md-ellipsis">
-                変更履歴
+                Contributing
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1520,10 +1445,10 @@ PostgreSQL が弾くスキーマを通してしまうため。</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "content.action.edit", "search.suggest", "search.highlight"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f", "clipboard.copy": "\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u3078\u30b3\u30d4\u30fc", "search.result.more.one": "\u3053\u306e\u30da\u30fc\u30b8\u5185\u306b\u3082\u30461\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.more.other": "\u3053\u306e\u30da\u30fc\u30b8\u5185\u306b\u3042\u3068#\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.none": "\u4f55\u3082\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3067\u3057\u305f", "search.result.one": "1\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.other": "#\u4ef6\u898b\u3064\u304b\u308a\u307e\u3057\u305f", "search.result.placeholder": "\u691c\u7d22\u30ad\u30fc\u30ef\u30fc\u30c9\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044", "search.result.term.missing": "\u691c\u7d22\u306b\u542b\u307e\u308c\u306a\u3044", "select.version": "\u30d0\u30fc\u30b8\u30e7\u30f3\u5207\u308a\u66ff\u3048"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "content.action.edit", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
