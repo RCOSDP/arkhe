@@ -226,6 +226,110 @@
         ]
       }
     },
+    "/api/import": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Import Ark",
+        "description": "**Record an ARK that was minted elsewhere.** Requires `ark:import`.\n\nMinting does not let a caller choose the name; this does, and that single difference is\nwhy it has its own scope and its own checks. It exists so that **a name minted inside a\nclosed network can later be published under the same identifier** — without it, opening\nan embargoed object means issuing a different ARK, and every reference handed out while\nit was closed dies.\n\nThree things are checked, and none of them can be waived:\n\n* the shoulder is **delegated** — importing into a namespace this ledger mints in could\n  collide with its own minter, and a name minted elsewhere only exists because the\n  namespace was delegated in the first place;\n* the name falls **inside that shoulder**;\n* the **check digit verifies** — for a name that arrives from outside, that is the only\n  evidence there is that it was not mistyped.\n\nA name already in the ledger is refused rather than overwritten, exactly as minting is.",
+        "operationId": "import_ark_api_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:import"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/import/bulk": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Bulk Import",
+        "description": "**Import a whole delegated namespace at once.** Requires `ark:import`. One request holds\nat most `ARKHE_BULK_LIMIT` rows.\n\nThis is the shape the closed-network case actually needs: a delegate hands over the\nnames it minted, and they arrive together. Each row goes through exactly the same checks\nas a single import, and **one row that fails any of them means nothing is created** — a\nhalf-imported namespace is worse than none, because the names that did land cannot be\ntaken back.\n\nRows may span several shoulders, as long as every one of them is delegated and within\nthe caller's reach.",
+        "operationId": "bulk_import_api_import_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkImportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkImportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:import"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/update": {
       "put": {
         "tags": [
@@ -726,6 +830,44 @@
         "type": "object",
         "title": "Body_token_oauth_token_post"
       },
+      "BulkImportIn": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ImportIn"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BulkImportIn",
+        "description": "Import in bulk. **One row that fails any check and nothing is created** — a half-imported namespace is worse than none, because the names that did land cannot be taken back."
+      },
+      "BulkImportOut": {
+        "properties": {
+          "imported": {
+            "items": {
+              "$ref": "#/components/schemas/ArkOut"
+            },
+            "type": "array",
+            "title": "Imported"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "imported",
+          "count"
+        ],
+        "title": "BulkImportOut"
+      },
       "BulkMintIn": {
         "properties": {
           "data": {
@@ -884,6 +1026,76 @@
         ],
         "title": "HoldReleaseIn",
         "description": "Lift a hold before its expiry."
+      },
+      "ImportIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": ""
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier",
+            "default": ""
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": ""
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation",
+            "default": ""
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": ""
+          },
+          "commitment": {
+            "type": "string",
+            "title": "Commitment",
+            "default": ""
+          },
+          "metadata": {
+            "type": "string",
+            "title": "Metadata",
+            "default": ""
+          },
+          "who": {
+            "type": "string",
+            "title": "Who",
+            "default": ""
+          },
+          "when": {
+            "type": "string",
+            "title": "When",
+            "default": ""
+          },
+          "ark": {
+            "type": "string",
+            "title": "Ark",
+            "description": "The ARK as it was minted elsewhere (`ark:99999/c7xyz1`)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "ImportIn",
+        "description": "An ARK minted elsewhere, to be recorded here. Unlike minting, **the caller brings the name**; it must fall inside a delegated shoulder of this ledger and its check digit must verify."
       },
       "MintIn": {
         "properties": {
@@ -1249,7 +1461,8 @@
               "ark:update": "Change where it points",
               "ark:read": "Read",
               "ark:tombstone": "Declare it lost",
-              "ark:hold": "Suspend forwarding"
+              "ark:hold": "Suspend forwarding",
+              "ark:import": "Import a name minted elsewhere"
             },
             "tokenUrl": "/oauth/token"
           }

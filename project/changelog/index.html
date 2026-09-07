@@ -2104,6 +2104,22 @@ listed under Changed and Fixed below; the ledger itself is untouched, and the on
 migration only widens columns.</p>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>POST /api/import</code> and <code>/api/import/bulk</code> take in an ARK minted elsewhere</strong>, one at a
+  time or a whole delegated shoulder at once. This was the largest gap in running a closed
+  arkhe underneath a public one: names minted inside the closed network could never reach
+  the public ledger, so opening an embargoed object meant issuing a <em>different</em> ARK — and
+  every reference handed out while it was closed died. Now the same identifier is
+  published by <a href="https://rcosdp.github.io/arkhe/guides/federation/#pid">one change of target</a>.</li>
+</ul>
+<p><strong>Importing is not minting</strong>, and it carries its own scope (<code>ark:import</code>): minting hands
+  you a name, importing asserts one. Three checks, none waivable — the shoulder is
+  <strong>delegated</strong>, the name falls inside it, and the <strong>check digit verifies</strong>, which for a
+  name arriving from outside is the only evidence that it was not mistyped. The ledger
+  must also be <strong>authoritative for the NAAN</strong>; taking custody of names in a namespace you
+  merely forward would be claiming to be its keeper. Reach follows the usual rule —
+  <strong>higher authority covers lower</strong> — and the bulk form creates nothing at all if any row
+  fails, because names that did land cannot be taken back.</p>
+<ul>
 <li>
 <p><strong><code>PATCH /api/update</code> writes only the fields you send.</strong> <code>PUT</code> on that path is a
   replacement — omit <code>title</code> and it is emptied — which is correct for a replacement and

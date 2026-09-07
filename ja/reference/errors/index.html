@@ -1294,6 +1294,18 @@
 <td>A request holds at most {limit} rows.</td>
 </tr>
 <tr>
+<td><code>ARKHE-1012</code></td>
+<td>400</td>
+<td>取り込もうとした名前の検査桁が合わない。<strong>外で採番された名前を信じる唯一の手段</strong>なので、ここは緩めない</td>
+<td>Check digit mismatch: {ark} was not minted by a NOID minter, or was mistyped.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1013</code></td>
+<td>400</td>
+<td>取り込む名前が、その NAAN のどの shoulder にも属していない</td>
+<td>The name {name} does not fall inside a shoulder of NAAN {naan}.</td>
+</tr>
+<tr>
 <td><code>ARKHE-1201</code></td>
 <td>401</td>
 <td>資格情報が無い。<strong>公開情報の読取には要らない</strong>ので、これは書き込みの口</td>
@@ -1352,6 +1364,18 @@
 <td>307</td>
 <td>その shoulder の採番は外に委譲されている。<strong>代理では呼ばない</strong>——応答が失われると「向こうにはあるがこちらは知らない ARK」が生まれる</td>
 <td>Minting for shoulder {shoulder} is delegated; go to the minter in Location.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1307</code></td>
+<td>403</td>
+<td>委譲していない shoulder には取り込めない。<strong>自分で採番している名前空間に外から名前を入れると、採番と衝突しうる</strong>——委譲したからこそ、外で採られた名前がある</td>
+<td>Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1308</code></td>
+<td>403</td>
+<td>取り次いでいるだけの NAAN には取り込めない。<strong>他所の名前空間の保管者を名乗ることになる</strong></td>
+<td>This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it.</td>
 </tr>
 <tr>
 <td><code>ARKHE-1401</code></td>

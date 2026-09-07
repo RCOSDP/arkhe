@@ -1001,6 +1001,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#handing-the-names-over" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handing the names over
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-arkhe-does-not-do-here" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1612,6 +1623,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#handing-the-names-over" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handing the names over
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#what-arkhe-does-not-do-here" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2111,9 +2133,10 @@ network, and the public side can state that the identifier exists.</p>
 objects inside.</p>
 <p><strong>B. Mint inside the closed network</strong> (<a href="#c-a-closed-arkhe-underneath">C-2</a>). Run an arkhe
 there and mark <code>/c7</code> <code>delegated</code> on the public side. The closed side becomes autonomous,
-but <strong>the public side never learns the names that follow</strong> — there is
-<a href="#what-does-not-exist-yet">no endpoint for importing an ARK minted elsewhere</a>, which is
-the largest constraint in this design today.</p>
+and the public side learns nothing until you hand a name over — <strong>which you now can</strong>:
+<code>POST /api/import</code> takes an ARK minted elsewhere into the public ledger, one at a time or
+a whole delegated shoulder at once. That is what turns C-2 into C-1 <strong>without changing
+the identifier</strong>, so a name handed out while it was closed keeps working when it opens.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Public side: record in the ledger that we do not mint in this namespace</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.example.ac.jp/closed-namespace'</span>
@@ -2123,6 +2146,26 @@ the largest constraint in this design today.</p>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"The closed organisation"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
 </code></pre></div>
+<h3 id="handing-the-names-over">Handing the names over<a class="headerlink" href="#handing-the-names-over" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># One at a time</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>…/api/import<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7xyz1", "title": "(only what may leave the closed network)"}'</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># Or the whole delegated shoulder at once — all or nothing</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>…/api/import/bulk<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"data": [{"ark": "ark:99999/c7xyz1"}, {"ark": "ark:99999/c7abc2"}]}'</span>
+</code></pre></div>
+<p><strong>Import is not minting, and its scope is separate</strong> (<code>ark:import</code>): minting hands you a
+name, importing asserts one. Three things are checked and none can be waived — the
+shoulder is <strong>delegated</strong>, the name falls inside it, and the <strong>check digit verifies</strong>,
+which for a name arriving from outside is the only evidence there is that it was not
+mistyped. The ledger must also be <strong>authoritative for the NAAN</strong>: taking custody of names
+in a namespace you merely forward would be claiming to be its keeper.</p>
+<p>Reach follows the same rule as everywhere else — <strong>higher authority covers lower</strong>. A
+system administrator may import anywhere, a NAAN administrator anywhere under that NAAN,
+an organisation only into its own shoulder.</p>
+<p>Once imported, publication is <a href="#pid">the same single change of target</a> as C-1: the name
+does not move.</p>
 <h3 id="what-arkhe-does-not-do-here">What arkhe does not do here<a class="headerlink" href="#what-arkhe-does-not-do-here" title="Permanent link">&para;</a></h3>
 <p><strong>It does not do access control.</strong> A closed PID is closed <strong>because its target is</strong>, not
 because arkhe turns anyone away. That judgement belongs to the repository holding the
@@ -2189,11 +2232,6 @@ rule of <strong>never handing the same shoulder out twice</strong>.</p>
 <h2 id="what-does-not-exist-yet">What does not exist yet<a class="headerlink" href="#what-does-not-exist-yet" title="Permanent link">&para;</a></h2>
 <p><strong>Things worth knowing before you build this</strong>, rather than discovering them halfway.</p>
 <ul>
-<li><strong>An endpoint for importing an ARK minted elsewhere.</strong> There is no way to put a name
-  minted below into the upper ledger — that is where the constraint in
-  <a href="#c-a-closed-arkhe-underneath">C</a> comes from. Adding one means checking, at import
-  time, that the name falls inside the delegated shoulder, that it is not a double mint,
-  and that the check digit is correct.</li>
 <li><strong>A CLI for <code>shoulder.redirect</code>.</strong> Only the admin interface and
   <code>arkhe depart --resolver</code> set it, which is where automating a delegation snags.</li>
 <li><strong>Cross-ledger listing, audit and quota.</strong> <code>/.well-known/ark</code> publishes the namespace
