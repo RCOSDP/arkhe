@@ -308,6 +308,123 @@ $ curl -H 'Accept: application/json' $R/.well-known/ark
  "held": []}
 ```
 
+## 10. 非公開の台帳と、あとからの公開
+
+ここまでは台帳 1 つの話だった。この設計が存在する理由の場面は 2 つある——**到達できない
+網の中の閉じた arkhe**と、**世界に答える公開の arkhe**。**識別子は両側で同じ**である。
+それがすべてで、閉じているあいだに配った名前は、公開されたときにも効かなければならない。
+
+| | | |
+| --- | --- | --- |
+| `$C` | 閉域の minter | 網の内側。`/c7` の権威をここが持つ |
+| `$P` | 公開の minter | ここでは `/c7` は `delegated` |
+| `$PR` | 公開の resolver | 世界が尋ねる先 |
+
+### 閉域で採番する
+
+```console
+$ curl -X POST $C/api/mint -H "Authorization: Bearer $CK" \
+       -d '{"url": "https://inside.closed.example/dataset/42",
+            "title": "（閉域の中にしか無い題名）"}'
+{"ark": "ark:99999/c7j89qtb3fc", …}
+```
+
+外から見ると、この名前はまだ何も語らない。委譲された shoulder は「その名前空間は
+閉じている」という説明ページで答える——**内部の住所は返さない**。外の人には
+どのみち届かないからである。
+
+```console
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7j89qtb3fc
+303 https://ark.example.ac.jp/closed-namespace
+```
+
+打ち間違いも同じページに着く。**名前が漏れない**というのがこの段の意味である。
+
+### 記述だけを引き取る
+
+```console
+$ curl -X POST $P/api/import -H "Authorization: Bearer $PK" \
+       -d '{"ark":   "ark:99999/c7j89qtb3fc",
+            "title": "関東平野の土壌水分（利用制限あり）",
+            "who":   "山田 太郎",
+            "when":  "2026",
+            "commitment": "利用は申請による"}'
+{"ark": "ark:99999/c7j89qtb3fc", "url": "", …}
+```
+
+**`url` は空のまま**。これは書き忘れではなく、**そう述べている**のである。公開の
+リゾルバは、誰も送り込めない識別子について記述を返すようになる。
+
+```console
+$ curl -H 'Accept: text/plain' "$PR/ark:99999/c7j89qtb3fc?info"
+erc:
+who: 山田 太郎
+what: 関東平野の土壌水分（利用制限あり）
+when: 2026
+where: ark:99999/c7j89qtb3fc
+about: ark:99999/c7j89qtb3fc
+policy: NP | NR, OP, CC | 2026
+commitment: 利用は申請による
+commitment-level: permanent-dynamic
+```
+
+**境界を越えたのは、運用者がこの要求に打ち込んだ内容そのものだけ**である。上りの
+自動同期は作らないこと——いずれ機微な題名が `?info` に出る。**出口に濾過器を置く
+より、出口が無いほうが強い。**
+
+### 段を上げる
+
+```console
+$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+                                   "url": "https://apply.example.ac.jp/dataset/42"}'
+→ 302 https://apply.example.ac.jp/dataset/42          # 申請すれば使える
+
+$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+                                   "url": "https://repo.example.ac.jp/records/42"}'
+→ 302 https://repo.example.ac.jp/records/42           # 禁輸が明けた
+```
+
+どちらの付け替えでも記述は残り（`what` も `who` もそのまま）、**名前はどの段でも
+同じ**だった。
+
+```
+ark:99999/c7j89qtb3fc
+```
+
+使うのは `PUT` ではなく `PATCH`。[5 節](#5-対象が移る)のとおりで、**ここで失いたく
+ないものがまさに記述**だからである。
+
+### 名前空間ごとまとめて
+
+```console
+$ curl -X POST $P/api/import/bulk -H "Authorization: Bearer $PK" \
+       -d '{"data": [{"ark": "ark:99999/c7xk7vtb226", "title": "batch 1"},
+                     {"ark": "ark:99999/c7zjft7mcxq", "title": "batch 2"}]}'
+{"count": 2, "imported": [...]}
+```
+
+**1 件でも検査に落ちれば、1 件も作らない。** 入ってしまった名前は引っ込められないので、
+中途半端に取り込まれた名前空間は、何もしないより悪い。
+
+### 断られるもの
+
+```console
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/s7abc1234"}'      # 委譲していない
+ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.
+
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fz"}'    # 検査桁
+ARKHE-1012  Check digit mismatch: ark:99999/c7j89qtb3fz was not minted by a NOID minter, or was mistyped.
+
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fc"}'    # 既に在る
+ARKHE-1005  ark:99999/c7j89qtb3fc is already registered.
+```
+
+検査桁は、**外から来た名前が打ち間違いでないことを公開台帳が確かめる唯一の手立て**
+なので、緩めない。到達範囲はほかと同じ規則で**上位が下位を覆い**、その NAAN の権威を
+この台帳が持っていることも要る——取り次いでいるだけの名前空間の名前を引き受けるのは、
+その保管者を名乗ることだからである。
+
+
 ## 全体の形
 
 ```mermaid
@@ -329,3 +446,4 @@ flowchart LR
 - [API リファレンス](../reference/api.md) — 全部の口と、解決が返すもの
 - [エラー](../reference/errors.md) — 全部の符号
 - [壊さないもの](../concepts/invariants.md) — なぜ削除の口が無いのか
+- [分散して運用する](federation.md) — 10 節の公開／非公開の構成をひととおり

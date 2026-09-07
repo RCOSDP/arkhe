@@ -315,6 +315,126 @@ $ curl -H 'Accept: application/json' $R/.well-known/ark
  "held": []}
 ```
 
+## 10. A closed ledger, published later
+
+Everything above was one ledger. The case this design exists for has two: a closed arkhe
+inside a network that cannot be reached, and a public one that answers the world. **The
+identifier is the same on both sides** — that is the whole point, because a name handed
+out while the object was closed has to keep working when it opens.
+
+| | | |
+| --- | --- | --- |
+| `$C` | closed minter | inside the network. Authoritative for `/c7` |
+| `$P` | public minter | the shoulder `/c7` is marked `delegated` here |
+| `$PR` | public resolver | what the world asks |
+
+### Mint inside
+
+```console
+$ curl -X POST $C/api/mint -H "Authorization: Bearer $CK" \
+       -d '{"url": "https://inside.closed.example/dataset/42",
+            "title": "(a title that only exists inside)"}'
+{"ark": "ark:99999/c7j89qtb3fc", …}
+```
+
+From outside, that name says nothing yet. The delegated shoulder answers with a page
+explaining that the namespace is closed — **not with the internal address**, which
+nobody outside could reach anyway:
+
+```console
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7j89qtb3fc
+303 https://ark.example.ac.jp/closed-namespace
+```
+
+A typo lands on the same page, which is the point of this level: **the names do not
+leak**.
+
+### Hand it over, description only
+
+```console
+$ curl -X POST $P/api/import -H "Authorization: Bearer $PK" \
+       -d '{"ark":   "ark:99999/c7j89qtb3fc",
+            "title": "Soil moisture, Kanto plain (restricted)",
+            "who":   "Yamada, Taro",
+            "when":  "2026",
+            "commitment": "Restricted access; use requires an application"}'
+{"ark": "ark:99999/c7j89qtb3fc", "url": "", …}
+```
+
+**`url` stays empty**, and that is not an omission — it is the statement. The public
+resolver now describes an identifier it cannot send anyone to:
+
+```console
+$ curl -H 'Accept: text/plain' "$PR/ark:99999/c7j89qtb3fc?info"
+erc:
+who: Yamada, Taro
+what: Soil moisture, Kanto plain (restricted)
+when: 2026
+where: ark:99999/c7j89qtb3fc
+about: ark:99999/c7j89qtb3fc
+policy: NP | NR, OP, CC | 2026
+commitment: Restricted access; use requires an application
+commitment-level: permanent-dynamic
+```
+
+**What crossed the boundary is exactly what an operator typed into that request.** Do not
+build an automatic sync upward: a confidential title will eventually arrive in `?info`,
+and having no path out is stronger than having a filter on the way out.
+
+### Raise it when you can
+
+```console
+$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+                                   "url": "https://apply.example.ac.jp/dataset/42"}'
+→ 302 https://apply.example.ac.jp/dataset/42          # available on application
+
+$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+                                   "url": "https://repo.example.ac.jp/records/42"}'
+→ 302 https://repo.example.ac.jp/records/42           # the embargo lifts
+```
+
+The description survives both moves (`what` and `who` are still there), and **the name
+was identical at every step**:
+
+```
+ark:99999/c7j89qtb3fc
+```
+
+Use `PATCH`, not `PUT` — [as in section 5](#5-move-the-object), the description is
+exactly what you do not want to lose here.
+
+### A whole namespace at once
+
+```console
+$ curl -X POST $P/api/import/bulk -H "Authorization: Bearer $PK" \
+       -d '{"data": [{"ark": "ark:99999/c7xk7vtb226", "title": "batch 1"},
+                     {"ark": "ark:99999/c7zjft7mcxq", "title": "batch 2"}]}'
+{"count": 2, "imported": [...]}
+```
+
+**One row that fails any check and nothing is created.** Names that did land cannot be
+taken back, so a half-imported namespace is worse than none.
+
+### What gets refused
+
+```console
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/s7abc1234"}'      # not delegated
+ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.
+
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fz"}'    # check digit
+ARKHE-1012  Check digit mismatch: ark:99999/c7j89qtb3fz was not minted by a NOID minter, or was mistyped.
+
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fc"}'    # already here
+ARKHE-1005  ark:99999/c7j89qtb3fc is already registered.
+```
+
+The check digit is the only evidence a public ledger has that a name arriving from
+outside was not mistyped, which is why it cannot be waived. Reach follows the usual rule
+— **higher authority covers lower** — and the NAAN must be one this ledger is
+authoritative for; taking custody of names in a namespace you merely forward would be
+claiming to be its keeper.
+
+
 ## The shape of it
 
 ```mermaid
@@ -336,3 +456,4 @@ Every dotted arrow changes where the name leads, or whether it leads anywhere at
 - [The API reference](../reference/api.md) — every endpoint, and what resolution answers
 - [Errors](../reference/errors.md) — every code
 - [Invariants](../concepts/invariants.md) — why there is no delete
+- [Running several arkhe](federation.md) — the closed/public arrangement of section 10 in full

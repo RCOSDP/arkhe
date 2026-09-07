@@ -24,6 +24,13 @@ migration only widens columns.
 
 ### Added
 
+- **A worked closed-then-published example**, as section 10 of
+  [the walkthrough](https://rcosdp.github.io/arkhe/guides/walkthrough/): mint inside a
+  closed network, see what the public resolver says before and after, import the name
+  with a description and no target, raise it to an application form and then to the
+  object, and the refusals. Two ledgers, four processes, **every response copied from a
+  running pair**.
+
 - **`POST /api/import` and `/api/import/bulk` take in an ARK minted elsewhere**, one at a
   time or a whole delegated shoulder at once. This was the largest gap in running a closed
   arkhe underneath a public one: names minted inside the closed network could never reach

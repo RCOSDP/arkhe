@@ -234,7 +234,7 @@ def _parse(raw: str):
         raise authz.Invalid(errors.ARK_UNREADABLE, reason=str(exc)) from exc
 
 
-def _check_importable(shoulder, name: str) -> None:
+def _check_importable(shoulder, name: str, raw: str) -> None:
     """**書かずに済む検査を、書く前に済ませる。**
 
     委譲されているか・名前がその内側か・検査桁が合うか。ここを通らない行が
@@ -247,7 +247,9 @@ def _check_importable(shoulder, name: str) -> None:
             errors.IMPORT_SHOULDER_NOT_DELEGATED, shoulder=exc.shoulder, status=exc.status
         ) from exc
     except minting.BadCheckDigit as exc:
-        raise authz.Invalid(errors.IMPORT_CHECK_DIGIT, ark=str(exc)) from exc
+        # **呼び出し側が送った文字列を返す。** 正規化後の名前を見せても、
+        # 打ち間違いを探している人の手元とは一致しない。
+        raise authz.Invalid(errors.IMPORT_CHECK_DIGIT, ark=raw) from exc
     except minting.OutsideShoulder as exc:
         raise authz.Invalid(
             errors.IMPORT_NAME_OUTSIDE_SHOULDER, name=exc.name, naan=exc.naan
@@ -279,7 +281,7 @@ def _import_one(session, principal, row) -> Ark:
     """
     parsed = _parse(row.ark)
     shoulder = _shoulder_holding(session, principal, parsed)
-    _check_importable(shoulder, parsed.name)
+    _check_importable(shoulder, parsed.name, row.ark)
     return _insert_import(session, principal, shoulder, row)
 
 
@@ -558,7 +560,7 @@ def bulk_import(body: BulkImportIn, principal: CurrentPrincipal, session: Db, cf
     # ——取り込みは名前を増やす操作で、増えた名前は引っ込められない。
     checked = [(_shoulder_holding(session, principal, _parse(row.ark)), row) for row in rows]
     for shoulder, row in checked:
-        _check_importable(shoulder, _parse(row.ark).name)
+        _check_importable(shoulder, _parse(row.ark).name, row.ark)
 
     out: list[Ark] = [_insert_import(session, principal, sh, row) for sh, row in checked]
     authz.audit(session, principal, "bulk_import", count=len(out))
