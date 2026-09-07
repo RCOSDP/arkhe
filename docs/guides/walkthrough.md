@@ -108,8 +108,25 @@ distinguishable. A namespace policy is set when the NAAN is registered
 **`Link: …; rel="describes"`** tells a client that knows nothing about inflections that
 this response *describes* the ARK rather than being the thing itself.
 
-`?json` returns the same record for a program, and `?info` returns a page for a person.
-Whichever you use, **the answer survives the object**: section 6 comes back to that.
+**The answer survives the object** either way: section 6 comes back to that.
+
+`?info` answers in whichever medium you ask for — the same description, a different
+content type:
+
+```console
+$ curl -o /dev/null -w '%{content_type}\n' "$R/ark:99999/x9tn1qkq2g7?info"
+text/html; charset=utf-8
+
+$ curl -H 'Accept: application/json' "$R/ark:99999/x9tn1qkq2g7?info"   # same as ?json
+$ curl -H 'Accept: text/plain'       "$R/ark:99999/x9tn1qkq2g7?info"   # same as ??
+```
+
+The page is translated too. **`?lang=` will not work here** — the query string *is* the
+inflection — so the language goes after an `&`, or comes from `Accept-Language`:
+
+```console
+$ curl "$R/ark:99999/x9tn1qkq2g7?info&lang=en"
+```
 
 ## 4. Point one part somewhere else
 
@@ -135,13 +152,20 @@ identifier appears**, even though nothing was minted.
 ## 5. Move the object
 
 ```bash
-curl -X PUT $M/api/update \
+curl -X PATCH $M/api/update \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
-  -d '{"ark":   "ark:99999/x9tn1qkq2g7",
-       "url":   "https://newrepo.example.ac.jp/datasets/1",
-       "title": "Rainfall in the Kanto plain, 1991-2020",
-       "who":   "Yamada, Taro",
-       "when":  "2026"}'
+  -d '{"ark": "ark:99999/x9tn1qkq2g7",
+       "url": "https://newrepo.example.ac.jp/datasets/1"}'
+```
+
+```json
+{
+  "ark": "ark:99999/x9tn1qkq2g7",
+  "url": "https://newrepo.example.ac.jp/datasets/1",
+  "title": "Rainfall in the Kanto plain, 1991-2020",
+  "who": "Yamada, Taro",
+  "when": "2026"
+}
 ```
 
 ```console
@@ -149,12 +173,15 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $R/ark:99999/x9tn1qkq2g7
 302 https://newrepo.example.ac.jp/datasets/1
 ```
 
-!!! warning "`update` replaces the record, it does not merge into it"
-    Sending only `ark` and `url` **empties `title`, `who`, `when` and the rest**, because
-    every omitted field carries its default. Send the whole record, as above. The
-    previous target is kept in the change history either way (the ARK's page in the admin
-    interface), but a description that was there and is now gone cannot be recovered
-    from it.
+**`PATCH` writes what you sent and leaves the rest alone**, which is what moving an
+object actually calls for. Sending a field as `""` clears it, so removing a value is
+still possible — the two cases have to stay distinguishable.
+
+!!! warning "`PUT` on the same path replaces the whole record"
+    `PUT /api/update` is a replacement: send only `ark` and `url` and **`title`, `who`,
+    `when` and the rest are emptied**, because every omitted field carries its default.
+    That is what a PUT means, and it is the right verb when you can say "the record is
+    now exactly this" — but for repointing an object, use `PATCH`.
 
 ## 6. Stop the redirect without killing the name
 

@@ -20,6 +20,7 @@ from arkhe.api.schemas import (
     HoldIn,
     HoldReleaseIn,
     MintIn,
+    PatchIn,
     RegisterIn,
     TombstoneIn,
     UpdateIn,
@@ -96,6 +97,18 @@ derivative sits elsewhere".
 
 **It requires `ark:mint`.** Nothing is minted, but a new resolvable identifier does
 appear, so it must not be handed to a principal that holds update rights alone.
+"""
+
+E_PATCH = """\
+**Update the fields you send, and leave the rest alone.** Requires `ark:update`.
+
+`PUT` replaces the record: every field you omit takes its default, so repointing an ARK
+with `{"ark": …, "url": …}` alone **empties its title, its who and its when**. That is
+correct for a replacement and wrong for what people actually do most of the time, which
+is move an object.
+
+Sending a field as `""` clears it; not sending it leaves it untouched. Both are needed,
+which is why this is not simply "ignore empty strings".
 """
 
 E_UPDATE = """\
@@ -386,6 +399,34 @@ def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
     # **行き先の履歴は誰が行っても残す**（監査は NAAN 単位以上しか残さない）。
     authz.record_change(session, principal, ark, action="update", before_url=before)
     authz.audit(session, principal, "update", ark.ark)
+    session.commit()
+    return ArkOut.of(ark)
+
+
+@router.patch(
+    "/update",
+    dependencies=needs("ark:update"),
+    response_model=ArkOut,
+    description=E_PATCH,
+)
+def patch(body: PatchIn, principal: CurrentPrincipal, session: Db):
+    """**送られた項目だけを書き換える。** `PUT` と同じ権限・同じ検証を通る。
+
+    `PUT` が要るのは「レコードをこの内容にする」と言い切れるときで、実際には
+    **行き先だけを付け替えたい**ほうがずっと多い。そこで `PUT` を送ると、
+    省いた記述が既定値で上書きされて消える——`?info` が答えるべき中身が、
+    行き先の付け替えのついでに失われる。
+
+    空文字を**送れば**消える。送らなければ触らない。この 2 つを区別できないと、
+    値を消す手段が無くなる。
+    """
+    authz.require_scope(principal, "ark:update")
+    ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
+    authz.assert_may_touch(session, principal, ark)
+    before = ark.url
+    _apply(ark, body.sent(), principal)
+    authz.record_change(session, principal, ark, action="update", before_url=before)
+    authz.audit(session, principal, "patch", ark.ark)
     session.commit()
     return ArkOut.of(ark)
 

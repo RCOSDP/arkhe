@@ -2,22 +2,20 @@
 {% block title %}{{ erc.ark }}{% endblock %}
 {% block body %}
 <div class="doc">
-  <p class="kicker">ARK</p>
+  <p class="kicker">{{ t('in.kicker') }}</p>
   <h1>{{ erc.what or erc.ark }}</h1>
   <p class="ark mono">{{ erc.ark }}</p>
 
   {# **止まっていることを隠さない。** 転送しない理由が分からないと、利用者には
      「壊れている」としか見えない——識別子が生きていることを、ここで言う。 #}
   {% if hold %}
-  <p class="note"><b>この識別子は今、転送を止めています。</b>
+  <p class="note"><b>{{ t('in.held.h') }}</b>
     {% if hold.reason %}{{ hold.reason }}{% endif %}
-    {% if hold.until %}<br><span class="dim">{{ hold.until }} までの一時的な措置です。
-      識別子は有効で、記述はこのとおり答え続けます。</span>{% endif %}</p>
+    {% if hold.until %}<br><span class="dim">{{ t('in.held.until').format(hold.until) }}</span>{% endif %}</p>
   {% endif %}
 
   {% if res.inherited_from %}
-  <p class="note">この記述は <span class="mono">{{ erc.inherited_from }}</span> から継承しています
-    （要求された名前は登録されていませんが、最も近い祖先の記述を返しています）。</p>
+  <p class="note">{{ t('in.inherited').format(erc.inherited_from) }}</p>
   {% endif %}
 
   <dl>
@@ -28,30 +26,32 @@
        転送先は別行に出す（§5.1.2）。 #}
     <dt>where</dt>
     <dd><span class="mono">{{ erc.where }}</span></dd>
-    <dt>今の行き先</dt>
+    <dt>{{ t('in.redirect') }}</dt>
     {# **安全なスキームのときだけリンクにする。** そうでなければ文字として出す
        ——踏めなければ実行されない。 #}
-    <dd>{% if hold %}<span class="dim">今は転送していません（保留中）</span>
+    <dd>{% if hold %}<span class="dim">{{ t('in.redirect.held') }}</span>
       {% elif erc.redirect and erc.redirect_safe %}<a href="{{ erc.redirect }}">{{ erc.redirect }}</a>
       {% elif erc.redirect %}<span class="mono">{{ erc.redirect }}</span>
-      <span class="dim">（このスキームは開けません）</span>
-        {% else %}<span class="dim">この ARK に転送先はありません（記述のみ）</span>{% endif %}</dd>
+      <span class="dim">{{ t('in.redirect.unopenable') }}</span>
+        {% else %}<span class="dim">{{ t('in.redirect.none') }}</span>{% endif %}</dd>
     {% for f in ('type','identifier','format','relation','source') %}
       {% if erc[f] %}<dt>{{ f }}</dt><dd>{{ erc[f] }}</dd>{% endif %}
     {% endfor %}
   </dl>
 
-  <h2>永続性について</h2>
+  <h2>{{ t('in.persistence') }}</h2>
   <dl>
     {% if erc.commitment_level %}
-    <dt>この対象への約束</dt><dd>{{ erc.commitment_label or erc.commitment_level }}</dd>{% endif %}
-    {% if erc.na_policy %}<dt>名前空間の方針</dt><dd class="mono">{{ erc.na_policy }}</dd>{% endif %}
+    <dt>{{ t('in.commitment') }}</dt><dd>{{ erc.commitment_label or erc.commitment_level }}</dd>{% endif %}
+    {% if erc.na_policy %}<dt>{{ t('in.na_policy') }}</dt><dd class="mono">{{ erc.na_policy }}</dd>{% endif %}
   </dl>
-  <p class="fine">ARK では、永続性は識別子の性質ではなく<b>提供者が続けるサービス</b>です。
-    ここに書かれているのは、その提供者が自ら宣言した約束の水準です。</p>
+  <p class="fine">{{ t('in.fine')|safe }}</p>
 
   <p class="fine dim">
     <a href="?">?</a> · <a href="??">??</a> · <a href="?json">?json</a>
+    {# **切り替えは `&lang=`。** `?info` はクエリ文字列そのものが inflection なので、
+       `?lang=` では inflection を壊してしまう。 #}
+    · {% for code, name in langs.items() %}{% if code != lang %}<a href="?info&lang={{ code }}">{{ name }}</a>{% endif %}{% endfor %}
   </p>
 </div>
 {% endblock %}

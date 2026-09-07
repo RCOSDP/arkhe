@@ -194,6 +194,85 @@ def test_F1_名前は仕様の下限まで受け_超えたら理由を返す(wor
     assert bad.json()["detail"] == {"length": 256, "limit": 255}
 
 
+def test_PATCHは送った項目だけ書き換える(world, principal_of, as_principal):
+    """**`PUT` は置き換え、`PATCH` は差分。** 実際に多いのは「行き先だけ動かす」で、
+    そこで `PUT` を使うと記述が既定値で消える。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={
+        "url": "https://one.example/1", "title": "題", "who": "山田", "when": "2026",
+    }).json()["ark"]
+
+    moved = c.patch("/api/update", json={"ark": key, "url": "https://two.example/2"}).json()
+    assert moved["url"] == "https://two.example/2"
+    assert (moved["title"], moved["who"], moved["when"]) == ("題", "山田", "2026")
+
+    # **空文字は「消す」。** 送らないことと区別できないと、値を消す手段が無くなる。
+    cleared = c.patch("/api/update", json={"ark": key, "title": ""}).json()
+    assert cleared["title"] == "" and cleared["who"] == "山田"
+
+    # `PUT` は今までどおり置き換える（挙動を変えていない）。
+    replaced = c.put("/api/update", json={"ark": key, "url": "https://three.example/3"}).json()
+    assert replaced["who"] == "" and replaced["url"] == "https://three.example/3"
+
+    # 権限も範囲も `PUT` と同じ経路を通る。
+    thin = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
+    assert thin.patch("/api/update", json={"ark": key, "url": "https://x/9"}).status_code == 403
+
+
+def test_infoは媒体で出し分ける(world, principal_of, as_principal):
+    """§5.2「応答の形は**返す content type が示す**」。中身はどれも同じ
+    「記述＋永続性宣言」で、違うのは媒体だけ。
+
+    `?json` は残す——**その JSON を名指しする別名**であって、別の内容ではない。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={
+        "url": "https://x/1", "title": "題", "who": "山田", "when": "2026",
+    }).json()["ark"].removeprefix("ark:")
+
+    html = c.get(f"/ark:{key}?info")
+    assert html.headers["content-type"].startswith("text/html")
+
+    js = c.get(f"/ark:{key}?info", headers={"Accept": "application/json"})
+    assert js.headers["content-type"].startswith("application/json")
+    assert js.json()["where"] == f"ark:{key}"
+    # **`?json` と同じもの**が返る。
+    assert js.json() == c.get(f"/ark:{key}?json").json()
+
+    anvl = c.get(f"/ark:{key}?info", headers={"Accept": "text/plain"})
+    assert anvl.headers["content-type"].startswith("text/plain")
+    assert anvl.text == c.get(f"/ark:{key}??").text   # `??` と同じ「記述＋宣言」
+
+    # どれにも THUMP のヘッダが付き、`Vary` で表現が分かれることを言う。
+    for r in (html, js):
+        assert r.headers["thump-status"] == "0.6 200 OK"
+        assert "Accept" in r.headers["vary"]
+
+
+def test_infoは画面の言語で答える(world, principal_of, as_principal):
+    """**`?info` は公開の口。** ARK は世界中から引かれるので、日本語しか話さないと
+    「識別子は届いたのに説明が読めない」で落ちる。
+
+    `?lang=` は使えない——クエリ文字列そのものが inflection だから。`?info&lang=en`。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
+
+    ja = c.get(f"/ark:{key}?info")
+    en = c.get(f"/ark:{key}?info&lang=en")
+    assert "永続性について" in ja.text and 'lang="ja"' in ja.text
+    assert "On persistence" in en.text and 'lang="en"' in en.text
+
+    # Accept-Language でも切り替わる。
+    hdr = c.get(f"/ark:{key}?info", headers={"Accept-Language": "en-GB,en;q=0.9"})
+    assert "On persistence" in hdr.text
+
+    # 永続性の水準の表示名も catalogue から来る（`?json` にも出る）。
+    js = c.get(f"/ark:{key}?info&lang=en", headers={"Accept": "application/json"}).json()
+    assert js["commitment_label"] == "permanent; the content may be revised"
+
+
 def test_A5_生成は新形式_受理は旧形式も永久に(world, principal_of, as_principal):
     """§2.2: 「新形式 `ark:` と旧形式 `ark:/` は**どちらも永久に**認識しなければ
     ならない。実装は**新しい ARK を新形式で生成すべき**」。

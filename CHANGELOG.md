@@ -11,6 +11,27 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **`PATCH /api/update` writes only the fields you send.** `PUT` on that path is a
+  replacement — omit `title` and it is emptied — which is correct for a replacement and
+  wrong for what people do most: move an object. Repointing an ARK no longer costs it
+  its description. Sending a field as `""` still clears it, so removing a value remains
+  possible; the two cases have to stay distinguishable.
+
+- **`?info` answers in whichever medium the client asks for.** §5.2 says the form of a
+  THUMP response is indicated by the returned content type, so `?info` now negotiates:
+  a page by default, JSON for `Accept: application/json`, and the ANVL of `??` for
+  `Accept: text/plain`. The content is the same description and permanence declaration
+  each time — §5 puts both in one `?info`. **`?json` stays** as a way to name the JSON
+  directly, and returns exactly what `?info` does under that Accept.
+
+- **The `?info` page is translated.** It is a public endpoint — an ARK is resolved from
+  anywhere — and it spoke only Japanese, so the identifier arrived and the explanation
+  could not be read. It now takes its words from the same catalogue as the admin
+  interface, including the persistence level's display name, which also reaches
+  `?json`'s `commitment_label`. **`?lang=` cannot be used** on this endpoint, because the
+  query string is the inflection; the language goes after an `&` (`?info&lang=en`), or
+  comes from `Accept-Language`.
+
 - **A walkthrough that follows one identifier end to end**, in
   [From minting to resolving, with curl](https://rcosdp.github.io/arkhe/guides/walkthrough/):
   minting, resolution, suffix passthrough, registering one qualified point, moving the
@@ -68,6 +89,13 @@ breaking in a system whose identifiers cannot be reissued.
   set it (`uvicorn --root-path /pid`) or it will publish a door that is not there.
 
 ### Fixed
+
+- **The ARK concept page said too little, and pointed nowhere.** Its diagram labelled
+  only "NAAN" and "name", which leaves out the label, the shoulder, the blade and the
+  qualifiers — the parts that make the string readable without fetching anything. The
+  anatomy now follows [arks.org](https://arks.org/), including their locksmithing
+  metaphor, and the page says plainly that it is an orientation and that arks.org is
+  where the scheme itself lives.
 
 - **The quickstart's local example could not resolve.** It started one process and
   curled `/ark:99999/…` at it, but the resolution endpoint only exists when

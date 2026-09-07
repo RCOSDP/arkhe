@@ -106,8 +106,24 @@ commitment-level: permanent-dynamic
 **`Link: …; rel="describes"`** は、inflection を知らない相手に「この応答は対象では
 なく **ARK を記述したもの**だ」と伝える。
 
-`?json` は同じ内容を機械に、`?info` は人に返す。どれで訊いても、**答えは対象より
-長く残る**——それは 6 節で。
+**答えは対象より長く残る**——それは 6 節で。
+
+`?info` は**求められた媒体で答える**。中身は同じ記述で、content type だけが違う。
+
+```console
+$ curl -o /dev/null -w '%{content_type}\n' "$R/ark:99999/x9tn1qkq2g7?info"
+text/html; charset=utf-8
+
+$ curl -H 'Accept: application/json' "$R/ark:99999/x9tn1qkq2g7?info"   # ?json と同じ
+$ curl -H 'Accept: text/plain'       "$R/ark:99999/x9tn1qkq2g7?info"   # ?? と同じ
+```
+
+ページ自体も翻訳される。**ここで `?lang=` は効かない**——クエリ文字列そのものが
+inflection だから——ので、言語は `&` の後ろに書くか、`Accept-Language` で渡す。
+
+```console
+$ curl "$R/ark:99999/x9tn1qkq2g7?info&lang=en"
+```
 
 ## 4. 一部だけ別の所在に向ける
 
@@ -133,13 +149,20 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $R/ark:99999/x9tn1qkq2g7
 ## 5. 対象が移る
 
 ```bash
-curl -X PUT $M/api/update \
+curl -X PATCH $M/api/update \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
-  -d '{"ark":   "ark:99999/x9tn1qkq2g7",
-       "url":   "https://newrepo.example.ac.jp/datasets/1",
-       "title": "関東平野の降水量 1991-2020",
-       "who":   "山田 太郎",
-       "when":  "2026"}'
+  -d '{"ark": "ark:99999/x9tn1qkq2g7",
+       "url": "https://newrepo.example.ac.jp/datasets/1"}'
+```
+
+```json
+{
+  "ark": "ark:99999/x9tn1qkq2g7",
+  "url": "https://newrepo.example.ac.jp/datasets/1",
+  "title": "関東平野の降水量 1991-2020",
+  "who": "山田 太郎",
+  "when": "2026"
+}
 ```
 
 ```console
@@ -147,10 +170,15 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $R/ark:99999/x9tn1qkq2g7
 302 https://newrepo.example.ac.jp/datasets/1
 ```
 
-!!! warning "`update` は差分ではなく、レコードの置き換えである"
-    `ark` と `url` だけを送ると、**`title` `who` `when` などが空になる**。省いた項目は
-    既定値を運ぶため。上のように**レコード全体を送ること**。前の行き先は履歴に残る
-    （管理画面の ARK のページ）が、**在った記述が消えたことは履歴からは戻せない**。
+**`PATCH` は送った項目だけを書き、ほかには触らない。** 対象が移ったときに要るのは
+これである。空文字を**送れば**消えるので、値を消す手段も残っている——この 2 つを
+区別できないと消せなくなる。
+
+!!! warning "同じパスへの `PUT` はレコード全体の置き換え"
+    `PUT /api/update` は置き換えなので、`ark` と `url` だけ送ると
+    **`title` `who` `when` などが空になる**（省いた項目が既定値を運ぶ）。それが PUT
+    の意味であり、「レコードはこの内容である」と言い切れるときには正しい動詞である。
+    **行き先を付け替えるだけなら `PATCH`。**
 
 ## 6. 名前を殺さずに転送を止める
 

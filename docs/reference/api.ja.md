@@ -55,8 +55,8 @@ arklet は順序不定の問い合わせ結果を入力と `zip` しており、
 | `/ark:99999/x9abc/page/3` | `302` で *対象*`/page/3` へ。**suffix passthrough。子に識別子は要らない** |
 | `/ark:99999/x9abc?` | ERC/ANVL の kernel（who / what / when / where） |
 | `/ark:99999/x9abc??` | 上に加えて**永続性宣言** |
-| `/ark:99999/x9abc?info` | 同じ内容を人に向けて |
-| `/ark:99999/x9abc?json` | 同じ内容を機械に向けて |
+| `/ark:99999/x9abc?info` | 同じ内容を、`Accept` に応じて**ページ・JSON・ANVL** で |
+| `/ark:99999/x9abc?json` | `?info` の JSON を名指しする別名 |
 | `/ark:12345/…`（未知 NAAN） | `302` でグローバルリゾルバへ |
 | `/.well-known/ark` | `text/plain`。リゾルバのルートパス（末尾は `/`） |
 | `/.well-known/ark`＋`Accept: application/json` | このリゾルバが何を預かっているか。採番を外に委ねているならその案内先 |
@@ -89,6 +89,18 @@ ERC の **`where` は ARK であって、転送先ではない**。§5.1.2 が�
 なく長期的な識別子」と定めている要素で、**行き先を付け替えても `where` は動かない**
 ——それがこの要素の価値そのものである。今の行き先は kernel の外の `redirect` として、
 あるときだけ出す。
+
+### `?info` は求められた媒体で答える
+
+§5.2 は「THUMP の応答の形は**返す content type が示す**」と書いている。`?info` は
+それに従って出し分ける——既定は人が読むページ、`application/json` なら機械向け、
+`text/plain` なら `??` と同じ ANVL。中身はどれも同じ「記述＋永続性宣言」である
+（§5「`?info` は記述と permanence を 1 回で返す」）。`?json` はその JSON を名指しする
+別名として残してある。どちらにも `Vary: Accept, Accept-Language` が付く。
+
+ページ自体も翻訳される（`?info&lang=en` → `Accept-Language` → 既定）。
+**`?lang=` は使えない**——この口ではクエリ文字列そのものが inflection なので、
+言語は `&` の後ろに書く。
 
 ### %-エンコードされた文字
 

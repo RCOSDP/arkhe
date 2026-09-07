@@ -1,4 +1,6 @@
-"""管理画面の国際化。日本語と英語を既定で持つ。
+"""画面の国際化。日本語と英語を既定で持つ。
+
+管理画面と、解決結果を人に見せる `?info` の両方がここから語を採る。
 
 gettext ではなく辞書にしてある。理由は 2 つ:
   - `.mo` のコンパイルがイメージのビルド手順に増える（この規模では割に合わない）
@@ -22,13 +24,14 @@ gettext ではなく辞書にしてある。理由は 2 つ:
   _arks     採番と、発行した ARK
   _signin   ログイン画面と、戻すための案内
   _audit    監査ログ
+  _info     `?info`——**管理画面ではなく公開の口**。解決結果を人に見せるページ
 """
 
 from __future__ import annotations
 
 from fastapi import Request
 
-from arkhe.api.i18n import _arks, _audit, _clients, _ledger, _shell, _signin
+from arkhe.api.i18n import _arks, _audit, _clients, _info, _ledger, _shell, _signin
 
 DEFAULT = "ja"
 LANGS = {"ja": "日本語", "en": "English"}
@@ -36,7 +39,7 @@ COOKIE = "arkhe_lang"
 
 #: 画面ごとの語彙を 1 つに束ねる。**同じキーが 2 か所にあれば起動時に落とす**
 #: ——後から入れたほうが黙って勝つと、直したはずの語が直らない。
-_PARTS = (_shell, _ledger, _clients, _arks, _signin, _audit)
+_PARTS = (_shell, _ledger, _clients, _arks, _signin, _audit, _info)
 
 
 def _merge(attr: str) -> dict[str, str]:

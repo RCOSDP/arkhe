@@ -60,8 +60,8 @@ behaviour that depends on the suffix.
 | `/ark:99999/x9abc/page/3` | `302` to *target*`/page/3` — suffix passthrough, no record of its own |
 | `/ark:99999/x9abc?` | ERC/ANVL kernel — who, what, when, where |
 | `/ark:99999/x9abc??` | The above plus the persistence statement |
-| `/ark:99999/x9abc?info` | The same for a human being |
-| `/ark:99999/x9abc?json` | The same for a program |
+| `/ark:99999/x9abc?info` | The same again — as a page, as JSON or as ANVL, by `Accept` |
+| `/ark:99999/x9abc?json` | The JSON of `?info`, named directly |
 | `/ark:12345/…` (unknown NAAN) | `302` to the global resolver |
 | `/.well-known/ark` | `text/plain`: the resolver's root path, ending in `/` |
 | `/.well-known/ark` with `Accept: application/json` | What this resolver holds, and where minting happens if elsewhere |
@@ -95,6 +95,18 @@ In the ERC, **`where` is the ARK, not the target** — §5.1.2 defines it as "th
 long-term identifier as opposed to a transient redirect target". Changing where an ARK
 points does not change its `where`; that is the whole value of the element. The current
 target is published as `redirect`, outside the kernel, and only when there is one.
+
+### `?info` answers in whichever medium you ask for
+
+§5.2 says the form of a THUMP response is **indicated by the returned content type**,
+so `?info` negotiates: a page by default, `application/json` for a program,
+`text/plain` for the ANVL that `??` returns. The content is the same description and
+permanence declaration each time — §5 puts both in one `?info`. `?json` remains as a
+way to name the JSON directly, and both carry `Vary: Accept, Accept-Language`.
+
+The page itself is translated (`?info&lang=en`, `Accept-Language`, then the default).
+**`?lang=` cannot be used** — on this endpoint the query string *is* the inflection, so
+the language goes after an `&`.
 
 ### `%`-encoded characters
 

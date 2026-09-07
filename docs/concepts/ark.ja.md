@@ -1,12 +1,45 @@
 # ARK とは何か
 
-**ARK**（Archival Resource Key）は、こういう形の永続識別子である。
+ARK Alliance 自身の言葉では、**ARK（Archival Resource Key）識別子とは、情報への
+長期的なアクセスを支える URL** である。発行するのは Name Assigning Authority として
+登録した組織で、**作る権利に金はかからない**。
+
+!!! info "このページは入口であって、仕様書ではない"
+    体系そのもの、FAQ、shoulder の作法、発行組織の登録簿、現行のドラフトは
+    すべて **<https://arks.org/>** にある。ここで短く書きすぎていると思ったら
+    そちらを読むこと——以下はあくまで、**arkhe がなぜこの形なのか**を説明する
+    ぶんだけである。
+
+## ARK を構成するもの
 
 ```
-ark:99999/x9abc1234
-    └──┬─┘ └────┬───┘
-     NAAN     name
+     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+     \________________________/\__/\___/ \/\_____/\_/\_____/
+                NMA           label NAAN    blade part variant
+                                     shoulder
+
+     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+                               \_________________/\________/
+                                base compact name qualifiers
 ```
+
+| | |
+| --- | --- |
+| **NMA** | Name Mapping Authority。**今日たまたま答えているリゾルバ**。ここだけが違う ARK は同じものを指す（identity inert）ので、組織やホストが変われば差し替えてよい |
+| **label** | `ark:` から識別子本体が始まる。旧形式の `ark:/` も同じ意味で、**永久に認識しなければならない** |
+| **NAAN** | 名前を割り当てた組織の番号。ARK Alliance に申請する。無料で、**二度と再登録されない** |
+| **shoulder** | NAAN の内側の下位名前空間。部門や単位に委譲する |
+| **blade** | 対象ごとに変わる部分。arkhe は乱数で採り、末尾に検査桁を置く |
+| **part**（`/`） | その手前のものに**含まれる**ものを指す、と述べる |
+| **variant**（`.`） | その手前のものの**変種**——形式・言語・版——を指す、と述べる |
+
+shoulder と blade は錠前屋の言葉で、arks.org はこの比喩を文字列全体に通している。
+NMA は鍵が入っていた**カバー**、`ark:99999` は手で持つ**弓（bow）**、shoulder と
+blade が実際に働く部分である。**捨てられるのはカバーだけ。**
+
+`/` と `.` があるおかげで、受け取った側は**文字列だけから構造を推測できる**。
+`ark:99999/x9abc1234/c3/s5.pdf` を公開するということは、メタデータを引かなくても
+「`s5.pdf` は `s5` の変種で、それは `x9abc1234` に含まれる」と述べたことになる。
 
 **HTTP と DNS の上に直接建っている。** この一点が DOI や Handle との違いを生み、
 以下のほとんどはそこから出てくる。
@@ -77,13 +110,19 @@ ARK は **NR（No Re-assignment、再割当てしない）** を宣言する。�
 
 それぞれを規律ではなくコードでどう守っているかは[壊さないもの](invariants.md)に書いた。
 
-## 用語
+## もう 2 つの用語
+
+文字列を構成するものは[上の表](#ark-を構成するもの)にある。この文書で何度も出てくる
+のに、**文字列の一部ではない**語が 2 つある。
 
 | | |
 | --- | --- |
-| **NAAN** | Name Assigning Authority Number。`99999` の部分。組織に交付される |
-| **shoulder** | NAAN の下位名前空間（`/x9` など）。**組織に委譲される単位** |
-| **blade** | shoulder より後ろ。対象を識別する部分 |
-| **inflection** | `?` や `??` の接尾。**対象へ行く**のではなく、**識別子について尋ねる** |
-| **suffix passthrough** | `…/x9abc/page/3` は `…/x9abc` のレコードで解決される。子に識別子を振らなくてよい |
-| **NMA** | Name Mapping Authority。その識別子を解決するとき、実際に答える主体 |
+| **inflection** | `?` `??` `?info` の接尾。**対象へ行く**のではなく、**識別子について尋ねる**。仕様が必須としているのは `?info` |
+| **suffix passthrough** | `…/x9abc1234/page/3` は `…/x9abc1234` のレコードで解決される。子に識別子を振らなくてよい——**1 レコード 1 採番**で足りる |
+
+## この先を読む
+
+- **<https://arks.org/>** — 体系、FAQ、shoulder の作法、発行組織の登録簿、
+  NAAN の申請方法
+- [The ARK Identifier Scheme](https://datatracker.ietf.org/doc/draft-kunze-ark/)
+  — 現行のドラフト。arkhe はこれに合わせて書かれている

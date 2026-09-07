@@ -16,6 +16,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 
 from arkhe import errors
+from arkhe.api import i18n
 from arkhe.arkspec.naming import ArkParseError, compact_ark, parse_ark
 from arkhe.auth.deps import Config, Db
 from arkhe.db.models import Manager, Naan, Shoulder, utcnow
@@ -37,13 +38,8 @@ DC_FIELDS = ("type", "identifier", "format", "relation", "source")
 #: 生の URI を渡すヘッダ名（`?` の判定に使う）。前段で立てているときだけ設定する。
 RAW_URI_HEADER = os.environ.get("ARKHE_RAW_URI_HEADER", "")
 
-COMMITMENT_LABEL_JA = {
-    "not-guaranteed": "保証なし（検証・開発系）",
-    "permanent-dynamic": "恒久・内容は更新されうる",
-    "permanent-stable": "恒久・内容は実質不変",
-    "permanent-unchanging": "恒久・内容は一切不変",
-    "descriptive-only": "記述のみ（所在は変わりうる）",
-}
+#: 永続性の水準の表示名は `api/i18n` の `ci.*` から採る。**画面の言語で出す**
+#: ——`?info` は公開の口で、ARK は世界中から引かれる。
 
 
 
@@ -116,7 +112,9 @@ def _inflection(request: Request) -> Inflection:
     生 URI を渡すサーバの下では `ARKHE_RAW_URI_HEADER` にヘッダ名を設定すると
     `?` も拾える（例: nginx で `X-Raw-URI` を立てる）。
     """
-    qs = request.url.query
+    # **先頭の要素だけを見る。** `?info` はクエリ文字列そのものが inflection なので、
+    # 言語の切り替えは `?info&lang=en` と書くしかない——`&` の手前で切って読む。
+    qs = request.url.query.split("&", 1)[0]
     if qs == "?":
         return Inflection.POLICY
     if qs == "info":
@@ -246,6 +244,18 @@ def _negotiate(accept: str, offers: tuple[str, ...]) -> str:
 #: そちらで、`Accept` を送らない相手（curl、発見クライアント）はこれを受け取る。
 WELL_KNOWN_OFFERS = ("text/plain", "application/json")
 
+#: `?info` で出せる表現。**html が先頭**——`?info` は人に見せる口で、`Accept` を
+#: 送らない相手（ブラウザ、curl）はこれを受け取る。
+#:
+#: 仕様（draft-kunze-ark-42 §5.2）: "THUMP is designed so that the response
+#: (**indicated by the returned HTTP content type**) is normally displayed, whether the
+#: output is structured for machine processing (text/plain) or formatted for human
+#: consumption (text/html)." ——**媒体で出し分けるのは仕様の想定どおり**である。
+#:
+#: 中身はどれも同じ「記述＋永続性宣言」（§5「`?info` は記述と permanence を 1 回で
+#: 返す」）。`?json` はこの json を名指しする別名として残す。
+INFO_OFFERS = ("text/html", "application/json", "text/plain")
+
 
 def _resolver_path(request: Request) -> str:
     """このホスト上での ARK リゾルバのルートパス。**必ず `/` で終える。**
@@ -259,7 +269,7 @@ def _resolver_path(request: Request) -> str:
     return root if root.endswith("/") else root + "/"
 
 
-def _erc(session, res) -> dict:
+def _erc(session, res, t) -> dict:
     ark = res.ark
     manager = None
     if ark.shoulder is not None and ark.shoulder.manager_id:
@@ -293,11 +303,9 @@ def _erc(session, res) -> dict:
         "redirect_safe": is_followable(ark.url),
         **{f: getattr(ark, f) for f in DC_FIELDS},
         "commitment_level": manager.commitment_level if manager else "",
-        # `permanent-dynamic` だけ見せられても意味が伝わらないので、人間向けの
-        # 表示名も渡す（`?info` で使う）。
-        "commitment_label": (
-            COMMITMENT_LABEL_JA.get(manager.commitment_level, "") if manager else ""
-        ),
+        # `permanent-dynamic` だけ見せられても意味が伝わらないので、人が読む名も渡す。
+        # **画面の言語で出す**（`ci.*`）。未知の値なら翻訳器がそのまま返す。
+        "commitment_label": t(f"ci.{manager.commitment_level}") if manager else "",
         "na_policy": naan.na_policy if naan else "",  # NAA ポリシー（NAAN 単位）
         "inherited_from": compact_ark(res.inherited_from) if res.inherited_from else "",
         "suffix": res.suffix,
@@ -512,7 +520,10 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
             headers=_thump(404, res.requested),
         )
 
-    erc = _erc(session, res)
+    # 記述に添える語は**画面の言語**で。`?info` は公開の口なので、`Accept-Language`
+    # と `?info&lang=` を見る（管理画面と同じ順序）。
+    lang = i18n.pick(request)
+    erc = _erc(session, res, i18n.translator(lang))
     kernel = [
         ("who", erc["who"]),
         ("what", erc["what"]),
@@ -529,22 +540,20 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
             headers=_thump(200, res.requested),
         )
 
-    if res.inflection is Inflection.JSON:
+    def _as_json():
         return JSONResponse(
-            headers=_thump(200, res.requested),
+            headers={**_thump(200, res.requested), "Vary": "Accept, Accept-Language"},
             content={
                 **erc,
                 "commitment": res.ark.commitment,
                 # **止まっていることは隠さない。** 機械にも分かる形で出す。
                 "hold": res.hold.as_dict() if res.hold else None,
-            }
+            },
         )
 
-    if res.inflection is Inflection.POLICY:
-        # `??` は **`?` の内容 ＋ 永続性宣言**（C4）。
-        #   draft-kunze-ark-42        … "'?' (brief metadata) and '??' (more metadata)"
-        #   arks.org/about/ark-features … "a maintenance commitment from the current server"
-        # **「more」の中身が commitment**、と読めば両立する。形式も ANVL に揃える。
+    def _as_anvl():
+        # `??` の中身。**`?info` の text/plain もこれ**——どちらも「記述＋永続性宣言」
+        # で、違うのは媒体だけである（§5）。
         return PlainTextResponse(
             _anvl(
                 [
@@ -569,10 +578,37 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
             headers=_thump(200, res.requested),
         )
 
-    return templates.TemplateResponse(
-        request,
-        "info.html",
-        {"erc": erc, "res": res, "hold": res.hold.as_dict() if res.hold else None},
-        headers=_thump(200, res.requested),
-    )
+    def _as_html():
+        return templates.TemplateResponse(
+            request,
+            "info.html",
+            {
+                "erc": erc, "res": res,
+                "hold": res.hold.as_dict() if res.hold else None,
+                "t": i18n.translator(lang), "lang": lang, "langs": i18n.LANGS,
+            },
+            headers={**_thump(200, res.requested), "Vary": "Accept, Accept-Language"},
+        )
+
+    if res.inflection is Inflection.JSON:
+        # `?json` は `?info` の JSON を**名指しする別名**。仕様の語彙ではないので
+        # 消しはしないが、`?info` に `Accept: application/json` を送っても同じものが返る。
+        return _as_json()
+
+    if res.inflection is Inflection.POLICY:
+        # `??` は **`?` の内容 ＋ 永続性宣言**（C4）。
+        #   draft-kunze-ark-42        … "'?' (brief metadata) and '??' (more metadata)"
+        #   arks.org/about/ark-features … "a maintenance commitment from the current server"
+        # **「more」の中身が commitment**、と読めば両立する。形式も ANVL に揃える。
+        return _as_anvl()
+
+    # `?info` と、inflection の無い記述（墓碑・保留・行き先なし）。**媒体で出し分ける**
+    # ——仕様が「応答の形は content type が示す」と書いているとおりで、中身はどれも
+    # 同じ「記述＋永続性宣言」である。`Accept` を送らない相手には人が読む html。
+    chosen = _negotiate(request.headers.get("accept", ""), INFO_OFFERS)
+    if chosen == "application/json":
+        return _as_json()
+    if chosen == "text/plain":
+        return _as_anvl()
+    return _as_html()
 

@@ -155,7 +155,37 @@ class HoldReleaseIn(BaseModel):
 
 
 class UpdateIn(ArkFields):
+    """`PUT` の入力。**レコードの置き換え**なので、省いた項目は既定値で埋まる。"""
+
+    model_config = _spec(
+        "Input for a replacing update. **Every omitted field takes its default**, so "
+        "send the whole record; to change one field and leave the rest alone, PATCH."
+    )
+
     ark: str
+
+
+class PatchIn(ArkFields):
+    """`PATCH` の入力。**送られた項目だけ**を書き換える。
+
+    `PUT` との違いは「省いた項目をどう読むか」だけ。あちらは「空にせよ」、
+    こちらは「触るな」。`model_fields_set` に**実際に送られてきた鍵**が入るので、
+    「空文字を送って消す」と「送らないから触らない」を区別できる
+    ——これができないと、**記述を消す手段が無くなる**。
+    """
+
+    model_config = _spec(
+        "Input for a merging update. **Only the fields actually sent are written**; "
+        "everything else is left as it is. Sending a field as \"\" clears it, which is "
+        "how a value is removed."
+    )
+
+    ark: str
+
+    def sent(self) -> dict:
+        """送られてきた書き込み可能項目だけを返す。"""
+        return {k: v for k, v in self.model_dump(include=set(WRITABLE)).items()
+                if k in self.model_fields_set}
 
 
 class TombstoneIn(BaseModel):

@@ -276,6 +276,56 @@
             "bearer": []
           }
         ]
+      },
+      "patch": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Patch",
+        "description": "**Update the fields you send, and leave the rest alone.** Requires `ark:update`.\n\n`PUT` replaces the record: every field you omit takes its default, so repointing an ARK\nwith `{\"ark\": …, \"url\": …}` alone **empties its title, its who and its when**. That is\ncorrect for a replacement and wrong for what people actually do most of the time, which\nis move an object.\n\nSending a field as `\"\"` clears it; not sending it leaves it untouched. Both are needed,\nwhich is why this is not simply \"ignore empty strings\".",
+        "operationId": "patch_api_update_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:update"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/api/update/bulk": {
@@ -909,6 +959,75 @@
         "title": "MintIn",
         "description": "Input for minting. `shoulder` is optional: omitted, the organisation's default is used; named, it is only checked against the caller's registered reach, never widening it. `naan` is not accepted — it follows from the principal."
       },
+      "PatchIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": ""
+          },
+          "identifier": {
+            "type": "string",
+            "title": "Identifier",
+            "default": ""
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": ""
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation",
+            "default": ""
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": ""
+          },
+          "commitment": {
+            "type": "string",
+            "title": "Commitment",
+            "default": ""
+          },
+          "metadata": {
+            "type": "string",
+            "title": "Metadata",
+            "default": ""
+          },
+          "who": {
+            "type": "string",
+            "title": "Who",
+            "default": ""
+          },
+          "when": {
+            "type": "string",
+            "title": "When",
+            "default": ""
+          },
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "PatchIn",
+        "description": "Input for a merging update. **Only the fields actually sent are written**; everything else is left as it is. Sending a field as \"\" clears it, which is how a value is removed."
+      },
       "RegisterIn": {
         "properties": {
           "url": {
@@ -1076,7 +1195,7 @@
           "ark"
         ],
         "title": "UpdateIn",
-        "description": "ERC / Dublin Core fields. All optional."
+        "description": "Input for a replacing update. **Every omitted field takes its default**, so send the whole record; to change one field and leave the rest alone, PATCH."
       },
       "ValidationError": {
         "properties": {

@@ -1,12 +1,47 @@
 # What ARK is
 
-An **ARK** (Archival Resource Key) is a persistent identifier that looks like this:
+In the ARK Alliance's own words, **Archival Resource Key (ARK) identifiers are URLs
+that support long-term access to information**. They are issued by organisations that
+register as Name Assigning Authorities, and **nobody pays for the right to create
+them**.
+
+!!! info "This page is an orientation, not the specification"
+    The scheme itself, the FAQ, the shoulder conventions, the registry of assigning
+    organisations and the current draft all live at **<https://arks.org/>**. Read it for
+    anything this page states too briefly — everything below is only the part that
+    explains why arkhe is shaped the way it is.
+
+## The parts of an ARK
 
 ```
-ark:99999/x9abc1234
-    └──┬─┘ └────┬───┘
-     NAAN     name
+     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+     \________________________/\__/\___/ \/\_____/\_/\_____/
+                NMA           label NAAN    blade part variant
+                                     shoulder
+
+     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+                               \_________________/\________/
+                                base compact name qualifiers
 ```
+
+| | |
+| --- | --- |
+| **NMA** | Name Mapping Authority — the resolver that happens to be answering today. **Identity inert**: ARKs that differ only here identify the same thing, so it can be replaced when an organisation or a host changes |
+| **label** | `ark:` marks the start of the identifier proper. The older `ark:/` means the same thing and **must be recognised in perpetuity** |
+| **NAAN** | The number of the organisation that assigned the name. Requested from the ARK Alliance, free, and **never re-registered** |
+| **shoulder** | A sub-namespace inside a NAAN, delegated to a department or unit |
+| **blade** | The part that varies per object. arkhe mints it at random, ending in a check digit |
+| **part** (`/`) | Says this names something **contained in** what precedes it |
+| **variant** (`.`) | Says this names a **variant form** — a format, a language, a version — of what precedes it |
+
+The shoulder and blade come from locksmithing, and arks.org carries the metaphor
+through the whole string: the NMA is the **cover** the key comes in, `ark:99999` is the
+**bow** you hold, and the shoulder and blade are the parts that do the work. **Only the
+cover is disposable.**
+
+`/` and `.` are the reason a recipient can infer structure from the string alone.
+Publishing `ark:99999/x9abc1234/c3/s5.pdf` says, without anyone having to fetch a
+metadata record, that `s5.pdf` is a variant of `s5`, which is contained in `x9abc1234`.
 
 It sits on plain HTTP and DNS. That single fact separates it from DOI and Handle, and
 most of what follows comes from it.
@@ -81,13 +116,19 @@ That one commitment is why arkhe:
 Read [Invariants](invariants.md) for how each of those is enforced in code rather
 than left to discipline.
 
-## Terms
+## Two more terms
+
+The parts of the string are in [the table above](#the-parts-of-an-ark). Two words that
+appear throughout this documentation are not parts of the string at all:
 
 | | |
 | --- | --- |
-| **NAAN** | Name Assigning Authority Number. The `99999` part. Granted to an organisation |
-| **shoulder** | A sub-namespace within a NAAN, such as `/x9`. What gets delegated to an organisation |
-| **blade** | What follows the shoulder — the part that identifies the object |
-| **inflection** | A `?` or `??` suffix that asks the resolver about the identifier rather than following it |
-| **suffix passthrough** | `…/x9abc/page/3` resolves through the record for `…/x9abc`, so children need no identifiers of their own |
-| **NMA** | Name Mapping Authority — whoever answers when the identifier is resolved |
+| **inflection** | A `?`, `??` or `?info` suffix that asks the resolver **about** the identifier instead of following it. `?info` is the one the specification requires |
+| **suffix passthrough** | `…/x9abc1234/page/3` resolves through the record for `…/x9abc1234`, so children need no identifiers of their own — one record per minting is enough |
+
+## Read on
+
+- **<https://arks.org/>** — the scheme, the FAQ, shoulder conventions, the registry of
+  assigning organisations, and how to request a NAAN
+- [The ARK Identifier Scheme](https://datatracker.ietf.org/doc/draft-kunze-ark/) — the
+  current draft, which is what arkhe is written against
