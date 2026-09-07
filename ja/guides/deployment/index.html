@@ -839,6 +839,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#規模の見積もり" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        規模の見積もり
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="規模の見積もり">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#解決実際に届く負荷" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        解決——実際に届く負荷
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#採番一括が-20-倍速い理由" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        採番——一括が 20 倍速い理由
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#メモリ" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        メモリ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#最小構成とその先" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        最小構成と、その先
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#自分の環境で測る" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自分の環境で測る
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#バックアップ" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1328,6 +1400,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#規模の見積もり" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        規模の見積もり
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="規模の見積もり">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#解決実際に届く負荷" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        解決——実際に届く負荷
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#採番一括が-20-倍速い理由" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        採番——一括が 20 倍速い理由
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#メモリ" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        メモリ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#最小構成とその先" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        最小構成と、その先
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#自分の環境で測る" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自分の環境で測る
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#バックアップ" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1424,6 +1568,148 @@
 <h2 id="コンテナ">コンテナ<a class="headerlink" href="#コンテナ" title="Permanent link">&para;</a></h2>
 <p>イメージはリポジトリ直下。<code>compose/oidc</code> は Keycloak と PostgreSQL を含む実例。
 <strong>手本ではなく見本</strong>として扱うこと——秘密値が平文で書いてあり、Keycloak は dev モード。</p>
+<h2 id="規模の見積もり">規模の見積もり<a class="headerlink" href="#規模の見積もり" title="Permanent link">&para;</a></h2>
+<p><strong>以下はある 1 台での実測であって、保証値ではない。</strong> 読むべきは<strong>何が何に比例するか</strong>
+という形のほうで、数字は <code>scripts/bench.py</code> と下の SQL で自分の環境で取り直すこと。</p>
+<p>測定環境: aarch64 20 コア、PostgreSQL 17（コンテナに CPU 4・メモリ 4 GB、
+<code>shared_buffers=1GB</code>）、<strong>台帳 100 万件（328 MB）</strong>、uvicorn、負荷は同一ホストから。</p>
+<h3 id="解決実際に届く負荷">解決——実際に届く負荷<a class="headerlink" href="#解決実際に届く負荷" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>同時数</th>
+<th>rps</th>
+<th>p50</th>
+<th>p95</th>
+<th>p99</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>302</code> で対象へ（1 worker）</td>
+<td>1</td>
+<td>285</td>
+<td>3.4 ms</td>
+<td>4.7</td>
+<td>5.2</td>
+</tr>
+<tr>
+<td><code>302</code> で対象へ（1 worker）</td>
+<td>8</td>
+<td>372</td>
+<td>19.8 ms</td>
+<td>34.8</td>
+<td>53.5</td>
+</tr>
+<tr>
+<td><strong><code>302</code> で対象へ（4 worker）</strong></td>
+<td>8</td>
+<td><strong>993</strong></td>
+<td>5.7 ms</td>
+<td>9.6</td>
+<td>15.2</td>
+</tr>
+<tr>
+<td><code>302</code> で対象へ（4 worker）</td>
+<td>32</td>
+<td>1,078</td>
+<td>18.3 ms</td>
+<td>37.1</td>
+<td>56.8</td>
+</tr>
+<tr>
+<td><code>?json</code> / <code>?info</code>（1 worker）</td>
+<td>8</td>
+<td>304</td>
+<td>24 ms</td>
+<td>41</td>
+<td>60〜66</td>
+</tr>
+<tr>
+<td>suffix passthrough（1 worker）</td>
+<td>8</td>
+<td>291</td>
+<td>25 ms</td>
+<td>42</td>
+<td>62</td>
+</tr>
+<tr>
+<td>未知 NAAN の取次（1 worker）</td>
+<td>8</td>
+<td>323</td>
+<td>23 ms</td>
+<td>40</td>
+<td>63</td>
+</tr>
+</tbody>
+</table>
+<p><strong>処理量は worker 数に比例する</strong>——1 から 4 で 2.9 倍。resolver は状態を持たず読み取り
+しかしないので、<strong>worker を増やす、次に resolver を増やす</strong>が第一手と第二手になる。</p>
+<p><strong>台帳の大きさはここに出てこない。</strong> 解決は主キーの索引 1 回（0.03 ms、4 バッファ）で、
+suffix passthrough は祖先を 1 回の <code>IN</code> でまとめて引くので 1 回増えるだけ。
+<strong>100 万件も 1000 件も同じ速さ</strong>である。</p>
+<p>比較のため <code>/healthz</code>（DB も認証も通らない）は 1 worker で 1,187 rps・p50 0.78 ms。
+<strong>残りの約 2.6 ms がアプリと DB の仕事</strong>で、うち DB 層（セッションを開き、1 回引き、
+閉じる）が 0.6 ms。</p>
+<h3 id="採番一括が-20-倍速い理由">採番——一括が 20 倍速い理由<a class="headerlink" href="#採番一括が-20-倍速い理由" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>rps</th>
+<th>p50</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /api/mint</code>（1 件ずつ）</td>
+<td><strong>45</strong></td>
+<td>82 ms</td>
+</tr>
+<tr>
+<td><code>POST /api/mint/bulk</code>（1000 件を 1 要求）</td>
+<td><strong>約 930 件/秒</strong></td>
+<td>1.06 秒</td>
+</tr>
+</tbody>
+</table>
+<p><strong>1 件ずつが遅いのは DB ではなく Argon2 である。</strong> API キーの検証 1 回が <strong>53 ms</strong> で、
+82 ms のほとんどを占める。この遅さは意図されたもので、<strong>盗んだ鍵の総当たりを高く
+つかせる</strong>ためにある。速くしてはいけない。</p>
+<p>だから<strong>規模のある投入では一括採番しか正気の選択肢が無い</strong>——認証 1 回を 1000 件で
+割る。1 万件なら、一括で 11 秒、1 件ずつで 4 分である。</p>
+<p><code>oauth2</code> も同じで、トークンの発行は <code>client_secret</code> を Argon2 で照合する。
+<strong><code>expires_in</code> が尽きるまで保ち回す</strong>こと（API 1 回ごとに取り直さない）。</p>
+<h3 id="メモリ">メモリ<a class="headerlink" href="#メモリ" title="Permanent link">&para;</a></h3>
+<p>arkhe のプロセスは役割によらず <strong>常駐 100 MB 程度</strong>。PostgreSQL は 100 万件・
+<code>shared_buffers=1GB</code> で 486 MB を使っていた。</p>
+<h3 id="最小構成とその先">最小構成と、その先<a class="headerlink" href="#最小構成とその先" title="Permanent link">&para;</a></h3>
+<p><strong>CPU とメモリの数字ではなく、構成の形で答えるのが正直なところである。</strong></p>
+<p><strong>最小</strong>——小さなホスト 1 台に minter・resolver・PostgreSQL を同居させる。<strong>動く</strong>が、
+冗長性は無い。評価用と、まだ外に答えていない台帳ならこれで足りる。</p>
+<p><strong>推奨</strong>——コードが最初から前提にしている分け方。</p>
+<ul>
+<li><strong>resolver を複数 worker・複数ホストで。</strong> 状態を持たない読み取り専用で、
+  <strong>minter や認可サーバが落ちても答え続けなければならない</strong>のはこちら</li>
+<li><strong>minter は別に。</strong> 採番は止まってよいが、解決は止められない</li>
+<li><strong>PostgreSQL はレプリカを持ち</strong>、resolver は <code>ARKHE_READ_DATABASE_URL</code> でそちらへ</li>
+<li>DB は<strong>主キーの索引がメモリに載る</strong>ように——100 万件で 39 MB。ほかは順に読むので
+  そこまで効かない</li>
+</ul>
+<h3 id="自分の環境で測る">自分の環境で測る<a class="headerlink" href="#自分の環境で測る" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 1 つの口へ 3000 要求、同時 8</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9abc<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 積み上げの上限: DB も認証も通らない口。</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># ほかの数字がこれに近づいていたら、**測っているのはクライアント**である</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/healthz<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># 採番（Argon2 の代金は要求ごとに掛かる）</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span>--post<span class="w"> </span>--auth<span class="w"> </span><span class="s2">"</span><span class="nv">$KEY</span><span class="s2">"</span>
+</code></pre></div>
+<p>バイト数の見積もりと、自分の台帳で測る方法は
+<a href="../../reference/data-model/#容量について">データモデル</a>にある。</p>
 <h2 id="バックアップ">バックアップ<a class="headerlink" href="#バックアップ" title="Permanent link">&para;</a></h2>
 <p>ここで取り返しがつかないのは台帳だけである。失った ARK は採り直せない——NR の下では
 <strong>同じ名前を配り直すことこそが禁じられている</strong>——ので、1 行の消失が識別子の恒久的な
@@ -1439,8 +1725,8 @@
 下限しか書いていないので、これが無いと<strong>同じコミットから別のものができる</strong>
 ——同じ Dockerfile で焼き直すたびにイメージの中身が変わり、「いつから壊れたか」が
 追えなくなる。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># lock どおりに入れる</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># 更新する（意図したときだけ）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># lock どおりに入れる</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># 更新する（意図したときだけ）</span>
 </code></pre></div>
 <p><code>--frozen</code> は<strong>lock と <code>pyproject.toml</code> がずれていたらそこで落とす</strong>。ずれたまま
 緑になるほうが困るので、検査（<code>scripts/check.sh</code>）もイメージのビルドもこれを使う。</p>

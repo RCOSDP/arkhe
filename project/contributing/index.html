@@ -1424,6 +1424,13 @@ side" appears, and before long nobody looks at the other side.</p>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w">              </span><span class="c1"># checks and dist/ only (the default)</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w"> </span>--publish<span class="w">    </span><span class="c1"># tag, push, GitHub release</span>
 </code></pre></div>
+<p>And one that is <strong>not</strong> a check:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9abc<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+</code></pre></div>
+<p><code>check.sh</code> does not call it. A benchmark takes time and its result depends on the machine
+and on what else that machine is doing, so it cannot be spoken about in green and red.
+It is there to get <strong>your own numbers</strong>; the ones in
+<a href="../../guides/deployment/#sizing">Deployment</a> are from one machine.</p>
 <h2 id="what-the-review-will-ask">What the review will ask<a class="headerlink" href="#what-the-review-will-ask" title="Permanent link">&para;</a></h2>
 <p><strong>Does an invariant still hold?</strong> Most of the design is refusals — see
 <a href="../../concepts/invariants/">Invariants</a>. A change that makes one of them merely a
@@ -1442,11 +1449,11 @@ right principal got in, but that the wrong one did not.</p>
 <p>Tests read as sentences on purpose — <code>test_他組織のARKは更新できない</code> — so a failure
 names the rule that broke rather than the function that raised.</p>
 <h2 id="the-layers">The layers<a class="headerlink" href="#the-layers" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>arkspec/    the ARK specification as pure functions. stdlib only.
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>domain/     resolution, authorisation, minting, administration. Knows nothing of HTTP.
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>db/         SQLAlchemy models and the repository.
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>auth/       three mechanisms, one Principal.
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>api/        FastAPI routers, the admin interface, i18n.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkspec/    the ARK specification as pure functions. stdlib only.
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>domain/     resolution, authorisation, minting, administration. Knows nothing of HTTP.
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>db/         SQLAlchemy models and the repository.
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>auth/       three mechanisms, one Principal.
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>api/        FastAPI routers, the admin interface, i18n.
 </code></pre></div>
 <p><code>arkspec/</code> and <code>domain/resolution.py</code> depending on nothing is not an accident — it is
 what let 97 tests move across a complete framework rewrite untouched. <strong>Keep it that
@@ -1455,8 +1462,8 @@ way.</strong> If specification logic needs a database, the design is wrong somew
 <p>The site is MkDocs Material, plain Markdown, bilingual by suffix: <code>page.md</code> is English,
 <code>page.ja.md</code> is Japanese. Diagrams are Mermaid in a fenced block — no image files to
 regenerate.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>scripts/export_openapi.py<span class="w">     </span><span class="c1"># regenerate the API spec from the code</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>mkdocs<span class="w"> </span>serve
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python<span class="w"> </span>scripts/export_openapi.py<span class="w">     </span><span class="c1"># regenerate the API spec from the code</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>mkdocs<span class="w"> </span>serve
 </code></pre></div>
 <p>Only the API spec is generated. <strong>The configuration and CLI pages are written by
 hand</strong> — add a setting or a command and you must add its row, in both languages.

@@ -2100,11 +2100,32 @@
 「修正」に挙げてある。台帳そのものは触っておらず、マイグレーションは列幅の拡大だけ。</p>
 <h3 id="追加">追加<a class="headerlink" href="#追加" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>手引きの 10 節が、台帳 2 つを組むところから始まるようになった。</strong> 公開側と閉域側は
+<li><strong>規模の見積もりを、当てずっぽうではなく実測で書いた。</strong>
+  <a href="https://rcosdp.github.io/arkhe/ja/guides/deployment/#規模の見積もり">デプロイ</a>に
+  解決と採番の処理量・遅延を、
+  <a href="https://rcosdp.github.io/arkhe/ja/reference/data-model/#容量について">データモデル</a>に
+  ARK 1 件あたりのバイト数と、自分の台帳で測る SQL を載せた。すべて 100 万件の台帳に
+  対して 1 台で取った値で、<strong>そう明記してある</strong>——考えるための形であって保証値ではない。</li>
+</ul>
+<p>見積もる前に知っておく価値のある発見が 2 つ。<strong>解決は台帳の大きさを気にしない</strong>
+  （索引 1 回。100 万件も 1000 件も同じで、処理量は worker 数に比例する）。そして
+  <strong>1 件ずつの採番を縛っているのは DB ではなく Argon2</strong> である——82 ms のうち 53 ms が
+  API キーの照合で、だから一括採番が 20 倍速く、規模のある投入では唯一の正気な選択肢
+  になる。</p>
+<ul>
+<li>
+<p><strong><code>scripts/bench.py</code></strong> — その数字を取った負荷測定の道具。<code>check.sh</code> からは呼ばない
+  ——負荷測定は機械とその日に左右されるので、<strong>緑と赤では語れない</strong>。測る前に温め、
+  文書には「まず <code>/healthz</code> を測れ」と書いた。サーバより先に飽和したクライアントは、
+  自分自身を測っているだけだからである。</p>
+</li>
+<li>
+<p><strong>手引きの 10 節が、台帳 2 つを組むところから始まるようになった。</strong> 公開側と閉域側は
   <strong>別々に運用する</strong>——DB も複製も同期も共有しない——ので、例もそこから始める:
   <code>arkhe naan add</code> / <code>onboard</code> / <code>shoulder add</code> と、外に「この名前空間は閉じている」と
   伝える <code>delegated</code> ＋ <code>redirect</code> の組。<strong>名前空間の割当は REST ではなく CLI の仕事</strong>
-  だということも書いた。</li>
+  だということも書いた。</p>
+</li>
 </ul>
 <p>そのうえで両側に curl で採番する——公開 shoulder は普通の道、非公開 shoulder は
   公開側の minter が <code>307</code> で委譲先を案内して断る——引き取りの前後で同じ名前を

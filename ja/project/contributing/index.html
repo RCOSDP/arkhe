@@ -1423,6 +1423,12 @@
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w">              </span><span class="c1"># 検査と dist の作成だけ（既定）</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w"> </span>--publish<span class="w">    </span><span class="c1"># タグ → push → GitHub のリリース</span>
 </code></pre></div>
+<p><strong>検査ではない</strong>ものが 1 つ。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9abc<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+</code></pre></div>
+<p><code>check.sh</code> からは呼ばない。負荷測定は時間がかかるうえ、結果が機械とその日の状態に
+左右されるので、<strong>緑と赤で語れない</strong>。<strong>自分の数字</strong>を取るための道具である
+（<a href="../../guides/deployment/#規模の見積もり">デプロイ</a>に載っているのは、ある 1 台の値）。</p>
 <h2 id="レビューで見ること">レビューで見ること<a class="headerlink" href="#レビューで見ること" title="Permanent link">&para;</a></h2>
 <p><strong>不変条件が保たれているか。</strong> この設計の多くは拒否でできている
 （<a href="../../concepts/invariants/">壊さないもの</a>）。<strong>コードが守っていたものを規約に
@@ -1438,11 +1444,11 @@ SQLite は PostgreSQL が弾くスキーマを通す。開発中に 2 度、こ�
 <p>テスト名は文になっている（<code>test_他組織のARKは更新できない</code>）。<strong>失敗したときに、
 例外を投げた関数ではなく壊れた規則の名前が出る</strong>ようにするため。</p>
 <h2 id="層">層<a class="headerlink" href="#層" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>arkspec/    ARK 仕様の純関数層。stdlib のみ。
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>domain/     解決・認可・採番・管理。HTTP を知らない。
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>db/         SQLAlchemy のモデルとリポジトリ。
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>auth/       3 機構、1 つの Principal。
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>api/        FastAPI のルータ、管理画面、国際化。
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkspec/    ARK 仕様の純関数層。stdlib のみ。
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>domain/     解決・認可・採番・管理。HTTP を知らない。
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>db/         SQLAlchemy のモデルとリポジトリ。
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>auth/       3 機構、1 つの Principal。
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>api/        FastAPI のルータ、管理画面、国際化。
 </code></pre></div>
 <p><code>arkspec/</code> と <code>domain/resolution.py</code> が何にも依存しないのは偶然ではない。<strong>フレーム
 ワークを丸ごと入れ替えても 97 本のテストが無改造で通った</strong>のはこれのおかげである。
@@ -1451,8 +1457,8 @@ SQLite は PostgreSQL が弾くスキーマを通す。開発中に 2 度、こ�
 <h2 id="ドキュメント">ドキュメント<a class="headerlink" href="#ドキュメント" title="Permanent link">&para;</a></h2>
 <p>MkDocs Material、素の Markdown、接尾で対訳（<code>page.md</code> が英語、<code>page.ja.md</code> が日本語）。
 図は Mermaid をコードブロックに書く——<strong>画像を書き出す手順を挟まない。</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>scripts/export_openapi.py<span class="w">     </span><span class="c1"># API 仕様をコードから作り直す</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>mkdocs<span class="w"> </span>serve
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python<span class="w"> </span>scripts/export_openapi.py<span class="w">     </span><span class="c1"># API 仕様をコードから作り直す</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>mkdocs<span class="w"> </span>serve
 </code></pre></div>
 <p>生成しているのは API 仕様だけ。<strong>設定とコマンドのページは手で書く</strong>——項目や
 コマンドを足したら、2 言語ぶん行を足すこと。忘れると <code>tests/test_docs.py</code> が落ちる。

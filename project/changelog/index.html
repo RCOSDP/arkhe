@@ -2104,11 +2104,32 @@ listed under Changed and Fixed below; the ledger itself is untouched, and the on
 migration only widens columns.</p>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Section 10 of the walkthrough now builds both ledgers from scratch.</strong> The public and
+<li><strong>Sizing, measured rather than guessed.</strong> <a href="https://rcosdp.github.io/arkhe/guides/deployment/#sizing">Deployment</a>
+  now carries throughput and latency for resolution and minting, and
+  <a href="https://rcosdp.github.io/arkhe/reference/data-model/#on-capacity">the data model</a>
+  carries bytes per ARK with the queries to measure your own. Everything came off one
+  machine against a ledger of a million ARKs, and the pages say so — they are a shape to
+  reason with, not a guarantee.</li>
+</ul>
+<p>The two findings worth knowing before capacity planning: <strong>resolution does not care how
+  large the ledger is</strong> (one index scan; a million rows resolve like a thousand, and
+  throughput follows the worker count), and <strong>minting one at a time is bound by Argon2</strong>,
+  not by the database — 53 ms of the 82 is verifying the API key, which is why bulk
+  minting is twenty times faster and the only sane way to ingest at scale.</p>
+<ul>
+<li>
+<p><strong><code>scripts/bench.py</code></strong> — the load harness those numbers came from. <code>check.sh</code> does not
+  call it: a benchmark depends on the machine and the hour, so it cannot be spoken about
+  in green and red. It warms up before measuring, and the documentation says to check
+  <code>/healthz</code> first, because a client that saturates before the server is measuring itself.</p>
+</li>
+<li>
+<p><strong>Section 10 of the walkthrough now builds both ledgers from scratch.</strong> The public and
   the closed side are <strong>operated separately</strong> — no shared database, no replication, no
   sync — so the example starts where that starts: <code>arkhe naan add</code>, <code>onboard</code>,
   <code>shoulder add</code>, and the <code>delegated</code> / <code>redirect</code> pair that tells the outside a namespace
-  is closed. Namespace allocation is CLI work, not REST, and the page now says so.</li>
+  is closed. Namespace allocation is CLI work, not REST, and the page now says so.</p>
+</li>
 </ul>
 <p>It then mints on each side with curl — the open shoulder the ordinary way, the closed
   one refused by the public minter with a <code>307</code> at the delegate — and resolves the same
