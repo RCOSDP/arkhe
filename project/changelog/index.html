@@ -2104,6 +2104,17 @@ listed under Changed and Fixed below; the ledger itself is untouched, and the on
 migration only widens columns.</p>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>Section 10 of the walkthrough now builds both ledgers from scratch.</strong> The public and
+  the closed side are <strong>operated separately</strong> — no shared database, no replication, no
+  sync — so the example starts where that starts: <code>arkhe naan add</code>, <code>onboard</code>,
+  <code>shoulder add</code>, and the <code>delegated</code> / <code>redirect</code> pair that tells the outside a namespace
+  is closed. Namespace allocation is CLI work, not REST, and the page now says so.</li>
+</ul>
+<p>It then mints on each side with curl — the open shoulder the ordinary way, the closed
+  one refused by the public minter with a <code>307</code> at the delegate — and resolves the same
+  name on both resolvers before and after it is handed over. Two ledgers, four processes,
+  <strong>one transcript from one run</strong>.</p>
+<ul>
 <li>
 <p><strong>A worked closed-then-published example</strong>, as section 10 of
   <a href="https://rcosdp.github.io/arkhe/guides/walkthrough/">the walkthrough</a>: mint inside a

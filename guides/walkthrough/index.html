@@ -793,22 +793,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#10-a-closed-ledger-published-later" class="md-nav__link">
+  <a href="#10-two-ledgers-one-public-one-closed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        10. A closed ledger, published later
+        10. Two ledgers: one public, one closed
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="10. A closed ledger, published later">
+    <nav class="md-nav" aria-label="10. Two ledgers: one public, one closed">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#mint-inside" class="md-nav__link">
+  <a href="#build-the-two-ledgers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mint inside
+        Build the two ledgers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mint-on-each-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mint on each side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolve-the-same-name-on-each-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolve the same name on each side
       
     </span>
   </a>
@@ -853,6 +875,17 @@
     <span class="md-ellipsis">
       
         What gets refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-side-by-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two side by side
       
     </span>
   </a>
@@ -1510,22 +1543,44 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#10-a-closed-ledger-published-later" class="md-nav__link">
+  <a href="#10-two-ledgers-one-public-one-closed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        10. A closed ledger, published later
+        10. Two ledgers: one public, one closed
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="10. A closed ledger, published later">
+    <nav class="md-nav" aria-label="10. Two ledgers: one public, one closed">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#mint-inside" class="md-nav__link">
+  <a href="#build-the-two-ledgers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mint inside
+        Build the two ledgers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mint-on-each-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mint on each side
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolve-the-same-name-on-each-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolve the same name on each side
       
     </span>
   </a>
@@ -1570,6 +1625,17 @@
     <span class="md-ellipsis">
       
         What gets refused
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-side-by-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two side by side
       
     </span>
   </a>
@@ -1878,11 +1944,14 @@ of the same URL:</p>
 <a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go"> "delegated_shoulders": [],</span>
 <a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="go"> "held": []}</span>
 </code></pre></div>
-<h2 id="10-a-closed-ledger-published-later">10. A closed ledger, published later<a class="headerlink" href="#10-a-closed-ledger-published-later" title="Permanent link">&para;</a></h2>
-<p>Everything above was one ledger. The case this design exists for has two: a closed arkhe
-inside a network that cannot be reached, and a public one that answers the world. <strong>The
-identifier is the same on both sides</strong> — that is the whole point, because a name handed
-out while the object was closed has to keep working when it opens.</p>
+<h2 id="10-two-ledgers-one-public-one-closed">10. Two ledgers: one public, one closed<a class="headerlink" href="#10-two-ledgers-one-public-one-closed" title="Permanent link">&para;</a></h2>
+<p>Everything above was one ledger. The case this design exists for has <strong>two, run
+separately</strong>: a closed arkhe inside a network the outside cannot reach, and a public one
+that answers the world. They share no database, no replication and no sync — <strong>the only
+thing that crosses is a namespace allocation a person sets on each side</strong>, and later the
+descriptions an operator chooses to hand over.</p>
+<p><strong>The identifier is the same on both.</strong> That is the whole point: a name given out while
+the object was closed has to keep working when it opens.</p>
 <table>
 <thead>
 <tr>
@@ -1893,99 +1962,159 @@ out while the object was closed has to keep working when it opens.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>$C</code></td>
-<td>closed minter</td>
-<td>inside the network. Authoritative for <code>/c7</code></td>
+<td><code>$P</code> / <code>$PR</code></td>
+<td>public minter / resolver</td>
+<td>authoritative for 99999. <code>/c7</code> is <code>delegated</code> here</td>
 </tr>
 <tr>
-<td><code>$P</code></td>
-<td>public minter</td>
-<td>the shoulder <code>/c7</code> is marked <code>delegated</code> here</td>
-</tr>
-<tr>
-<td><code>$PR</code></td>
-<td>public resolver</td>
-<td>what the world asks</td>
+<td><code>$C</code> / <code>$CR</code></td>
+<td>closed minter / resolver</td>
+<td>inside the network. Authoritative for <code>/c7</code> there</td>
 </tr>
 </tbody>
 </table>
-<h3 id="mint-inside">Mint inside<a class="headerlink" href="#mint-inside" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$C</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$CK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"url"</span>:<span class="w"> </span><span class="s2">"https://inside.closed.example/dataset/42"</span>,
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">            "title": "(a title that only exists inside)"}'</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="go">{"ark": "ark:99999/c7j89qtb3fc", …}</span>
+<h3 id="build-the-two-ledgers">Build the two ledgers<a class="headerlink" href="#build-the-two-ledgers" title="Permanent link">&para;</a></h3>
+<p><strong>Namespaces are not part of the REST API.</strong> Minting, updating and importing are; carving
+out a NAAN or a shoulder is done with the CLI (or the admin interface), because it is an
+act of allocation rather than of identification.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp"># </span>──<span class="w"> </span>Public<span class="w"> </span>side<span class="w"> </span>──────────────────────────────────────────────
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="gp">$ </span>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example RA"</span><span class="w"> </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026"</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">Registered NAAN 99999 (Example RA)</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="gp">$ </span>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example University"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7<span class="w">        </span><span class="c1"># open PIDs</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="go">Onboarded Example University and delegated 99999/s7</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="gp">$ </span>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/c7<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span><span class="w"> </span>--note<span class="w"> </span><span class="s2">"closed PIDs"</span><span class="w">  </span><span class="c1"># closed PIDs</span>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="go">Carved out 99999/c7</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="gp"># </span>/c7<span class="w"> </span>is<span class="w"> </span>minted<span class="w"> </span>elsewhere.<span class="w"> </span>Record<span class="w"> </span>that,<span class="w"> </span>and<span class="w"> </span>give<span class="w"> </span>the<span class="w"> </span>outside<span class="w"> </span>an<span class="w"> </span>explanation
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="gp">$ </span>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span><span class="m">2</span><span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
+<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a><span class="go">99999/c7 → delegated</span>
+<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a><span class="gp">$ </span>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="s1">'303 https://ark.example.ac.jp/closed-namespace'</span>
+<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a><span class="go">resolution for 99999/c7 now goes to 303 https://ark.example.ac.jp/closed-namespace</span>
+<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>
+<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a><span class="gp">$ </span>arkhe<span class="w"> </span>shoulder<span class="w"> </span>list
+<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a><span class="go">   2  99999/c7      delegated  Example University</span>
+<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a><span class="go">   1  99999/s7      active     Example University</span>
 </code></pre></div>
-<p>From outside, that name says nothing yet. The delegated shoulder answers with a page
-explaining that the namespace is closed — <strong>not with the internal address</strong>, which
-nobody outside could reach anyway:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/c7j89qtb3fc
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">303 https://ark.example.ac.jp/closed-namespace</span>
+<p>The closed side is a <strong>separate ledger</strong> that holds the same NAAN and the same shoulder,
+and is authoritative for it there:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp"># </span>──<span class="w"> </span>Inside<span class="w"> </span>the<span class="w"> </span>closed<span class="w"> </span>network<span class="w"> </span>─────────────────────────────────
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="gp">$ </span>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example RA (closed)"</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">Registered NAAN 99999 (Example RA (closed))</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="gp">$ </span>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Closed unit"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="go">Onboarded Closed unit and delegated 99999/c7</span>
 </code></pre></div>
-<p>A typo lands on the same page, which is the point of this level: <strong>the names do not
-leak</strong>.</p>
+<p>Nothing connects the two. <strong><code>303 https://…/closed-namespace</code> is not a default</strong> — it is
+the value just written into <code>shoulder.redirect</code>, and without it an unregistered name
+under <code>/c7</code> simply answers <code>404</code>.</p>
+<h3 id="mint-on-each-side">Mint on each side<a class="headerlink" href="#mint-on-each-side" title="Permanent link">&para;</a></h3>
+<p>The open shoulder is the ordinary path from section 1:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"shoulder"</span>:<span class="w"> </span><span class="s2">"/s7"</span>,<span class="w"> </span><span class="s2">"url"</span>:<span class="w"> </span><span class="s2">"https://repo.example.ac.jp/records/7"</span>,
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">            "title": "Open dataset"}'</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">{"ark": "ark:99999/s75h5rdvnm2", …}</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/s75h5rdvnm2
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="go">302 https://repo.example.ac.jp/records/7</span>
+</code></pre></div>
+<p><strong>The public side cannot mint in <code>/c7</code>, and says where to go instead:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-i<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"shoulder": "/c7"}'</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">HTTP/1.1 307 Temporary Redirect</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="go">location: https://ark.closed.example.ac.jp</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="go">{"code": "ARKHE-1306",</span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="go"> "message": "Minting for shoulder /c7 is delegated; go to the minter in Location.",</span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="go"> "detail": {"shoulder": "/c7", "minter": "https://ark.closed.example.ac.jp",</span>
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="go">            "note": "closed PIDs"}}</span>
+</code></pre></div>
+<p>It answers <code>307</code> and <strong>does not proxy the call</strong>. Minting on someone's behalf means that
+when the response is lost, a name exists over there that nobody here knows about — and
+under NR that cannot be cleaned up.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp"># </span>──<span class="w"> </span>Inside<span class="w"> </span>the<span class="w"> </span>closed<span class="w"> </span>network<span class="w"> </span>─────────────────────────────────
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$C</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$CK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"url"</span>:<span class="w"> </span><span class="s2">"https://inside.closed.example/dataset/42"</span>,
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="go">            "title": "(a title that only exists inside)"}'</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="go">{"ark": "ark:99999/c7w545sj4z5", …}</span>
+</code></pre></div>
+<h3 id="resolve-the-same-name-on-each-side">Resolve the same name on each side<a class="headerlink" href="#resolve-the-same-name-on-each-side" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$CR</span>/ark:99999/c7w545sj4z5
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="go">302 https://inside.closed.example/dataset/42      # inside: straight to the object</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/c7w545sj4z5
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">303 https://ark.example.ac.jp/closed-namespace    # outside: "this namespace is closed"</span>
+</code></pre></div>
+<p>A typo lands on that same page, which is the point of this level: <strong>the names do not
+leak</strong>, and nothing was configured per identifier.</p>
 <h3 id="hand-it-over-description-only">Hand it over, description only<a class="headerlink" href="#hand-it-over-description-only" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w">   </span><span class="s2">"ark:99999/c7j89qtb3fc"</span>,
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">            "title": "Soil moisture, Kanto plain (restricted)",</span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">            "who":   "Yamada, Taro",</span>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="go">            "when":  "2026",</span>
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="go">            "commitment": "Restricted access; use requires an application"}'</span>
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="go">{"ark": "ark:99999/c7j89qtb3fc", "url": "", …}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w">   </span><span class="s2">"ark:99999/c7w545sj4z5"</span>,
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">            "title": "Soil moisture, Kanto plain (restricted)",</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="go">            "who":   "Yamada, Taro",</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="go">            "when":  "2026",</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="go">            "commitment": "Restricted access; use requires an application"}'</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="go">{"ark": "ark:99999/c7w545sj4z5", "url": "", …}</span>
 </code></pre></div>
 <p><strong><code>url</code> stays empty</strong>, and that is not an omission — it is the statement. The public
 resolver now describes an identifier it cannot send anyone to:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: text/plain'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$PR</span><span class="s2">/ark:99999/c7j89qtb3fc?info"</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">erc:</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="go">who: Yamada, Taro</span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="go">what: Soil moisture, Kanto plain (restricted)</span>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="go">when: 2026</span>
-<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="go">where: ark:99999/c7j89qtb3fc</span>
-<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="go">about: ark:99999/c7j89qtb3fc</span>
-<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="go">policy: NP | NR, OP, CC | 2026</span>
-<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="go">commitment: Restricted access; use requires an application</span>
-<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="go">commitment-level: permanent-dynamic</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: text/plain'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$PR</span><span class="s2">/ark:99999/c7w545sj4z5?info"</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="go">erc:</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="go">who: Yamada, Taro</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="go">what: Soil moisture, Kanto plain (restricted)</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="go">when: 2026</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="go">where: ark:99999/c7w545sj4z5</span>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="go">about: ark:99999/c7w545sj4z5</span>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="go">policy: NP | NR, OP, CC | 2026</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="go">commitment: Restricted access; use requires an application</span>
+<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="go">commitment-level: permanent-dynamic</span>
 </code></pre></div>
 <p><strong>What crossed the boundary is exactly what an operator typed into that request.</strong> Do not
 build an automatic sync upward: a confidential title will eventually arrive in <code>?info</code>,
 and having no path out is stronger than having a filter on the way out.</p>
 <h3 id="raise-it-when-you-can">Raise it when you can<a class="headerlink" href="#raise-it-when-you-can" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PATCH<span class="w"> </span><span class="nv">$P</span>/api/update<span class="w"> </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"…c7j89qtb3fc"</span>,
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">                                   "url": "https://apply.example.ac.jp/dataset/42"}'</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">→ 302 https://apply.example.ac.jp/dataset/42          # available on application</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PATCH<span class="w"> </span><span class="nv">$P</span>/api/update<span class="w"> </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"…c7j89qtb3fc"</span>,
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="go">                                   "url": "https://repo.example.ac.jp/records/42"}'</span>
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="go">→ 302 https://repo.example.ac.jp/records/42           # the embargo lifts</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PATCH<span class="w"> </span><span class="nv">$P</span>/api/update<span class="w"> </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"ark:99999/c7w545sj4z5"</span>,
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="go">                                   "url": "https://apply.example.ac.jp/dataset/42"}'</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="go">→ 302 https://apply.example.ac.jp/dataset/42          # available on application</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PATCH<span class="w"> </span><span class="nv">$P</span>/api/update<span class="w"> </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"ark:99999/c7w545sj4z5"</span>,
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="go">                                   "url": "https://repo.example.ac.jp/records/42"}'</span>
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a><span class="go">→ 302 https://repo.example.ac.jp/records/42           # the embargo lifts</span>
 </code></pre></div>
-<p>The description survives both moves (<code>what</code> and <code>who</code> are still there), and <strong>the name
-was identical at every step</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>ark:99999/c7j89qtb3fc
-</code></pre></div>
-<p>Use <code>PATCH</code>, not <code>PUT</code> — <a href="#5-move-the-object">as in section 5</a>, the description is
-exactly what you do not want to lose here.</p>
+<p>The description survives both moves — <code>what</code> and <code>who</code> are still there — and <strong>the name
+was identical at every step</strong>. Use <code>PATCH</code>, not <code>PUT</code>: <a href="#5-move-the-object">as in section 5</a>,
+the description is exactly what you do not want to lose here.</p>
 <h3 id="a-whole-namespace-at-once">A whole namespace at once<a class="headerlink" href="#a-whole-namespace-at-once" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import/bulk<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"data"</span>:<span class="w"> </span><span class="o">[{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"ark:99999/c7xk7vtb226"</span>,<span class="w"> </span><span class="s2">"title"</span>:<span class="w"> </span><span class="s2">"batch 1"</span><span class="o">}</span>,
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">                     {"ark": "ark:99999/c7zjft7mcxq", "title": "batch 2"}]}'</span>
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="go">{"count": 2, "imported": [...]}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import/bulk<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"data"</span>:<span class="w"> </span><span class="o">[{</span><span class="s2">"ark"</span>:<span class="w"> </span><span class="s2">"ark:99999/c7p31k8g8hn"</span>,<span class="w"> </span><span class="s2">"title"</span>:<span class="w"> </span><span class="s2">"batch 1"</span><span class="o">}</span>,
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="go">                     {"ark": "ark:99999/c7vtrvkbmfw", "title": "batch 2"}]}'</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="go">{"count": 2, "imported": [...]}</span>
 </code></pre></div>
 <p><strong>One row that fails any check and nothing is created.</strong> Names that did land cannot be
 taken back, so a half-imported namespace is worse than none.</p>
 <h3 id="what-gets-refused">What gets refused<a class="headerlink" href="#what-gets-refused" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/s7abc1234"}'</span><span class="w">      </span><span class="c1"># not delegated</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="go">ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.</span>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7j89qtb3fz"}'</span><span class="w">    </span><span class="c1"># check digit</span>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="go">ARKHE-1012  Check digit mismatch: ark:99999/c7j89qtb3fz was not minted by a NOID minter, or was mistyped.</span>
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7j89qtb3fc"}'</span><span class="w">    </span><span class="c1"># already here</span>
-<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="go">ARKHE-1005  ark:99999/c7j89qtb3fc is already registered.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/s7abc1234"}'</span><span class="w">      </span><span class="c1"># not delegated</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="go">ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7w545sj4zz"}'</span><span class="w">    </span><span class="c1"># check digit</span>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="go">ARKHE-1012  Check digit mismatch: ark:99999/c7w545sj4zz was not minted by a NOID minter, or was mistyped.</span>
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>
+<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7w545sj4z5"}'</span><span class="w">    </span><span class="c1"># already here</span>
+<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="go">ARKHE-1005  ark:99999/c7w545sj4z5 is already registered.</span>
 </code></pre></div>
 <p>The check digit is the only evidence a public ledger has that a name arriving from
 outside was not mistyped, which is why it cannot be waived. Reach follows the usual rule
 — <strong>higher authority covers lower</strong> — and the NAAN must be one this ledger is
 authoritative for; taking custody of names in a namespace you merely forward would be
 claiming to be its keeper.</p>
+<h3 id="the-two-side-by-side">The two side by side<a class="headerlink" href="#the-two-side-by-side" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/s75h5rdvnm2
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">302 https://repo.example.ac.jp/records/7      # was open all along</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/c7w545sj4z5
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="go">302 https://repo.example.ac.jp/records/42     # was closed for a year</span>
+</code></pre></div>
+<p><strong>Same NAAN, same shape, one resolver.</strong> The only difference is the shoulder, and by the
+time an outsider sees either of them, that difference has stopped mattering.</p>
 <h2 id="the-shape-of-it">The shape of it<a class="headerlink" href="#the-shape-of-it" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>flowchart LR
     M["POST /api/mint&lt;br/&gt;&lt;small&gt;ark:mint&lt;/small&gt;"] --&gt; A(["ark:99999/x9tn1qkq2g7"])

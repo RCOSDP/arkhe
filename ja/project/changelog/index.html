@@ -2100,6 +2100,16 @@
 「修正」に挙げてある。台帳そのものは触っておらず、マイグレーションは列幅の拡大だけ。</p>
 <h3 id="追加">追加<a class="headerlink" href="#追加" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>手引きの 10 節が、台帳 2 つを組むところから始まるようになった。</strong> 公開側と閉域側は
+  <strong>別々に運用する</strong>——DB も複製も同期も共有しない——ので、例もそこから始める:
+  <code>arkhe naan add</code> / <code>onboard</code> / <code>shoulder add</code> と、外に「この名前空間は閉じている」と
+  伝える <code>delegated</code> ＋ <code>redirect</code> の組。<strong>名前空間の割当は REST ではなく CLI の仕事</strong>
+  だということも書いた。</li>
+</ul>
+<p>そのうえで両側に curl で採番する——公開 shoulder は普通の道、非公開 shoulder は
+  公開側の minter が <code>307</code> で委譲先を案内して断る——引き取りの前後で同じ名前を
+  両方のリゾルバに尋ねる。台帳 2 つ・プロセス 4 つ、<strong>1 回の実行から写した 1 本の記録</strong>。</p>
+<ul>
 <li>
 <p><strong>閉じたまま配って、あとで公開する例</strong>を
   <a href="https://rcosdp.github.io/arkhe/ja/guides/walkthrough/">手引きの 10 節</a>に足した。
