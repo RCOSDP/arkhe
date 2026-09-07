@@ -523,6 +523,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-parts-of-an-ark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The parts of an ARK
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#ark-is-not-a-peer-of-doi-and-handle" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -556,10 +567,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#terms" class="md-nav__link">
+  <a href="#two-more-terms" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Terms
+        Two more terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read on
       
     </span>
   </a>
@@ -1262,6 +1284,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-parts-of-an-ark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The parts of an ARK
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#ark-is-not-a-peer-of-doi-and-handle" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1295,10 +1328,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#terms" class="md-nav__link">
+  <a href="#two-more-terms" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Terms
+        Two more terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#read-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read on
       
     </span>
   </a>
@@ -1331,11 +1375,72 @@
 
 
 <h1 id="what-ark-is">What ARK is<a class="headerlink" href="#what-ark-is" title="Permanent link">&para;</a></h1>
-<p>An <strong>ARK</strong> (Archival Resource Key) is a persistent identifier that looks like this:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ark:99999/x9abc1234
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    └──┬─┘ └────┬───┘
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>     NAAN     name
+<p>In the ARK Alliance's own words, <strong>Archival Resource Key (ARK) identifiers are URLs
+that support long-term access to information</strong>. They are issued by organisations that
+register as Name Assigning Authorities, and <strong>nobody pays for the right to create
+them</strong>.</p>
+<div class="admonition info">
+<p class="admonition-title">This page is an orientation, not the specification</p>
+<p>The scheme itself, the FAQ, the shoulder conventions, the registry of assigning
+organisations and the current draft all live at <strong><a href="https://arks.org/">https://arks.org/</a></strong>. Read it for
+anything this page states too briefly — everything below is only the part that
+explains why arkhe is shaped the way it is.</p>
+</div>
+<h2 id="the-parts-of-an-ark">The parts of an ARK<a class="headerlink" href="#the-parts-of-an-ark" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     \________________________/\__/\___/ \/\_____/\_/\_____/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                NMA           label NAAN    blade part variant
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                     shoulder
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                               \_________________/\________/
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                                base compact name qualifiers
 </code></pre></div>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>NMA</strong></td>
+<td>Name Mapping Authority — the resolver that happens to be answering today. <strong>Identity inert</strong>: ARKs that differ only here identify the same thing, so it can be replaced when an organisation or a host changes</td>
+</tr>
+<tr>
+<td><strong>label</strong></td>
+<td><code>ark:</code> marks the start of the identifier proper. The older <code>ark:/</code> means the same thing and <strong>must be recognised in perpetuity</strong></td>
+</tr>
+<tr>
+<td><strong>NAAN</strong></td>
+<td>The number of the organisation that assigned the name. Requested from the ARK Alliance, free, and <strong>never re-registered</strong></td>
+</tr>
+<tr>
+<td><strong>shoulder</strong></td>
+<td>A sub-namespace inside a NAAN, delegated to a department or unit</td>
+</tr>
+<tr>
+<td><strong>blade</strong></td>
+<td>The part that varies per object. arkhe mints it at random, ending in a check digit</td>
+</tr>
+<tr>
+<td><strong>part</strong> (<code>/</code>)</td>
+<td>Says this names something <strong>contained in</strong> what precedes it</td>
+</tr>
+<tr>
+<td><strong>variant</strong> (<code>.</code>)</td>
+<td>Says this names a <strong>variant form</strong> — a format, a language, a version — of what precedes it</td>
+</tr>
+</tbody>
+</table>
+<p>The shoulder and blade come from locksmithing, and arks.org carries the metaphor
+through the whole string: the NMA is the <strong>cover</strong> the key comes in, <code>ark:99999</code> is the
+<strong>bow</strong> you hold, and the shoulder and blade are the parts that do the work. <strong>Only the
+cover is disposable.</strong></p>
+<p><code>/</code> and <code>.</code> are the reason a recipient can infer structure from the string alone.
+Publishing <code>ark:99999/x9abc1234/c3/s5.pdf</code> says, without anyone having to fetch a
+metadata record, that <code>s5.pdf</code> is a variant of <code>s5</code>, which is contained in <code>x9abc1234</code>.</p>
 <p>It sits on plain HTTP and DNS. That single fact separates it from DOI and Handle, and
 most of what follows comes from it.</p>
 <h2 id="ark-is-not-a-peer-of-doi-and-handle">ARK is not a peer of DOI and Handle<a class="headerlink" href="#ark-is-not-a-peer-of-doi-and-handle" title="Permanent link">&para;</a></h2>
@@ -1389,7 +1494,9 @@ something else.</p>
 </ul>
 <p>Read <a href="../invariants/">Invariants</a> for how each of those is enforced in code rather
 than left to discipline.</p>
-<h2 id="terms">Terms<a class="headerlink" href="#terms" title="Permanent link">&para;</a></h2>
+<h2 id="two-more-terms">Two more terms<a class="headerlink" href="#two-more-terms" title="Permanent link">&para;</a></h2>
+<p>The parts of the string are in <a href="#the-parts-of-an-ark">the table above</a>. Two words that
+appear throughout this documentation are not parts of the string at all:</p>
 <table>
 <thead>
 <tr>
@@ -1399,31 +1506,22 @@ than left to discipline.</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>NAAN</strong></td>
-<td>Name Assigning Authority Number. The <code>99999</code> part. Granted to an organisation</td>
-</tr>
-<tr>
-<td><strong>shoulder</strong></td>
-<td>A sub-namespace within a NAAN, such as <code>/x9</code>. What gets delegated to an organisation</td>
-</tr>
-<tr>
-<td><strong>blade</strong></td>
-<td>What follows the shoulder — the part that identifies the object</td>
-</tr>
-<tr>
 <td><strong>inflection</strong></td>
-<td>A <code>?</code> or <code>??</code> suffix that asks the resolver about the identifier rather than following it</td>
+<td>A <code>?</code>, <code>??</code> or <code>?info</code> suffix that asks the resolver <strong>about</strong> the identifier instead of following it. <code>?info</code> is the one the specification requires</td>
 </tr>
 <tr>
 <td><strong>suffix passthrough</strong></td>
-<td><code>…/x9abc/page/3</code> resolves through the record for <code>…/x9abc</code>, so children need no identifiers of their own</td>
-</tr>
-<tr>
-<td><strong>NMA</strong></td>
-<td>Name Mapping Authority — whoever answers when the identifier is resolved</td>
+<td><code>…/x9abc1234/page/3</code> resolves through the record for <code>…/x9abc1234</code>, so children need no identifiers of their own — one record per minting is enough</td>
 </tr>
 </tbody>
 </table>
+<h2 id="read-on">Read on<a class="headerlink" href="#read-on" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><a href="https://arks.org/">https://arks.org/</a></strong> — the scheme, the FAQ, shoulder conventions, the registry of
+  assigning organisations, and how to request a NAAN</li>
+<li><a href="https://datatracker.ietf.org/doc/draft-kunze-ark/">The ARK Identifier Scheme</a> — the
+  current draft, which is what arkhe is written against</li>
+</ul>
 
 
 

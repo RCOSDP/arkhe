@@ -523,6 +523,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#ark-を構成するもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ARK を構成するもの
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#ark-は-doi-や-handle-と横並びではない" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -556,10 +567,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#用語" class="md-nav__link">
+  <a href="#もう-2-つの用語" class="md-nav__link">
     <span class="md-ellipsis">
       
-        用語
+        もう 2 つの用語
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#この先を読む" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        この先を読む
       
     </span>
   </a>
@@ -1262,6 +1284,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#ark-を構成するもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ARK を構成するもの
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#ark-は-doi-や-handle-と横並びではない" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1295,10 +1328,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#用語" class="md-nav__link">
+  <a href="#もう-2-つの用語" class="md-nav__link">
     <span class="md-ellipsis">
       
-        用語
+        もう 2 つの用語
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#この先を読む" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        この先を読む
       
     </span>
   </a>
@@ -1331,11 +1375,70 @@
 
 
 <h1 id="ark-とは何か">ARK とは何か<a class="headerlink" href="#ark-とは何か" title="Permanent link">&para;</a></h1>
-<p><strong>ARK</strong>（Archival Resource Key）は、こういう形の永続識別子である。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ark:99999/x9abc1234
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    └──┬─┘ └────┬───┘
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>     NAAN     name
+<p>ARK Alliance 自身の言葉では、<strong>ARK（Archival Resource Key）識別子とは、情報への
+長期的なアクセスを支える URL</strong> である。発行するのは Name Assigning Authority として
+登録した組織で、<strong>作る権利に金はかからない</strong>。</p>
+<div class="admonition info">
+<p class="admonition-title">このページは入口であって、仕様書ではない</p>
+<p>体系そのもの、FAQ、shoulder の作法、発行組織の登録簿、現行のドラフトは
+すべて <strong><a href="https://arks.org/">https://arks.org/</a></strong> にある。ここで短く書きすぎていると思ったら
+そちらを読むこと——以下はあくまで、<strong>arkhe がなぜこの形なのか</strong>を説明する
+ぶんだけである。</p>
+</div>
+<h2 id="ark-を構成するもの">ARK を構成するもの<a class="headerlink" href="#ark-を構成するもの" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     \________________________/\__/\___/ \/\_____/\_/\_____/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                NMA           label NAAN    blade part variant
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                     shoulder
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                               \_________________/\________/
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                                base compact name qualifiers
 </code></pre></div>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>NMA</strong></td>
+<td>Name Mapping Authority。<strong>今日たまたま答えているリゾルバ</strong>。ここだけが違う ARK は同じものを指す（identity inert）ので、組織やホストが変われば差し替えてよい</td>
+</tr>
+<tr>
+<td><strong>label</strong></td>
+<td><code>ark:</code> から識別子本体が始まる。旧形式の <code>ark:/</code> も同じ意味で、<strong>永久に認識しなければならない</strong></td>
+</tr>
+<tr>
+<td><strong>NAAN</strong></td>
+<td>名前を割り当てた組織の番号。ARK Alliance に申請する。無料で、<strong>二度と再登録されない</strong></td>
+</tr>
+<tr>
+<td><strong>shoulder</strong></td>
+<td>NAAN の内側の下位名前空間。部門や単位に委譲する</td>
+</tr>
+<tr>
+<td><strong>blade</strong></td>
+<td>対象ごとに変わる部分。arkhe は乱数で採り、末尾に検査桁を置く</td>
+</tr>
+<tr>
+<td><strong>part</strong>（<code>/</code>）</td>
+<td>その手前のものに<strong>含まれる</strong>ものを指す、と述べる</td>
+</tr>
+<tr>
+<td><strong>variant</strong>（<code>.</code>）</td>
+<td>その手前のものの<strong>変種</strong>——形式・言語・版——を指す、と述べる</td>
+</tr>
+</tbody>
+</table>
+<p>shoulder と blade は錠前屋の言葉で、arks.org はこの比喩を文字列全体に通している。
+NMA は鍵が入っていた<strong>カバー</strong>、<code>ark:99999</code> は手で持つ<strong>弓（bow）</strong>、shoulder と
+blade が実際に働く部分である。<strong>捨てられるのはカバーだけ。</strong></p>
+<p><code>/</code> と <code>.</code> があるおかげで、受け取った側は<strong>文字列だけから構造を推測できる</strong>。
+<code>ark:99999/x9abc1234/c3/s5.pdf</code> を公開するということは、メタデータを引かなくても
+「<code>s5.pdf</code> は <code>s5</code> の変種で、それは <code>x9abc1234</code> に含まれる」と述べたことになる。</p>
 <p><strong>HTTP と DNS の上に直接建っている。</strong> この一点が DOI や Handle との違いを生み、
 以下のほとんどはそこから出てくる。</p>
 <h2 id="ark-は-doi-や-handle-と横並びではない">ARK は DOI や Handle と横並びではない<a class="headerlink" href="#ark-は-doi-や-handle-と横並びではない" title="Permanent link">&para;</a></h2>
@@ -1385,7 +1488,9 @@ ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して�
 <li>統合・分割・離脱を跨いで<strong>解決し続ける</strong>。</li>
 </ul>
 <p>それぞれを規律ではなくコードでどう守っているかは<a href="../invariants/">壊さないもの</a>に書いた。</p>
-<h2 id="用語">用語<a class="headerlink" href="#用語" title="Permanent link">&para;</a></h2>
+<h2 id="もう-2-つの用語">もう 2 つの用語<a class="headerlink" href="#もう-2-つの用語" title="Permanent link">&para;</a></h2>
+<p>文字列を構成するものは<a href="#ark-を構成するもの">上の表</a>にある。この文書で何度も出てくる
+のに、<strong>文字列の一部ではない</strong>語が 2 つある。</p>
 <table>
 <thead>
 <tr>
@@ -1395,31 +1500,22 @@ ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して�
 </thead>
 <tbody>
 <tr>
-<td><strong>NAAN</strong></td>
-<td>Name Assigning Authority Number。<code>99999</code> の部分。組織に交付される</td>
-</tr>
-<tr>
-<td><strong>shoulder</strong></td>
-<td>NAAN の下位名前空間（<code>/x9</code> など）。<strong>組織に委譲される単位</strong></td>
-</tr>
-<tr>
-<td><strong>blade</strong></td>
-<td>shoulder より後ろ。対象を識別する部分</td>
-</tr>
-<tr>
 <td><strong>inflection</strong></td>
-<td><code>?</code> や <code>??</code> の接尾。<strong>対象へ行く</strong>のではなく、<strong>識別子について尋ねる</strong></td>
+<td><code>?</code> <code>??</code> <code>?info</code> の接尾。<strong>対象へ行く</strong>のではなく、<strong>識別子について尋ねる</strong>。仕様が必須としているのは <code>?info</code></td>
 </tr>
 <tr>
 <td><strong>suffix passthrough</strong></td>
-<td><code>…/x9abc/page/3</code> は <code>…/x9abc</code> のレコードで解決される。子に識別子を振らなくてよい</td>
-</tr>
-<tr>
-<td><strong>NMA</strong></td>
-<td>Name Mapping Authority。その識別子を解決するとき、実際に答える主体</td>
+<td><code>…/x9abc1234/page/3</code> は <code>…/x9abc1234</code> のレコードで解決される。子に識別子を振らなくてよい——<strong>1 レコード 1 採番</strong>で足りる</td>
 </tr>
 </tbody>
 </table>
+<h2 id="この先を読む">この先を読む<a class="headerlink" href="#この先を読む" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><a href="https://arks.org/">https://arks.org/</a></strong> — 体系、FAQ、shoulder の作法、発行組織の登録簿、
+  NAAN の申請方法</li>
+<li><a href="https://datatracker.ietf.org/doc/draft-kunze-ark/">The ARK Identifier Scheme</a>
+  — 現行のドラフト。arkhe はこれに合わせて書かれている</li>
+</ul>
 
 
 

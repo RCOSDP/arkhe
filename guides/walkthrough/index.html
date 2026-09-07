@@ -1583,82 +1583,100 @@ distinguishable. A namespace policy is set when the NAAN is registered
 (<code>arkhe naan add … --policy</code>, or the NAAN form in the admin interface).</p>
 <p><strong><code>Link: …; rel="describes"</code></strong> tells a client that knows nothing about inflections that
 this response <em>describes</em> the ARK rather than being the thing itself.</p>
-<p><code>?json</code> returns the same record for a program, and <code>?info</code> returns a page for a person.
-Whichever you use, <strong>the answer survives the object</strong>: section 6 comes back to that.</p>
+<p><strong>The answer survives the object</strong> either way: section 6 comes back to that.</p>
+<p><code>?info</code> answers in whichever medium you ask for — the same description, a different
+content type:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{content_type}\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7?info"</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">text/html; charset=utf-8</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7?info"</span><span class="w">   </span><span class="c1"># same as ?json</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: text/plain'</span><span class="w">       </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7?info"</span><span class="w">   </span><span class="c1"># same as ??</span>
+</code></pre></div>
+<p>The page is translated too. <strong><code>?lang=</code> will not work here</strong> — the query string <em>is</em> the
+inflection — so the language goes after an <code>&amp;</code>, or comes from <code>Accept-Language</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7?info&amp;lang=en"</span>
+</code></pre></div>
 <h2 id="4-point-one-part-somewhere-else">4. Point one part somewhere else<a class="headerlink" href="#4-point-one-part-somewhere-else" title="Permanent link">&para;</a></h2>
 <p>Suffix passthrough covers the general case. When one part genuinely lives elsewhere —
 a IIIF canvas, a subtree in another store — register that one point:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/register<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "qualifier": "/page/3",</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s1">       "url": "https://iiif.example.ac.jp/records/1/canvas/3"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/register<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "qualifier": "/page/3",</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="s1">       "url": "https://iiif.example.ac.jp/records/1/canvas/3"}'</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7/page/3
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">302 https://iiif.example.ac.jp/records/1/canvas/3</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7/page/3
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">302 https://iiif.example.ac.jp/records/1/canvas/3</span>
 </code></pre></div>
 <p>The registered row wins over the ancestor; everything else under the name still passes
 through. Note that this needs <code>ark:mint</code>, not <code>ark:update</code> — <strong>a new resolvable
 identifier appears</strong>, even though nothing was minted.</p>
 <h2 id="5-move-the-object">5. Move the object<a class="headerlink" href="#5-move-the-object" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark":   "ark:99999/x9tn1qkq2g7",</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="s1">       "url":   "https://newrepo.example.ac.jp/datasets/1",</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="s1">       "title": "Rainfall in the Kanto plain, 1991-2020",</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="s1">       "who":   "Yamada, Taro",</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="s1">       "when":  "2026"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PATCH<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7",</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="s1">       "url": "https://newrepo.example.ac.jp/datasets/1"}'</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">302 https://newrepo.example.ac.jp/datasets/1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">"ark"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ark:99999/x9tn1qkq2g7"</span><span class="p">,</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://newrepo.example.ac.jp/datasets/1"</span><span class="p">,</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Rainfall in the Kanto plain, 1991-2020"</span><span class="p">,</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="nt">"who"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Yamada, Taro"</span><span class="p">,</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="nt">"when"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026"</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="p">}</span>
 </code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">302 https://newrepo.example.ac.jp/datasets/1</span>
+</code></pre></div>
+<p><strong><code>PATCH</code> writes what you sent and leaves the rest alone</strong>, which is what moving an
+object actually calls for. Sending a field as <code>""</code> clears it, so removing a value is
+still possible — the two cases have to stay distinguishable.</p>
 <div class="admonition warning">
-<p class="admonition-title"><code>update</code> replaces the record, it does not merge into it</p>
-<p>Sending only <code>ark</code> and <code>url</code> <strong>empties <code>title</code>, <code>who</code>, <code>when</code> and the rest</strong>, because
-every omitted field carries its default. Send the whole record, as above. The
-previous target is kept in the change history either way (the ARK's page in the admin
-interface), but a description that was there and is now gone cannot be recovered
-from it.</p>
+<p class="admonition-title"><code>PUT</code> on the same path replaces the whole record</p>
+<p><code>PUT /api/update</code> is a replacement: send only <code>ark</code> and <code>url</code> and <strong><code>title</code>, <code>who</code>,
+<code>when</code> and the rest are emptied</strong>, because every omitted field carries its default.
+That is what a PUT means, and it is the right verb when you can say "the record is
+now exactly this" — but for repointing an object, use <code>PATCH</code>.</p>
 </div>
 <h2 id="6-stop-the-redirect-without-killing-the-name">6. Stop the redirect without killing the name<a class="headerlink" href="#6-stop-the-redirect-without-killing-the-name" title="Permanent link">&para;</a></h2>
 <p>A delegate is down, or a wrong target went out, and you need it to stop <strong>now</strong>. <code>404</code>
 would be a lie — the identifier exists — and <code>503</code> makes a permanent identifier look
 broken. A hold answers <code>200</code> with the description instead:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "until": "2026-09-14T00:00:00Z",</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="s1">       "reason": "verifying the new target"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "until": "2026-09-14T00:00:00Z",</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s1">       "reason": "verifying the new target"}'</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">erc:</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">redirect: https://newrepo.example.ac.jp/datasets/1</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">commitment-level: permanent-dynamic</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">hold: verifying the new target</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">hold-until: 2026-09-14T00:00:00+00:00</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">erc:</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">redirect: https://newrepo.example.ac.jp/datasets/1</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">commitment-level: permanent-dynamic</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">hold: verifying the new target</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">hold-until: 2026-09-14T00:00:00+00:00</span>
 </code></pre></div>
 <p><strong>The reason is published</strong>, so do not put anything in it you would not say in public.
 <code>until</code> is required and capped by <code>ARKHE_HOLD_MAX_DAYS</code>: "temporary" left to memory
 becomes permanent, and an expired hold lifts itself by the clock alone. To lift it
 early:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold/release<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold/release<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7"}'</span>
 </code></pre></div>
 <h2 id="7-when-the-object-is-gone">7. When the object is gone<a class="headerlink" href="#7-when-the-object-is-gone" title="Permanent link">&para;</a></h2>
 <p>There is no delete. When the thing itself is gone, say so:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/tombstone<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7",</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s1">       "commitment": "The dataset was withdrawn by the depositor in 2026-09."}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/tombstone<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7",</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="s1">       "commitment": "The dataset was withdrawn by the depositor in 2026-09."}'</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">200</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">erc:</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">about: ark:99999/x9tn1qkq2g7</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">commitment: The dataset was withdrawn by the depositor in 2026-09.</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">commitment-level: permanent-dynamic</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">200</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">erc:</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">about: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">commitment: The dataset was withdrawn by the depositor in 2026-09.</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="go">commitment-level: permanent-dynamic</span>
 </code></pre></div>
 <p>The redirect is gone; <strong>the identifier and the record are not</strong>. A citation written in
 2026 still leads somewhere that says what the thing was and what happened to it, which
@@ -1666,42 +1684,42 @@ is what <a href="../../concepts/invariants/">FAIR A2</a> asks for and what a <co
 <h2 id="8-when-something-is-wrong">8. When something is wrong<a class="headerlink" href="#8-when-something-is-wrong" title="Permanent link">&para;</a></h2>
 <p>Errors carry a code. <strong>Match on the code, not on the wording</strong> — the full list is
 <a href="../../reference/errors/">the errors reference</a>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{}'</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">{"code": "ARKHE-1201", "message": "No credentials."}</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">       </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "not-an-ark", "url": "https://x/1"}'</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">{"code": "ARKHE-1001",</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go"> "message": "Not readable as an ARK: missing name part",</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go"> "detail": {"reason": "missing name part"}}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{}'</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">{"code": "ARKHE-1201", "message": "No credentials."}</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">       </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "not-an-ark", "url": "https://x/1"}'</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="go">{"code": "ARKHE-1001",</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="go"> "message": "Not readable as an ARK: missing name part",</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="go"> "detail": {"reason": "missing name part"}}</span>
 </code></pre></div>
 <p>Resolution answers in plain text, with the code first:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9zzzzzzzz
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">ARKHE-1403 ark:99999/x9zzzzzzzz — Check digit mismatch: the identifier looks mistranscribed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9zzzzzzzz
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">ARKHE-1403 ark:99999/x9zzzzzzzz — Check digit mismatch: the identifier looks mistranscribed.</span>
 </code></pre></div>
 <p><strong>That is a different answer from "no such ARK".</strong> The check digit says the string was
 mistyped or mis-transcribed on its way here, which is worth telling a person who is
 staring at a printed identifier.</p>
 <p>A NAAN this resolver knows nothing about is handed upwards rather than refused:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:12345/abcde
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">302 https://n2t.net/ark:12345/abcde</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:12345/abcde
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">302 https://n2t.net/ark:12345/abcde</span>
 </code></pre></div>
 <h2 id="9-what-the-resolver-says-about-itself">9. What the resolver says about itself<a class="headerlink" href="#9-what-the-resolver-says-about-itself" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/.well-known/ark
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">/</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/.well-known/ark
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">/</span>
 </code></pre></div>
 <p>That is the specification's own answer: the resolver's root path, so that appending a
 compact ARK to it gives a resolution request. arkhe's own inventory — the namespaces it
 holds, and where minting happens when it happens elsewhere — is the JSON representation
 of the same URL:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span><span class="nv">$R</span>/.well-known/ark
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">{"resolver_path": "/",</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go"> "resolver": "arkhe",</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go"> "global_resolver": "https://n2t.net",</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go"> "naans": [{"naan": "99999", "authoritative": true,</span>
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">            "redirect": null, "minter": null, "na_policy": null}],</span>
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go"> "delegated_shoulders": [],</span>
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="go"> "held": []}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span><span class="nv">$R</span>/.well-known/ark
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">{"resolver_path": "/",</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="go"> "resolver": "arkhe",</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go"> "global_resolver": "https://n2t.net",</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="go"> "naans": [{"naan": "99999", "authoritative": true,</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="go">            "redirect": null, "minter": null, "na_policy": null}],</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="go"> "delegated_shoulders": [],</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="go"> "held": []}</span>
 </code></pre></div>
 <h2 id="the-shape-of-it">The shape of it<a class="headerlink" href="#the-shape-of-it" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>flowchart LR

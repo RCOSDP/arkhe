@@ -2072,6 +2072,28 @@
 <h3 id="追加">追加<a class="headerlink" href="#追加" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong><code>PATCH /api/update</code> は送った項目だけを書く。</strong> 同じパスの <code>PUT</code> は置き換えで、
+  <code>title</code> を省けば空になる——置き換えとしては正しいが、<strong>実際にいちばん多い「対象が
+  移った」には合わない</strong>。行き先を付け替えるのに記述を失わなくなった。空文字を送れば
+  今までどおり消えるので、値を消す手段も残っている（この 2 つは区別できなければ
+  ならない）。</p>
+</li>
+<li>
+<p><strong><code>?info</code> は求められた媒体で答える。</strong> §5.2 は「THUMP の応答の形は返す content type
+  が示す」と書いている。既定は人が読むページ、<code>Accept: application/json</code> なら JSON、
+  <code>Accept: text/plain</code> なら <code>??</code> と同じ ANVL。中身はどれも同じ「記述＋永続性宣言」
+  である（§5）。<strong><code>?json</code> は残す</strong>——その JSON を名指しする別名で、<code>?info</code> に同じ
+  <code>Accept</code> を送ったときと同じものを返す。</p>
+</li>
+<li>
+<p><strong><code>?info</code> のページを翻訳するようにした。</strong> ここは公開の口で、ARK は世界中から
+  引かれるのに日本語しか話しておらず、<strong>識別子は届いたのに説明が読めない</strong>状態
+  だった。管理画面と同じ catalogue から語を採る。永続性の水準の表示名も同じで、
+  それは <code>?json</code> の <code>commitment_label</code> にも出る。<strong>この口で <code>?lang=</code> は使えない</strong>
+  ——クエリ文字列そのものが inflection なので、言語は <code>&amp;</code> の後ろ（<code>?info&amp;lang=en</code>）か
+  <code>Accept-Language</code> で渡す。</p>
+</li>
+<li>
 <p><strong>識別子 1 本を端から端まで追う手引き</strong>を足した
   （<a href="https://rcosdp.github.io/arkhe/ja/guides/walkthrough/">curl で採番から解決まで</a>）。
   採番、解決、suffix passthrough、修飾子 1 点の登録、対象の移動、保留、墓碑、
@@ -2127,6 +2149,13 @@
   設定すること（<code>uvicorn --root-path /pid</code>）——さもないと無い口を案内する。</p>
 <h3 id="修正">修正<a class="headerlink" href="#修正" title="Permanent link">&para;</a></h3>
 <ul>
+<li>
+<p><strong>ARK の説明ページが短すぎ、行き先も示していなかった。</strong> 図が <code>NAAN</code> と <code>name</code>
+  しか示しておらず、label・shoulder・blade・修飾子——<strong>何も引かずに文字列だけから
+  構造を読める</strong>という要点を担う部分——が落ちていた。<a href="https://arks.org/">arks.org</a>
+  の定義に合わせて構成を書き直し（錠前の比喩も含めて）、<strong>このページは入口であって
+  体系そのものは arks.org にある</strong>と明記した。</p>
+</li>
 <li>
 <p><strong>クイックスタートの「手元で動かす」例では解決できなかった。</strong> 1 プロセスを起動して
   <code>/ark:99999/…</code> を叩いていたが、解決の口は <code>ARKHE_RESOLVER=1</code> のときだけ生える

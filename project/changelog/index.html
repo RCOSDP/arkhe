@@ -2073,6 +2073,30 @@ breaking in a system whose identifiers cannot be reissued.</p>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong><code>PATCH /api/update</code> writes only the fields you send.</strong> <code>PUT</code> on that path is a
+  replacement — omit <code>title</code> and it is emptied — which is correct for a replacement and
+  wrong for what people do most: move an object. Repointing an ARK no longer costs it
+  its description. Sending a field as <code>""</code> still clears it, so removing a value remains
+  possible; the two cases have to stay distinguishable.</p>
+</li>
+<li>
+<p><strong><code>?info</code> answers in whichever medium the client asks for.</strong> §5.2 says the form of a
+  THUMP response is indicated by the returned content type, so <code>?info</code> now negotiates:
+  a page by default, JSON for <code>Accept: application/json</code>, and the ANVL of <code>??</code> for
+  <code>Accept: text/plain</code>. The content is the same description and permanence declaration
+  each time — §5 puts both in one <code>?info</code>. <strong><code>?json</code> stays</strong> as a way to name the JSON
+  directly, and returns exactly what <code>?info</code> does under that Accept.</p>
+</li>
+<li>
+<p><strong>The <code>?info</code> page is translated.</strong> It is a public endpoint — an ARK is resolved from
+  anywhere — and it spoke only Japanese, so the identifier arrived and the explanation
+  could not be read. It now takes its words from the same catalogue as the admin
+  interface, including the persistence level's display name, which also reaches
+  <code>?json</code>'s <code>commitment_label</code>. <strong><code>?lang=</code> cannot be used</strong> on this endpoint, because the
+  query string is the inflection; the language goes after an <code>&amp;</code> (<code>?info&amp;lang=en</code>), or
+  comes from <code>Accept-Language</code>.</p>
+</li>
+<li>
 <p><strong>A walkthrough that follows one identifier end to end</strong>, in
   <a href="https://rcosdp.github.io/arkhe/guides/walkthrough/">From minting to resolving, with curl</a>:
   minting, resolution, suffix passthrough, registering one qualified point, moving the
@@ -2131,6 +2155,14 @@ breaking in a system whose identifiers cannot be reissued.</p>
   set it (<code>uvicorn --root-path /pid</code>) or it will publish a door that is not there.</p>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li>
+<p><strong>The ARK concept page said too little, and pointed nowhere.</strong> Its diagram labelled
+  only "NAAN" and "name", which leaves out the label, the shoulder, the blade and the
+  qualifiers — the parts that make the string readable without fetching anything. The
+  anatomy now follows <a href="https://arks.org/">arks.org</a>, including their locksmithing
+  metaphor, and the page says plainly that it is an orientation and that arks.org is
+  where the scheme itself lives.</p>
+</li>
 <li>
 <p><strong>The quickstart's local example could not resolve.</strong> It started one process and
   curled <code>/ark:99999/…</code> at it, but the resolution endpoint only exists when

@@ -1050,6 +1050,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#info-answers-in-whichever-medium-you-ask-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ?info answers in whichever medium you ask for
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-encoded-characters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1335,6 +1346,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#info-answers-in-whichever-medium-you-ask-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ?info answers in whichever medium you ask for
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-encoded-characters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1456,11 +1478,11 @@ behaviour that depends on the suffix.</p>
 </tr>
 <tr>
 <td><code>/ark:99999/x9abc?info</code></td>
-<td>The same for a human being</td>
+<td>The same again — as a page, as JSON or as ANVL, by <code>Accept</code></td>
 </tr>
 <tr>
 <td><code>/ark:99999/x9abc?json</code></td>
-<td>The same for a program</td>
+<td>The JSON of <code>?info</code>, named directly</td>
 </tr>
 <tr>
 <td><code>/ark:12345/…</code> (unknown NAAN)</td>
@@ -1498,6 +1520,15 @@ an answer about the identifier.</p>
 long-term identifier as opposed to a transient redirect target". Changing where an ARK
 points does not change its <code>where</code>; that is the whole value of the element. The current
 target is published as <code>redirect</code>, outside the kernel, and only when there is one.</p>
+<h3 id="info-answers-in-whichever-medium-you-ask-for"><code>?info</code> answers in whichever medium you ask for<a class="headerlink" href="#info-answers-in-whichever-medium-you-ask-for" title="Permanent link">&para;</a></h3>
+<p>§5.2 says the form of a THUMP response is <strong>indicated by the returned content type</strong>,
+so <code>?info</code> negotiates: a page by default, <code>application/json</code> for a program,
+<code>text/plain</code> for the ANVL that <code>??</code> returns. The content is the same description and
+permanence declaration each time — §5 puts both in one <code>?info</code>. <code>?json</code> remains as a
+way to name the JSON directly, and both carry <code>Vary: Accept, Accept-Language</code>.</p>
+<p>The page itself is translated (<code>?info&amp;lang=en</code>, <code>Accept-Language</code>, then the default).
+<strong><code>?lang=</code> cannot be used</strong> — on this endpoint the query string <em>is</em> the inflection, so
+the language goes after an <code>&amp;</code>.</p>
 <h3 id="-encoded-characters"><code>%</code>-encoded characters<a class="headerlink" href="#-encoded-characters" title="Permanent link">&para;</a></h3>
 <p>A reserved character (<code>%</code>, <code>-</code>, <code>.</code>, <code>/</code>) may be <code>%</code>-encoded <strong>to conceal its reserved
 meaning</strong> — <code>%2F</code> is the only way to write "there is a slash here, but it does not

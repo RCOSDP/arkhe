@@ -1050,6 +1050,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#info-は求められた媒体で答える" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ?info は求められた媒体で答える
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-エンコードされた文字" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1335,6 +1346,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#info-は求められた媒体で答える" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ?info は求められた媒体で答える
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-エンコードされた文字" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1451,11 +1473,11 @@ arklet は順序不定の問い合わせ結果を入力と <code>zip</code> し�
 </tr>
 <tr>
 <td><code>/ark:99999/x9abc?info</code></td>
-<td>同じ内容を人に向けて</td>
+<td>同じ内容を、<code>Accept</code> に応じて<strong>ページ・JSON・ANVL</strong> で</td>
 </tr>
 <tr>
 <td><code>/ark:99999/x9abc?json</code></td>
-<td>同じ内容を機械に向けて</td>
+<td><code>?info</code> の JSON を名指しする別名</td>
 </tr>
 <tr>
 <td><code>/ark:12345/…</code>（未知 NAAN）</td>
@@ -1492,6 +1514,15 @@ arkhe は <code>&lt;…&gt;; rel="describes"</code> を出す——<strong>同�
 なく長期的な識別子」と定めている要素で、<strong>行き先を付け替えても <code>where</code> は動かない</strong>
 ——それがこの要素の価値そのものである。今の行き先は kernel の外の <code>redirect</code> として、
 あるときだけ出す。</p>
+<h3 id="info-は求められた媒体で答える"><code>?info</code> は求められた媒体で答える<a class="headerlink" href="#info-は求められた媒体で答える" title="Permanent link">&para;</a></h3>
+<p>§5.2 は「THUMP の応答の形は<strong>返す content type が示す</strong>」と書いている。<code>?info</code> は
+それに従って出し分ける——既定は人が読むページ、<code>application/json</code> なら機械向け、
+<code>text/plain</code> なら <code>??</code> と同じ ANVL。中身はどれも同じ「記述＋永続性宣言」である
+（§5「<code>?info</code> は記述と permanence を 1 回で返す」）。<code>?json</code> はその JSON を名指しする
+別名として残してある。どちらにも <code>Vary: Accept, Accept-Language</code> が付く。</p>
+<p>ページ自体も翻訳される（<code>?info&amp;lang=en</code> → <code>Accept-Language</code> → 既定）。
+<strong><code>?lang=</code> は使えない</strong>——この口ではクエリ文字列そのものが inflection なので、
+言語は <code>&amp;</code> の後ろに書く。</p>
 <h3 id="-エンコードされた文字">%-エンコードされた文字<a class="headerlink" href="#-エンコードされた文字" title="Permanent link">&para;</a></h3>
 <p>予約文字（<code>%</code> <code>-</code> <code>.</code> <code>/</code>）は、<strong>その予約された意味を隠す目的でなら</strong> %-エンコード
 してよい——<code>%2F</code> は「ここに <code>/</code> はあるが成分の区切りではない」と書く唯一の方法である。
