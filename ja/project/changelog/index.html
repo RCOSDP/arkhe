@@ -2093,6 +2093,13 @@
 <h3 id="修正">修正<a class="headerlink" href="#修正" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong>日本語版「壊さないもの」のページ内リンクが切れていた。</strong> <code>#ark</code> が何も指して
+  おらず、意図していた見出しは <code>#ark-は削除しない</code>。mkdocs はページ内アンカーの
+  切れを <code>INFO</code> で流すので <code>--strict</code> でも止まらず、<strong>見出しを書いた時点から静かに
+  死んでいた</strong>。<code>check.sh</code> と <code>deploy-docs.sh</code> で落とすようにした——読む側から見れば、
+  ほかのリンク切れと同じものだから。</p>
+</li>
+<li>
 <p><strong>管理画面は言語を切り替えられるのに、断りだけ切り替わらなかった。</strong> 画面は
   <code>?lang=</code> → cookie → <code>Accept-Language</code> で切り替わるが、断りの文面 15 か所——
   「この主体の範囲外」「NAAN 単位以上の権限が要る」、ログイン画面の「ID か
