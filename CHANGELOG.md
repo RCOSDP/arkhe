@@ -126,6 +126,10 @@ migration only widens columns.
 
 ### Fixed
 
+- **The English federation guide still listed a CLI for `shoulder.redirect` as missing.**
+  `arkhe shoulder redirect` exists and is in the CLI reference; the Japanese page had
+  been corrected and the English one had not.
+
 - **The walkthrough now warns that the tail is concatenated as it stands.** Suffix
   passthrough appends what follows the name to the target, so a target carrying a query
   string ends up with the tail inside it (`…/view?id=1` + `/page/3` →

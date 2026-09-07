@@ -544,8 +544,6 @@ rule of **never handing the same shoulder out twice**.
 
 **Things worth knowing before you build this**, rather than discovering them halfway.
 
-- **A CLI for `shoulder.redirect`.** Only the admin interface and
-  `arkhe depart --resolver` set it, which is where automating a delegation snags.
 - **Cross-ledger listing, audit and quota.** `/.well-known/ark` publishes the namespace
   allocation, not the individual ARKs.
 - **Health of the delegate.** The upper instance does not know whether the lower one is

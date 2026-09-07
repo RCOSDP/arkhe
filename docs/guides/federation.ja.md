@@ -511,7 +511,6 @@ flowchart TD
 **この構成を組むときに、無いと分かっていたほうがよいもの。** 隠して驚かせるより、
 先に書く。
 
-- ~~`shoulder.redirect` を設定する CLI~~ → **入った**（`arkhe shoulder redirect`）。
 - **台帳をまたぐ一覧・監査・quota。** `/.well-known/ark` が公開するのは名前空間の割当までで、
   個々の ARK は含まない。
 - **委譲先の健全性の監視。** 上位は下位が生きているかを知らない。委譲した shoulder の
