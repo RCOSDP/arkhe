@@ -63,6 +63,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **A link inside the Japanese invariants page was dead.** `#ark` pointed at nothing;
+  the heading it meant is `#ark-は削除しない`. mkdocs reports a broken in-page anchor as
+  `INFO`, so `--strict` never stopped it — the link had been quietly dead since the
+  heading was written. `check.sh` and `deploy-docs.sh` now fail on it, because to a
+  reader it is the same broken link as any other.
+
 - **The admin interface switches languages, but its refusals did not.** The screen
   picks `?lang=` → cookie → `Accept-Language`, yet fifteen refusals — "outside your
   reach", "needs NAAN-wide authority", the login screen's "wrong ID or password" — were

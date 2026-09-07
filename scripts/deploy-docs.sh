@@ -52,8 +52,15 @@ fi
 
 sec "3. 検査"
 # **リンク切れを公開しない。** --strict は警告を失敗にする。
-uv run mkdocs build --strict --quiet --site-dir "$(mktemp -d)" || die "mkdocs build --strict が落ちた"
-echo "  ✓ mkdocs build --strict"
+# **ページ内のアンカー切れも見る。** mkdocs は INFO で流すので `--strict` では
+# 止まらないが、読む側にとっては同じ「切れたリンク」である。
+out="$(uv run mkdocs build --strict --site-dir "$(mktemp -d)" 2>&1)" \
+  || { echo "$out" | tail -20 | sed 's/^/    /'; die "mkdocs build --strict が落ちた"; }
+if echo "$out" | grep -q "there is no such anchor"; then
+  echo "$out" | grep "there is no such anchor" | sed 's/^/    /'
+  die "ページ内のリンクが切れている"
+fi
+echo "  ✓ mkdocs build --strict（アンカー切れも見る）"
 
 if [ -n "$DRY" ]; then
   echo

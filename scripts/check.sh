@@ -17,7 +17,7 @@
 #   4. マイグレーションを **PostgreSQL で往復**（SQLite は PostgreSQL が弾く形を通す）
 #      ＋ alembic check
 #   5. OpenAPI を実装から書き出して、コミット済みのものとずれていないか
-#   6. mkdocs build --strict
+#   6. mkdocs build --strict（ページ内のアンカー切れも落とす）
 #
 # **道具が無い項目は黙って通さず SKIP と出す。**「入っていないから通った」が
 # いちばん危ない——緑を見て出したのに、見ていない検査があることになる。
@@ -105,8 +105,16 @@ if [ "$WITH_DOCS" = 0 ]; then
   skip "--no-docs が指定された"
 else
   # --strict: リンク切れや解決できない参照を、警告で済ませず失敗にする
-  run uv run mkdocs build --strict --quiet --site-dir "$(mktemp -d)"
-  ok "mkdocs build --strict"
+  # **ページ内のアンカー切れも落とす。** mkdocs はこれを INFO で流すので
+  # `--strict` では止まらない——見出しを直したときに、そこを指すリンクだけが
+  # 静かに死ぬ。実際 1 本死んでいた。
+  out="$(uv run mkdocs build --strict --site-dir "$(mktemp -d)" 2>&1)" \
+    || { echo "$out" | tail -20 | sed 's/^/    /'; die "mkdocs build --strict が落ちた"; }
+  if echo "$out" | grep -q "there is no such anchor"; then
+    echo "$out" | grep "there is no such anchor" | sed 's/^/    /'
+    die "ページ内のリンクが切れている"
+  fi
+  ok "mkdocs build --strict（アンカー切れも見る）"
 fi
 
 echo
