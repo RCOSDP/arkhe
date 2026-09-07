@@ -487,13 +487,13 @@ def set_shoulder_status(
                 ),
             }
         )
-    # **委譲には行き先が要る**が、`minter`（機械が叩ける口）と `about`（人が読む
-    # 案内）のどちらでもよい。閉域への委譲では前者が存在しない——外から到達できない
-    # 口の URL を配っても、誰も使えないうえ内部の構成が漏れるだけである。
-    if new is ShoulderStatus.DELEGATED and not (minter or about or sh.minter or sh.about):
-        raise Invalid(
-            {"minter": "委譲するなら採番の行き先（minter）か、人向けの案内（about）が要る"}
-        )
+    # **委譲に行き先は要らない。** 委譲とは「この名前空間ではもう採番しない」と
+    # 台帳に刻むことで、**どこで採るかを外に公示することではない**。閉域なら公示
+    # しようがないし、公示できない委譲を禁じると、**制約を満たすためだけに嘘の値**
+    # ——内部ホスト名や人向けのページ——を `minter` に入れることになる。
+    #
+    # `minter` があれば 307 で案内し、`about` があれば 403 の本文に載せ、
+    # どちらも無ければ「ここでは採番しない」とだけ答える。
     sh.status = new.value
     if minter:
         sh.minter = minter

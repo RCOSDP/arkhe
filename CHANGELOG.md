@@ -137,6 +137,19 @@ migration only widens columns.
 
 ### Fixed
 
+- **Delegation no longer requires a destination at all.** Splitting `minter` from
+  `about` fixed which field to write in, but left the pressure that put the wrong value
+  there in the first place: a `CHECK` constraint dating from the initial schema demanded
+  that a delegated shoulder name *somewhere*. For a namespace delegated into a closed
+  network there is nowhere to name, so the constraint could only be satisfied by writing
+  something untrue — an internal hostname, or a page for people in a field that promises
+  an API.
+
+  **Delegation records that this ledger does not mint here**; publishing where minting
+  happens is a separate, optional thing. A minting request against a shoulder with
+  neither is answered `403 ARKHE-1309` — "minting happens elsewhere" — with no invented
+  URL. `about` appears in `detail` only when there is one.
+
 - **`shoulder.minter` was carrying two incompatible meanings.** It is published in
   `/.well-known/ark` and used as the `Location` of the `307` that answers a minting
   request — both of which claim, in machine-readable form, "call this to mint". For a

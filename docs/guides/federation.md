@@ -285,13 +285,13 @@ pattern different from the others.
   hostname to people who cannot reach it. Point at a **public explanation page**
   instead — `shoulder.redirect` accepts a leading status code, e.g.
   `303 https://…/closed-namespace`.
-- **Leave `minter` empty and set `about` instead.** `/.well-known/ark` and the `307`
-  that answers a minting request both say "call this to mint" — a machine-readable claim.
-  An internal minter URL there leaks the closed network *and* is useless to anyone
-  outside; a human explanation page there makes the claim false, because a client will
-  `POST` to it. `about` is the field for a page people read, and a shoulder that has only
-  `about` answers a minting request with **`403` and that URL in the body** rather than a
-  `307` nobody can follow.
+- **Leave `minter` empty.** `/.well-known/ark` and the `307` that answers a minting
+  request both say "call this to mint" — a machine-readable claim. An internal minter URL
+  there leaks the closed network *and* is useless to anyone outside; a human explanation
+  page there makes the claim false, because a client will `POST` to it. **Delegation does
+  not require a destination at all**: it records that this ledger does not mint here, and
+  a minting request is answered `403 ARKHE-1309`. If there is a page worth pointing at,
+  put it in `about` and it comes back in the body — never in `Location`.
 - **A `307` delegation from above does not work here**, because outside callers cannot
   reach the closed minter. Inside users call the closed arkhe directly. Marking the
   shoulder `delegated` above is still worth doing: it is what guarantees, in the ledger

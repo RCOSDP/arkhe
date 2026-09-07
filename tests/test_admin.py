@@ -26,14 +26,25 @@ def test_retiredからは戻せない(db, world, root):
     assert "retired" in e.value.detail["reason"]
 
 
-def test_委譲には採番の行き先が要る(db, world, root):
-    with pytest.raises(Invalid):
-        ops.set_shoulder_status(db, root, shoulder_id=world["sh_a"].id, status="delegated")
+def test_委譲に行き先は要らない(db, world, root):
+    """**委譲とは「ここでは採番しない」と刻むこと**で、どこで採るかの公示ではない。
+
+    閉域なら公示しようがない。それを禁じると、**制約を満たすためだけに嘘の値**
+    ——内部ホスト名や人向けのページ——を `minter` に入れることになる（実際、
+    文書はしばらくそう案内していた）。
+    """
+    sh = ops.set_shoulder_status(db, root, shoulder_id=world["sh_a"].id, status="delegated")
+    db.commit()
+    assert sh.status == ShoulderStatus.DELEGATED
+    assert sh.minter == "" and sh.about == ""
+
+    # 叩ける口があるなら書く。あとから足せる。
     ops.set_shoulder_status(
         db, root, shoulder_id=world["sh_a"].id, status="delegated",
         minter="https://mint.example.org",
     )
-    assert world["sh_a"].status == ShoulderStatus.DELEGATED
+    db.commit()
+    assert world["sh_a"].minter == "https://mint.example.org"
 
 
 def test_組織と名前空間は対で生まれる(db, world):

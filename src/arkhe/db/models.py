@@ -286,6 +286,11 @@ class Shoulder(Base, HoldMixin):
     #: N2T の `minter`。**採番の委譲先——機械が叩ける口。** `status=delegated` の
     #: とき、mint 要求は 307 でここへ案内する（**プロキシしない**）。
     #:
+    #: **空でよい。** 委譲とは「ここでは採番しない」と決めることであって、
+    #: 「どこで採るかを外に公示する」ことではない。かつては委譲に行き先を必須に
+    #: していたが、**それが内部ホスト名や説明ページを minter に押し込ませていた**
+    #: ——制約を満たすために、嘘の値を入れる圧力になっていた。
+    #:
     #: **外から到達できないなら、ここは空にする。** 説明ページを入れてはいけない
     #: ——`/.well-known/ark` と 307 の `Location` は「ここを叩けば採番できる」と
     #: 言う契約で、人向けのページを置くと**受け取った側に見分ける手段が無くなる**。
@@ -317,15 +322,6 @@ class Shoulder(Base, HoldMixin):
 
     __table_args__ = (
         UniqueConstraint("shoulder", "naan", name="uniq_shoulder_per_naan"),
-        # **委譲するなら行き先が要る。** 無いと mint 要求を案内できず、採番しようと
-        # した人が 403 だけ受け取って手詰まりになる。
-        #
-        # ただし行き先は 2 種類ある——`minter`（機械が叩ける口）と `about`（人が
-        # 読む案内）。**閉域への委譲では前者が存在しない**ので、どちらか 1 つでよい。
-        CheckConstraint(
-            "status <> 'delegated' OR minter <> '' OR about <> ''",
-            name="delegated_shoulder_needs_a_destination",
-        ),
     )
 
     @property

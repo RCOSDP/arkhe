@@ -215,11 +215,10 @@ IMPORT_SHOULDER_NOT_DELEGATED = Code(
 
 SHOULDER_DELEGATED_UNREACHABLE = Code(
     "ARKHE-1309", 403,
-    "Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. "
-    "See {about}",
+    "Minting for shoulder {shoulder} happens elsewhere; this ledger does not mint in it.",
     "その shoulder の採番は外で行われており、**ここから叩ける口は無い**（閉域など）。"
-    "人向けの案内だけを返す——`Location` に人向けのページを載せると、クライアントは"
-    "そこへ POST しにいく",
+    "案内のページがあれば `detail.about` に載る——`Location` に人向けのページを"
+    "載せると、クライアントはそこへ POST しにいく",
 )
 
 SHOULDER_DELEGATED = Code(

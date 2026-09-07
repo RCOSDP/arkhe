@@ -246,24 +246,23 @@ def test_到達できない委譲は403と案内を返す(db, world, root, princ
     assert r2.json()["detail"]["about"] == "https://ark.example.ac.jp/closed/99999"
 
 
-def test_委譲には行き先か案内のどちらかが要る(db, world, root):
-    """**どちらも無い委譲は作れない。** 採番しようとした人が手詰まりになる。"""
-    import pytest as _pytest
+def test_行き先の無い委譲は_ここでは採番しないとだけ答える(db, world, root,
+                                                             principal_of, as_principal):
+    """**行き先を書かない委譲も正当。** 案内できることと、委譲できることは別。
 
+    書くものが無いのに書けと強いると、**制約を満たすためだけの嘘の値**が入る。
+    """
     from arkhe.domain import admin_ops as ops
-    from arkhe.domain.authz import Invalid
 
-    with _pytest.raises(Invalid):
-        ops.set_shoulder_status(db, root, shoulder_id=world["sh_c"].id, status="delegated")
-    db.rollback()
-
-    # `about` だけでも委譲できる（閉域の形）。
-    sh = ops.set_shoulder_status(
-        db, root, shoulder_id=world["sh_c"].id, status="delegated",
-        about="https://ark.example.ac.jp/closed",
-    )
+    ops.set_shoulder_status(db, root, shoulder_id=world["sh_a"].id, status="delegated")
     db.commit()
-    assert sh.status == "delegated" and sh.minter == ""
+    c = as_principal(principal_of(manager=world["a"]))
+    r = c.post("/api/mint", json={})
+    assert r.status_code == 403
+    assert r.json()["code"] == "ARKHE-1309"
+    # **URL を騙らない。** 無いものは detail にも出さない。
+    assert "about" not in r.json().get("detail", {})
+    assert "location" not in r.headers
 
 
 def test_well_knownはminterと案内を分けて出す(db, world, root, principal_of, as_principal):

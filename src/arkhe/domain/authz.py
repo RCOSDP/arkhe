@@ -63,11 +63,14 @@ class ShoulderDelegated(Forbidden):
         else:
             # **叩ける口が無い**（閉域など）。307 で人向けのページへ送ると、
             # クライアントはそこへ POST しにいく——**403 で止め、案内は本文に置く**。
+            # `about` は**あれば**載せる。無い委譲も正当で、その場合は
+            # 「ここでは採番しない」とだけ答える。
+            extra = {"about": shoulder.about} if shoulder.about else {}
             super().__init__(
                 errors.SHOULDER_DELEGATED_UNREACHABLE,
                 shoulder=shoulder.shoulder,
-                about=shoulder.about,
                 note=shoulder.note,
+                **extra,
             )
 
 
