@@ -9,18 +9,17 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
-## [0.1.0] — 2026-09-07
+## [0.2.0] — 2026-09-07
 
-**The release that closes the gap with the specification, and stops speaking Japanese to
-the outside.** Every known deviation from `draft-kunze-ark-42` is gone — four MUSTs and
-three SHOULDs — and everything arkhe publishes beyond its own ledger is now English:
-the OpenAPI document, and error bodies that carry a stable code so a client never has to
-match on a sentence. The admin interface and the `?info` page answer in the language of
-the screen instead.
+**The release that lets a closed ledger hand its names to a public one.** An ARK minted
+inside a network the outside cannot reach can now be taken into the public ledger and
+published under **the same identifier** — until now, opening an embargoed object meant
+issuing a different ARK, and every reference handed out while it was closed died. That
+was the largest gap in running arkhe on both sides of a boundary.
 
-**This is the first release that breaks published output.** The shapes that changed are
-listed under Changed and Fixed below; the ledger itself is untouched, and the one
-migration only widens columns.
+Delegation was reworked around the same case: **`minter` had been carrying two
+incompatible meanings**, and the constraint that forced it to carry them is gone. Sizing
+is now measured rather than asserted.
 
 ### Added
 
@@ -75,6 +74,82 @@ migration only widens columns.
   merely forward would be claiming to be its keeper. Reach follows the usual rule —
   **higher authority covers lower** — and the bulk form creates nothing at all if any row
   fails, because names that did land cannot be taken back.
+
+### Fixed
+
+- **Delegation no longer requires a destination at all.** Splitting `minter` from
+  `about` fixed which field to write in, but left the pressure that put the wrong value
+  there in the first place: a `CHECK` constraint dating from the initial schema demanded
+  that a delegated shoulder name *somewhere*. For a namespace delegated into a closed
+  network there is nowhere to name, so the constraint could only be satisfied by writing
+  something untrue — an internal hostname, or a page for people in a field that promises
+  an API.
+
+  **Delegation records that this ledger does not mint here**; publishing where minting
+  happens is a separate, optional thing. A minting request against a shoulder with
+  neither is answered `403 ARKHE-1309` — "minting happens elsewhere" — with no invented
+  URL. `about` appears in `detail` only when there is one.
+
+- **`shoulder.minter` was carrying two incompatible meanings.** It is published in
+  `/.well-known/ark` and used as the `Location` of the `307` that answers a minting
+  request — both of which claim, in machine-readable form, "call this to mint". For a
+  namespace delegated into a closed network there is no such endpoint an outsider can
+  call, and the guidance was to write a human explanation page there instead. **That makes
+  the claim false**: a client follows the `307` and `POST`s to a web page, and nothing in
+  the response distinguishes an API from a page.
+
+  `shoulder.about` now holds the page for people. A delegated shoulder needs one or the
+  other (the check constraint moved from `minter <> ''` to `minter <> '' OR about <> ''`),
+  and a minting request is answered:
+
+      minter present  →  307, Location: the minter          (unchanged)
+      about only      →  403, ARKHE-1309, the URL in the body
+
+  **The 403 branch already existed** in the exception handler and could never be reached,
+  because delegation required a `minter`. `/.well-known/ark` now reports the two fields
+  separately, so a client can tell a callable endpoint from a page. Existing rows are left
+  alone — which `minter` values are really explanation pages is not something the ledger
+  can know.
+
+- **"A typo lands on the same page" was wrong.** The check digit is verified *before* the
+  shoulder is consulted, so a mistyped identifier under a delegated shoulder answers
+  `404 ARKHE-1403`, not the explanation page. What is actually indistinguishable is a name
+  that exists from one that never did — which is the property that matters, and the guides
+  now say that instead.
+
+- **`arkhe shoulder add` and `arkhe onboard` now print the id they created.** Every other
+  shoulder command — `status`, `redirect`, `hold add shoulder` — takes that id, and the
+  command that made the thing was the one place not telling you it. Finding it meant
+  running `shoulder list` afterwards, which the documentation's own examples quietly did.
+
+- **The English federation guide still listed a CLI for `shoulder.redirect` as missing.**
+  `arkhe shoulder redirect` exists and is in the CLI reference; the Japanese page had
+  been corrected and the English one had not.
+
+- **The walkthrough now warns that the tail is concatenated as it stands.** Suffix
+  passthrough appends what follows the name to the target, so a target carrying a query
+  string ends up with the tail inside it (`…/view?id=1` + `/page/3` →
+  `…/view?id=1/page/3`). The behaviour is unchanged; it was simply not written down.
+
+- **The federation guide still listed holds as missing.** "A way to suspend redirection
+  temporarily" sat under *What does not exist yet* — it shipped in 0.0.9, per ARK, per
+  shoulder and per NAAN, with the reason and the expiry published and the clock lifting
+  it. The bullet was simply not removed at the time.
+
+## [0.1.0] — 2026-09-07
+
+**The release that closes the gap with the specification, and stops speaking Japanese to
+the outside.** Every known deviation from `draft-kunze-ark-42` is gone — four MUSTs and
+three SHOULDs — and everything arkhe publishes beyond its own ledger is now English:
+the OpenAPI document, and error bodies that carry a stable code so a client never has to
+match on a sentence. The admin interface and the `?info` page answer in the language of
+the screen instead.
+
+**This is the first release that breaks published output.** The shapes that changed are
+listed under Changed and Fixed below; the ledger itself is untouched, and the one
+migration only widens columns.
+
+### Added
 
 - **`PATCH /api/update` writes only the fields you send.** `PUT` on that path is a
   replacement — omit `title` and it is emptied — which is correct for a replacement and
@@ -154,65 +229,6 @@ migration only widens columns.
   set it (`uvicorn --root-path /pid`) or it will publish a door that is not there.
 
 ### Fixed
-
-- **Delegation no longer requires a destination at all.** Splitting `minter` from
-  `about` fixed which field to write in, but left the pressure that put the wrong value
-  there in the first place: a `CHECK` constraint dating from the initial schema demanded
-  that a delegated shoulder name *somewhere*. For a namespace delegated into a closed
-  network there is nowhere to name, so the constraint could only be satisfied by writing
-  something untrue — an internal hostname, or a page for people in a field that promises
-  an API.
-
-  **Delegation records that this ledger does not mint here**; publishing where minting
-  happens is a separate, optional thing. A minting request against a shoulder with
-  neither is answered `403 ARKHE-1309` — "minting happens elsewhere" — with no invented
-  URL. `about` appears in `detail` only when there is one.
-
-- **`shoulder.minter` was carrying two incompatible meanings.** It is published in
-  `/.well-known/ark` and used as the `Location` of the `307` that answers a minting
-  request — both of which claim, in machine-readable form, "call this to mint". For a
-  namespace delegated into a closed network there is no such endpoint an outsider can
-  call, and the guidance was to write a human explanation page there instead. **That makes
-  the claim false**: a client follows the `307` and `POST`s to a web page, and nothing in
-  the response distinguishes an API from a page.
-
-  `shoulder.about` now holds the page for people. A delegated shoulder needs one or the
-  other (the check constraint moved from `minter <> ''` to `minter <> '' OR about <> ''`),
-  and a minting request is answered:
-
-      minter present  →  307, Location: the minter          (unchanged)
-      about only      →  403, ARKHE-1309, the URL in the body
-
-  **The 403 branch already existed** in the exception handler and could never be reached,
-  because delegation required a `minter`. `/.well-known/ark` now reports the two fields
-  separately, so a client can tell a callable endpoint from a page. Existing rows are left
-  alone — which `minter` values are really explanation pages is not something the ledger
-  can know.
-
-- **"A typo lands on the same page" was wrong.** The check digit is verified *before* the
-  shoulder is consulted, so a mistyped identifier under a delegated shoulder answers
-  `404 ARKHE-1403`, not the explanation page. What is actually indistinguishable is a name
-  that exists from one that never did — which is the property that matters, and the guides
-  now say that instead.
-
-- **`arkhe shoulder add` and `arkhe onboard` now print the id they created.** Every other
-  shoulder command — `status`, `redirect`, `hold add shoulder` — takes that id, and the
-  command that made the thing was the one place not telling you it. Finding it meant
-  running `shoulder list` afterwards, which the documentation's own examples quietly did.
-
-- **The English federation guide still listed a CLI for `shoulder.redirect` as missing.**
-  `arkhe shoulder redirect` exists and is in the CLI reference; the Japanese page had
-  been corrected and the English one had not.
-
-- **The walkthrough now warns that the tail is concatenated as it stands.** Suffix
-  passthrough appends what follows the name to the target, so a target carrying a query
-  string ends up with the tail inside it (`…/view?id=1` + `/page/3` →
-  `…/view?id=1/page/3`). The behaviour is unchanged; it was simply not written down.
-
-- **The federation guide still listed holds as missing.** "A way to suspend redirection
-  temporarily" sat under *What does not exist yet* — it shipped in 0.0.9, per ARK, per
-  shoulder and per NAAN, with the reason and the expiry published and the clock lifting
-  it. The bullet was simply not removed at the time.
 
 - **The ARK concept page said too little, and pointed nowhere.** Its diagram labelled
   only "NAAN" and "name", which leaves out the label, the shoulder, the blade and the
@@ -846,7 +862,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0
 [0.1.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.1.0
 [0.0.9]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.9
 [0.0.8]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.8
