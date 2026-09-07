@@ -24,6 +24,24 @@ migration only widens columns.
 
 ### Added
 
+- **Sizing, measured rather than guessed.** [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/#sizing)
+  now carries throughput and latency for resolution and minting, and
+  [the data model](https://rcosdp.github.io/arkhe/reference/data-model/#on-capacity)
+  carries bytes per ARK with the queries to measure your own. Everything came off one
+  machine against a ledger of a million ARKs, and the pages say so — they are a shape to
+  reason with, not a guarantee.
+
+  The two findings worth knowing before capacity planning: **resolution does not care how
+  large the ledger is** (one index scan; a million rows resolve like a thousand, and
+  throughput follows the worker count), and **minting one at a time is bound by Argon2**,
+  not by the database — 53 ms of the 82 is verifying the API key, which is why bulk
+  minting is twenty times faster and the only sane way to ingest at scale.
+
+- **`scripts/bench.py`** — the load harness those numbers came from. `check.sh` does not
+  call it: a benchmark depends on the machine and the hour, so it cannot be spoken about
+  in green and red. It warms up before measuring, and the documentation says to check
+  `/healthz` first, because a client that saturates before the server is measuring itself.
+
 - **Section 10 of the walkthrough now builds both ledgers from scratch.** The public and
   the closed side are **operated separately** — no shared database, no replication, no
   sync — so the example starts where that starts: `arkhe naan add`, `onboard`,

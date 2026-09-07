@@ -38,6 +38,99 @@ The image is at the repository root; `compose/oidc` is a worked example with Key
 and PostgreSQL. Treat it as a demonstration, not a template: its secrets are in the
 file in the clear and Keycloak runs in dev mode.
 
+## Sizing
+
+**These are measurements from one machine, not guarantees.** Take them as the shape of
+the thing — what scales with what — and measure your own with `scripts/bench.py` and the
+queries below.
+
+Measured on: aarch64, 20 cores, PostgreSQL 17 in a container limited to 4 CPUs / 4 GB
+with `shared_buffers=1GB`, **a ledger of one million ARKs (328 MB)**, uvicorn, load
+generated on the same host.
+
+### Resolution — the load that actually arrives
+
+| | concurrency | rps | p50 | p95 | p99 |
+| --- | --- | --- | --- | --- | --- |
+| `302` to the target, 1 worker | 1 | 285 | 3.4 ms | 4.7 | 5.2 |
+| `302` to the target, 1 worker | 8 | 372 | 19.8 ms | 34.8 | 53.5 |
+| **`302` to the target, 4 workers** | 8 | **993** | 5.7 ms | 9.6 | 15.2 |
+| `302` to the target, 4 workers | 32 | 1,078 | 18.3 ms | 37.1 | 56.8 |
+| `?json` / `?info`, 1 worker | 8 | 304 | 24 ms | 41 | 60–66 |
+| suffix passthrough, 1 worker | 8 | 291 | 25 ms | 42 | 62 |
+| unknown NAAN → forwarded, 1 worker | 8 | 323 | 23 ms | 40 | 63 |
+
+**Throughput follows the worker count** — 2.9× from one to four. The resolver holds no
+state and only reads, so adding workers, then adding resolvers, is the first and second
+lever.
+
+**The size of the ledger does not show up here.** A resolution is one index scan on the
+primary key (0.03 ms, 4 buffers); suffix passthrough asks for every ancestor in a single
+`IN` and costs one more. A million rows resolve like a thousand.
+
+For reference, `/healthz` — no database, no authentication — runs at 1,187 rps and
+p50 0.78 ms on one worker. The remaining ~2.6 ms per resolution is application and
+database work, of which the database layer (open a session, one query, close) is 0.6 ms.
+
+### Minting — and why bulk is twenty times faster
+
+| | rps | p50 |
+| --- | --- | --- |
+| `POST /api/mint`, one at a time | **45** | 82 ms |
+| `POST /api/mint/bulk`, 1000 rows in one request | **~930 rows/s** | 1.06 s |
+
+**What makes single minting slow is not the database — it is Argon2.** Verifying one API
+key takes **53 ms**, which is most of the 82. That slowness is deliberate: it is what
+makes a stolen-key search expensive, and it should not be tuned away.
+
+It is also why **bulk minting is the only sane way to ingest at scale**: one
+authentication amortised across a thousand rows. Ten thousand objects is eleven seconds
+in bulk and four minutes one at a time.
+
+The same applies to `oauth2`: issuing a token verifies `client_secret` with Argon2, so
+fetch a token and **hold it until `expires_in` runs out** rather than per call.
+
+### Memory
+
+An arkhe process is about **100 MB resident**, whichever role it runs. PostgreSQL used
+486 MB with a million ARKs and `shared_buffers=1GB`.
+
+### What to run, at minimum and beyond
+
+**Rather than a CPU and memory figure, the honest answer is a shape.**
+
+**Minimum** — one small host: minter, resolver and PostgreSQL side by side. Everything
+works; nothing is redundant. Fine for evaluation and for a ledger that is not yet
+answering the public.
+
+**Recommended** — the split the code already assumes:
+
+- **the resolver, several workers and more than one host.** It is stateless and read-only,
+  and it must keep answering when the minter or the authorisation server does not
+- **the minter, separately.** Minting may stop; resolution may not
+- **PostgreSQL with a replica**, and the resolver pointed at it with
+  `ARKHE_READ_DATABASE_URL`
+- Size the database so that **the primary-key index stays in memory** — 39 MB per million
+  ARKs. Everything else is sequential enough not to matter
+
+### Measuring your own
+
+```bash
+# One endpoint, 3000 requests, 8 at a time
+python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
+
+# The ceiling of the stack: no database, no authentication.
+# If your other numbers approach this, you are measuring the client
+python scripts/bench.py http://127.0.0.1:8000/healthz -n 3000 -c 8
+
+# Minting (the Argon2 cost is per request)
+python scripts/bench.py http://127.0.0.1:8000/api/mint -n 200 -c 4 --post --auth "$KEY"
+```
+
+Capacity in bytes, and how to measure it against your own ledger, is in
+[the data model](../reference/data-model.md#on-capacity).
+
+
 ## Backups
 
 The ledger is the only irreplaceable thing here. An ARK that is lost cannot be minted

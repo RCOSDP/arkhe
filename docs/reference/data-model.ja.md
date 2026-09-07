@@ -168,6 +168,50 @@ ER 図は形しか示さない。**arkhe の設計の中身は制約のほうに
 **子リソースは採番しない。** `ark:99999/x9abc/page/3` のような深い参照は suffix
 passthrough が賄うので、**1 レコード 1 採番**で足りる。ここが容量設計でいちばん効く。
 
+### 1 行の実寸
+
+PostgreSQL 17、100 万件、表と索引をすべて含めた実測。
+
+| | ARK 1 件あたり |
+| --- | --- |
+| `url` ＋ `title` ＋ `who` ＋ `when` | **362 バイト** |
+| `url` だけ（記述なし） | **158 バイト**（表のみ） |
+| `ark_change` 1 行（行き先を変えた記録） | **258 バイト** |
+
+線形である——10 万件でも 100 万件でも 362 B/件。したがって
+
+```
+台帳 ≒ 採番数 × 400 B ＋ 付け替え回数 × 260 B ＋ 監査
+```
+
+そして**掛ける相手が参照ではなく対象の数**なので、
+
+| 採番数 | 台帳 |
+| --- | --- |
+| 100 万 | 約 0.4 GB |
+| 1,000 万 | 約 4 GB |
+| 1 億 | 約 40 GB |
+
+**1 億件でも、ふつうの PostgreSQL 1 台に収まる。** 文書ストアと同じ勘定で見積もるのが
+よくある取り違えで、arkhe が持つのは**名前とその行き先**であって、対象そのものではない。
+
+### 自分の台帳で測る
+
+```sql
+-- 実寸と、ここでの 1 件あたり
+select pg_size_pretty(pg_total_relation_size('ark')) as total,
+       round(pg_total_relation_size('ark')::numeric / count(*), 0) as bytes_per_ark
+from ark;
+
+-- 索引ごと——メモリに載っていてほしいのは主キー
+select indexrelname, pg_size_pretty(pg_relation_size(indexrelid))
+from pg_stat_user_indexes where relname = 'ark'
+order by pg_relation_size(indexrelid) desc;
+```
+
+**記述をどれだけ持つかで 2 倍以上変わる**（158 B 対 362 B）ので、一般論より自分の
+台帳を測るほうが確かである。処理量と構成は[デプロイ](../guides/deployment.md#規模の見積もり)にある。
+
 ### 列の幅は仕様から決まる
 
 このうち 2 つは我々が選べる値ではない。`draft-kunze-ark-42` は**受け取る側**に

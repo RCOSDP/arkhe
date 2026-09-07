@@ -172,6 +172,52 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 depth — `ark:99999/x9abc/page/3` needs no row of its own — so **one record per
 minting** is enough. Nothing else matters as much for capacity.
 
+### What a row costs
+
+Measured on PostgreSQL 17, a million rows, table and every index included:
+
+| | bytes per ARK |
+| --- | --- |
+| `url` + `title` + `who` + `when` | **362** |
+| `url` only, no description | **158** (table alone) |
+| one entry in `ark_change` (a target moved) | **258** |
+
+It is linear: 362 B per row at a hundred thousand and at a million alike. So
+
+```
+ledger ≈ mintings × 400 B  +  repointings × 260 B  +  audit
+```
+
+and, because **the multiplier is objects rather than references**:
+
+| ARKs minted | ledger |
+| --- | --- |
+| 1 million | ~0.4 GB |
+| 10 million | ~4 GB |
+| 100 million | ~40 GB |
+
+A hundred million identifiers fit on one ordinary PostgreSQL host. Sizing this like a
+document store is the usual mistake — arkhe stores names and where they point, not the
+things.
+
+### Measuring your own
+
+```sql
+-- The real size, and what one ARK costs here
+select pg_size_pretty(pg_total_relation_size('ark')) as total,
+       round(pg_total_relation_size('ark')::numeric / count(*), 0) as bytes_per_ark
+from ark;
+
+-- Index by index — the primary key is the one that wants to stay in memory
+select indexrelname, pg_size_pretty(pg_relation_size(indexrelid))
+from pg_stat_user_indexes where relname = 'ark'
+order by pg_relation_size(indexrelid) desc;
+```
+
+**How much description you keep more than doubles it** (158 B against 362 B), so a
+measurement of your own ledger beats any general figure. Throughput and what to run is
+in [Deployment](../guides/deployment.md#sizing).
+
 ### Field widths come from the specification
 
 Two of them are not ours to choose. `draft-kunze-ark-42` obliges a *receiving*

@@ -36,6 +36,16 @@ bash scripts/release.sh vX.Y.Z              # 検査と dist の作成だけ（�
 bash scripts/release.sh vX.Y.Z --publish    # タグ → push → GitHub のリリース
 ```
 
+**検査ではない**ものが 1 つ。
+
+```bash
+python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
+```
+
+`check.sh` からは呼ばない。負荷測定は時間がかかるうえ、結果が機械とその日の状態に
+左右されるので、**緑と赤で語れない**。**自分の数字**を取るための道具である
+（[デプロイ](../guides/deployment.md#規模の見積もり)に載っているのは、ある 1 台の値）。
+
 ## レビューで見ること
 
 **不変条件が保たれているか。** この設計の多くは拒否でできている

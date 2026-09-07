@@ -37,6 +37,17 @@ bash scripts/release.sh vX.Y.Z              # checks and dist/ only (the default
 bash scripts/release.sh vX.Y.Z --publish    # tag, push, GitHub release
 ```
 
+And one that is **not** a check:
+
+```bash
+python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
+```
+
+`check.sh` does not call it. A benchmark takes time and its result depends on the machine
+and on what else that machine is doing, so it cannot be spoken about in green and red.
+It is there to get **your own numbers**; the ones in
+[Deployment](../guides/deployment.md#sizing) are from one machine.
+
 ## What the review will ask
 
 **Does an invariant still hold?** Most of the design is refusals — see
