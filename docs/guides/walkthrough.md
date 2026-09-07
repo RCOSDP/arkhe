@@ -315,63 +315,140 @@ $ curl -H 'Accept: application/json' $R/.well-known/ark
  "held": []}
 ```
 
-## 10. A closed ledger, published later
+## 10. Two ledgers: one public, one closed
 
-Everything above was one ledger. The case this design exists for has two: a closed arkhe
-inside a network that cannot be reached, and a public one that answers the world. **The
-identifier is the same on both sides** — that is the whole point, because a name handed
-out while the object was closed has to keep working when it opens.
+Everything above was one ledger. The case this design exists for has **two, run
+separately**: a closed arkhe inside a network the outside cannot reach, and a public one
+that answers the world. They share no database, no replication and no sync — **the only
+thing that crosses is a namespace allocation a person sets on each side**, and later the
+descriptions an operator chooses to hand over.
+
+**The identifier is the same on both.** That is the whole point: a name given out while
+the object was closed has to keep working when it opens.
 
 | | | |
 | --- | --- | --- |
-| `$C` | closed minter | inside the network. Authoritative for `/c7` |
-| `$P` | public minter | the shoulder `/c7` is marked `delegated` here |
-| `$PR` | public resolver | what the world asks |
+| `$P` / `$PR` | public minter / resolver | authoritative for 99999. `/c7` is `delegated` here |
+| `$C` / `$CR` | closed minter / resolver | inside the network. Authoritative for `/c7` there |
 
-### Mint inside
+### Build the two ledgers
+
+**Namespaces are not part of the REST API.** Minting, updating and importing are; carving
+out a NAAN or a shoulder is done with the CLI (or the admin interface), because it is an
+act of allocation rather than of identification.
 
 ```console
+# ── Public side ──────────────────────────────────────────────
+$ arkhe naan add 99999 "Example RA" --policy "NP | NR, OP, CC | 2026"
+Registered NAAN 99999 (Example RA)
+
+$ arkhe onboard 99999 "Example University" --shoulder /s7        # open PIDs
+Onboarded Example University and delegated 99999/s7
+
+$ arkhe shoulder add 99999 /c7 --manager 1 --note "closed PIDs"  # closed PIDs
+Carved out 99999/c7
+
+# /c7 is minted elsewhere. Record that, and give the outside an explanation
+$ arkhe shoulder status 2 delegated --minter https://ark.closed.example.ac.jp
+99999/c7 → delegated
+$ arkhe shoulder redirect 2 '303 https://ark.example.ac.jp/closed-namespace'
+resolution for 99999/c7 now goes to 303 https://ark.example.ac.jp/closed-namespace
+
+$ arkhe shoulder list
+   2  99999/c7      delegated  Example University
+   1  99999/s7      active     Example University
+```
+
+The closed side is a **separate ledger** that holds the same NAAN and the same shoulder,
+and is authoritative for it there:
+
+```console
+# ── Inside the closed network ─────────────────────────────────
+$ arkhe naan add 99999 "Example RA (closed)"
+Registered NAAN 99999 (Example RA (closed))
+$ arkhe onboard 99999 "Closed unit" --shoulder /c7
+Onboarded Closed unit and delegated 99999/c7
+```
+
+Nothing connects the two. **`303 https://…/closed-namespace` is not a default** — it is
+the value just written into `shoulder.redirect`, and without it an unregistered name
+under `/c7` simply answers `404`.
+
+### Mint on each side
+
+The open shoulder is the ordinary path from section 1:
+
+```console
+$ curl -X POST $P/api/mint -H "Authorization: Bearer $PK" \
+       -d '{"shoulder": "/s7", "url": "https://repo.example.ac.jp/records/7",
+            "title": "Open dataset"}'
+{"ark": "ark:99999/s75h5rdvnm2", …}
+
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/s75h5rdvnm2
+302 https://repo.example.ac.jp/records/7
+```
+
+**The public side cannot mint in `/c7`, and says where to go instead:**
+
+```console
+$ curl -i -X POST $P/api/mint -H "Authorization: Bearer $PK" -d '{"shoulder": "/c7"}'
+HTTP/1.1 307 Temporary Redirect
+location: https://ark.closed.example.ac.jp
+
+{"code": "ARKHE-1306",
+ "message": "Minting for shoulder /c7 is delegated; go to the minter in Location.",
+ "detail": {"shoulder": "/c7", "minter": "https://ark.closed.example.ac.jp",
+            "note": "closed PIDs"}}
+```
+
+It answers `307` and **does not proxy the call**. Minting on someone's behalf means that
+when the response is lost, a name exists over there that nobody here knows about — and
+under NR that cannot be cleaned up.
+
+```console
+# ── Inside the closed network ─────────────────────────────────
 $ curl -X POST $C/api/mint -H "Authorization: Bearer $CK" \
        -d '{"url": "https://inside.closed.example/dataset/42",
             "title": "(a title that only exists inside)"}'
-{"ark": "ark:99999/c7j89qtb3fc", …}
+{"ark": "ark:99999/c7w545sj4z5", …}
 ```
 
-From outside, that name says nothing yet. The delegated shoulder answers with a page
-explaining that the namespace is closed — **not with the internal address**, which
-nobody outside could reach anyway:
+### Resolve the same name on each side
 
 ```console
-$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7j89qtb3fc
-303 https://ark.example.ac.jp/closed-namespace
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $CR/ark:99999/c7w545sj4z5
+302 https://inside.closed.example/dataset/42      # inside: straight to the object
+
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7w545sj4z5
+303 https://ark.example.ac.jp/closed-namespace    # outside: "this namespace is closed"
 ```
 
-A typo lands on the same page, which is the point of this level: **the names do not
-leak**.
+A typo lands on that same page, which is the point of this level: **the names do not
+leak**, and nothing was configured per identifier.
 
 ### Hand it over, description only
 
 ```console
 $ curl -X POST $P/api/import -H "Authorization: Bearer $PK" \
-       -d '{"ark":   "ark:99999/c7j89qtb3fc",
+       -d '{"ark":   "ark:99999/c7w545sj4z5",
             "title": "Soil moisture, Kanto plain (restricted)",
             "who":   "Yamada, Taro",
             "when":  "2026",
             "commitment": "Restricted access; use requires an application"}'
-{"ark": "ark:99999/c7j89qtb3fc", "url": "", …}
+{"ark": "ark:99999/c7w545sj4z5", "url": "", …}
 ```
 
 **`url` stays empty**, and that is not an omission — it is the statement. The public
 resolver now describes an identifier it cannot send anyone to:
 
 ```console
-$ curl -H 'Accept: text/plain' "$PR/ark:99999/c7j89qtb3fc?info"
+$ curl -H 'Accept: text/plain' "$PR/ark:99999/c7w545sj4z5?info"
 erc:
 who: Yamada, Taro
 what: Soil moisture, Kanto plain (restricted)
 when: 2026
-where: ark:99999/c7j89qtb3fc
-about: ark:99999/c7j89qtb3fc
+where: ark:99999/c7w545sj4z5
+about: ark:99999/c7w545sj4z5
 policy: NP | NR, OP, CC | 2026
 commitment: Restricted access; use requires an application
 commitment-level: permanent-dynamic
@@ -384,31 +461,25 @@ and having no path out is stronger than having a filter on the way out.
 ### Raise it when you can
 
 ```console
-$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+$ curl -X PATCH $P/api/update -d '{"ark": "ark:99999/c7w545sj4z5",
                                    "url": "https://apply.example.ac.jp/dataset/42"}'
 → 302 https://apply.example.ac.jp/dataset/42          # available on application
 
-$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+$ curl -X PATCH $P/api/update -d '{"ark": "ark:99999/c7w545sj4z5",
                                    "url": "https://repo.example.ac.jp/records/42"}'
 → 302 https://repo.example.ac.jp/records/42           # the embargo lifts
 ```
 
-The description survives both moves (`what` and `who` are still there), and **the name
-was identical at every step**:
-
-```
-ark:99999/c7j89qtb3fc
-```
-
-Use `PATCH`, not `PUT` — [as in section 5](#5-move-the-object), the description is
-exactly what you do not want to lose here.
+The description survives both moves — `what` and `who` are still there — and **the name
+was identical at every step**. Use `PATCH`, not `PUT`: [as in section 5](#5-move-the-object),
+the description is exactly what you do not want to lose here.
 
 ### A whole namespace at once
 
 ```console
 $ curl -X POST $P/api/import/bulk -H "Authorization: Bearer $PK" \
-       -d '{"data": [{"ark": "ark:99999/c7xk7vtb226", "title": "batch 1"},
-                     {"ark": "ark:99999/c7zjft7mcxq", "title": "batch 2"}]}'
+       -d '{"data": [{"ark": "ark:99999/c7p31k8g8hn", "title": "batch 1"},
+                     {"ark": "ark:99999/c7vtrvkbmfw", "title": "batch 2"}]}'
 {"count": 2, "imported": [...]}
 ```
 
@@ -421,11 +492,11 @@ taken back, so a half-imported namespace is worse than none.
 $ curl -X POST $P/api/import -d '{"ark": "ark:99999/s7abc1234"}'      # not delegated
 ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.
 
-$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fz"}'    # check digit
-ARKHE-1012  Check digit mismatch: ark:99999/c7j89qtb3fz was not minted by a NOID minter, or was mistyped.
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7w545sj4zz"}'    # check digit
+ARKHE-1012  Check digit mismatch: ark:99999/c7w545sj4zz was not minted by a NOID minter, or was mistyped.
 
-$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fc"}'    # already here
-ARKHE-1005  ark:99999/c7j89qtb3fc is already registered.
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7w545sj4z5"}'    # already here
+ARKHE-1005  ark:99999/c7w545sj4z5 is already registered.
 ```
 
 The check digit is the only evidence a public ledger has that a name arriving from
@@ -433,6 +504,19 @@ outside was not mistyped, which is why it cannot be waived. Reach follows the us
 — **higher authority covers lower** — and the NAAN must be one this ledger is
 authoritative for; taking custody of names in a namespace you merely forward would be
 claiming to be its keeper.
+
+### The two side by side
+
+```console
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/s75h5rdvnm2
+302 https://repo.example.ac.jp/records/7      # was open all along
+
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7w545sj4z5
+302 https://repo.example.ac.jp/records/42     # was closed for a year
+```
+
+**Same NAAN, same shape, one resolver.** The only difference is the shoulder, and by the
+time an outsider sees either of them, that difference has stopped mattering.
 
 
 ## The shape of it

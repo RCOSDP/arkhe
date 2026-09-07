@@ -24,6 +24,17 @@ migration only widens columns.
 
 ### Added
 
+- **Section 10 of the walkthrough now builds both ledgers from scratch.** The public and
+  the closed side are **operated separately** — no shared database, no replication, no
+  sync — so the example starts where that starts: `arkhe naan add`, `onboard`,
+  `shoulder add`, and the `delegated` / `redirect` pair that tells the outside a namespace
+  is closed. Namespace allocation is CLI work, not REST, and the page now says so.
+
+  It then mints on each side with curl — the open shoulder the ordinary way, the closed
+  one refused by the public minter with a `307` at the delegate — and resolves the same
+  name on both resolvers before and after it is handed over. Two ledgers, four processes,
+  **one transcript from one run**.
+
 - **A worked closed-then-published example**, as section 10 of
   [the walkthrough](https://rcosdp.github.io/arkhe/guides/walkthrough/): mint inside a
   closed network, see what the public resolver says before and after, import the name

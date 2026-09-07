@@ -308,61 +308,137 @@ $ curl -H 'Accept: application/json' $R/.well-known/ark
  "held": []}
 ```
 
-## 10. 非公開の台帳と、あとからの公開
+## 10. 台帳を 2 つ——公開と非公開
 
-ここまでは台帳 1 つの話だった。この設計が存在する理由の場面は 2 つある——**到達できない
-網の中の閉じた arkhe**と、**世界に答える公開の arkhe**。**識別子は両側で同じ**である。
-それがすべてで、閉じているあいだに配った名前は、公開されたときにも効かなければならない。
+ここまでは台帳 1 つの話だった。この設計が存在する理由の場面には**台帳が 2 つあり、
+別々に運用される**——外から到達できない網の中の閉じた arkhe と、世界に答える公開の
+arkhe。DB も複製も同期も共有しない。**越えるのは、両側で人が設定する名前空間の割当**と、
+あとから運用者が渡すと決めた記述だけである。
+
+**識別子は両方で同じ。** それがすべてで、閉じているあいだに配った名前は、公開された
+ときにも効かなければならない。
 
 | | | |
 | --- | --- | --- |
-| `$C` | 閉域の minter | 網の内側。`/c7` の権威をここが持つ |
-| `$P` | 公開の minter | ここでは `/c7` は `delegated` |
-| `$PR` | 公開の resolver | 世界が尋ねる先 |
+| `$P` / `$PR` | 公開の minter / resolver | 99999 の権威。ここでは `/c7` は `delegated` |
+| `$C` / `$CR` | 閉域の minter / resolver | 網の内側。`/c7` の権威をそこが持つ |
 
-### 閉域で採番する
+### 台帳を 2 つ組む
+
+**名前空間は REST API の対象ではない。** 採番・更新・取り込みはそうだが、NAAN や
+shoulder を切り出すのは CLI（または管理画面）の仕事である——**識別ではなく割当**の
+操作だからである。
 
 ```console
+# ── 公開側 ────────────────────────────────────────────────────
+$ arkhe naan add 99999 "Example RA" --policy "NP | NR, OP, CC | 2026"
+Registered NAAN 99999 (Example RA)
+
+$ arkhe onboard 99999 "Example University" --shoulder /s7        # 公開の PID
+Onboarded Example University and delegated 99999/s7
+
+$ arkhe shoulder add 99999 /c7 --manager 1 --note "closed PIDs"  # 非公開の PID
+Carved out 99999/c7
+
+# /c7 は外で採番する。台帳にそう刻み、外向きには説明を用意する
+$ arkhe shoulder status 2 delegated --minter https://ark.closed.example.ac.jp
+99999/c7 → delegated
+$ arkhe shoulder redirect 2 '303 https://ark.example.ac.jp/closed-namespace'
+resolution for 99999/c7 now goes to 303 https://ark.example.ac.jp/closed-namespace
+
+$ arkhe shoulder list
+   2  99999/c7      delegated  Example University
+   1  99999/s7      active     Example University
+```
+
+閉域側は**別の台帳**で、同じ NAAN・同じ shoulder を持ち、そこでは自分が権威を持つ。
+
+```console
+# ── 閉域の中 ──────────────────────────────────────────────────
+$ arkhe naan add 99999 "Example RA (closed)"
+Registered NAAN 99999 (Example RA (closed))
+$ arkhe onboard 99999 "Closed unit" --shoulder /c7
+Onboarded Closed unit and delegated 99999/c7
+```
+
+2 つをつなぐものは何も無い。**`303 https://…/closed-namespace` は既定値ではない**
+——いま `shoulder.redirect` に書いた値であって、置かなければ `/c7` の未登録名は
+単に `404` になる。
+
+### それぞれの側で採番する
+
+公開の shoulder は 1 節と同じ普通の道。
+
+```console
+$ curl -X POST $P/api/mint -H "Authorization: Bearer $PK" \
+       -d '{"shoulder": "/s7", "url": "https://repo.example.ac.jp/records/7",
+            "title": "Open dataset"}'
+{"ark": "ark:99999/s75h5rdvnm2", …}
+
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/s75h5rdvnm2
+302 https://repo.example.ac.jp/records/7
+```
+
+**公開側は `/c7` には採番できず、どこへ行けばよいかを答える。**
+
+```console
+$ curl -i -X POST $P/api/mint -H "Authorization: Bearer $PK" -d '{"shoulder": "/c7"}'
+HTTP/1.1 307 Temporary Redirect
+location: https://ark.closed.example.ac.jp
+
+{"code": "ARKHE-1306",
+ "message": "Minting for shoulder /c7 is delegated; go to the minter in Location.",
+ "detail": {"shoulder": "/c7", "minter": "https://ark.closed.example.ac.jp",
+            "note": "closed PIDs"}}
+```
+
+`307` を返し、**代理では呼ばない**。代理で採ると、応答が失われたときに
+**向こうには在るがこちらは知らない ARK** が生まれる——NR の下では片付けられない。
+
+```console
+# ── 閉域の中 ──────────────────────────────────────────────────
 $ curl -X POST $C/api/mint -H "Authorization: Bearer $CK" \
        -d '{"url": "https://inside.closed.example/dataset/42",
             "title": "（閉域の中にしか無い題名）"}'
-{"ark": "ark:99999/c7j89qtb3fc", …}
+{"ark": "ark:99999/c7w545sj4z5", …}
 ```
 
-外から見ると、この名前はまだ何も語らない。委譲された shoulder は「その名前空間は
-閉じている」という説明ページで答える——**内部の住所は返さない**。外の人には
-どのみち届かないからである。
+### 同じ名前を、それぞれの側で解決する
 
 ```console
-$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7j89qtb3fc
-303 https://ark.example.ac.jp/closed-namespace
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $CR/ark:99999/c7w545sj4z5
+302 https://inside.closed.example/dataset/42      # 内側: そのまま対象へ
+
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7w545sj4z5
+303 https://ark.example.ac.jp/closed-namespace    # 外側:「この名前空間は閉じている」
 ```
 
-打ち間違いも同じページに着く。**名前が漏れない**というのがこの段の意味である。
+打ち間違いも同じページに着く。**名前が漏れない**というのがこの段の意味で、
+識別子ごとの設定は何もしていない。
 
 ### 記述だけを引き取る
 
 ```console
 $ curl -X POST $P/api/import -H "Authorization: Bearer $PK" \
-       -d '{"ark":   "ark:99999/c7j89qtb3fc",
+       -d '{"ark":   "ark:99999/c7w545sj4z5",
             "title": "関東平野の土壌水分（利用制限あり）",
             "who":   "山田 太郎",
             "when":  "2026",
             "commitment": "利用は申請による"}'
-{"ark": "ark:99999/c7j89qtb3fc", "url": "", …}
+{"ark": "ark:99999/c7w545sj4z5", "url": "", …}
 ```
 
 **`url` は空のまま**。これは書き忘れではなく、**そう述べている**のである。公開の
 リゾルバは、誰も送り込めない識別子について記述を返すようになる。
 
 ```console
-$ curl -H 'Accept: text/plain' "$PR/ark:99999/c7j89qtb3fc?info"
+$ curl -H 'Accept: text/plain' "$PR/ark:99999/c7w545sj4z5?info"
 erc:
 who: 山田 太郎
 what: 関東平野の土壌水分（利用制限あり）
 when: 2026
-where: ark:99999/c7j89qtb3fc
-about: ark:99999/c7j89qtb3fc
+where: ark:99999/c7w545sj4z5
+about: ark:99999/c7w545sj4z5
 policy: NP | NR, OP, CC | 2026
 commitment: 利用は申請による
 commitment-level: permanent-dynamic
@@ -375,31 +451,25 @@ commitment-level: permanent-dynamic
 ### 段を上げる
 
 ```console
-$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+$ curl -X PATCH $P/api/update -d '{"ark": "ark:99999/c7w545sj4z5",
                                    "url": "https://apply.example.ac.jp/dataset/42"}'
 → 302 https://apply.example.ac.jp/dataset/42          # 申請すれば使える
 
-$ curl -X PATCH $P/api/update -d '{"ark": "…c7j89qtb3fc",
+$ curl -X PATCH $P/api/update -d '{"ark": "ark:99999/c7w545sj4z5",
                                    "url": "https://repo.example.ac.jp/records/42"}'
 → 302 https://repo.example.ac.jp/records/42           # 禁輸が明けた
 ```
 
 どちらの付け替えでも記述は残り（`what` も `who` もそのまま）、**名前はどの段でも
-同じ**だった。
-
-```
-ark:99999/c7j89qtb3fc
-```
-
-使うのは `PUT` ではなく `PATCH`。[5 節](#5-対象が移る)のとおりで、**ここで失いたく
-ないものがまさに記述**だからである。
+同じ**だった。使うのは `PUT` ではなく `PATCH`——[5 節](#5-対象が移る)のとおりで、
+**ここで失いたくないものがまさに記述**だからである。
 
 ### 名前空間ごとまとめて
 
 ```console
 $ curl -X POST $P/api/import/bulk -H "Authorization: Bearer $PK" \
-       -d '{"data": [{"ark": "ark:99999/c7xk7vtb226", "title": "batch 1"},
-                     {"ark": "ark:99999/c7zjft7mcxq", "title": "batch 2"}]}'
+       -d '{"data": [{"ark": "ark:99999/c7p31k8g8hn", "title": "batch 1"},
+                     {"ark": "ark:99999/c7vtrvkbmfw", "title": "batch 2"}]}'
 {"count": 2, "imported": [...]}
 ```
 
@@ -412,17 +482,30 @@ $ curl -X POST $P/api/import/bulk -H "Authorization: Bearer $PK" \
 $ curl -X POST $P/api/import -d '{"ark": "ark:99999/s7abc1234"}'      # 委譲していない
 ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.
 
-$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fz"}'    # 検査桁
-ARKHE-1012  Check digit mismatch: ark:99999/c7j89qtb3fz was not minted by a NOID minter, or was mistyped.
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7w545sj4zz"}'    # 検査桁
+ARKHE-1012  Check digit mismatch: ark:99999/c7w545sj4zz was not minted by a NOID minter, or was mistyped.
 
-$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7j89qtb3fc"}'    # 既に在る
-ARKHE-1005  ark:99999/c7j89qtb3fc is already registered.
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7w545sj4z5"}'    # 既に在る
+ARKHE-1005  ark:99999/c7w545sj4z5 is already registered.
 ```
 
 検査桁は、**外から来た名前が打ち間違いでないことを公開台帳が確かめる唯一の手立て**
 なので、緩めない。到達範囲はほかと同じ規則で**上位が下位を覆い**、その NAAN の権威を
 この台帳が持っていることも要る——取り次いでいるだけの名前空間の名前を引き受けるのは、
 その保管者を名乗ることだからである。
+
+### 2 本を並べて
+
+```console
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/s75h5rdvnm2
+302 https://repo.example.ac.jp/records/7      # 最初から公開だったもの
+
+$ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/c7w545sj4z5
+302 https://repo.example.ac.jp/records/42     # 1 年間閉じていたもの
+```
+
+**同じ NAAN、同じ形、同じリゾルバ。** 違うのは shoulder だけで、外の人がどちらかを
+見るころには、その違いは意味を持たなくなっている。
 
 
 ## 全体の形
