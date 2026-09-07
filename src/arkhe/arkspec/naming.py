@@ -80,11 +80,11 @@ def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
     D4: `allow_naan_only=True` なら `ark:99999`（名前なし）も受け、`name=""` を返す。
     """
     if not isinstance(ark, str):
-        raise ArkParseError("ARK must be a string")
+        raise ArkParseError("not a string")
 
     parts = _LABEL.split(ark)
     if len(parts) != 2:
-        raise ArkParseError("Not a valid ARK: missing or repeated 'ark:' label")
+        raise ArkParseError("missing or repeated 'ark:' label")
     nma, rest = parts
 
     rest = rest.lstrip("/")
@@ -94,16 +94,19 @@ def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
         # そのもの」を指し、N2T も階層を遡ってここまで見る。呼び出し側が扱えるよう
         # `name=""` で返す——扱えない側は `allow_naan_only=False` で弾ける。
         if not allow_naan_only:
-            raise ArkParseError("Not a valid ARK: missing name part")
+            raise ArkParseError("missing name part")
         name = ""
 
-    # F1: 変換や照合の前に長さで弾く。
-    if not naan or len(naan) > MAX_NAAN_LENGTH:
-        raise ArkParseError("Not a valid NAAN: bad length")
+    # F1: 変換や照合の前に長さで弾く。**空と長すぎるは別の理由**——同じ文面に
+    # まとめると、`ark:/` に「16 オクテットを超えている」と答えることになる。
+    if not naan:
+        raise ArkParseError("missing NAAN")
+    if len(naan) > MAX_NAAN_LENGTH:
+        raise ArkParseError(f"NAAN is longer than {MAX_NAAN_LENGTH} octets")
 
     naan = naan.lower()  # A1: NAAN だけ小文字化する
     if not set(naan) <= _NAAN_CHARS:  # N3
-        raise ArkParseError("Not a valid NAAN: must be betanumeric")
+        raise ArkParseError("NAAN must be betanumeric")
 
     return ParsedArk(nma=nma, naan=naan, name=name)
 

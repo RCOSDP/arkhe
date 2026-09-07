@@ -11,6 +11,12 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **A walkthrough that follows one identifier end to end**, in
+  [From minting to resolving, with curl](https://rcosdp.github.io/arkhe/guides/walkthrough/):
+  minting, resolution, suffix passthrough, registering one qualified point, moving the
+  object, a hold, a tombstone, the error codes, and what the resolver says about itself.
+  **Every response on the page was copied from a running instance**, not written by hand.
+
 - **Each operation now states the scope it requires.** The specification said
   `{"oauth2": []}` — that a token gets you in, but **not what it has to carry** — so a
   client generated from it had no choice but to ask for every scope.
@@ -62,6 +68,13 @@ breaking in a system whose identifiers cannot be reissued.
   set it (`uvicorn --root-path /pid`) or it will publish a door that is not there.
 
 ### Fixed
+
+- **The quickstart's local example could not resolve.** It started one process and
+  curled `/ark:99999/…` at it, but the resolution endpoint only exists when
+  `ARKHE_RESOLVER=1` — a single process answers `404`. That separation is deliberate, so
+  the example now starts both. Parse errors also stopped repeating themselves
+  (`Not readable as an ARK: Not a valid ARK: missing name part`), and an empty NAAN no
+  longer claims to be too long.
 
 - **A link inside the Japanese invariants page was dead.** `#ark` pointed at nothing;
   the heading it meant is `#ark-は削除しない`. mkdocs reports a broken in-page anchor as

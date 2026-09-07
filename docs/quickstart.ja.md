@@ -110,17 +110,24 @@ arkhe client key univ-repo          # 平文はこの一度だけ表示される
 
 起動して、1 本採番して、解決する。
 
+**プロセスは 2 つ。** minter に解決の口は無く、resolver に採番の口も無い
+——分けてあること自体が要点なので、**1 プロセスで両方はできない**。
+
 ```bash
-uvicorn arkhe.app:create_app --factory &
+uvicorn arkhe.app:create_app --factory --port 8000 &                   # 採番
+ARKHE_RESOLVER=1 uvicorn arkhe.app:create_app --factory --port 8001 &  # 解決
 
 curl -X POST http://127.0.0.1:8000/api/mint \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -d '{"url": "https://example.org/records/1", "title": "最初の対象"}'
 # → {"ark": "ark:99999/x9…", …}
 
-curl -i "http://127.0.0.1:8000/ark:99999/x9…"        # 302 で対象へ
-curl    "http://127.0.0.1:8000/ark:99999/x9…??"      # 永続性宣言
+curl -i "http://127.0.0.1:8001/ark:99999/x9…"        # 302 で対象へ
+curl    "http://127.0.0.1:8001/ark:99999/x9…??"      # 永続性宣言
 ```
+
+[識別子 1 本を最後まで追う](guides/walkthrough.md)——採番、解決、suffix passthrough、
+保留、墓碑まで、実際の応答で。
 
 ## いま何が起きたか
 

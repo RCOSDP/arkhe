@@ -112,17 +112,24 @@ arkhe client key univ-repo          # the plaintext is shown once and never agai
 
 Run it, mint one, resolve it:
 
+**Two processes.** The minter has no resolution endpoint and the resolver has no
+minting endpoint — that separation is the point, so a single process cannot do both:
+
 ```bash
-uvicorn arkhe.app:create_app --factory &
+uvicorn arkhe.app:create_app --factory --port 8000 &                   # minting
+ARKHE_RESOLVER=1 uvicorn arkhe.app:create_app --factory --port 8001 &  # resolution
 
 curl -X POST http://127.0.0.1:8000/api/mint \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -d '{"url": "https://example.org/records/1", "title": "First object"}'
 # → {"ark": "ark:99999/x9…", …}
 
-curl -i "http://127.0.0.1:8000/ark:99999/x9…"        # 302 to the object
-curl    "http://127.0.0.1:8000/ark:99999/x9…??"      # the persistence statement
+curl -i "http://127.0.0.1:8001/ark:99999/x9…"        # 302 to the object
+curl    "http://127.0.0.1:8001/ark:99999/x9…??"      # the persistence statement
 ```
+
+[Follow one identifier all the way through](guides/walkthrough.md) — minting,
+resolution, suffix passthrough, a hold, a tombstone — with real responses.
 
 ## What just happened
 

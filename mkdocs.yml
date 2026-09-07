@@ -65,6 +65,7 @@ plugins:
             Invariants: 壊さないもの
             Guides: 手引き
             Setting up for the first time: はじめて立ち上げるとき
+            From minting to resolving, with curl: curl で採番から解決まで
             Authentication: 認証
             Admin interface: 管理画面
             Succession and departure: 承継と離脱
@@ -140,6 +141,7 @@ nav:
       - Invariants: concepts/invariants.md
   - Guides:
       - Setting up for the first time: guides/onboarding.md
+      - From minting to resolving, with curl: guides/walkthrough.md
       - Authentication: guides/authentication.md
       - Admin interface: guides/admin.md
       - Succession and departure: guides/succession.md
