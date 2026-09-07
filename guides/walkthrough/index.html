@@ -10,19 +10,19 @@
       
       
       
-        <link rel="canonical" href="https://rcosdp.github.io/arkhe/guides/onboarding/">
+        <link rel="canonical" href="https://rcosdp.github.io/arkhe/guides/walkthrough/">
       
       
-        <link rel="prev" href="../../concepts/invariants/">
+        <link rel="prev" href="../onboarding/">
       
       
-        <link rel="next" href="../walkthrough/">
+        <link rel="next" href="../authentication/">
       
       
         
           <link rel="alternate" href="./" hreflang="en">
         
-          <link rel="alternate" href="../../ja/guides/onboarding/" hreflang="ja">
+          <link rel="alternate" href="../../ja/guides/walkthrough/" hreflang="ja">
         
       
       
@@ -31,7 +31,7 @@
     
     
       
-        <title>Setting up for the first time - arkhe</title>
+        <title>From minting to resolving, with curl - arkhe</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#setting-up-for-the-first-time" class="md-skip">
+        <a href="#from-minting-to-resolving-with-curl" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Setting up for the first time
+              From minting to resolving, with curl
             
           </span>
         </div>
@@ -173,7 +173,7 @@
           </li>
         
           <li class="md-select__item">
-            <a href="../../ja/guides/onboarding/" hreflang="ja" class="md-select__link">
+            <a href="../../ja/guides/walkthrough/" hreflang="ja" class="md-select__link">
               日本語
             </a>
           </li>
@@ -603,6 +603,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setting up for the first time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -622,7 +650,7 @@
   <span class="md-ellipsis">
     
   
-    Setting up for the first time
+    From minting to resolving, with curl
   
 
     
@@ -640,7 +668,7 @@
   <span class="md-ellipsis">
     
   
-    Setting up for the first time
+    From minting to resolving, with curl
   
 
     
@@ -666,10 +694,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-request-a-naan" class="md-nav__link">
+  <a href="#1-mint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Request a NAAN
+        1. Mint
       
     </span>
   </a>
@@ -677,10 +705,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-stand-arkhe-up" class="md-nav__link">
+  <a href="#2-resolve" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Stand arkhe up
+        2. Resolve
       
     </span>
   </a>
@@ -688,10 +716,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-register-your-resolver-url-in-the-naan-registry" class="md-nav__link">
+  <a href="#3-ask-about-the-identifier-instead-of-following-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Register your resolver URL in the NAAN registry
+        3. Ask about the identifier instead of following it
       
     </span>
   </a>
@@ -699,10 +727,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-register-the-naan-and-state-your-policy" class="md-nav__link">
+  <a href="#4-point-one-part-somewhere-else" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Register the NAAN and state your policy
+        4. Point one part somewhere else
       
     </span>
   </a>
@@ -710,10 +738,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-onboard-an-organisation-and-delegate-a-namespace" class="md-nav__link">
+  <a href="#5-move-the-object" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Onboard an organisation and delegate a namespace
+        5. Move the object
       
     </span>
   </a>
@@ -721,10 +749,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-confirm-the-commitment" class="md-nav__link">
+  <a href="#6-stop-the-redirect-without-killing-the-name" class="md-nav__link">
     <span class="md-ellipsis">
       
-        6. Confirm the commitment
+        6. Stop the redirect without killing the name
       
     </span>
   </a>
@@ -732,38 +760,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#7-register-people-and-machines" class="md-nav__link">
+  <a href="#7-when-the-object-is-gone" class="md-nav__link">
     <span class="md-ellipsis">
       
-        7. Register people and machines
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="7. Register people and machines">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#where-authentication-is-delegated-registration-is-the-linkage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where authentication is delegated, registration is the linkage
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#8-from-then-on" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        8. From then on
+        7. When the object is gone
       
     </span>
   </a>
@@ -771,10 +771,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-this-order" class="md-nav__link">
+  <a href="#8-when-something-is-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why this order
+        8. When something is wrong
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-what-the-resolver-says-about-itself" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. What the resolver says about itself
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-shape-of-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The shape of it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next
       
     </span>
   </a>
@@ -785,34 +818,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../walkthrough/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    From minting to resolving, with curl
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1334,10 +1339,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-request-a-naan" class="md-nav__link">
+  <a href="#1-mint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Request a NAAN
+        1. Mint
       
     </span>
   </a>
@@ -1345,10 +1350,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-stand-arkhe-up" class="md-nav__link">
+  <a href="#2-resolve" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Stand arkhe up
+        2. Resolve
       
     </span>
   </a>
@@ -1356,10 +1361,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-register-your-resolver-url-in-the-naan-registry" class="md-nav__link">
+  <a href="#3-ask-about-the-identifier-instead-of-following-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Register your resolver URL in the NAAN registry
+        3. Ask about the identifier instead of following it
       
     </span>
   </a>
@@ -1367,10 +1372,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-register-the-naan-and-state-your-policy" class="md-nav__link">
+  <a href="#4-point-one-part-somewhere-else" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Register the NAAN and state your policy
+        4. Point one part somewhere else
       
     </span>
   </a>
@@ -1378,10 +1383,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-onboard-an-organisation-and-delegate-a-namespace" class="md-nav__link">
+  <a href="#5-move-the-object" class="md-nav__link">
     <span class="md-ellipsis">
       
-        5. Onboard an organisation and delegate a namespace
+        5. Move the object
       
     </span>
   </a>
@@ -1389,10 +1394,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-confirm-the-commitment" class="md-nav__link">
+  <a href="#6-stop-the-redirect-without-killing-the-name" class="md-nav__link">
     <span class="md-ellipsis">
       
-        6. Confirm the commitment
+        6. Stop the redirect without killing the name
       
     </span>
   </a>
@@ -1400,38 +1405,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#7-register-people-and-machines" class="md-nav__link">
+  <a href="#7-when-the-object-is-gone" class="md-nav__link">
     <span class="md-ellipsis">
       
-        7. Register people and machines
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="7. Register people and machines">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#where-authentication-is-delegated-registration-is-the-linkage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Where authentication is delegated, registration is the linkage
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#8-from-then-on" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        8. From then on
+        7. When the object is gone
       
     </span>
   </a>
@@ -1439,10 +1416,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-this-order" class="md-nav__link">
+  <a href="#8-when-something-is-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why this order
+        8. When something is wrong
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-what-the-resolver-says-about-itself" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. What the resolver says about itself
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-shape-of-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The shape of it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next
       
     </span>
   </a>
@@ -1466,7 +1476,7 @@
 
 
   
-    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/onboarding.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/walkthrough.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1474,308 +1484,242 @@
   
 
 
-<h1 id="setting-up-for-the-first-time">Setting up for the first time<a class="headerlink" href="#setting-up-for-the-first-time" title="Permanent link">&para;</a></h1>
-<p>From holding no NAAN to an organisation that can mint. <strong>Half of this happens outside
-arkhe</strong>, so those steps are listed too.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>1. Request a NAAN from the ARK Alliance      outside arkhe
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>2. Stand arkhe up                            → Deployment
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>3. Register your resolver URL in the         outside arkhe
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   NAAN registry
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>4. Register the NAAN and state your policy   arkhe naan add
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>5. Onboard an organisation, delegate a        arkhe onboard
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>   namespace
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>6. Confirm the organisation's commitment      arkhe manager commitment
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>7. Register people and machines              arkhe client add
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>8. From then on: rotation, succession, departure
+<h1 id="from-minting-to-resolving-with-curl">From minting to resolving, with curl<a class="headerlink" href="#from-minting-to-resolving-with-curl" title="Permanent link">&para;</a></h1>
+<p>One identifier, followed from the moment it is minted to the moment the object behind
+it is gone. Every response below is a real one, copied from a running instance.</p>
+<p>Two processes answer, and <strong>neither can do the other's job</strong>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$M</code></td>
+<td><code>http://127.0.0.1:8110</code></td>
+<td>minting and updating. <strong>Needs a credential</strong></td>
+</tr>
+<tr>
+<td><code>$R</code></td>
+<td><code>http://127.0.0.1:8111</code></td>
+<td>resolution. <strong>Needs none</strong>, and has no minting endpoint</td>
+</tr>
+</tbody>
+</table>
+<p>Standing them up is <a href="../../quickstart/">the quickstart</a>; the rest of this page assumes
+a NAAN, an organisation with the shoulder <code>/x9</code>, and an API key in <code>$KEY</code>.</p>
+<h2 id="1-mint">1. Mint<a class="headerlink" href="#1-mint" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url":   "https://repo.example.ac.jp/records/1",</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s1">       "title": "Rainfall in the Kanto plain, 1991-2020",</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s1">       "who":   "Yamada, Taro",</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s1">       "when":  "2026"}'</span>
 </code></pre></div>
-<h2 id="1-request-a-naan">1. Request a NAAN<a class="headerlink" href="#1-request-a-naan" title="Permanent link">&para;</a></h2>
-<p>The ARK Alliance issues them <strong>free of charge</strong>. There is no registration agency to
-pay and no membership to maintain.</p>
-<p>The request asks what you intend to do with the NAAN. <strong>What you write there has to
-match what ends up in the ledger from step 4 onwards.</strong> Decided separately, the
-outward declaration and the actual operation drift apart.</p>
-<h2 id="2-stand-arkhe-up">2. Stand arkhe up<a class="headerlink" href="#2-stand-arkhe-up" title="Permanent link">&para;</a></h2>
-<p>See <a href="../deployment/">Deployment</a>. It has to come <strong>before</strong> step 3, because what you
-register there is this resolver's URL.</p>
-<h2 id="3-register-your-resolver-url-in-the-naan-registry">3. Register your resolver URL in the NAAN registry<a class="headerlink" href="#3-register-your-resolver-url-in-the-naan-registry" title="Permanent link">&para;</a></h2>
-<p><strong>Skip this and <code>n2t.net/ark:99999/…</code> never reaches you.</strong> Getting a NAAN is not
-just receiving a number; it runs through to writing your resolver's URL into the
-registry entry.</p>
-<p><strong>Update it whenever that URL changes.</strong> Nothing follows it for you.</p>
-<div class="admonition note">
-<p class="admonition-title">You also publish this on your own side</p>
-<p>arkhe answers <code>/.well-known/ark</code> with where minting for a NAAN happens. It is no
-substitute for the registry — the registry is the only way to be found from
-outside — but where minting sits elsewhere, it tells clients where to go.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"ark"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ark:99999/x9tn1qkq2g7"</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://repo.example.ac.jp/records/1"</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Rainfall in the Kanto plain, 1991-2020"</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">"who"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Yamada, Taro"</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">"when"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026"</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">"created_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-09-07T09:54:10.571278Z"</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">"hold_until"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>201</code>, and the name is now spoken for <strong>for good</strong>. <code>x9</code> is the shoulder the
+organisation was given; <code>tn1qkq2g</code> came from a random minter; the final <code>7</code> is a
+<a href="../../concepts/ark/">check digit</a>, which is why a mistyped ARK can be told apart from
+an ARK that simply is not here.</p>
+<div class="admonition tip">
+<p class="admonition-title">Send a <code>request_id</code> for anything at scale</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>-d<span class="w"> </span><span class="s1">'{"request_id": "ingest-2026-09-07-0001", "url": "…"}'</span>
+</code></pre></div>
+Resending the same <code>request_id</code> returns the ARK minted the first time (<code>200</code>
+instead of <code>201</code>) rather than minting a second one. A batch of ten thousand is
+interrupted more often than not, and <strong>an ARK nobody points at cannot be taken
+back</strong>.</p>
 </div>
-<h2 id="4-register-the-naan-and-state-your-policy">4. Register the NAAN and state your policy<a class="headerlink" href="#4-register-the-naan-and-state-your-policy" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Your University"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://example.ac.uk/ark-policy"</span>
+<h2 id="2-resolve">2. Resolve<a class="headerlink" href="#2-resolve" title="Permanent link">&para;</a></h2>
+<p>Resolution needs no credential — that is the whole point of the second process.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
 </code></pre></div>
-<p><strong>This is where the NAA policy is stated.</strong> It is not paperwork; it is the central
-declaration in arkhe, because ARK has no registration agency guaranteeing persistence
-on your behalf. <a href="../../concepts/ark/">The commitment is yours</a>, and so is stating what
-it consists of. What you have not stated, <code>??</code> cannot answer.</p>
-<p><code>--authoritative</code> (the default) means "an unknown name under this NAAN may be
-answered with <code>404</code>". <strong>If you have taken over a NAAN whose minting continues
-elsewhere</strong>, pass <code>--authoritative false</code> with <code>--redirect</code>. The two go together;
-neither is accepted alone.</p>
-<h2 id="5-onboard-an-organisation-and-delegate-a-namespace">5. Onboard an organisation and delegate a namespace<a class="headerlink" href="#5-onboard-an-organisation-and-delegate-a-namespace" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"Example Institute"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9<span class="w"> </span>--commitment<span class="w"> </span>permanent-stable
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">302</span> <span class="ne">Found</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="na">location</span><span class="o">:</span> <span class="l">https://repo.example.ac.jp/records/1</span>
 </code></pre></div>
-<p><strong>Registering the organisation and delegating the shoulder always happen together.</strong>
-They cannot be separated: an organisation with no namespace cannot mint, so there is
-no point putting one in the ledger.</p>
-<p>Decide the shoulder layout beforehand. <strong>Once handed out it cannot be taken back</strong> —
-having declared <code>NR</code>, existing ARKs go on resolving. A namespace you stop using is
-<code>retired</code>, not deleted.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/y2<span class="w"> </span>--reserve<span class="w">   </span><span class="c1"># held for later, nothing minted in it</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>list<span class="w"> </span>--naan<span class="w"> </span><span class="m">99999</span>
+<p>A child of that object needs no identifier of its own. Anything after the name is
+handed to the target — <strong>suffix passthrough</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7/page/3
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">302 https://repo.example.ac.jp/records/1/page/3</span>
 </code></pre></div>
-<h2 id="6-confirm-the-commitment">6. Confirm the commitment<a class="headerlink" href="#6-confirm-the-commitment" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkhe<span class="w"> </span>manager<span class="w"> </span>commitment<span class="w"> </span>--list
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>manager<span class="w"> </span>list
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>arkhe<span class="w"> </span>manager<span class="w"> </span>commitment<span class="w"> </span><span class="m">1</span><span class="w"> </span>permanent-stable
+<h2 id="3-ask-about-the-identifier-instead-of-following-it">3. Ask about the identifier instead of following it<a class="headerlink" href="#3-ask-about-the-identifier-instead-of-following-it" title="Permanent link">&para;</a></h2>
+<p>Appending <code>??</code> asks what the resolver <em>promises</em> about the name. The answer is
+ERC/ANVL — the format ARK has answered in for twenty years.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">HTTP/1.1 200 OK</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">content-type: text/plain; charset=utf-8</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">thump-status: 0.6 200 OK</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="go">link: &lt;/ark:99999/x9tn1qkq2g7&gt;; rel="describes"</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="go">erc:</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="go">who: Yamada, Taro</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="go">what: Rainfall in the Kanto plain, 1991-2020</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">when: 2026</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="go">redirect: https://repo.example.ac.jp/records/1</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="go">about: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="go">policy: (:unav)</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="go">commitment-level: permanent-dynamic</span>
 </code></pre></div>
-<p>It can also be changed <a href="../admin/#changing-settings">from the admin interface</a>, where
-<strong>the organisation's own administrator may change it</strong> — the commitment is the
-organisation's, and a declaration nobody can make is not a declaration.</p>
-<p>Onboarding without <code>--commitment</code> leaves the default <code>permanent-dynamic</code>. <strong>Do not
-leave it there.</strong> The value is published verbatim by <code>?</code> and <code>??</code>, so leaving it
-means <strong>claiming, in the organisation's name, a commitment the organisation never
-made</strong>. Publishing an undeclared default as a declaration is worse than publishing
-nothing.</p>
-<p>The levels are the NLM permanence ratings (<code>descriptive-only</code> is an addition, for
-physical objects).</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>not-guaranteed</code></td>
-<td>No commitment</td>
-</tr>
-<tr>
-<td><code>permanent-dynamic</code></td>
-<td>Permanent; content may change</td>
-</tr>
-<tr>
-<td><code>permanent-stable</code></td>
-<td>Permanent; content substantially unchanged</td>
-</tr>
-<tr>
-<td><code>permanent-unchanging</code></td>
-<td>Permanent; content not changed</td>
-</tr>
-<tr>
-<td><code>descriptive-only</code></td>
-<td>Description only — the object is not online</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Lowering a level is a legitimate operation.</strong> Saying it plainly is more honest than
-holding up a promise you cannot keep, and it is what keeps asking <code>??</code> worth doing.</p>
-<h2 id="7-register-people-and-machines">7. Register people and machines<a class="headerlink" href="#7-register-people-and-machines" title="Permanent link">&para;</a></h2>
-<p><strong>These two cannot be mixed.</strong></p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Identifies itself with</th>
-<th>May hold</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>A person (an organisational administrator)</td>
-<td>External login (OIDC / proxy) or a password</td>
-<td><strong>No</strong> API key or client secret</td>
-</tr>
-<tr>
-<td>A machine (the repository itself)</td>
-<td>API key / client secret</td>
-<td><strong>No</strong> password</td>
-</tr>
-</tbody>
-</table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># An administrator. The client_id is whatever the authorization server returns</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># (an email address, an eppn).</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>admin@example.ac.uk<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--person<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># The repository itself, pinned to a shoulder.</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>repo-web-api<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--shoulder<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>repo-web-api<span class="w">          </span><span class="c1"># the plaintext is shown once</span>
+<p>Three things in there are worth pausing on.</p>
+<p><strong><code>where</code> is the ARK, not the target.</strong> The specification defines it as "the long-term
+identifier as opposed to a transient redirect target", so repointing the ARK does not
+change it. Where the object sits <em>today</em> is <code>redirect</code>, outside the kernel.</p>
+<p><strong><code>(:unav)</code> is not an empty field.</strong> ERC requires a reason when a value cannot be
+given, so "we have not recorded a namespace policy" and "there is no such thing" stay
+distinguishable. A namespace policy is set when the NAAN is registered
+(<code>arkhe naan add … --policy</code>, or the NAAN form in the admin interface).</p>
+<p><strong><code>Link: …; rel="describes"</code></strong> tells a client that knows nothing about inflections that
+this response <em>describes</em> the ARK rather than being the thing itself.</p>
+<p><code>?json</code> returns the same record for a program, and <code>?info</code> returns a page for a person.
+Whichever you use, <strong>the answer survives the object</strong>: section 6 comes back to that.</p>
+<h2 id="4-point-one-part-somewhere-else">4. Point one part somewhere else<a class="headerlink" href="#4-point-one-part-somewhere-else" title="Permanent link">&para;</a></h2>
+<p>Suffix passthrough covers the general case. When one part genuinely lives elsewhere —
+a IIIF canvas, a subtree in another store — register that one point:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/register<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "qualifier": "/page/3",</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s1">       "url": "https://iiif.example.ac.jp/records/1/canvas/3"}'</span>
 </code></pre></div>
-<p>People hold no API keys because <strong>a key outlives the person's departure from the
-organisation</strong>. Revoking a person is done at the authorization server, and arkhe
-follows. <code>arkhe client passwd</code> is for <code>ARKHE_ADMIN_LOGIN=password</code> deployments only.</p>
-<p><strong>Give each process its own credential.</strong> Sharing one across a repository's web and
-worker processes means (1) you cannot tell which of them minted, (2) one leak forces
-you to revoke all of them, and (3) you cannot narrow scope per use. Pinning with
-<code>--shoulder</code> means a leaked key still cannot reach another organisation's namespace.</p>
-<p>Finally, check the configuration:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>arkhe<span class="w"> </span>check
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7/page/3
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">302 https://iiif.example.ac.jp/records/1/canvas/3</span>
 </code></pre></div>
-<h3 id="where-authentication-is-delegated-registration-is-the-linkage">Where authentication is delegated, registration is the linkage<a class="headerlink" href="#where-authentication-is-delegated-registration-is-the-linkage" title="Permanent link">&para;</a></h3>
-<p>Under <code>ARKHE_AUTH=oidc</code>, arkhe <strong>holds no key</strong>. The secret is created and revoked at
-the authorization server — revocation taking effect in one place is the point of the
-arrangement.</p>
-<p><strong>The registration is still required.</strong> Being able to authenticate is not the same as
-being allowed into this namespace, so a subject absent from the ledger is refused even
-with a valid token.</p>
-<table>
-<thead>
-<tr>
-<th>Where</th>
-<th>What</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Authorization server</td>
-<td>The client, and issuing and revoking its secret</td>
-</tr>
-<tr>
-<td>arkhe</td>
-<td>A user under the same identifier, with its organisation, namespace and scopes</td>
-</tr>
-</tbody>
-</table>
-<p>The identifier has to be <strong>the string the authorization server sends</strong>, verbatim.</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Claims tried, in order</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Machine</td>
-<td><code>azp</code> → <code>client_id</code> → <code>sub</code></td>
-</tr>
-<tr>
-<td>Person</td>
-<td><code>preferred_username</code> → <code>email</code> → <code>sub</code></td>
-</tr>
-</tbody>
-</table>
-<h4 id="how-to-create-one">How to create one<a class="headerlink" href="#how-to-create-one" title="Permanent link">&para;</a></h4>
-<p><strong>1. Create the client at the authorization server</strong> — the secret is born there.</p>
-<p>In Keycloak: <code>Clients</code> → <code>Create client</code>.</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Client ID</td>
-<td><code>jc2-web-api</code> — <strong>register this same string in arkhe</strong></td>
-</tr>
-<tr>
-<td>Client authentication</td>
-<td>on (confidential; it needs a secret)</td>
-</tr>
-<tr>
-<td>Service accounts roles</td>
-<td>on — <strong>so a token can be had without a person</strong></td>
-</tr>
-<tr>
-<td>Standard flow</td>
-<td>off — nobody signs in through a browser as this</td>
-</tr>
-</tbody>
-</table>
-<p>The secret appears under <code>Credentials</code>. <strong>arkhe never receives it</strong> — it has no need
-for it, and what it does not hold it cannot leak.</p>
-<p>Through the API (what <code>setup-arkhe-realm.py</code> does in JC2):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="nv">$KC</span><span class="s2">/admin/realms/</span><span class="nv">$REALM</span><span class="s2">/clients"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$ADMIN_TOKEN</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"clientId":"jc2-web-api","publicClient":false,</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s1">       "serviceAccountsEnabled":true,"standardFlowEnabled":false}'</span>
+<p>The registered row wins over the ancestor; everything else under the name still passes
+through. Note that this needs <code>ark:mint</code>, not <code>ark:update</code> — <strong>a new resolvable
+identifier appears</strong>, even though nothing was minted.</p>
+<h2 id="5-move-the-object">5. Move the object<a class="headerlink" href="#5-move-the-object" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark":   "ark:99999/x9tn1qkq2g7",</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="s1">       "url":   "https://newrepo.example.ac.jp/datasets/1",</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="s1">       "title": "Rainfall in the Kanto plain, 1991-2020",</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="s1">       "who":   "Yamada, Taro",</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="s1">       "when":  "2026"}'</span>
 </code></pre></div>
-<p><strong>2. Register the same identifier in arkhe</strong> — the reach is decided here.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>jc2-web-api<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--shoulder<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">302 https://newrepo.example.ac.jp/datasets/1</span>
 </code></pre></div>
-<p><strong>Do not run <code>arkhe client key</code>.</strong> A key issued anyway will not authenticate unless
-<code>apikey</code> or <code>oauth2</code> is in <code>ARKHE_AUTH</code>.</p>
-<h4 id="rotating-and-stopping">Rotating and stopping<a class="headerlink" href="#rotating-and-stopping" title="Permanent link">&para;</a></h4>
-<table>
-<thead>
-<tr>
-<th>To</th>
-<th>Where</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Rotate the secret</td>
-<td>The authorization server; arkhe needs no change</td>
-</tr>
-<tr>
-<td>Stop tokens being issued</td>
-<td>The authorization server — <strong>affects every resource at once</strong></td>
-</tr>
-<tr>
-<td>Stop only this namespace</td>
-<td><code>arkhe client disable jc2-web-api</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Having two places to stop it is the point.</strong> The authorization server reaches every
-resource; arkhe reaches only this namespace. "Remove this organisation from ARK but
-leave its other integrations alone" is possible without touching their configuration.</p>
-<p>Under <code>oidc</code>, <strong><code>arkhe client disable</code> is the only way to stop one from arkhe's
-side</strong> — it holds no credential, so there is nothing to revoke. The same control is on
-the user's page in the admin interface.</p>
-<h2 id="8-from-then-on">8. From then on<a class="headerlink" href="#8-from-then-on" title="Permanent link">&para;</a></h2>
-<p>Minting is not the whole of the daily work.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>repo-web-api<span class="w">          </span><span class="c1"># hand out the new key first</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>arkhe<span class="w"> </span>client<span class="w"> </span>revoke<span class="w"> </span>&lt;credential_id&gt;<span class="w">    </span><span class="c1"># revoke the old one once traffic has moved</span>
+<div class="admonition warning">
+<p class="admonition-title"><code>update</code> replaces the record, it does not merge into it</p>
+<p>Sending only <code>ark</code> and <code>url</code> <strong>empties <code>title</code>, <code>who</code>, <code>when</code> and the rest</strong>, because
+every omitted field carries its default. Send the whole record, as above. The
+previous target is kept in the change history either way (the ARK's page in the admin
+interface), but a description that was there and is now gone cannot be recovered
+from it.</p>
+</div>
+<h2 id="6-stop-the-redirect-without-killing-the-name">6. Stop the redirect without killing the name<a class="headerlink" href="#6-stop-the-redirect-without-killing-the-name" title="Permanent link">&para;</a></h2>
+<p>A delegate is down, or a wrong target went out, and you need it to stop <strong>now</strong>. <code>404</code>
+would be a lie — the identifier exists — and <code>503</code> makes a permanent identifier look
+broken. A hold answers <code>200</code> with the description instead:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "until": "2026-09-14T00:00:00Z",</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="s1">       "reason": "verifying the new target"}'</span>
 </code></pre></div>
-<p><strong>Old credentials are not revoked for you.</strong> That is so the two can run in parallel
-during a changeover, and revoking <strong>does not delete the row</strong> — whose key it was, and
-when it stopped, both remain.</p>
-<p>There is a time-boxed way out for incidents:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>breakglass<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--days<span class="w"> </span><span class="m">7</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">erc:</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">redirect: https://newrepo.example.ac.jp/datasets/1</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">commitment-level: permanent-dynamic</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">hold: verifying the new target</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">hold-until: 2026-09-14T00:00:00+00:00</span>
 </code></pre></div>
-<p>When organisations merge or leave, use <a href="../succession/">succession and
-departure</a>. In both, <strong>existing identifiers go on resolving</strong> — without
-that as an operational procedure, a declaration of <code>NR</code> cannot actually be honoured.</p>
-<h2 id="why-this-order">Why this order<a class="headerlink" href="#why-this-order" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Order</th>
-<th>Otherwise</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>2 before 3</td>
-<td>There is no resolver URL yet to register</td>
-</tr>
-<tr>
-<td>4 before 5</td>
-<td>Organisations appear under a NAAN whose policy is unstated</td>
-</tr>
-<tr>
-<td>5 is indivisible</td>
-<td>An organisation that cannot mint is left in the ledger</td>
-</tr>
-<tr>
-<td>6 right after 5</td>
-<td>A default goes live, published as the organisation's declaration</td>
-</tr>
-</tbody>
-</table>
+<p><strong>The reason is published</strong>, so do not put anything in it you would not say in public.
+<code>until</code> is required and capped by <code>ARKHE_HOLD_MAX_DAYS</code>: "temporary" left to memory
+becomes permanent, and an expired hold lifts itself by the clock alone. To lift it
+early:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold/release<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7"}'</span>
+</code></pre></div>
+<h2 id="7-when-the-object-is-gone">7. When the object is gone<a class="headerlink" href="#7-when-the-object-is-gone" title="Permanent link">&para;</a></h2>
+<p>There is no delete. When the thing itself is gone, say so:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/tombstone<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7",</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s1">       "commitment": "The dataset was withdrawn by the depositor in 2026-09."}'</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">200</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">erc:</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">about: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">commitment: The dataset was withdrawn by the depositor in 2026-09.</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">commitment-level: permanent-dynamic</span>
+</code></pre></div>
+<p>The redirect is gone; <strong>the identifier and the record are not</strong>. A citation written in
+2026 still leads somewhere that says what the thing was and what happened to it, which
+is what <a href="../../concepts/invariants/">FAIR A2</a> asks for and what a <code>404</code> cannot do.</p>
+<h2 id="8-when-something-is-wrong">8. When something is wrong<a class="headerlink" href="#8-when-something-is-wrong" title="Permanent link">&para;</a></h2>
+<p>Errors carry a code. <strong>Match on the code, not on the wording</strong> — the full list is
+<a href="../../reference/errors/">the errors reference</a>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{}'</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">{"code": "ARKHE-1201", "message": "No credentials."}</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">       </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "not-an-ark", "url": "https://x/1"}'</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">{"code": "ARKHE-1001",</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go"> "message": "Not readable as an ARK: missing name part",</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go"> "detail": {"reason": "missing name part"}}</span>
+</code></pre></div>
+<p>Resolution answers in plain text, with the code first:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9zzzzzzzz
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">ARKHE-1403 ark:99999/x9zzzzzzzz — Check digit mismatch: the identifier looks mistranscribed.</span>
+</code></pre></div>
+<p><strong>That is a different answer from "no such ARK".</strong> The check digit says the string was
+mistyped or mis-transcribed on its way here, which is worth telling a person who is
+staring at a printed identifier.</p>
+<p>A NAAN this resolver knows nothing about is handed upwards rather than refused:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:12345/abcde
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">302 https://n2t.net/ark:12345/abcde</span>
+</code></pre></div>
+<h2 id="9-what-the-resolver-says-about-itself">9. What the resolver says about itself<a class="headerlink" href="#9-what-the-resolver-says-about-itself" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/.well-known/ark
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">/</span>
+</code></pre></div>
+<p>That is the specification's own answer: the resolver's root path, so that appending a
+compact ARK to it gives a resolution request. arkhe's own inventory — the namespaces it
+holds, and where minting happens when it happens elsewhere — is the JSON representation
+of the same URL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span><span class="nv">$R</span>/.well-known/ark
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">{"resolver_path": "/",</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go"> "resolver": "arkhe",</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go"> "global_resolver": "https://n2t.net",</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go"> "naans": [{"naan": "99999", "authoritative": true,</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">            "redirect": null, "minter": null, "na_policy": null}],</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go"> "delegated_shoulders": [],</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="go"> "held": []}</span>
+</code></pre></div>
+<h2 id="the-shape-of-it">The shape of it<a class="headerlink" href="#the-shape-of-it" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    M["POST /api/mint&lt;br/&gt;&lt;small&gt;ark:mint&lt;/small&gt;"] --&gt; A(["ark:99999/x9tn1qkq2g7"])
+    A --&gt;|"GET"| T["302 → the object"]
+    A --&gt;|"GET …/page/3"| P["302 → the object/page/3&lt;br/&gt;&lt;small&gt;suffix passthrough&lt;/small&gt;"]
+    A --&gt;|"?? · ?info · ?json"| D["200 the description&lt;br/&gt;&lt;small&gt;answers even when the object cannot&lt;/small&gt;"]
+    U["PUT /api/update"] -.-&gt;|"the target moves"| A
+    H["PUT /api/hold"] -.-&gt;|"the redirect stops, dated"| A
+    X["PUT /api/tombstone"] -.-&gt;|"the object is gone"| A</code></pre>
+<p>Every dotted arrow changes where the name leads, or whether it leads anywhere at all.
+<strong>None of them changes what the name means</strong>, and none of them can take it back.</p>
+<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../reference/api/">The API reference</a> — every endpoint, and what resolution answers</li>
+<li><a href="../../reference/errors/">Errors</a> — every code</li>
+<li><a href="../../concepts/invariants/">Invariants</a> — why there is no delete</li>
+</ul>
 
 
 
@@ -1811,7 +1755,7 @@ that as an operational procedure, a declaration of <code>NR</code> cannot actual
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../concepts/invariants/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Invariants">
+          <a href="../onboarding/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Setting up for the first time">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1821,20 +1765,20 @@ that as an operational procedure, a declaration of <code>NR</code> cannot actual
                 Previous
               </span>
               <div class="md-ellipsis">
-                Invariants
+                Setting up for the first time
               </div>
             </div>
           </a>
         
         
           
-          <a href="../walkthrough/" class="md-footer__link md-footer__link--next" aria-label="Next: From minting to resolving, with curl">
+          <a href="../authentication/" class="md-footer__link md-footer__link--next" aria-label="Next: Authentication">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                From minting to resolving, with curl
+                Authentication
               </div>
             </div>
             <div class="md-footer__button md-icon">

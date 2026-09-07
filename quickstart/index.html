@@ -736,6 +736,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../guides/walkthrough/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From minting to resolving, with curl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guides/authentication/" class="md-nav__link">
         
   
@@ -1466,16 +1494,21 @@ the demo passwords are published above. See <a href="../guides/deployment/">Depl
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo<span class="w">          </span><span class="c1"># the plaintext is shown once and never again</span>
 </code></pre></div>
 <p>Run it, mint one, resolve it:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "First object"}'</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># → {"ark": "ark:99999/x9…", …}</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:99999/x9…"</span><span class="w">        </span><span class="c1"># 302 to the object</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:99999/x9…??"</span><span class="w">      </span><span class="c1"># the persistence statement</span>
+<p><strong>Two processes.</strong> The minter has no resolution endpoint and the resolver has no
+minting endpoint — that separation is the point, so a single process cannot do both:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span><span class="p">&amp;</span><span class="w">                   </span><span class="c1"># minting</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span>--port<span class="w"> </span><span class="m">8001</span><span class="w"> </span><span class="p">&amp;</span><span class="w">  </span><span class="c1"># resolution</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "First object"}'</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># → {"ark": "ark:99999/x9…", …}</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8001/ark:99999/x9…"</span><span class="w">        </span><span class="c1"># 302 to the object</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8001/ark:99999/x9…??"</span><span class="w">      </span><span class="c1"># the persistence statement</span>
 </code></pre></div>
+<p><a href="../guides/walkthrough/">Follow one identifier all the way through</a> — minting,
+resolution, suffix passthrough, a hold, a tombstone — with real responses.</p>
 <h2 id="what-just-happened">What just happened<a class="headerlink" href="#what-just-happened" title="Permanent link">&para;</a></h2>
 <p>You minted an identifier that <strong>cannot be taken back</strong>. ARK declares that names are
 never re-assigned, so arkhe has no delete: an object that is lost gets a

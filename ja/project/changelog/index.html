@@ -630,6 +630,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/walkthrough/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    curl で採番から解決まで
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -2044,6 +2072,13 @@
 <h3 id="追加">追加<a class="headerlink" href="#追加" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong>識別子 1 本を端から端まで追う手引き</strong>を足した
+  （<a href="https://rcosdp.github.io/arkhe/ja/guides/walkthrough/">curl で採番から解決まで</a>）。
+  採番、解決、suffix passthrough、修飾子 1 点の登録、対象の移動、保留、墓碑、
+  誤りの符号、リゾルバが自分について答えること。<strong>載っている応答はすべて、
+  動いているインスタンスから写したもの</strong>で、手で書いたものではない。</p>
+</li>
+<li>
 <p><strong>口ごとに、要求する scope が仕様書に出るようになった。</strong> これまでは
   <code>{"oauth2": []}</code>——「トークンで入れる」とは書いてあるが、<strong>何が要るかは書いていない</strong>
   ので、仕様書から起こしたクライアントは全部入りの scope を要求するしかなかった。</p>
@@ -2092,6 +2127,14 @@
   設定すること（<code>uvicorn --root-path /pid</code>）——さもないと無い口を案内する。</p>
 <h3 id="修正">修正<a class="headerlink" href="#修正" title="Permanent link">&para;</a></h3>
 <ul>
+<li>
+<p><strong>クイックスタートの「手元で動かす」例では解決できなかった。</strong> 1 プロセスを起動して
+  <code>/ark:99999/…</code> を叩いていたが、解決の口は <code>ARKHE_RESOLVER=1</code> のときだけ生える
+  ——1 プロセスでは <code>404</code> になる。分けてあること自体が設計なので、例も 2 つ起動する
+  形に直した。あわせて解析の誤りが二重に名乗るのをやめ
+  （<code>Not readable as an ARK: Not a valid ARK: missing name part</code>）、
+  空の NAAN が「長すぎる」と言わないようにした。</p>
+</li>
 <li>
 <p><strong>日本語版「壊さないもの」のページ内リンクが切れていた。</strong> <code>#ark</code> が何も指して
   おらず、意図していた見出しは <code>#ark-は削除しない</code>。mkdocs はページ内アンカーの

@@ -736,6 +736,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../guides/walkthrough/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    curl で採番から解決まで
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../guides/authentication/" class="md-nav__link">
         
   
@@ -1464,16 +1492,21 @@ LAN に出すのは明示的な操作にしてある。</p>
 <a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>univ-repo<span class="w">          </span><span class="c1"># 平文はこの一度だけ表示される</span>
 </code></pre></div>
 <p>起動して、1 本採番して、解決する。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "最初の対象"}'</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># → {"ark": "ark:99999/x9…", …}</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8000/ark:99999/x9…"</span><span class="w">        </span><span class="c1"># 302 で対象へ</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8000/ark:99999/x9…??"</span><span class="w">      </span><span class="c1"># 永続性宣言</span>
+<p><strong>プロセスは 2 つ。</strong> minter に解決の口は無く、resolver に採番の口も無い
+——分けてあること自体が要点なので、<strong>1 プロセスで両方はできない</strong>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span><span class="p">&amp;</span><span class="w">                   </span><span class="c1"># 採番</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w"> </span>--port<span class="w"> </span><span class="m">8001</span><span class="w"> </span><span class="p">&amp;</span><span class="w">  </span><span class="c1"># 解決</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url": "https://example.org/records/1", "title": "最初の対象"}'</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># → {"ark": "ark:99999/x9…", …}</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"http://127.0.0.1:8001/ark:99999/x9…"</span><span class="w">        </span><span class="c1"># 302 で対象へ</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>curl<span class="w">    </span><span class="s2">"http://127.0.0.1:8001/ark:99999/x9…??"</span><span class="w">      </span><span class="c1"># 永続性宣言</span>
 </code></pre></div>
+<p><a href="../guides/walkthrough/">識別子 1 本を最後まで追う</a>——採番、解決、suffix passthrough、
+保留、墓碑まで、実際の応答で。</p>
 <h2 id="いま何が起きたか">いま何が起きたか<a class="headerlink" href="#いま何が起きたか" title="Permanent link">&para;</a></h2>
 <p><strong>取り消せない識別子</strong>を 1 本作った。ARK は再割当てしないと宣言する体系なので、
 arkhe に削除は無い。対象が失われたときは削除ではなく

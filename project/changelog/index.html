@@ -630,6 +630,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/walkthrough/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From minting to resolving, with curl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/authentication/" class="md-nav__link">
         
   
@@ -2045,6 +2073,13 @@ breaking in a system whose identifiers cannot be reissued.</p>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong>A walkthrough that follows one identifier end to end</strong>, in
+  <a href="https://rcosdp.github.io/arkhe/guides/walkthrough/">From minting to resolving, with curl</a>:
+  minting, resolution, suffix passthrough, registering one qualified point, moving the
+  object, a hold, a tombstone, the error codes, and what the resolver says about itself.
+  <strong>Every response on the page was copied from a running instance</strong>, not written by hand.</p>
+</li>
+<li>
 <p><strong>Each operation now states the scope it requires.</strong> The specification said
   <code>{"oauth2": []}</code> — that a token gets you in, but <strong>not what it has to carry</strong> — so a
   client generated from it had no choice but to ask for every scope.</p>
@@ -2096,6 +2131,14 @@ breaking in a system whose identifiers cannot be reissued.</p>
   set it (<code>uvicorn --root-path /pid</code>) or it will publish a door that is not there.</p>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li>
+<p><strong>The quickstart's local example could not resolve.</strong> It started one process and
+  curled <code>/ark:99999/…</code> at it, but the resolution endpoint only exists when
+  <code>ARKHE_RESOLVER=1</code> — a single process answers <code>404</code>. That separation is deliberate, so
+  the example now starts both. Parse errors also stopped repeating themselves
+  (<code>Not readable as an ARK: Not a valid ARK: missing name part</code>), and an empty NAAN no
+  longer claims to be too long.</p>
+</li>
 <li>
 <p><strong>A link inside the Japanese invariants page was dead.</strong> <code>#ark</code> pointed at nothing;
   the heading it meant is <code>#ark-は削除しない</code>. mkdocs reports a broken in-page anchor as

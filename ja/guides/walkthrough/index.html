@@ -10,17 +10,17 @@
       
       
       
-        <link rel="canonical" href="https://rcosdp.github.io/arkhe/ja/guides/onboarding/">
+        <link rel="canonical" href="https://rcosdp.github.io/arkhe/ja/guides/walkthrough/">
       
       
-        <link rel="prev" href="../../concepts/invariants/">
+        <link rel="prev" href="../onboarding/">
       
       
-        <link rel="next" href="../walkthrough/">
+        <link rel="next" href="../authentication/">
       
       
         
-          <link rel="alternate" href="../../../guides/onboarding/" hreflang="en">
+          <link rel="alternate" href="../../../guides/walkthrough/" hreflang="en">
         
           <link rel="alternate" href="./" hreflang="ja">
         
@@ -31,7 +31,7 @@
     
     
       
-        <title>はじめて立ち上げるとき - arkhe</title>
+        <title>curl で採番から解決まで - arkhe</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#はじめて立ち上げるとき" class="md-skip">
+        <a href="#curl-で採番から解決まで" class="md-skip">
           コンテンツにスキップ
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              はじめて立ち上げるとき
+              curl で採番から解決まで
             
           </span>
         </div>
@@ -167,7 +167,7 @@
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="../../../guides/onboarding/" hreflang="en" class="md-select__link">
+            <a href="../../../guides/walkthrough/" hreflang="en" class="md-select__link">
               English
             </a>
           </li>
@@ -603,6 +603,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    はじめて立ち上げるとき
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -622,7 +650,7 @@
   <span class="md-ellipsis">
     
   
-    はじめて立ち上げるとき
+    curl で採番から解決まで
   
 
     
@@ -640,7 +668,7 @@
   <span class="md-ellipsis">
     
   
-    はじめて立ち上げるとき
+    curl で採番から解決まで
   
 
     
@@ -666,10 +694,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#①-naan-を申請する" class="md-nav__link">
+  <a href="#1-採番する" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ① NAAN を申請する
+        1. 採番する
       
     </span>
   </a>
@@ -677,10 +705,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#②-arkhe-を立てる" class="md-nav__link">
+  <a href="#2-解決する" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ② arkhe を立てる
+        2. 解決する
       
     </span>
   </a>
@@ -688,10 +716,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#③-naan-registry-に解決先の-url-を登録する" class="md-nav__link">
+  <a href="#3-追いかけずに識別子について尋ねる" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ③ NAAN registry に解決先の URL を登録する
+        3. 追いかけずに、識別子について尋ねる
       
     </span>
   </a>
@@ -699,10 +727,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#④-naan-を登録し方針を述べる" class="md-nav__link">
+  <a href="#4-一部だけ別の所在に向ける" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ④ NAAN を登録し、方針を述べる
+        4. 一部だけ別の所在に向ける
       
     </span>
   </a>
@@ -710,10 +738,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#⑤-組織を迎え名前空間を委譲する" class="md-nav__link">
+  <a href="#5-対象が移る" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⑤ 組織を迎え、名前空間を委譲する
+        5. 対象が移る
       
     </span>
   </a>
@@ -721,10 +749,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#⑥-約束の水準を確かめる" class="md-nav__link">
+  <a href="#6-名前を殺さずに転送を止める" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⑥ 約束の水準を確かめる
+        6. 名前を殺さずに転送を止める
       
     </span>
   </a>
@@ -732,38 +760,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#⑦-人と機械を登録する" class="md-nav__link">
+  <a href="#7-対象が失われたとき" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⑦ 人と機械を登録する
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="⑦ 人と機械を登録する">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#認可サーバに寄せた構成では登録が紐付けになる" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        認可サーバに寄せた構成では、登録が紐付けになる
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#⑧-以後の運用" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ⑧ 以後の運用
+        7. 対象が失われたとき
       
     </span>
   </a>
@@ -771,10 +771,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#この順番である理由" class="md-nav__link">
+  <a href="#8-誤ったとき" class="md-nav__link">
     <span class="md-ellipsis">
       
-        この順番である理由
+        8. 誤ったとき
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-リゾルバが自分について答えること" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. リゾルバが自分について答えること
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#全体の形" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        全体の形
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#つぎに" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        つぎに
       
     </span>
   </a>
@@ -785,34 +818,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../walkthrough/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    curl で採番から解決まで
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1334,10 +1339,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#①-naan-を申請する" class="md-nav__link">
+  <a href="#1-採番する" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ① NAAN を申請する
+        1. 採番する
       
     </span>
   </a>
@@ -1345,10 +1350,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#②-arkhe-を立てる" class="md-nav__link">
+  <a href="#2-解決する" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ② arkhe を立てる
+        2. 解決する
       
     </span>
   </a>
@@ -1356,10 +1361,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#③-naan-registry-に解決先の-url-を登録する" class="md-nav__link">
+  <a href="#3-追いかけずに識別子について尋ねる" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ③ NAAN registry に解決先の URL を登録する
+        3. 追いかけずに、識別子について尋ねる
       
     </span>
   </a>
@@ -1367,10 +1372,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#④-naan-を登録し方針を述べる" class="md-nav__link">
+  <a href="#4-一部だけ別の所在に向ける" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ④ NAAN を登録し、方針を述べる
+        4. 一部だけ別の所在に向ける
       
     </span>
   </a>
@@ -1378,10 +1383,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#⑤-組織を迎え名前空間を委譲する" class="md-nav__link">
+  <a href="#5-対象が移る" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⑤ 組織を迎え、名前空間を委譲する
+        5. 対象が移る
       
     </span>
   </a>
@@ -1389,10 +1394,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#⑥-約束の水準を確かめる" class="md-nav__link">
+  <a href="#6-名前を殺さずに転送を止める" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⑥ 約束の水準を確かめる
+        6. 名前を殺さずに転送を止める
       
     </span>
   </a>
@@ -1400,38 +1405,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#⑦-人と機械を登録する" class="md-nav__link">
+  <a href="#7-対象が失われたとき" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⑦ 人と機械を登録する
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="⑦ 人と機械を登録する">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#認可サーバに寄せた構成では登録が紐付けになる" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        認可サーバに寄せた構成では、登録が紐付けになる
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#⑧-以後の運用" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ⑧ 以後の運用
+        7. 対象が失われたとき
       
     </span>
   </a>
@@ -1439,10 +1416,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#この順番である理由" class="md-nav__link">
+  <a href="#8-誤ったとき" class="md-nav__link">
     <span class="md-ellipsis">
       
-        この順番である理由
+        8. 誤ったとき
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-リゾルバが自分について答えること" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. リゾルバが自分について答えること
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#全体の形" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        全体の形
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#つぎに" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        つぎに
       
     </span>
   </a>
@@ -1466,7 +1476,7 @@
 
 
   
-    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/onboarding.ja.md" title="編集" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/walkthrough.ja.md" title="編集" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1474,299 +1484,236 @@
   
 
 
-<h1 id="はじめて立ち上げるとき">はじめて立ち上げるとき<a class="headerlink" href="#はじめて立ち上げるとき" title="Permanent link">&para;</a></h1>
-<p>NAAN を持っていない状態から、組織が採番できる状態までの通し。<strong>arkhe の外で
-起きることが半分を占める</strong>ので、そこも含めて並べる。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>① ARK Alliance に NAAN を申請する          arkhe の外
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>② arkhe を立てる                            → デプロイ
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>③ NAAN registry に解決先の URL を登録する   arkhe の外
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>④ arkhe に NAAN を登録し、方針を述べる       arkhe naan add
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>⑤ 組織を迎え、名前空間を委譲する             arkhe onboard
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>⑥ 組織の約束の水準を確かめる                 arkhe manager commitment
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>⑦ 人と機械を登録する                         arkhe client add
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>⑧ 以後：ローテーション・承継・離脱
+<h1 id="curl-で採番から解決まで">curl で、採番から解決まで<a class="headerlink" href="#curl-で採番から解決まで" title="Permanent link">&para;</a></h1>
+<p>識別子を 1 つ、採番した瞬間から、対象が失われるところまで追う。以下の応答は
+すべて<strong>動いているインスタンスから写したもの</strong>である。</p>
+<p>答えるのは 2 つのプロセスで、<strong>互いの仕事はできない</strong>。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$M</code></td>
+<td><code>http://127.0.0.1:8110</code></td>
+<td>採番と更新。<strong>資格情報が要る</strong></td>
+</tr>
+<tr>
+<td><code>$R</code></td>
+<td><code>http://127.0.0.1:8111</code></td>
+<td>解決。<strong>認証は要らず</strong>、採番の口も持たない</td>
+</tr>
+</tbody>
+</table>
+<p>立ち上げ方は<a href="../../quickstart/">クイックスタート</a>。以下は NAAN が 1 つ、shoulder
+<code>/x9</code> を持つ組織が 1 つ、API キーが <code>$KEY</code> にある状態を前提にする。</p>
+<h2 id="1-採番する">1. 採番する<a class="headerlink" href="#1-採番する" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/mint<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"url":   "https://repo.example.ac.jp/records/1",</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="s1">       "title": "関東平野の降水量 1991-2020",</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="s1">       "who":   "山田 太郎",</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="s1">       "when":  "2026"}'</span>
 </code></pre></div>
-<h2 id="①-naan-を申請する">① NAAN を申請する<a class="headerlink" href="#①-naan-を申請する" title="Permanent link">&para;</a></h2>
-<p>ARK Alliance から<strong>無償で</strong>交付される。登録組織に払う金も、維持する会員資格も無い。</p>
-<p>申請には、その NAAN で何をするつもりかを述べる欄がある。<strong>ここで書いたことが
-④ 以降で台帳に載る内容と一致していなければならない。</strong> 別々に考えると、外向きの
-宣言と実際の運用がずれる。</p>
-<h2 id="②-arkhe-を立てる">② arkhe を立てる<a class="headerlink" href="#②-arkhe-を立てる" title="Permanent link">&para;</a></h2>
-<p><a href="../deployment/">デプロイ</a>を見ること。<strong>③ の前に立てる</strong>必要がある——③ で登録するのは
-このリゾルバの URL だからである。</p>
-<h2 id="③-naan-registry-に解決先の-url-を登録する">③ NAAN registry に解決先の URL を登録する<a class="headerlink" href="#③-naan-registry-に解決先の-url-を登録する" title="Permanent link">&para;</a></h2>
-<p><strong>ここが抜けると <code>n2t.net/ark:99999/…</code> は自分のところに届かない。</strong> NAAN の交付は
-番号をもらって終わりではなく、registry のエントリに自分のリゾルバの URL を書くまでが
-一続きである。</p>
-<p>リゾルバの URL が変わったら<strong>そのたびに更新する</strong>。ここは自動では追随しない。</p>
-<div class="admonition note">
-<p class="admonition-title">自分の側でも公開している</p>
-<p>arkhe は <code>/.well-known/ark</code> で、その NAAN の採番をどこで行っているかを返す。
-registry の代わりにはならない（外から見つけてもらう経路は registry だけ）が、
-採番の窓口が別にある構成では、クライアントがどこへ行けばよいか分かる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">"ark"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ark:99999/x9tn1qkq2g7"</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://repo.example.ac.jp/records/1"</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"関東平野の降水量 1991-2020"</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="nt">"who"</span><span class="p">:</span><span class="w"> </span><span class="s2">"山田 太郎"</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">"when"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026"</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">"created_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-09-07T09:54:10.571278Z"</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">"hold_until"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>201</code>。この名前は<strong>もう戻せない</strong>。<code>x9</code> は組織に切り出した shoulder、<code>tn1qkq2g</code> は
+乱数、末尾の <code>7</code> は<a href="../../concepts/ark/">チェックディジット</a>である——<strong>打ち間違えた
+ARK と、ここに無いだけの ARK を区別できる</strong>のはこの 1 文字による。</p>
+<div class="admonition tip">
+<p class="admonition-title">量を投入するなら <code>request_id</code> を付ける</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>-d<span class="w"> </span><span class="s1">'{"request_id": "ingest-2026-09-07-0001", "url": "…"}'</span>
+</code></pre></div>
+同じ <code>request_id</code> で送り直すと、最初に採番した ARK が返る（<code>201</code> ではなく
+<code>200</code>）。1 万件の投入は途中で切れるほうが普通で、<strong>誰も指していない ARK は
+回収できない</strong>。</p>
 </div>
-<h2 id="④-naan-を登録し方針を述べる">④ NAAN を登録し、方針を述べる<a class="headerlink" href="#④-naan-を登録し方針を述べる" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"○○大学"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>--policy<span class="w"> </span><span class="s2">"NP | NR, OP, CC | 2026 | https://example.ac.jp/ark-policy"</span>
+<h2 id="2-解決する">2. 解決する<a class="headerlink" href="#2-解決する" title="Permanent link">&para;</a></h2>
+<p>解決に資格情報は要らない。プロセスを分けてあるのはそのためである。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-i<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
 </code></pre></div>
-<p><strong>NAA ポリシーを述べるのはここ。</strong> 事務手続きではなく、arkhe にとって中心的な宣言で
-ある——ARK には代わりに永続性を保証してくれる登録組織がいないので、<a href="../../concepts/ark/">約束はこちらの
-もの</a>であり、その中身も自分で述べるしかない。述べていないものは
-<code>??</code> で答えられない。</p>
-<p><code>--authoritative</code>（既定）は「この NAAN の未知の名前には <code>404</code> と答えてよい」という
-意味である。<strong>採番を他所が続けている NAAN を引き受けた場合は</strong> <code>--authoritative false</code>
-と <code>--redirect</code> を付ける。この 2 つは対で、片方だけでは登録できない。</p>
-<h2 id="⑤-組織を迎え名前空間を委譲する">⑤ 組織を迎え、名前空間を委譲する<a class="headerlink" href="#⑤-組織を迎え名前空間を委譲する" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"○○研究所"</span><span class="w"> </span>--shoulder<span class="w"> </span>/x9<span class="w"> </span>--commitment<span class="w"> </span>permanent-stable
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">302</span> <span class="ne">Found</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="na">location</span><span class="o">:</span> <span class="l">https://repo.example.ac.jp/records/1</span>
 </code></pre></div>
-<p><strong>組織の登録と shoulder の委譲は必ず対で起きる。</strong> 分けられない——名前空間を持たない
-組織は採番できないので、台帳に置く意味がない。</p>
-<p>shoulder の設計は先に決めておくこと。<strong>一度配ったら取り戻せない</strong>（<code>NR</code> を宣言して
-いる以上、既存の ARK は解決し続ける）。使わなくなった名前空間は消すのではなく
-<code>retired</code> にする。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/y2<span class="w"> </span>--reserve<span class="w">   </span><span class="c1"># 将来のために押さえるだけ</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>list<span class="w"> </span>--naan<span class="w"> </span><span class="m">99999</span>
+<p>その対象の子には、識別子を振らなくてよい。名前より後ろはそのまま行き先に渡される
+——<strong>suffix passthrough</strong>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7/page/3
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">302 https://repo.example.ac.jp/records/1/page/3</span>
 </code></pre></div>
-<h2 id="⑥-約束の水準を確かめる">⑥ 約束の水準を確かめる<a class="headerlink" href="#⑥-約束の水準を確かめる" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arkhe<span class="w"> </span>manager<span class="w"> </span>commitment<span class="w"> </span>--list
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>arkhe<span class="w"> </span>manager<span class="w"> </span>list
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>arkhe<span class="w"> </span>manager<span class="w"> </span>commitment<span class="w"> </span><span class="m">1</span><span class="w"> </span>permanent-stable
+<h2 id="3-追いかけずに識別子について尋ねる">3. 追いかけずに、識別子について尋ねる<a class="headerlink" href="#3-追いかけずに識別子について尋ねる" title="Permanent link">&para;</a></h2>
+<p><code>??</code> を付けると、その名前について<strong>リゾルバが何を約束しているか</strong>を訊ける。返るのは
+ERC/ANVL——ARK が 20 年答えてきた形式である。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-i<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">HTTP/1.1 200 OK</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">content-type: text/plain; charset=utf-8</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">thump-status: 0.6 200 OK</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="go">link: &lt;/ark:99999/x9tn1qkq2g7&gt;; rel="describes"</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="go">erc:</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="go">who: 山田 太郎</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="go">what: 関東平野の降水量 1991-2020</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">when: 2026</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="go">redirect: https://repo.example.ac.jp/records/1</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="go">about: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="go">policy: (:unav)</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="go">commitment-level: permanent-dynamic</span>
 </code></pre></div>
-<p><strong>管理画面からも変えられる</strong>（一覧の組織行の「操作」）。ここは
-<a href="../admin/#設定を変える">組織管理者自身も変えられる</a>——約束は組織自身のもので、
-述べる主体が述べられなければ意味がない。</p>
-<p><code>--commitment</code> を付けずに迎えると既定の <code>permanent-dynamic</code> が付く。<strong>既定のまま
-置いてはいけない。</strong> この値は <code>?</code> と <code>??</code> でそのまま公開されるので、放置すると
-<strong>組織が述べていない約束を、組織の名前で名乗る</strong>ことになる。宣言していないものを
-宣言として出すのは、何も出さないより悪い。</p>
-<p>水準は NLM の permanence ratings を採っている（<code>descriptive-only</code> だけは物理
-オブジェクト向けの追加）。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>not-guaranteed</code></td>
-<td>約束しない</td>
-</tr>
-<tr>
-<td><code>permanent-dynamic</code></td>
-<td>永続。内容は変わりうる</td>
-</tr>
-<tr>
-<td><code>permanent-stable</code></td>
-<td>永続。内容は実質的に変わらない</td>
-</tr>
-<tr>
-<td><code>permanent-unchanging</code></td>
-<td>永続。内容は変えない</td>
-</tr>
-<tr>
-<td><code>descriptive-only</code></td>
-<td>記述だけ（物理オブジェクトなど、対象がオンラインに無い）</td>
-</tr>
-</tbody>
-</table>
-<p><strong>水準を下げるのも正当な操作である。</strong> 守れない約束を掲げ続けるより、実態に合わせて
-言い直すほうが誠実で、<code>??</code> を尋ねる意味も保たれる。</p>
-<h2 id="⑦-人と機械を登録する">⑦ 人と機械を登録する<a class="headerlink" href="#⑦-人と機械を登録する" title="Permanent link">&para;</a></h2>
-<p><strong>この 2 つは混ぜられない。</strong></p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>名乗り方</th>
-<th>持てる資格情報</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>人（組織管理者など）</td>
-<td>外部ログイン（OIDC / proxy）またはパスワード</td>
-<td>API キー・client_secret は<strong>持てない</strong></td>
-</tr>
-<tr>
-<td>機械（リポジトリ本体など）</td>
-<td>API キー / client_secret</td>
-<td>パスワードは<strong>持てない</strong></td>
-</tr>
-</tbody>
-</table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># 組織管理者。client_id は認可サーバが返す識別子（メール・eppn など）</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>admin@example.ac.jp<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--person<span class="w"> </span>--manager<span class="w"> </span><span class="m">1</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># リポジトリ本体。shoulder に固定する</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>repo-web-api<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--shoulder<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>repo-web-api<span class="w">          </span><span class="c1"># 平文はこの一度だけ</span>
+<p>ここには立ち止まる価値のあるものが 3 つある。</p>
+<p><strong><code>where</code> は ARK であって、転送先ではない。</strong> 仕様は「一時的な転送先ではなく長期的な
+識別子」と定めている。だから<strong>行き先を付け替えても <code>where</code> は動かない</strong>。今どこに
+あるかは kernel の外の <code>redirect</code> に出る。</p>
+<p><strong><code>(:unav)</code> は空欄ではない。</strong> ERC は値を出せないとき理由を示す符号を置くよう定めて
+いる。「名前空間の方針をまだ書いていない」と「そもそも無い」を混ぜないためで、
+名前空間の方針は NAAN を登録するときに置く
+（<code>arkhe naan add … --policy</code>、または管理画面の NAAN の編集）。</p>
+<p><strong><code>Link: …; rel="describes"</code></strong> は、inflection を知らない相手に「この応答は対象では
+なく <strong>ARK を記述したもの</strong>だ」と伝える。</p>
+<p><code>?json</code> は同じ内容を機械に、<code>?info</code> は人に返す。どれで訊いても、<strong>答えは対象より
+長く残る</strong>——それは 6 節で。</p>
+<h2 id="4-一部だけ別の所在に向ける">4. 一部だけ別の所在に向ける<a class="headerlink" href="#4-一部だけ別の所在に向ける" title="Permanent link">&para;</a></h2>
+<p>一般の深い参照は suffix passthrough が賄う。<strong>その 1 点だけ本当に別の場所にある</strong>
+とき——IIIF の canvas、別ストレージのサブツリー——はそこを登録する。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/register<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "qualifier": "/page/3",</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s1">       "url": "https://iiif.example.ac.jp/records/1/canvas/3"}'</span>
 </code></pre></div>
-<p>人に API キーを配らないのは、<strong>その人が組織を離れても鍵が生き残る</strong>からである。人の
-失効は認可サーバ側で行い、arkhe はそれに従う。<code>arkhe client passwd</code> は
-<code>ARKHE_ADMIN_LOGIN=password</code> の構成でだけ使う。</p>
-<p><strong>プロセスごとに鍵を分けること。</strong> リポジトリの web / worker などで共有すると、
-(1) どれが採番したか追えない (2) 1 つ漏れたら全部を失効させるしかない
-(3) 用途ごとに scope を絞れない。<code>--shoulder</code> で固定しておけば、鍵が漏れても他組織の
-名前空間には届かない。</p>
-<p>最後に設定を確かめる。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>arkhe<span class="w"> </span>check
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7/page/3
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">302 https://iiif.example.ac.jp/records/1/canvas/3</span>
 </code></pre></div>
-<h3 id="認可サーバに寄せた構成では登録が紐付けになる">認可サーバに寄せた構成では、登録が紐付けになる<a class="headerlink" href="#認可サーバに寄せた構成では登録が紐付けになる" title="Permanent link">&para;</a></h3>
-<p><code>ARKHE_AUTH=oidc</code> の構成では、arkhe は<strong>鍵を持たない</strong>。秘密は認可サーバが作り、
-そこで失効させる——失効が 1 か所で効くのがこの形の利点である。</p>
-<p><strong>それでも登録は要る。</strong> 認可サーバで認証できることと、この名前空間を触ってよい
-ことは別だからで、台帳に無い主体は正しいトークンを持っていても通らない。</p>
-<table>
-<thead>
-<tr>
-<th>どこで</th>
-<th>何を</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>認可サーバ</td>
-<td>クライアントを作り、秘密を発行・失効させる</td>
-</tr>
-<tr>
-<td>arkhe</td>
-<td>同じ識別子で利用者を登録し、組織・名前空間・できることを決める</td>
-</tr>
-</tbody>
-</table>
-<p>識別子は<strong>認可サーバが送ってくる文字列そのまま</strong>でなければならない。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>照合の順</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>機械</td>
-<td><code>azp</code> → <code>client_id</code> → <code>sub</code></td>
-</tr>
-<tr>
-<td>人</td>
-<td><code>preferred_username</code> → <code>email</code> → <code>sub</code></td>
-</tr>
-</tbody>
-</table>
-<h4 id="作り方">作り方<a class="headerlink" href="#作り方" title="Permanent link">&para;</a></h4>
-<p><strong>① 認可サーバでクライアントを作る</strong>（秘密はここで生まれる）</p>
-<p>Keycloak なら、管理コンソールで <code>Clients</code> → <code>Create client</code>。</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Client ID</td>
-<td><code>jc2-web-api</code>（<strong>この文字列を arkhe にも登録する</strong>）</td>
-</tr>
-<tr>
-<td>Client authentication</td>
-<td>有効（＝ confidential。秘密が要る）</td>
-</tr>
-<tr>
-<td>Service accounts roles</td>
-<td>有効（<strong>人を介さずトークンを取るため</strong>）</td>
-</tr>
-<tr>
-<td>Standard flow</td>
-<td>無効（ブラウザで人が入る用途ではない）</td>
-</tr>
-</tbody>
-</table>
-<p>秘密は <code>Credentials</code> タブに出る。<strong>arkhe はこれを受け取らない</strong>——受け取る必要が
-無いし、持たなければ漏らしようもない。</p>
-<p>API からやるなら（<a href="https://github.com/RCOSDP/arkhe"><code>setup-arkhe-realm.py</code></a> が
-JC2 でやっているのと同じこと）:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="nv">$KC</span><span class="s2">/admin/realms/</span><span class="nv">$REALM</span><span class="s2">/clients"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$ADMIN_TOKEN</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"clientId":"jc2-web-api","publicClient":false,</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="s1">       "serviceAccountsEnabled":true,"standardFlowEnabled":false}'</span>
+<p>登録した行が祖先に優先し、それ以外は今までどおり通り抜ける。この口が要求するのは
+<code>ark:update</code> ではなく <strong><code>ark:mint</code></strong> である——採番はしないが、<strong>新しく解決できる
+識別子が増える</strong>から。</p>
+<h2 id="5-対象が移る">5. 対象が移る<a class="headerlink" href="#5-対象が移る" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark":   "ark:99999/x9tn1qkq2g7",</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="s1">       "url":   "https://newrepo.example.ac.jp/datasets/1",</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="s1">       "title": "関東平野の降水量 1991-2020",</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="s1">       "who":   "山田 太郎",</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="s1">       "when":  "2026"}'</span>
 </code></pre></div>
-<p><strong>② arkhe に同じ識別子で登録する</strong>（到達範囲はここで決まる）</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>add<span class="w"> </span>jc2-web-api<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--shoulder<span class="w"> </span><span class="m">1</span><span class="w"> </span>--scopes<span class="w"> </span><span class="s2">"ark:mint ark:update"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">302 https://newrepo.example.ac.jp/datasets/1</span>
 </code></pre></div>
-<p><strong><code>arkhe client key</code> は叩かない。</strong> 叩いても <code>ARKHE_AUTH</code> に <code>apikey</code> /
-<code>oauth2</code> が無ければその鍵は通らない。</p>
-<h4 id="入れ替えと停止">入れ替えと停止<a class="headerlink" href="#入れ替えと停止" title="Permanent link">&para;</a></h4>
-<table>
-<thead>
-<tr>
-<th>したいこと</th>
-<th>どこで</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>秘密を入れ替える</td>
-<td>認可サーバ（arkhe は何も変えなくてよい）</td>
-</tr>
-<tr>
-<td>トークンを出さなくする</td>
-<td>認可サーバ。<strong>他の資源にも一斉に効く</strong></td>
-</tr>
-<tr>
-<td>この名前空間だけ止める</td>
-<td><code>arkhe client disable jc2-web-api</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>止める側が 2 つあるのは利点である。</strong> 認可サーバ側は全資源に効き、arkhe 側は
-この名前空間にだけ効く。「この組織を ARK からは外すが、他の連携は残す」が、
-相手の設定を触らずにできる。</p>
-<p><code>oidc</code> の構成では、<strong><code>arkhe client disable</code> が arkhe 側の唯一の止め方</strong>になる
-——資格情報を持たないので、失効させるものが無い。管理画面の利用者ページからも
-できる。</p>
-<h2 id="⑧-以後の運用">⑧ 以後の運用<a class="headerlink" href="#⑧-以後の運用" title="Permanent link">&para;</a></h2>
-<p>日々あるのは払い出しだけではない。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>key<span class="w"> </span>repo-web-api<span class="w">          </span><span class="c1"># 新しい鍵を先に配る</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>arkhe<span class="w"> </span>client<span class="w"> </span>revoke<span class="w"> </span>&lt;credential_id&gt;<span class="w">    </span><span class="c1"># 切り替わってから古いほうを止める</span>
+<div class="admonition warning">
+<p class="admonition-title"><code>update</code> は差分ではなく、レコードの置き換えである</p>
+<p><code>ark</code> と <code>url</code> だけを送ると、<strong><code>title</code> <code>who</code> <code>when</code> などが空になる</strong>。省いた項目は
+既定値を運ぶため。上のように<strong>レコード全体を送ること</strong>。前の行き先は履歴に残る
+（管理画面の ARK のページ）が、<strong>在った記述が消えたことは履歴からは戻せない</strong>。</p>
+</div>
+<h2 id="6-名前を殺さずに転送を止める">6. 名前を殺さずに転送を止める<a class="headerlink" href="#6-名前を殺さずに転送を止める" title="Permanent link">&para;</a></h2>
+<p>委譲先が落ちた、間違った行き先を配ってしまった——<strong>今すぐ</strong>止めたい。<code>404</code> は嘘
+（その識別子は存在する）で、<code>503</code> は永続識別子が壊れて見える。保留は <code>200</code> と記述を
+返す。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7", "until": "2026-09-14T00:00:00Z",</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="s1">       "reason": "新しい行き先を確認中"}'</span>
 </code></pre></div>
-<p><strong>古い鍵は自動では失効しない。</strong> 並行させて切り替えるためで、失効させても
-<strong>行は消さない</strong>（いつ誰の鍵だったかが残る）。</p>
-<p>障害対応には期限つきの逃げ道がある。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>arkhe<span class="w"> </span>client<span class="w"> </span>breakglass<span class="w"> </span><span class="m">99999</span><span class="w"> </span>--days<span class="w"> </span><span class="m">7</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">erc:</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">redirect: https://newrepo.example.ac.jp/datasets/1</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">commitment-level: permanent-dynamic</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">hold: 新しい行き先を確認中</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">hold-until: 2026-09-14T00:00:00+00:00</span>
 </code></pre></div>
-<p>組織が統合されたり去ったりしたときは<a href="../succession/">承継と離脱</a>を使う。どちらも
-<strong>既存の識別子は解決し続ける</strong>——これを運用手順として持っていないと、<code>NR</code> の宣言は
-実際には守れない。</p>
-<h2 id="この順番である理由">この順番である理由<a class="headerlink" href="#この順番である理由" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>順序</th>
-<th>そうしないと</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>② が ③ より先</td>
-<td>登録するリゾルバの URL がまだ無い</td>
-</tr>
-<tr>
-<td>④ が ⑤ より先</td>
-<td>方針を述べていない NAAN の下に組織ができる</td>
-</tr>
-<tr>
-<td>⑤ は不可分</td>
-<td>採番できない組織が台帳に残る</td>
-</tr>
-<tr>
-<td>⑥ は ⑤ の直後</td>
-<td>既定値が組織の宣言として公開されたまま動き出す</td>
-</tr>
-</tbody>
-</table>
+<p><strong>理由は公開の口に出る。</strong> 人前で言わないことを書かない。<code>until</code> は必須で
+<code>ARKHE_HOLD_MAX_DAYS</code> が上限——「一時的」を人の記憶に頼ると恒久化するからで、
+期限が切れれば時計だけで戻る。前倒しで外すなら:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/hold/release<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7"}'</span>
+</code></pre></div>
+<h2 id="7-対象が失われたとき">7. 対象が失われたとき<a class="headerlink" href="#7-対象が失われたとき" title="Permanent link">&para;</a></h2>
+<p>削除の口は無い。<strong>もう無い</strong>なら、そう述べる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/tombstone<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9tn1qkq2g7",</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s1">       "commitment": "2026-09 に寄託者の申し出により取り下げ。"}'</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g7
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">200</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7??"</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">erc:</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">where: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">about: ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">commitment: 2026-09 に寄託者の申し出により取り下げ。</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">commitment-level: permanent-dynamic</span>
+</code></pre></div>
+<p>転送は消えたが、<strong>識別子と記述は消えていない</strong>。2026 年に書かれた引用は、いまも
+「それが何であり、何が起きたか」を述べる場所に着く——<a href="../../concepts/invariants/">FAIR A2</a>
+が求めているのはこれで、<code>404</code> にはできないことである。</p>
+<h2 id="8-誤ったとき">8. 誤ったとき<a class="headerlink" href="#8-誤ったとき" title="Permanent link">&para;</a></h2>
+<p>誤りには符号が付く。<strong>文面ではなく符号で判定すること</strong>——一覧は
+<a href="../../reference/errors/">エラーの参照ページ</a>にある。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/mint<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{}'</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">{"code": "ARKHE-1201", "message": "No credentials."}</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="nv">$M</span>/api/update<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">       </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "not-an-ark", "url": "https://x/1"}'</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">{"code": "ARKHE-1001",</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go"> "message": "Not readable as an ARK: missing name part",</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go"> "detail": {"reason": "missing name part"}}</span>
+</code></pre></div>
+<p>解決の口は text/plain で、符号を行頭に置く。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9zzzzzzzz
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">ARKHE-1403 ark:99999/x9zzzzzzzz — Check digit mismatch: the identifier looks mistranscribed.</span>
+</code></pre></div>
+<p><strong>これは「そんな ARK は無い」とは別の答えである。</strong> 検査桁は「ここへ来る途中で
+打ち間違えられた・写し間違えられた」と言っている——印刷された識別子とにらめっこ
+している人に、伝える価値がある違いである。</p>
+<p>このリゾルバが知らない NAAN は、拒まずに上へ渡す。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$R</span>/ark:12345/abcde
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">302 https://n2t.net/ark:12345/abcde</span>
+</code></pre></div>
+<h2 id="9-リゾルバが自分について答えること">9. リゾルバが自分について答えること<a class="headerlink" href="#9-リゾルバが自分について答えること" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/.well-known/ark
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">/</span>
+</code></pre></div>
+<p>仕様が定めているのはこれ——<strong>リゾルバのルートパス</strong>で、ここに compact ARK を継ぎ足すと
+解決の要求になる。arkhe 独自の在庫（預かっている名前空間、採番を外に委ねているなら
+その案内先）は同じ URL の JSON 表現。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span><span class="nv">$R</span>/.well-known/ark
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">{"resolver_path": "/",</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go"> "resolver": "arkhe",</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go"> "global_resolver": "https://n2t.net",</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go"> "naans": [{"naan": "99999", "authoritative": true,</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">            "redirect": null, "minter": null, "na_policy": null}],</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go"> "delegated_shoulders": [],</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="go"> "held": []}</span>
+</code></pre></div>
+<h2 id="全体の形">全体の形<a class="headerlink" href="#全体の形" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    M["POST /api/mint&lt;br/&gt;&lt;small&gt;ark:mint&lt;/small&gt;"] --&gt; A(["ark:99999/x9tn1qkq2g7"])
+    A --&gt;|"GET"| T["302 → 対象へ"]
+    A --&gt;|"GET …/page/3"| P["302 → 対象/page/3&lt;br/&gt;&lt;small&gt;suffix passthrough&lt;/small&gt;"]
+    A --&gt;|"?? · ?info · ?json"| D["200 記述&lt;br/&gt;&lt;small&gt;対象に到達できなくても答えられる&lt;/small&gt;"]
+    U["PUT /api/update"] -.-&gt;|"対象が移る"| A
+    H["PUT /api/hold"] -.-&gt;|"期限つきで転送を止める"| A
+    X["PUT /api/tombstone"] -.-&gt;|"対象が失われた"| A</code></pre>
+<p>点線はどれも、<strong>名前がどこへ導くか</strong>（あるいは導かないか）を変える。
+<strong>名前が何を意味するかは、どれも変えない。</strong> そして、どれも取り消せない。</p>
+<h2 id="つぎに">つぎに<a class="headerlink" href="#つぎに" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../reference/api/">API リファレンス</a> — 全部の口と、解決が返すもの</li>
+<li><a href="../../reference/errors/">エラー</a> — 全部の符号</li>
+<li><a href="../../concepts/invariants/">壊さないもの</a> — なぜ削除の口が無いのか</li>
+</ul>
 
 
 
@@ -1802,7 +1749,7 @@ JC2 でやっているのと同じこと）:</p>
       <nav class="md-footer__inner md-grid" aria-label="フッター" >
         
           
-          <a href="../../concepts/invariants/" class="md-footer__link md-footer__link--prev" aria-label="前: 壊さないもの">
+          <a href="../onboarding/" class="md-footer__link md-footer__link--prev" aria-label="前: はじめて立ち上げるとき">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1812,20 +1759,20 @@ JC2 でやっているのと同じこと）:</p>
                 前
               </span>
               <div class="md-ellipsis">
-                壊さないもの
+                はじめて立ち上げるとき
               </div>
             </div>
           </a>
         
         
           
-          <a href="../walkthrough/" class="md-footer__link md-footer__link--next" aria-label="次: curl で採番から解決まで">
+          <a href="../authentication/" class="md-footer__link md-footer__link--next" aria-label="次: 認証">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 次
               </span>
               <div class="md-ellipsis">
-                curl で採番から解決まで
+                認証
               </div>
             </div>
             <div class="md-footer__button md-icon">

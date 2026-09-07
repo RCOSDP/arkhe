@@ -78,6 +78,13 @@
         <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/succession/"/>
     </url>
     <url>
+        <loc>https://rcosdp.github.io/arkhe/guides/walkthrough/</loc>
+        <lastmod>2026-09-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/walkthrough/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/walkthrough/"/>
+    </url>
+    <url>
         <loc>https://rcosdp.github.io/arkhe/project/changelog/</loc>
         <lastmod>2026-09-07</lastmod>
         <changefreq>daily</changefreq>
@@ -209,6 +216,13 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/succession/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/succession/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/guides/walkthrough/</loc>
+        <lastmod>2026-09-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/walkthrough/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/walkthrough/"/>
     </url>
     <url>
         <loc>https://rcosdp.github.io/arkhe/ja/project/changelog/</loc>
