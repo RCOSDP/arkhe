@@ -1831,9 +1831,13 @@
     O -.-&gt;|"上位に投げた場合&lt;br/&gt;307 で行き先を返す"| T</code></pre>
 <p>上位の台帳:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span>/s7<span class="w"> </span>--note<span class="w"> </span><span class="s2">"拠点 B へ委譲"</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.b.example.ac.jp
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.b.example.ac.jp/ark:$id'</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">#   → 99999/s7 を切り出しました（id 3）   ← 次の 2 行が取る id</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.b.example.ac.jp
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.b.example.ac.jp/ark:$id'</span>
 </code></pre></div>
+<p><code>shoulder add</code> も <code>onboard</code> も、作った id を表示する。<code>arkhe shoulder list</code> でも引ける
+——<strong>shoulder のコマンドが取るのは id であって <code>/s7</code> という文字列ではない</strong>。同じ文字列は
+複数の NAAN の下に在りうるからである。</p>
 <p>下位の台帳:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"（上位と同じ NAAN）"</span><span class="w">      </span><span class="c1"># 権威を持つ側として登録する</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"拠点 B の組織"</span><span class="w"> </span>--shoulder<span class="w"> </span>/s7
