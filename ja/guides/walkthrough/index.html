@@ -2035,8 +2035,12 @@ shoulder を切り出すのは CLI（または管理画面）の仕事である�
 <a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/c7w545sj4z5
 <a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">303 https://ark.example.ac.jp/closed-namespace    # 外側:「この名前空間は閉じている」</span>
 </code></pre></div>
-<p>打ち間違いも同じページに着く。<strong>名前が漏れない</strong>というのがこの段の意味で、
-識別子ごとの設定は何もしていない。</p>
+<p><strong>実在する名前と、しない名前は、同じ答えになる</strong>——公開側は名前を持っていないので、
+区別できないのである。それがこの段の意味で、<strong>存在が漏れない</strong>。識別子ごとの設定も
+何もしていない。</p>
+<p><em>打ち間違い</em>は別で、検査桁は shoulder を見る前に検証されるため、綴りの壊れた文字列は
+説明ページではなく <code>404 ARKHE-1403</code> になる。<strong>well-formed な名前どうしは見分けが
+つかず、壊れた名前には壊れていると言う。</strong></p>
 <h3 id="記述だけを引き取る">記述だけを引き取る<a class="headerlink" href="#記述だけを引き取る" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w">   </span><span class="s2">"ark:99999/c7w545sj4z5"</span>,

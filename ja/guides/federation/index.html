@@ -1985,13 +1985,17 @@ application/json</code> を付けて求める）。<strong>下位から見て、
 </ul>
 <p><strong>C-2. 上位は名前を知らない。</strong> shoulder ごと委譲し、外からは「その名前空間は閉じている」
 以上のことは分からない。<strong>上位が持つのは割当の事実だけ</strong>で、いちばん漏れない。
-代わりに、外からは正当な識別子と誤記の区別がつかない（どちらも同じ説明ページに着く）。</p>
+代わりに、<strong>実在する名前と一度も採られていない名前が同じ答えになる</strong>——上位はそれを
+区別できないので、どれかが存在するとは言えない。</p>
+<p>ただし<strong>打ち間違いは捕まる</strong>。検査桁は shoulder を見る前に検証されるので、綴りの
+壊れた文字列は説明ページではなく <code>404 ARKHE-1403</code> になる。well-formed な名前どうしは
+見分けがつかず、壊れた名前には壊れていると言う、ということである。</p>
 <p>外から同じ識別子を引いたとき、<strong>返るものが違う</strong>。</p>
 <pre class="mermaid"><code>flowchart LR
     U["外の利用者&lt;br/&gt;ark:99999/s7abc"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;上位が名前と記述を持つ&lt;/small&gt;&lt;br/&gt;200 記述を返す"]
     U --&gt; C2["C-2&lt;br/&gt;&lt;small&gt;上位は名前を知らない&lt;/small&gt;&lt;br/&gt;303 説明ページ"]
     C1 --&gt; R1["存在は言える&lt;br/&gt;行き先は無い&lt;br/&gt;&lt;small&gt;＝制限公開そのもの&lt;/small&gt;"]
-    C2 --&gt; R2["名前の存在も漏れない&lt;br/&gt;&lt;small&gt;誤記と区別がつかない&lt;/small&gt;"]</code></pre>
+    C2 --&gt; R2["存在が漏れない&lt;br/&gt;&lt;small&gt;実在も未採番も同じ答え。&lt;br/&gt;誤記は 404&lt;/small&gt;"]</code></pre>
 <p>境界を越えるものも違う。<strong>C-1 で上へ渡るのは、運用者が手で入れた記述だけ</strong>である。</p>
 <pre class="mermaid"><code>flowchart TB
     subgraph OUT["公開側"]

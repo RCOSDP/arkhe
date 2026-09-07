@@ -2213,6 +2213,12 @@
 <h3 id="修正">修正<a class="headerlink" href="#修正" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong>「打ち間違いも同じページに着く」は誤りだった。</strong> 検査桁は shoulder を見る<em>前</em>に
+  検証されるので、委譲した shoulder の下の綴りの壊れた識別子は説明ページではなく
+  <code>404 ARKHE-1403</code> になる。実際に区別がつかないのは<strong>実在する名前と一度も採られて
+  いない名前</strong>のほうで、意味があるのもそちらである——手引きをその形に直した。</p>
+</li>
+<li>
 <p><strong><code>arkhe shoulder add</code> と <code>arkhe onboard</code> が、作った id を表示するようになった。</strong>
   ほかの shoulder コマンド——<code>status</code> / <code>redirect</code> / <code>hold add shoulder</code>——はすべて
   その id を取るのに、<strong>作った当人だけが教えてくれなかった</strong>。知るには後から

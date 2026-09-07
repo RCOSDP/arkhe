@@ -2045,8 +2045,12 @@ under NR that cannot be cleaned up.</p>
 <a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code} %{redirect_url}\n'</span><span class="w"> </span><span class="nv">$PR</span>/ark:99999/c7w545sj4z5
 <a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">303 https://ark.example.ac.jp/closed-namespace    # outside: "this namespace is closed"</span>
 </code></pre></div>
-<p>A typo lands on that same page, which is the point of this level: <strong>the names do not
-leak</strong>, and nothing was configured per identifier.</p>
+<p><strong>A name that exists and one that does not are answered identically</strong> — the public side
+does not hold the names, so it cannot tell them apart. That is the point of this level:
+existence does not leak, and nothing was configured per identifier.</p>
+<p>A <em>typo</em> is a different matter. The check digit is verified before the shoulder is
+consulted, so a mistyped string answers <code>404 ARKHE-1403</code> rather than the explanation
+page. Well-formed names all look alike; malformed ones are told they are malformed.</p>
 <h3 id="hand-it-over-description-only">Hand it over, description only<a class="headerlink" href="#hand-it-over-description-only" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$PK</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">       </span>-d<span class="w"> </span><span class="err">'</span><span class="o">{</span><span class="s2">"ark"</span>:<span class="w">   </span><span class="s2">"ark:99999/c7w545sj4z5"</span>,

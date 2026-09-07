@@ -2225,6 +2225,13 @@ migration only widens columns.</p>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong>"A typo lands on the same page" was wrong.</strong> The check digit is verified <em>before</em> the
+  shoulder is consulted, so a mistyped identifier under a delegated shoulder answers
+  <code>404 ARKHE-1403</code>, not the explanation page. What is actually indistinguishable is a name
+  that exists from one that never did — which is the property that matters, and the guides
+  now say that instead.</p>
+</li>
+<li>
 <p><strong><code>arkhe shoulder add</code> and <code>arkhe onboard</code> now print the id they created.</strong> Every other
   shoulder command — <code>status</code>, <code>redirect</code>, <code>hold add shoulder</code> — takes that id, and the
   command that made the thing was the one place not telling you it. Finding it meant

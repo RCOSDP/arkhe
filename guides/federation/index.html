@@ -2008,14 +2008,19 @@ the names it was given to the objects inside.</p>
 </ul>
 <p><strong>C-2. The upper instance does not know the names.</strong> Delegate the whole shoulder; from
 outside, nothing beyond "that namespace is closed" is visible. <strong>All the upper ledger
-holds is the fact of the allocation</strong> — the least leaky arrangement. The cost is that
-outsiders cannot tell a valid identifier from a typo; both land on the same page.</p>
+holds is the fact of the allocation</strong> — the least leaky arrangement. The cost is that a
+name that exists and one that never did are answered identically: the upper instance
+cannot tell them apart, so it cannot state that any particular one exists.</p>
+<p>A <strong>mistyped</strong> identifier is still caught, though. The check digit is verified before the
+shoulder is consulted, so a broken string answers <code>404 ARKHE-1403</code> rather than the
+explanation page — well-formed names are indistinguishable from one another, malformed
+ones are told they are malformed.</p>
 <p>Pulling the same identifier from outside <strong>returns different things</strong>.</p>
 <pre class="mermaid"><code>flowchart LR
     U["outside user&lt;br/&gt;ark:99999/s7abc"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;name and description held above&lt;/small&gt;&lt;br/&gt;200, a description"]
     U --&gt; C2["C-2&lt;br/&gt;&lt;small&gt;the name is not known above&lt;/small&gt;&lt;br/&gt;303, an explanation page"]
     C1 --&gt; R1["existence can be stated&lt;br/&gt;no target&lt;br/&gt;&lt;small&gt;= restricted access itself&lt;/small&gt;"]
-    C2 --&gt; R2["the name does not leak&lt;br/&gt;&lt;small&gt;a typo looks the same&lt;/small&gt;"]</code></pre>
+    C2 --&gt; R2["existence does not leak&lt;br/&gt;&lt;small&gt;real and never-minted look alike;&lt;br/&gt;a typo gets 404&lt;/small&gt;"]</code></pre>
 <p>What crosses the boundary differs too. <strong>In C-1 the only thing going up is a description
 an operator typed in.</strong></p>
 <pre class="mermaid"><code>flowchart TB
