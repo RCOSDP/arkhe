@@ -169,5 +169,18 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 ## On capacity
 
 **Child resources are never minted.** Suffix passthrough covers a reference of any
-depth — `ark:/99999/x9abc/page/3` needs no row of its own — so **one record per
+depth — `ark:99999/x9abc/page/3` needs no row of its own — so **one record per
 minting** is enough. Nothing else matters as much for capacity.
+
+### Field widths come from the specification
+
+Two of them are not ours to choose. `draft-kunze-ark-42` obliges a *receiving*
+implementation to support **a NAAN of at least 16 octets** (§2.3) and **at least 255
+octets of Base Name plus Qualifier** (§3.1), so `naan.naan` is `varchar(16)`,
+`ark.assigned_name` is `varchar(255)`, and the ledger key `ark.ark` — `<naan>/<name>` —
+is `varchar(272)`. Every column that holds a NAAN or an ARK follows those, because a
+value that fits on one path and not another is worse than a value that never fits.
+
+A longer name is refused with a `400` naming the limit, not with a database error:
+being unable to index it is our constraint, and the specification already warns anyone
+generating such strings that receivers may not handle them.

@@ -40,7 +40,155 @@ breaking in a system whose identifiers cannot be reissued.
   issuing a token verifies `client_secret` with Argon2, so fetching per call pays the
   same cost as `apikey` and adds a round trip on top.
 
+### Changed
+
+- **`/.well-known/ark` now answers `text/plain` by default, as the specification
+  requires.** `draft-kunze-ark-42` §5.6 registers `ark` in the Well-Known URIs registry
+  (RFC 8615) and defines the answer as **plain text containing the resolver's root path,
+  ending in `/`** — append a compact ARK to it and you have a resolution request. arkhe
+  had claimed the same path first, for its own JSON inventory, so **a client reading the
+  specification would conclude the host has no ARK resolver.**
+
+      $ curl https://ark.example.ac.jp/.well-known/ark
+      /
+
+  The inventory — namespaces held, delegated shoulders and their `minter`, held
+  namespaces — is now the JSON representation of the same URL: ask for it with
+  `Accept: application/json`. **This is a change for anything already reading that JSON
+  without an `Accept` header**; the body is otherwise the same, plus `resolver_path`.
+  Both representations carry `Vary: Accept`.
+
+  The path comes from the ASGI `root_path`, so a deployment mounted under a prefix must
+  set it (`uvicorn --root-path /pid`) or it will publish a door that is not there.
+
 ### Fixed
+
+- **The admin interface switches languages, but its refusals did not.** The screen
+  picks `?lang=` → cookie → `Accept-Language`, yet fifteen refusals — "outside your
+  reach", "needs NAAN-wide authority", the login screen's "wrong ID or password" — were
+  hardcoded Japanese, so an English session **fell back to Japanese at exactly the moment
+  it was already stuck**. They now come from the same catalogue as the screen, which
+  means a missing translation fails at start-up like every other key.
+
+- **Start-up configuration errors are English.** `Settings.check()` refuses a
+  half-configured deployment before it serves anything; those messages go to an
+  operator's console, alongside the container logs, and are now in the same language as
+  the rest of what arkhe prints there.
+
+- **Errors now carry a code, and their bodies are English.** The wording of a message
+  changes — it gets clearer, it gets translated — so a client that matched on text was
+  building on sand. Every error the API and the resolver return now looks like
+
+      {"code": "ARKHE-1011",
+       "message": "A request holds at most 1000 rows.",
+       "detail": {"limit": 1000}}
+
+  with `detail` holding the values that filled the message, **still structured**, so a
+  number never has to be cut back out of a sentence. Resolution answers `text/plain`
+  with the code first (`ARKHE-1403 ark:99999/x9abcd — Check digit mismatch: …`).
+
+  The full list is [the errors reference](https://rcosdp.github.io/arkhe/reference/errors/),
+  generated from one registry (`arkhe.errors`) that holds the code, the status, the
+  English message and a Japanese explanation together — a test fails if a code is
+  missing from either page, is reused, or has only one of the two languages.
+
+  **`/oauth/token` keeps its own shape on purpose**: RFC 6749 §5.2 (`error` /
+  `error_description`, which is what OAuth libraries read), with `code` added alongside.
+  The admin interface keeps its own catalogue, because it answers in the language of the
+  screen rather than in the language of this API.
+
+- **The published OpenAPI document was in Japanese.** FastAPI and Pydantic turn a
+  handler's or a model's docstring into the `description`, and this codebase comments in
+  Japanese — so the specification did too, for readers who are outside this ledger and
+  cannot be assumed to read it.
+
+  Every string the document publishes is now English: the overview, the tag
+  descriptions, each endpoint, each response code, the request schemas and their fields,
+  and both security schemes. **The docstrings stay in Japanese** — they are for people
+  reading the implementation, a different audience — so the English text is passed
+  explicitly (`description=` on the route, `model_config` on the model), which FastAPI
+  and Pydantic prefer over the docstring.
+
+  A test walks the generated document for both roles and fails on any CJK character, so
+  a new endpoint cannot leak its docstring into the specification by being forgotten.
+
+- **The label was matched case-sensitively by the router.** `parse_ark` had always been
+  case-insensitive, as §3.2 step 3 requires, but the HTTP routes were literal, so
+  `/ARK:/99999/x9abc` never reached the resolver and came back `404`. The label — those
+  five characters only — is now normalised before routing. **The name's case is left
+  alone**, because it is part of the identifier (step 5).
+
+- **The THUMP response headers were missing.** §5.2 shows `THUMP-Status` and a `Link`
+  header on an inflection response, and says what the latter is for: telling a recipient
+  who knows nothing about inflections that the response *describes* the uninflected ARK.
+  Both are now on every answer the resolver gives about an identifier (`?`, `??`,
+  `?info`, `?json`, a description, a hold, a `404`), and on none of the redirects.
+
+  The `rel` is written `<…>; rel="describes"` rather than the specification example's
+  `<…> rel="describes";`, which is not a valid [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288)
+  link value — the same assertion, in a form standard parsers can read.
+
+- **The ERC `where` held the redirect target instead of the identifier.** §5.1.2 defines
+  it as "the long-term identifier as opposed to a transient redirect target"; arkhe had
+  it the other way round, with the ARK only as a fallback when no target was set. Since
+  a description answers *what this identifier denotes*, a value that moves when the
+  target moves cannot be quoted. `where` is now the compact ARK — repointing an ARK no
+  longer changes it — and the current target is published as `redirect`, outside the
+  kernel and only when there is one. **This changes `?`, `??`, `?json` and the `?info`
+  page**; anything reading a target out of `where` must read `redirect`.
+
+- **New ARKs were generated in the old `ark:/` label form.** §2.2 asks implementations
+  to **generate the new form** (`ark:99999/x9abc`) while continuing to recognise both
+  *in perpetuity*. arkhe recognised both — but everything it emitted carried the old
+  label, so the strings it handed out became the next implementation's input and the
+  old form never shrank.
+
+  Every generated ARK is now new-form: the `ark` field of every API response, the ERC
+  `where` and `about`, `?json`, the 404 body, the `Location` when forwarding to another
+  resolver or to N2T, the CLI's `ark list`, and the admin interface. The label is
+  chosen in one place (`arkspec.naming.compact_ark`) so it cannot drift apart again.
+
+  **Reception is unchanged and will not narrow**: `ark:`, `ark:/` and a bare
+  `99999/x9abc` all still address the same identifier, and a test holds that open.
+
+  This changes the shape of published output — anything parsing `ark:/…` out of an API
+  response or CLI line must accept `ark:…`. **A ledger is not touched**: the stored key
+  has never included the label.
+
+- **Two field widths sat below what the specification obliges a receiver to accept.** A
+  NAAN was rejected above 10 octets and a name was stored in `varchar(100)`, while
+  `draft-kunze-ark-42` requires support for **16 octets of NAAN** (§2.3) and **255
+  octets of Base Name plus Qualifier** (§3.1).
+
+  The NAAN limit had a reason, but not one that applies here: arklet passes the NAAN to
+  `int()` and guarded the conversion with `len(naan) > 10`, and the constant came across
+  with the rest of the parsing. **arkhe decided the opposite in N2** — the NAAN is kept
+  and compared as a string, never integerised, so that `ark:/099999/…` and
+  `ark:/99999/…` stay distinct — which left the guard with nothing to guard.
+
+  `naan.naan` is now `varchar(16)`, `ark.assigned_name` `varchar(255)`, and the ledger
+  key `ark.ark` `varchar(272)` (16 + `/` + 255); every column holding a NAAN or an ARK
+  moved with them. On PostgreSQL this is a metadata-only change — no table rewrite, no
+  index rebuild. A name longer than 255 is now refused with a `400` naming the limit
+  rather than failing in the database.
+
+- **`%2F` in a name was silently turned into a component separator.** ASGI decodes the
+  request path before the application sees it, so `ark:/99999/x54%2Fc2` arrived as
+  `x54/c2` — **a different identifier**. A reserved character may be `%`-encoded
+  precisely *to conceal its reserved meaning* (`draft-kunze-ark-42` §3.2), so `%2F`
+  means "a slash that does not separate components"; decoding it made suffix
+  passthrough inherit an unrelated record's target, and forwarded a rewritten ARK to
+  the global resolver. The same applied to `%7D`, whose decoded form `}` is not even in
+  the ARK character repertoire (§3.1) — the encoding is the only legal way to carry it.
+  The specification states it plainly: *no %-encoded character should ever appear in an
+  ARK in its decoded form.*
+
+  Resolution now reads the still-encoded path from the ASGI `raw_path`, and hex case is
+  normalised (`%2f` → `%2F`, normalisation step 5) on both the resolving and the
+  registering side, so a qualifier registered as `/a%2fb` is found when requested as
+  `/a%2Fb`. **A proxy in front must pass the encoding through** — see
+  [the API reference](https://rcosdp.github.io/arkhe/reference/api/) for nginx and
+  Apache.
 
 - **Bulk minting returned a 500 when one request carried the same `request_id` twice.**
   A receipt is unique per (client, request_id), so writing the second one raised an

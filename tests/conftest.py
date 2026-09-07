@@ -17,7 +17,11 @@ from arkhe import observability
 from arkhe.api import admin as admin_router
 from arkhe.api import mint as mint_router
 from arkhe.api import resolve as resolve_router
-from arkhe.app import _install_handlers, _install_security_headers
+from arkhe.app import (
+    _install_ark_label_case,
+    _install_handlers,
+    _install_security_headers,
+)
 from arkhe.auth import deps
 from arkhe.auth.principal import Principal
 from arkhe.db import session as session_mod
@@ -103,6 +107,7 @@ def settings() -> Settings:
 def app(factory, settings):
     a = FastAPI()
     _install_handlers(a)
+    _install_ark_label_case(a)
     _install_security_headers(a)
     observability.install(a)
     a.include_router(mint_router.router)

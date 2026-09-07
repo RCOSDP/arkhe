@@ -70,7 +70,9 @@ def test_oauth2_登録に無いscopeは取れない(db, client_with_keys):
             db, client_id="a-web", client_secret=sec,
             requested_scope="ark:mint ark:admin", secret_key=SECRET,
         )
+    # **RFC 6749 §5.2 の形を守る**（符号は併記する）。
     assert e.value.detail["error"] == "invalid_scope"
+    assert e.value.detail["code"] == "ARKHE-1305"
 
 
 def test_oauth2_要求すると狭くなるが広がらない(db, client_with_keys):

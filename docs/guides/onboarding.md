@@ -32,7 +32,7 @@ register there is this resolver's URL.
 
 ## 3. Register your resolver URL in the NAAN registry
 
-**Skip this and `n2t.net/ark:/99999/…` never reaches you.** Getting a NAAN is not
+**Skip this and `n2t.net/ark:99999/…` never reaches you.** Getting a NAAN is not
 just receiving a number; it runs through to writing your resolver's URL into the
 registry entry.
 

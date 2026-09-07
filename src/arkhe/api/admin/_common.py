@@ -31,7 +31,7 @@ from arkhe.api import i18n
 from arkhe.auth import login as login_flow
 from arkhe.auth import session as sess
 from arkhe.auth.deps import Config, Db, authenticate, bearer
-from arkhe.auth.errors import AuthError
+from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import (
     Client,
@@ -134,6 +134,16 @@ def _ctx(request: Request, principal: Principal, page: str, **extra) -> dict:
         "can_add_client": _can_add_client(principal),
         **extra,
     }
+
+
+def _refuse(request: Request, key: str) -> Forbidden:
+    """断りを**画面の言語で**返す。
+
+    画面は `?lang=` → cookie → `Accept-Language` で切り替わるのに、断りの文面
+    だけ直書きの日本語だった——**いちばん困っているときに母語から落ちる**。
+    語彙は画面と同じ catalogue から採るので、抜ければ起動時に落ちる。
+    """
+    return Forbidden(i18n.translator(i18n.pick(request))(key))
 
 
 def _remember_lang(request: Request, response):

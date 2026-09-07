@@ -3,7 +3,7 @@
 **ARK**（Archival Resource Key）は、こういう形の永続識別子である。
 
 ```
-ark:/99999/x9abc1234
+ark:99999/x9abc1234
     └──┬─┘ └────┬───┘
      NAAN     name
 ```
@@ -21,7 +21,7 @@ flowchart TB
         DOI["10.xxxx — DOI<br/><small>登録組織が名前空間を管理し、<br/>レコードは RA 側に置かれる</small>"]
         HDL["20.500.xxxxx — CNRI Handle<br/><small>組織が購入する prefix</small>"]
     end
-    ARK["ark:/99999/…<br/><small>HTTP と DNS の上に直接。下部構造を持たない。</small>"]
+    ARK["ark:99999/…<br/><small>HTTP と DNS の上に直接。下部構造を持たない。</small>"]
 ```
 
 **DOI は Handle の上に建っている。** `doi.org` は Handle のリゾルバであり、DOI は
@@ -37,7 +37,7 @@ Handle の `10.x` 名前空間の名前である。**ARK だけが別系統**で
 **約束はあなたのもので、その中身も自分で述べる**。だからこそ**尋ねる手段**が用意されている。
 
 ```bash
-curl "https://example.org/ark:/99999/x9abc1234??"
+curl "https://example.org/ark:99999/x9abc1234??"
 ```
 
 ```
@@ -45,7 +45,8 @@ erc:
 who: 山田太郎
 what: あるデータセット
 when: 2026
-where: https://repo.example.ac.jp/records/1
+where: ark:99999/x9abc1234
+redirect: https://repo.example.ac.jp/records/1
 policy: NP | NR, OP, CC | 2026 | https://example.org/policy
 commitment-level: permanent-dynamic
 ```

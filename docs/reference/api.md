@@ -56,14 +56,82 @@ behaviour that depends on the suffix.
 
 | Request | Answer |
 | --- | --- |
-| `/ark:/99999/x9abc` | `302` to the target, or a description if there is none |
-| `/ark:/99999/x9abc/page/3` | `302` to *target*`/page/3` — suffix passthrough, no record of its own |
-| `/ark:/99999/x9abc?` | ERC/ANVL kernel — who, what, when, where |
-| `/ark:/99999/x9abc??` | The above plus the persistence statement |
-| `/ark:/99999/x9abc?info` | The same for a human being |
-| `/ark:/99999/x9abc?json` | The same for a program |
-| `/ark:/12345/…` (unknown NAAN) | `302` to the global resolver |
-| `/.well-known/ark` | What this resolver holds, and where minting happens if elsewhere |
+| `/ark:99999/x9abc` | `302` to the target, or a description if there is none |
+| `/ark:99999/x9abc/page/3` | `302` to *target*`/page/3` — suffix passthrough, no record of its own |
+| `/ark:99999/x9abc?` | ERC/ANVL kernel — who, what, when, where |
+| `/ark:99999/x9abc??` | The above plus the persistence statement |
+| `/ark:99999/x9abc?info` | The same for a human being |
+| `/ark:99999/x9abc?json` | The same for a program |
+| `/ark:12345/…` (unknown NAAN) | `302` to the global resolver |
+| `/.well-known/ark` | `text/plain`: the resolver's root path, ending in `/` |
+| `/.well-known/ark` with `Accept: application/json` | What this resolver holds, and where minting happens if elsewhere |
 
 A bare `?` cannot be distinguished from no query string at the protocol level — even
 in ASGI. Set `ARKHE_RAW_URI_HEADER` if something in front passes the raw URI.
+
+Every error carries a code (`ARKHE-1011`), an English `message`, and a structured
+`detail`. **Match on the code, not on the wording** — see
+[Errors](errors.md) for the full list.
+
+### THUMP headers and `where`
+
+Every answer the resolver gives about an identifier — `?`, `??`, `?info`, `?json`, a
+description with no target, a hold, a `404` — carries the two headers from §5.2:
+
+```
+THUMP-Status: 0.6 404 Not Found
+Link: </ark:99999/x9abc>; rel="describes"
+```
+
+The `Link` is what tells a recipient who knows nothing about inflections that the
+response *describes* the uninflected ARK rather than being a representation of the URL
+it fetched. The specification's own example writes it `<…> rel="describes";`; that is
+not a valid [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288) link value, so arkhe
+emits the well-formed `<…>; rel="describes"` — the same assertion, in a form standard
+parsers can read. Redirects carry neither header: a redirect is the access service, not
+an answer about the identifier.
+
+In the ERC, **`where` is the ARK, not the target** — §5.1.2 defines it as "the
+long-term identifier as opposed to a transient redirect target". Changing where an ARK
+points does not change its `where`; that is the whole value of the element. The current
+target is published as `redirect`, outside the kernel, and only when there is one.
+
+### `%`-encoded characters
+
+A reserved character (`%`, `-`, `.`, `/`) may be `%`-encoded **to conceal its reserved
+meaning** — `%2F` is the only way to write "there is a slash here, but it does not
+separate components". So `ark:99999/x54%2Fc2` and `ark:99999/x54/c2` are **different
+identifiers**, and the specification forbids the encoded form from ever appearing
+decoded (`draft-kunze-ark-42` §3.2). arkhe reads the still-encoded path from the ASGI
+`raw_path` and normalises only the hex case (`%2f` → `%2F`, step 5); it never decodes.
+
+**Anything in front must pass the encoding through.** With nginx, `proxy_pass` without
+a URI part (`proxy_pass http://backend;`) — adding a path makes nginx re-encode the
+decoded one. With Apache, `AllowEncodedSlashes NoDecode`. Where a proxy normalises
+`%2F` anyway, the encoding cannot be recovered and such names will not resolve.
+
+### `/.well-known/ark`
+
+`draft-kunze-ark-42` §5.6 registers `ark` in the Well-Known URIs registry
+([RFC 8615](https://www.rfc-editor.org/rfc/rfc8615)) and defines the answer as **plain
+text containing the resolver's root path, ending in `/`** — append a compact ARK to it
+and you have a resolution request. **A client that sends no `Accept`, or `*/*`, gets
+that**; answering such a client with JSON would make the host look like it has no ARK
+resolver at all.
+
+```console
+$ curl https://ark.example.ac.jp/.well-known/ark
+/
+```
+
+arkhe's own inventory — the namespaces it holds, delegated shoulders and their
+`minter`, and any held namespace — is the JSON representation of the same URL, so ask
+for it by name:
+
+```console
+$ curl -H 'Accept: application/json' https://ark.example.ac.jp/.well-known/ark
+```
+
+Both carry `Vary: Accept`. The path comes from the ASGI `root_path`, so if you mount
+arkhe under a prefix, set it (`uvicorn --root-path /pid`) or the answer will point at a
+door that is not there.

@@ -19,6 +19,7 @@ import jwt
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from arkhe import errors
 from arkhe.auth.apikey import _expired, _mechanism_allowed, _to_principal
 from arkhe.auth.errors import AuthError, UnregisteredSubject
 from arkhe.auth.principal import Principal
@@ -95,7 +96,7 @@ class OidcVerifier:
         try:
             claims = self.decode(token)
         except Exception as exc:
-            raise AuthError(f"invalid token: {exc}") from exc
+            raise AuthError(errors.INVALID_CREDENTIALS, reason=str(exc)) from exc
 
         # 外部の主体を arkhe の台帳に突き合わせる。**登録が無ければ通さない。**
         # 認可サーバで認証できることと、この ARK 名前空間を触ってよいことは別。
@@ -113,10 +114,12 @@ class OidcVerifier:
         # 「登録し忘れ」として画面に並べると、消すために登録し直すことになる
         # ——止めた意味が消える。返す答え（401）は同じでも、区別して扱う。
         if not client.active or _expired(client.expires_at):
-            raise AuthError(f"subject {subject} is registered but not usable")
+            raise AuthError(errors.INVALID_CREDENTIALS,
+                            reason=f"subject {subject} is registered but not usable")
         # **組織に許されていない機構では通さない**（apikey / oauth2 と同じ）。
         if not _mechanism_allowed(session, client, "oidc"):
-            raise AuthError("this mechanism is not allowed for the organisation")
+            raise AuthError(errors.INVALID_CREDENTIALS,
+                            reason="this mechanism is not allowed for the organisation")
 
         principal = _to_principal(client, mechanism="oidc")
         return Principal(**{**principal.__dict__, "scopes": _granted(claims, principal)})

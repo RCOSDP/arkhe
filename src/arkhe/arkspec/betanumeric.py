@@ -75,7 +75,7 @@ def check_digit_base(naan: str, name_without_digit: str) -> str:
 
 
 def verify_ark_check_digit(naan: str, name: str) -> bool:
-    """`ark:/<naan>/<name>` の検査桁を検証する。**呼び出し側はこちらを使う。**
+    """`ark:<naan>/<name>` の検査桁を検証する。**呼び出し側はこちらを使う。**
 
     D1: 未登録 ARK に対してこれを検証し、不一致なら**転記ミスを明示した 404**
     を返す。検証せずに転送すると、NCDA が保証している「単一文字誤り・隣接転置の

@@ -87,8 +87,8 @@ NAANs it is *not* authoritative for.
 flowchart TD
     U[The public] --> A["arkhe A<br/><small>authoritative for 99999</small>"]
     U --> B["arkhe B<br/><small>authoritative for 12345</small>"]
-    A -->|"302 for ark:/12345/…"| B
-    B -->|"302 for ark:/99999/…"| A
+    A -->|"302 for ark:12345/…"| B
+    B -->|"302 for ark:99999/…"| A
     A -.->|"unknown NAAN"| N[n2t.net]
 ```
 
@@ -132,7 +132,7 @@ The upper ledger:
 ```bash
 arkhe shoulder add 99999 /s7 --note "delegated to site B"
 arkhe shoulder status <id> delegated --minter https://ark.b.example.ac.jp
-arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:/$id'
+arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:$id'
 ```
 
 The lower ledger:
@@ -153,7 +153,7 @@ sequenceDiagram
     T-->>O: 307 + minter address
     Note over T: never called on their behalf
     O->>S: POST /api/mint
-    S-->>O: 201 ark:/99999/s7abc
+    S-->>O: 201 ark:99999/s7abc
     Note over S: only the lower ledger creates the name
 ```
 
@@ -162,9 +162,9 @@ sequenceDiagram
     participant U as outside user
     participant T as upper arkhe
     participant S as arkhe B
-    U->>T: GET /ark:/99999/s7abc
-    T-->>U: 302 https://ark.b…/ark:/…
-    U->>S: GET /ark:/99999/s7abc
+    U->>T: GET /ark:99999/s7abc
+    T-->>U: 302 https://ark.b…/ark:…
+    U->>S: GET /ark:99999/s7abc
     S-->>U: 302 the target URL
     Note over T,S: if the upper instance is down, the lower one is unreachable
 ```
@@ -181,7 +181,7 @@ is what determines the outcome**, so it is worth reading before wiring a delegat
 
 ```mermaid
 flowchart TD
-    R["ark:/99999/s7abc<br/>arrives at the upper instance"] --> E{"exact match<br/>in the ledger"}
+    R["ark:99999/s7abc<br/>arrives at the upper instance"] --> E{"exact match<br/>in the ledger"}
     E -->|yes| A1["the upper instance answers<br/><small>② minted before the delegation</small>"]
     E -->|no| P{"an ancestor"}
     P -->|yes| A2["describe / redirect from it"]
@@ -236,7 +236,8 @@ identifier is alive**: `?info` and `??` keep answering, so the persistence promi
 withdrawn. The expiry is mandatory and lifts itself by the clock alone
 ([Invariants](../concepts/invariants.md)).
 
-Held namespaces appear under `held` in `/.well-known/ark`, so **the instance below can
+Held namespaces appear under `held` in `/.well-known/ark` (the JSON representation —
+ask for it with `Accept: application/json`), so **the instance below can
 verify mechanically that the one above stopped forwarding** — which matters when nobody
 answers the phone.
 
@@ -316,7 +317,7 @@ Pulling the same identifier from outside **returns different things**.
 
 ```mermaid
 flowchart LR
-    U["outside user<br/>ark:/99999/s7abc"] --> C1["C-1<br/><small>name and description held above</small><br/>200, a description"]
+    U["outside user<br/>ark:99999/s7abc"] --> C1["C-1<br/><small>name and description held above</small><br/>200, a description"]
     U --> C2["C-2<br/><small>the name is not known above</small><br/>303, an explanation page"]
     C1 --> R1["existence can be stated<br/>no target<br/><small>= restricted access itself</small>"]
     C2 --> R2["the name does not leak<br/><small>a typo looks the same</small>"]
@@ -347,7 +348,7 @@ published cannot be withdrawn.
 ## Closed PIDs and open PIDs {#pid}
 
 **Public and closed identifiers live side by side inside one NAAN.** What is divided is
-the shoulder; **the shape of the identifier is not** — keeping it as `ark:/99999/…`
+the shoulder; **the shape of the identifier is not** — keeping it as `ark:99999/…`
 either way is the whole point of this arrangement.
 
 ### Why the shape must not differ
@@ -366,9 +367,9 @@ flowchart TD
     N["NAAN 99999<br/><small>na_policy — what ?? answers — lives here</small>"]
     N --> SO["shoulder /s7<br/><small>open PIDs</small>"]
     N --> SC["shoulder /c7<br/><small>closed PIDs</small>"]
-    SO --> AO["ark:/99999/s7abc<br/><small>url = the public target</small>"]
-    SC --> AC["ark:/99999/c7xyz<br/><small>url = empty / an application form</small>"]
-    AC -->|"when it opens, only the url changes"| AC2["ark:/99999/c7xyz<br/><small>url = the public target</small>"]
+    SO --> AO["ark:99999/s7abc<br/><small>url = the public target</small>"]
+    SC --> AC["ark:99999/c7xyz<br/><small>url = empty / an application form</small>"]
+    AC -->|"when it opens, only the url changes"| AC2["ark:99999/c7xyz<br/><small>url = the public target</small>"]
 ```
 
 **The bottom two are the same identifier.** The row, the name and the shoulder are
@@ -377,7 +378,7 @@ why publication is compatible with a declaration of NR**: what changed was not t
 
 ### Three levels of what is visible
 
-| Level | What the public ledger holds | Pulling `ark:/…` from outside | Where it fits |
+| Level | What the public ledger holds | Pulling `ark:…` from outside | Where it fits |
 | --- | --- | --- | --- |
 | **Invisible** | no name at all ([C-2](#c-a-closed-arkhe-underneath)) | `303` to an explanation page | **existence itself is sensitive** |
 | **Described** | name and description, `url` empty | **`200` and a description** (D6) | catalogue public, object not |
@@ -430,14 +431,14 @@ curl -X POST https://ark.example.ac.jp/api/mint \
        "what_title": "(only what may leave the closed network)",
        "commitment": "Restricted access; use requires an application",
        "url": ""}'
-# → ark:/99999/c7xyz…
+# → ark:99999/c7xyz…
 
 # Add the door (raise it to the third level)
-curl -X PUT …/api/update -d '{"ark": "ark:/99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
                               "url": "https://apply.example.ac.jp/dataset/…"}'
 
 # When the embargo lifts, point it at the object. **The identifier does not change**
-curl -X PUT …/api/update -d '{"ark": "ark:/99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
                               "url": "https://repo.example.ac.jp/records/123"}'
 ```
 
@@ -494,7 +495,7 @@ people operating it** — with one ledger, arkhe enforced them.
 
 ```mermaid
 flowchart TD
-    X["arkhe X<br/><small>mints 99999/s7</small>"] --> N["ark:/99999/s7abc"]
+    X["arkhe X<br/><small>mints 99999/s7</small>"] --> N["ark:99999/s7abc"]
     Y["arkhe Y<br/><small>also mints 99999/s7</small>"] --> N
     N --> Z["✗ one name pointing at two things<br/><small>under NR this cannot be undone</small>"]
 ```

@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+from arkhe import errors
+from arkhe.errors import ApiError
 
-class AuthError(Exception):
+
+class AuthError(ApiError):
     """401。資格情報が無い・不正・期限切れ。"""
 
     status = 401
 
-    def __init__(self, detail: str = "invalid credentials", *, challenge: str = "Bearer"):
-        self.detail = detail
-        self.challenge = challenge
-        super().__init__(detail)
+    def __init__(self, detail=None, *, challenge: str = "Bearer", **fmt):
+        super().__init__(detail if detail is not None else errors.INVALID_CREDENTIALS,
+                         challenge=challenge, **fmt)
 
 
 class UnregisteredSubject(AuthError):
@@ -29,14 +31,10 @@ class UnregisteredSubject(AuthError):
         super().__init__(f"subject {subject} is not registered with this resolver")
 
 
-class Forbidden(Exception):
+class Forbidden(ApiError):
     """403。認証はできたが、その操作・その名前空間には届かない。"""
 
     status = 403
-
-    def __init__(self, detail):
-        self.detail = detail
-        super().__init__(str(detail))
 
 
 class InsufficientScope(Forbidden):
@@ -44,4 +42,4 @@ class InsufficientScope(Forbidden):
 
     def __init__(self, required: str):
         self.required = required
-        super().__init__({"detail": "insufficient_scope", "required_scope": required})
+        super().__init__(errors.INSUFFICIENT_SCOPE, scope=required)

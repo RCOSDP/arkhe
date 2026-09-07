@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
     R["組織の<br/>リポジトリ"] -->|採番| M[minter]
-    U[誰でも] -->|ark:/99999/…| S[resolver]
+    U[誰でも] -->|ark:99999/…| S[resolver]
     M --> D[(台帳)]
     S --> D
     S -->|302| T[対象]

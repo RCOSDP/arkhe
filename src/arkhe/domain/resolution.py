@@ -20,12 +20,15 @@ from datetime import UTC, datetime
 from enum import Enum
 from urllib.parse import urlsplit
 
+from arkhe import errors
 from arkhe.arkspec.betanumeric import verify_ark_check_digit
 from arkhe.arkspec.naming import (
     QUALIFIER_SEPARATORS,
     ark_key,
+    compact_ark,
     gen_prefixes,
     is_structural_at,
+    normalize_percent,
     normalize_structural,
     split_after_normalized,
     strip_hyphens,
@@ -176,6 +179,8 @@ class Resolution:
     inherited_from: str = ""
     inflection: Inflection = Inflection.NONE
     reason: str = ""
+    #: 符号（`arkhe.errors.Code`）。**文面ではなくこれで判定させる。**
+    code: object | None = None
     detail: dict = field(default_factory=dict)
     #: 効いている保留。**転送を止めた理由**を応答に載せるために運ぶ。
     hold: Hold | None = None
@@ -253,6 +258,10 @@ def resolve(
     渡さなければ現在時刻を見る。
     """
     now = now or datetime.now(UTC)
+    # A4: **%-エンコードは復号しない。** 16 進の大小だけ揃える（手順5）。
+    # `%2F` は「ここに `/` はあるが成分の区切りではない」と言うための唯一の書き方で、
+    # 潰すと別の識別子になる（`x54%2Fc2` と `x54/c2` は別物）。
+    name = normalize_percent(name)
     name = normalize_structural(name)  # N4
     normalized = strip_hyphens(name)  # A2
     requested = ark_key(naan, name)
@@ -295,12 +304,13 @@ def resolve(
                 status=404,
                 requested=requested,
                 inflection=inflection,
-                reason="metadata for an unknown NAAN is not held by this resolver",
+                code=errors.NO_METADATA_FOR_UNKNOWN_NAAN,
+                reason=errors.NO_METADATA_FOR_UNKNOWN_NAAN.message,
             )
         return Resolution(
             Outcome.FORWARD,
             status=302,
-            location=f"{global_resolver.rstrip('/')}/ark:/{requested}",
+            location=f"{global_resolver.rstrip('/')}/{compact_ark(requested)}",
             requested=requested,
             reason="unknown NAAN forwarded to the global resolver",
         )
@@ -315,7 +325,8 @@ def resolve(
                 status=404,
                 requested=requested,
                 inflection=inflection,
-                reason="check digit mismatch: the identifier looks mistranscribed",
+                code=errors.CHECK_DIGIT_MISMATCH,
+                reason=errors.CHECK_DIGIT_MISMATCH.message,
                 detail={"base": stem},
             )
 
@@ -344,7 +355,8 @@ def resolve(
             status=404,
             requested=requested,
             inflection=inflection,
-            reason="this resolver is authoritative for the NAAN and has no such ark",
+            code=errors.ARK_UNKNOWN_NAME,
+            reason=errors.ARK_UNKNOWN_NAME.message,
         )
 
     # 他所の NAAN は登録された委譲先へ。**その NAAN ごと止めることもできる。**
@@ -354,7 +366,7 @@ def resolve(
     return Resolution(
         Outcome.FORWARD,
         status=302,
-        location=f"{naan_obj.redirect.rstrip('/')}/ark:/{requested}",
+        location=f"{naan_obj.redirect.rstrip('/')}/{compact_ark(requested)}",
         requested=requested,
         reason="delegated by NAAN registration",
     )

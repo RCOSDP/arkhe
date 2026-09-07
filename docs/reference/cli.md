@@ -88,7 +88,7 @@ namespace has been mintable, it cannot be called unused again.
 ### Holding a redirect
 
 ```bash
-arkhe hold add ark ark:/99999/x9abc --days 3 --reason "verifying the target"
+arkhe hold add ark ark:99999/x9abc --days 3 --reason "verifying the target"
 arkhe hold add shoulder 3 --days 1 --reason "the delegate's resolver is down"
 arkhe hold list
 arkhe hold release shoulder 3

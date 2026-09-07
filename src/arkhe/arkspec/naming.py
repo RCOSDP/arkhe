@@ -9,10 +9,10 @@ MIT License, Copyright (c) Internet Archive. See LICENSE.
 受け入れ条件:
   A1  `ARK:` を大小非依存で受ける。**NAAN は小文字化、名前の大小は保持**
   A2  ハイフンは無意味として無視する
-  N2  **NAAN は文字列として保持・比較する**（`ark:/099999/…` と `ark:/99999/…` は別物）
+  N2  **NAAN は文字列として保持・比較する**（`ark:099999/…` と `ark:99999/…` は別物）
   N3  betanumeric NAAN を受理する（2001 年以前の歴史的 NAAN）
   N4  構造文字の正規化。`.` は両側に非構造文字がある場合のみ構造文字
-  F1  NAAN の長さ制限（変換の前に弾く）
+  F1  NAAN の長さ制限（仕様が要求する 16 オクテットまで受ける）
   D5  祖先は最長一致
 """
 
@@ -28,8 +28,27 @@ from .betanumeric import BETANUMERIC
 #: base name のあとに続く修飾子領域を開くので、suffix passthrough は両方を走査する。
 QUALIFIER_SEPARATORS = "/."
 
-#: F1: `int()` に渡す前に長さで弾く。IA 原典の `len(naan) > 10` を踏襲。
-MAX_NAAN_LENGTH = 10
+#: F1: 仕様（draft-kunze-ark-42 §2.3）: "For received ARKs, implementations **must
+#: support a minimum NAAN length of 16 octets**."
+#:
+#: **以前は 10 だった。** IA 原典（arklet）の `len(naan) > 10` を踏襲したもので、
+#: あちらは NAAN を `int()` に通すので変換前に守る必要があった。**arkhe は N2 で
+#: 「NAAN は文字列として保持・比較する。整数化してはならない」と決めている**ので、
+#: 守るべき変換がそもそも無い——理由の無いまま仕様の下限を割っていた。
+#:
+#: 2001 年以降に割り当てられた NAAN はすべて 5 桁だが、ここは**受け取る側の
+#: 下限**であって、我々が配る番号の話ではない。
+MAX_NAAN_LENGTH = 16
+
+#: F1: 仕様（§3.1）: "implementations must support a minimum length of **255 octets**
+#: for the string composed of the Base Name plus Qualifier."
+#:
+#: 名前は visible ASCII なので、オクテットと文字数は一致する（%-エンコードされた
+#: 部分も `%XX` という ASCII 3 文字として数える）。
+MAX_NAME_LENGTH = 255
+
+#: 台帳の鍵（`<naan>/<name>`）に要る長さ。**両方の下限を満たすために足す。**
+MAX_ARK_LENGTH = MAX_NAAN_LENGTH + 1 + MAX_NAME_LENGTH
 
 #: A1: ラベルは大小非依存。
 _LABEL = re.compile(r"ark:", re.IGNORECASE)
@@ -58,7 +77,7 @@ def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
     N2: NAAN を**文字列のまま**返す。`099999` と `99999` は別の NAAN。
     N3: betanumeric NAAN を受理する。
     F1: 長さ制限を先に適用する。
-    D4: `allow_naan_only=True` なら `ark:/99999`（名前なし）も受け、`name=""` を返す。
+    D4: `allow_naan_only=True` なら `ark:99999`（名前なし）も受け、`name=""` を返す。
     """
     if not isinstance(ark, str):
         raise ArkParseError("ARK must be a string")
@@ -71,7 +90,7 @@ def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
     rest = rest.lstrip("/")
     naan, slash, name = rest.partition("/")
     if not slash or not name:
-        # D4: **NAAN だけの ARK は不正ではない。** `ark:/99999` は「その名前空間
+        # D4: **NAAN だけの ARK は不正ではない。** `ark:99999` は「その名前空間
         # そのもの」を指し、N2T も階層を遡ってここまで見る。呼び出し側が扱えるよう
         # `name=""` で返す——扱えない側は `allow_naan_only=False` で弾ける。
         if not allow_naan_only:
@@ -96,6 +115,25 @@ def ark_key(naan: str, name: str) -> str:
     （A2。`strip_hyphens` を通した name を渡す）。
     """
     return f"{naan}/{name}"
+
+
+def compact_ark(key: str) -> str:
+    """台帳の鍵（`<naan>/<name>`）を **compact ARK の表記**にする。
+
+    A5。仕様（draft-kunze-ark-42 §2.2）:
+
+    > There is a new form of the label, "ark:", and an old form, "ark:/", both of
+    > which **must be recognized in perpetuity**. Implementations **should generate
+    > new ARKs in the new form (without the "/")**.
+
+    **受理と生成で非対称にする。** 受け取るほうは両方を永久に受ける（`parse_ark`）。
+    出すほうは新形式に寄せる——旧形式を出し続けると、我々が配った文字列が
+    そのまま次の実装の入力になり、**旧形式が減らない**。
+
+    ここを 1 つの関数にしてあるのは、`f"ark:/{…}"` が散っていると片方だけ直る
+    からである。**表記を決める場所は 1 つ。**
+    """
+    return f"ark:{key}"
 
 
 #: A3: 除去するハイフン様文字。
@@ -127,6 +165,28 @@ _HYPHEN_TABLE = dict.fromkeys(map(ord, HYPHENS))
 #: 構造文字（成分の区切り）。`/` は包含、`.` は変種。
 STRUCTURAL = "/."
 _STRUCTURAL_RUN = re.compile(r"([/.])[/.]+")
+
+#: A4: %-エンコードの三つ組。**16 進 2 桁として成立するものだけ**を見る。
+_PERCENT_TRIPLET = re.compile(r"%([0-9A-Fa-f]{2})")
+
+
+def normalize_percent(text: str) -> str:
+    """%-エンコードの 16 進を大文字に揃える（正規化 手順5）。
+
+    A4。仕様（draft-kunze-ark-42 §3.2 手順5）: "the two characters following every
+    occurrence of '%' are converted to uppercase. **The case of all other letters in
+    the ARK string must be preserved.**"
+
+    **`%2f` と `%2F` を別の識別子にしないためだけの規則ではない。** §3.1 は
+    「大文字の 16 進が望ましい——ARK を知らないソフトウェアが URL として等値
+    比較するときに効く」と理由まで書いている。揃えておかないと、我々の外側で
+    比較された瞬間に別物になる。
+
+    **三つ組として成立しないものは触らない。** 裸の `%` や `%zz` は不正だが、
+    ここで直すと「壊れた入力を黙って別の文字列にする」ことになる——名前の
+    一部として届いたのかもしれないので、そのまま通して照合で落とす。
+    """
+    return _PERCENT_TRIPLET.sub(lambda m: "%" + m.group(1).upper(), text)
 
 
 def strip_hyphens(text: str) -> str:

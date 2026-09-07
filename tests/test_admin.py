@@ -88,7 +88,7 @@ def test_画面から採番できる(db, world, principal_of, as_principal):
     """**API と同じ経路**（authz → minting）を通る。画面専用の抜け道を作らない。"""
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/admin/mint", data={"url": "https://example.org/manual"})
-    assert r.status_code == 200 and "ark:/99999/a1" in r.text
+    assert r.status_code == 200 and "ark:99999/a1" in r.text
 
 
 def test_画面からでも他組織には採番できない(db, world, principal_of, as_principal):

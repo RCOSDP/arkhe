@@ -3,7 +3,7 @@
   "info": {
     "title": "arkhe",
     "summary": "ARK identifier infrastructure — minter and resolver as separate services",
-    "description": "ARK 識別子の採番と解決。\n\n**ARK は再割当てしない（NR）。** この一点が API の形をほぼ決めている。\n\n* **採番した ARK は取り消せない。** 削除の口は無く、対象が失われたときは\n  `tombstone`（記述は残り、到達性だけが落ちる）。\n* **再送で番号を増やさない。** `request_id` を付けて送れば、同じ値の再送には\n  前回と同じ ARK が返る。万オーダーの投入は途中で切れる方が普通なので、\n  切れた塊はそのまま再送してよい。\n* **shoulder はリクエストで指定しても広がらない。** 到達範囲は資格情報の\n  登録属性で決まる。省略すれば組織の既定が使われる。\n* **子リソースは採番しない。** `ark:/99999/x9abc/page/3` のような深い参照は\n  suffix passthrough が賄うので、1 レコード 1 採番で足りる。\n\n### 認証\n\n`Authorize` から Bearer トークンを入れる。受け付ける資格情報は起動時の\n`ARKHE_AUTH` で決まり、API キー・arkhe が発行したトークン・外部の認可サーバが\n発行した JWT のいずれか（併用可）。\n\n**公開情報の読取に認証は要らない。** リポジトリは公開レコードを誰にでも見せる\nものだから。\n",
+    "description": "Minting and resolution of ARK identifiers.\n\n**An ARK is never re-assigned (NR).** That one commitment shapes most of this API.\n\n* **A minted ARK cannot be withdrawn.** There is no delete; when an object is lost you\n  `tombstone` it (the description stays, only reachability goes).\n* **A resend does not mint again.** Send a `request_id` and the same value resent\n  returns the same ARK. Batches of tens of thousands are interrupted more often than\n  not, so an interrupted batch can simply be sent again.\n* **Naming a shoulder in a request does not widen anything.** Reach comes from the\n  credential's registration; omit it and the organisation's default is used.\n* **Child resources are not minted.** A deep reference such as\n  `ark:99999/x9abc/page/3` is covered by suffix passthrough, so one record per minting\n  is enough.\n\n### Authentication\n\nPut a bearer token in via `Authorize`. Which credentials are accepted is set at start-up\nby `ARKHE_AUTH`: an API key, a token arkhe issued, or a JWT from an external\nauthorisation server (any combination).\n\n**Reading public information needs no authentication**, because a repository shows its\npublic records to anyone.\n",
     "license": {
       "name": "MIT",
       "identifier": "MIT"
@@ -16,8 +16,8 @@
         "tags": [
           "oauth"
         ],
-        "summary": "アクセストークンを発行する（client_credentials）",
-        "description": "RFC 6749 §4.4 の client_credentials。\n\n資格情報は **本文でも Basic 認証でも**受ける（§2.3.1 は Basic を推奨し、\n本文も認めている。既存のクライアントライブラリはどちらも使う）。",
+        "summary": "Issue an access token (client_credentials)",
+        "description": "RFC 6749 §4.4 client_credentials.\n\nCredentials are accepted **in the body or by Basic authentication** (§2.3.1 recommends Basic and permits the body; client libraries in the wild use both).",
         "operationId": "token_oauth_token_post",
         "requestBody": {
           "content": {
@@ -56,7 +56,7 @@
           "ark"
         ],
         "summary": "Mint",
-        "description": "**新しい ARK を 1 つ発行する。** `ark:mint` が要る。\n\n採番先の shoulder は、省略すれば組織の既定。指定した場合は**その主体の到達範囲に\n含まれるかを検証するだけ**で、範囲を広げる手段にはならない。\n\n**`request_id` を付けると再送で番号が増えない**（F4）。同じ主体が同じ\n`request_id` で送り直すと、最初に採番した ARK をそのまま返す——応答だけが失われた\nときに死んだ番号が増えるのを防ぐ。区別は状態符号に出る:\n\n  201  採番した\n  200  以前の採番を返した（再送）\n\nARK は**振り直せない**。採番は取り消せない操作である。",
+        "description": "**Mint one new ARK.** Requires `ark:mint`.\n\nThe shoulder defaults to the organisation's own. Naming one in the request only asks\nwhether it lies inside the caller's registered reach — it never widens it.\n\n**Send a `request_id` and a resend will not mint again.** The same principal resending\nthe same `request_id` gets back the ARK minted the first time, so a lost response does\nnot leave a dead identifier behind. The status code says which happened:\n\n    201  minted\n    200  returned an earlier minting (a resend)\n\n**An ARK is never reissued**, so minting cannot be undone.",
         "operationId": "mint_api_mint_post",
         "requestBody": {
           "content": {
@@ -80,7 +80,7 @@
             }
           },
           "200": {
-            "description": "以前の採番を返した（再送）",
+            "description": "returned an earlier minting (a resend)",
             "content": {
               "application/json": {
                 "schema": {
@@ -118,7 +118,7 @@
           "ark"
         ],
         "summary": "Bulk Mint",
-        "description": "**まとめて採番する。** `ark:mint` が要る。1 リクエストの上限は\n`ARKHE_BULK_LIMIT`（既定 1000）。\n\n**1 件でも範囲外なら、何も作らない。** 到達範囲と shoulder の検証を全件先に済ませて\nから採番するので、途中まで採番された状態は残らない。\n\n**応答は入力の順序で返す。** 再送ぶん（`request_id` が既知の行）と新規ぶんが混ざる\nので、並びを保って呼び出し側が突き合わせられるようにしてある。`created` と\n`replayed` にそれぞれの件数が出る。全件が再送なら 200、1 件でも採番していれば 201。\n\n行ごとに `request_id` を付けておけば、**切れた塊をそのまま送り直せる**——\n採番済みの行は飛ばされる。**同じ `request_id` が 1 回の要求に複数あるときも\n1 件にまとめる**（同じ依頼を 2 度書いたのだから、番号も 1 つ）。",
+        "description": "**Mint in bulk.** Requires `ark:mint`. One request holds at most `ARKHE_BULK_LIMIT`\nrows (1000 by default).\n\n**One row out of reach and nothing is created.** Reach and shoulder are checked for\nevery row before any minting, so a half-minted batch cannot be left behind.\n\n**The answer keeps the order of the input**, because resent rows (a `request_id`\nalready seen) and new ones are mixed and the caller has to line them up. `created` and\n`replayed` carry the two counts; all resends answer 200, one new minting makes it 201.\n\nGive each row a `request_id` and **an interrupted batch can be sent again as it is** —\nrows already minted are skipped. **The same `request_id` twice inside one request still\nmints once**: it is one request, so it gets one number.",
         "operationId": "bulk_mint_api_mint_bulk_post",
         "requestBody": {
           "content": {
@@ -142,7 +142,7 @@
             }
           },
           "200": {
-            "description": "全件が再送だった",
+            "description": "every row was a resend",
             "content": {
               "application/json": {
                 "schema": {
@@ -180,7 +180,7 @@
           "ark"
         ],
         "summary": "Register",
-        "description": "B4: **既存 ARK に修飾子を付けた行を登録する。**\n\n既定では suffix passthrough が任意の深さを賄う。この口は**その既定を 1 点だけ\n上書きする**ためにある——「このサブツリーだけ別ストレージ」「この変換版だけ別の所在」。\n\n**`ark:mint` を要求する。** 採番ではないが、**新しく解決可能な識別子が増える**\nので、更新権限しか持たない主体に渡してはいけない。",
+        "description": "**Register a row for a qualified ARK** — an existing base name plus a qualifier.\n\nSuffix passthrough already covers a reference of any depth; this endpoint **overrides\nthat default at a single point**: \"this subtree lives in another store\", \"this\nderivative sits elsewhere\".\n\n**It requires `ark:mint`.** Nothing is minted, but a new resolvable identifier does\nappear, so it must not be handed to a principal that holds update rights alone.",
         "operationId": "register_api_register_post",
         "requestBody": {
           "content": {
@@ -232,7 +232,7 @@
           "ark"
         ],
         "summary": "Update",
-        "description": "既存 ARK を更新する。**対象の shoulder の manager を照合する**（M3）。",
+        "description": "Update an existing ARK. **The manager of the target's shoulder is checked.**",
         "operationId": "update_api_update_put",
         "requestBody": {
           "content": {
@@ -284,7 +284,7 @@
           "ark"
         ],
         "summary": "Bulk Update",
-        "description": "M5: **辞書で引き当て、部分適用しない。**",
+        "description": "Update in bulk. Rows are matched by key, and **nothing is applied unless every row\nis found and in reach** — there is no partial application.",
         "operationId": "bulk_update_api_update_bulk_put",
         "requestBody": {
           "content": {
@@ -336,7 +336,7 @@
           "ark"
         ],
         "summary": "Tombstone",
-        "description": "**対象が失われたと宣言する。** ARK は削除しない。\n\n`NR`（No Re-assignment）を宣言している以上、識別子は消せない。消せるのは\n対象への到達性だけで、**識別子とメタデータは残る**。\n\n**scope を `ark:update` と分けてある。** 墓碑化は「どこにあるか」ではなく\n「もう無い」という宣言で、意味も影響も違う。取り消しにくく、公開されると\n信頼に関わるので、投入バッチのような日常の書き手には渡さない。",
+        "description": "**Declare that the object is gone.** The ARK is not deleted.\n\nUnder NR (no re-assignment) an identifier cannot be removed; only reachability can be.\n**The identifier and its metadata stay**, and the resolver answers with the description.\n\n**Its scope is separate from `ark:update`.** A tombstone says \"this is gone\", not \"this\nis elsewhere\" — a different meaning with different consequences. It is hard to walk back\nand it is public, so it does not belong to routine writers such as an ingest batch.",
         "operationId": "tombstone_api_tombstone_put",
         "requestBody": {
           "content": {
@@ -388,7 +388,7 @@
           "ark"
         ],
         "summary": "Hold",
-        "description": "**転送を一時的に止める。** 解決は止めない——記述は返り続ける。\n\n委譲先が落ちた、間違った行き先を配ってしまった、対象が移動中——急いで\n止めたいが、識別子は殺したくない場面のためのもの。`404` は嘘（その識別子は\n存在する）で、`503` は識別子が壊れて見えるので、**`200` と記述**を返す\n経路（D6・tombstone と同じ）に乗せる。\n\n**scope を `ark:update` と分けてある。** 止めるのは「どこにあるか」を書き換える\nのとは別の判断で、公開の口に理由が出る。tombstone とも分ける——あちらは\n「もう無い」という恒久の宣言で、こちらは**期限つきで、元の行き先を残す**。",
+        "description": "**Stop redirecting, temporarily.** Resolution is not stopped — the description keeps\nbeing returned.\n\nFor when a delegate is down, a wrong target went out, or an object is moving: you have\nto stop quickly without killing the identifier. `404` would be a lie (the identifier\nexists) and `503` makes a permanent identifier look broken, so a hold answers **200 with\nthe description**, the same path a tombstone takes.\n\n**Its scope is separate from `ark:update`**, because stopping is a different decision\nfrom repointing and the reason is published. It is separate from a tombstone too: that\nis a permanent declaration, while this is **dated, and keeps the previous target**.",
         "operationId": "hold_api_hold_put",
         "requestBody": {
           "content": {
@@ -440,7 +440,7 @@
           "ark"
         ],
         "summary": "Hold Release",
-        "description": "期限を待たずに保留を外す。**期限切れは時計が勝手に外す**ので、これは前倒し。",
+        "description": "Lift a hold before its expiry. **An expired hold lifts itself by the clock**, so this\nis only for lifting one early.",
         "operationId": "hold_release_api_hold_release_put",
         "requestBody": {
           "content": {
@@ -492,7 +492,7 @@
           "ark"
         ],
         "summary": "Bulk Query",
-        "description": "M4: **読み取りも到達範囲に絞る**（arklet は認可を一切していなかった）。",
+        "description": "Look up ARKs in bulk. **Reads are confined to the caller's reach**, exactly as writes\nare.",
         "operationId": "bulk_query_api_query_post",
         "requestBody": {
           "content": {
@@ -802,14 +802,14 @@
             "type": "string",
             "format": "date-time",
             "title": "Until",
-            "description": "この時点まで転送しない。過去は受けない"
+            "description": "No redirection until this moment. A time in the past is refused."
           },
           "reason": {
             "type": "string",
             "maxLength": 500,
             "minLength": 1,
             "title": "Reason",
-            "description": "止めている理由"
+            "description": "Why redirection is stopped. **This is published.**"
           }
         },
         "type": "object",
@@ -819,7 +819,7 @@
           "reason"
         ],
         "title": "HoldIn",
-        "description": "転送の一時停止。**解決は止めない**（記述は返り続ける）。\n\n`until` を必須にしてあるのは、「一時的」を人の記憶に頼ると恒久化するから。\n`reason` を必須にしてあるのは、**公開の口（`?info`）に出る**うえ、外す判断に\n要るから——理由の無い保留は、掛けた本人以外に外せない。"
+        "description": "A temporary stop on redirection. **Resolution is not stopped** — the description keeps being returned. `until` is required because a \"temporary\" left to memory becomes permanent; `reason` is required because it is published, and because lifting the hold needs it."
       },
       "HoldReleaseIn": {
         "properties": {
@@ -833,7 +833,7 @@
           "ark"
         ],
         "title": "HoldReleaseIn",
-        "description": "期限を待たずに保留を外す。"
+        "description": "Lift a hold before its expiry."
       },
       "MintIn": {
         "properties": {
@@ -901,13 +901,13 @@
             "type": "string",
             "maxLength": 200,
             "title": "Request Id",
-            "description": "冪等鍵。同じ値で再送すると、前回採番した ARK をそのまま返す",
+            "description": "Idempotency key. Resending the same value returns the ARK minted the first time, instead of minting again.",
             "default": ""
           }
         },
         "type": "object",
         "title": "MintIn",
-        "description": "採番の入力。\n\n**`shoulder` は任意。** 省略すると組織の `default_shoulder` が使われる。\n指定した場合も**範囲を広げる手段にはならない**（登録された到達範囲内かを\n検証するだけ）。`naan` は受け取らない——主体が決めるものだから。"
+        "description": "Input for minting. `shoulder` is optional: omitted, the organisation's default is used; named, it is only checked against the caller's registered reach, never widening it. `naan` is not accepted — it follows from the principal."
       },
       "RegisterIn": {
         "properties": {
@@ -969,12 +969,12 @@
           "ark": {
             "type": "string",
             "title": "Ark",
-            "description": "既存の base ARK（`ark:/99999/xyz`）"
+            "description": "An existing base ARK (`ark:99999/xyz`)."
           },
           "qualifier": {
             "type": "string",
             "title": "Qualifier",
-            "description": "`/`（包含）か `.`（変種）で始める"
+            "description": "Begins with `/` (a part) or `.` (a variant)."
           }
         },
         "type": "object",
@@ -983,7 +983,7 @@
           "qualifier"
         ],
         "title": "RegisterIn",
-        "description": "B4: 修飾子付き ARK の登録。\n\n**`ark` は既存の base、`qualifier` はその後ろに付ける部分参照。**\n採番ではないので NOID もチェックディジットも生成しない。"
+        "description": "A qualified ARK: `ark` is an existing base name and `qualifier` the part reference appended to it. Nothing is minted, so no NOID and no check digit are generated."
       },
       "TombstoneIn": {
         "properties": {
@@ -1007,7 +1007,7 @@
           "ark"
         ],
         "title": "TombstoneIn",
-        "description": "**対象が失われたと宣言する。** ARK は削除しない。"
+        "description": "Declare that the object is gone. **The ARK is not deleted** — the identifier and its metadata stay, only reachability goes."
       },
       "UpdateIn": {
         "properties": {
@@ -1075,7 +1075,8 @@
         "required": [
           "ark"
         ],
-        "title": "UpdateIn"
+        "title": "UpdateIn",
+        "description": "ERC / Dublin Core fields. All optional."
       },
       "ValidationError": {
         "properties": {
@@ -1121,7 +1122,7 @@
     "securitySchemes": {
       "oauth2": {
         "type": "oauth2",
-        "description": "arkhe が自分で発行するトークン（RFC 6749 §4.4 client_credentials）。",
+        "description": "Tokens arkhe issues itself (RFC 6749 §4.4 client_credentials).",
         "flows": {
           "clientCredentials": {
             "scopes": {
@@ -1137,7 +1138,7 @@
       },
       "bearer": {
         "type": "http",
-        "description": "API キー（apikey モード）、arkhe が発行したトークン（oauth2 モード）、外部の認可サーバが発行した JWT（oidc モード）のいずれか。有効な機構は ARKHE_AUTH で決まる。",
+        "description": "An API key (apikey mode), a token arkhe issued (oauth2 mode), or a JWT from an external authorisation server (oidc mode). Which mechanisms are live is set by ARKHE_AUTH.",
         "scheme": "bearer"
       }
     }
@@ -1145,11 +1146,11 @@
   "tags": [
     {
       "name": "ark",
-      "description": "採番と更新。**書き込みは到達範囲の内側にしか届かない。**"
+      "description": "Minting and updating. **A write never reaches outside the caller's registered reach.**"
     },
     {
       "name": "resolve",
-      "description": "解決。`?`（簡潔な記述）・`??`（永続性宣言）・`?info`（人間向け）・`?json`（機械可読）の inflection を持つ。**対象に到達できなくても記述は答えられる**（FAIR A2）。`ARKHE_RESOLVER=1` で起動したときだけ現れる。"
+      "description": "Resolution, with the `?` (a brief description), `??` (the persistence statement), `?info` (for a person) and `?json` (for a program) inflections. **A description can be answered even when the object cannot be reached** (FAIR A2). Present only when started with `ARKHE_RESOLVER=1`."
     }
   ]
 }

@@ -12,7 +12,7 @@ def test_採番して解決できる(world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/api/mint", json={"url": "https://example.org/1", "title": "A"})
     assert r.status_code == 201
-    key = r.json()["ark"].removeprefix("ark:/")
+    key = r.json()["ark"].removeprefix("ark:")
     assert c.get(f"/ark:/{key}").headers["location"] == "https://example.org/1"
 
 
@@ -129,10 +129,11 @@ def test_ark表記のゆれを吸収する(world, principal_of, as_principal):
     `9999-9` は別の NAAN であり 400 になるのが正しい。
     """
     c = as_principal(principal_of(manager=world["a"]))
-    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:/")
+    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
     naan, name = key.split("/", 1)
     hyphenated = f"{naan}/{name[:3]}-{name[3:]}"  # name 部に入れる
-    for form in (f"ark:/{key}", key, hyphenated):
+    # §2.2: 新旧どちらのラベルも**永久に**受ける。生成が新形式になっても受理は減らさない。
+    for form in (f"ark:{key}", f"ark:/{key}", key, hyphenated):
         assert c.put(
             "/api/update", json={"ark": form, "url": "https://x/2"}
         ).status_code == 200, form
@@ -146,11 +147,322 @@ def test_ark表記のゆれを吸収する(world, principal_of, as_principal):
     assert bad.status_code in (400, 404)
 
 
-def test_well_known_ark(world, principal_of, as_principal):
+def test_F1_仕様が要求する長さのNAANで採番して解決できる(db, root, principal_of, as_principal):
+    """§2.3「受け取る実装は NAAN 16 オクテットまで対応しなければならない」。
+
+    **10 で弾いていたのは arklet の `int()` を守るための定数**で、N2（NAAN を
+    整数化しない）を決めた時点で理由は消えていた。**端から端まで通ることを見る**
+    ——解析だけ通っても、列が狭ければ採番で落ちる。
+    """
+    from arkhe.domain import admin_ops as ops
+
+    long_naan = "bcdfghjkmnpqrstv"  # 16 オクテットの betanumeric
+    assert len(long_naan) == 16
+    ops.create_naan(db, root, naan=long_naan, name="長い NAAN の RA")
+    db.flush()
+    manager, _ = ops.onboard_manager(db, root, naan=long_naan, name="D組織", shoulder="/d4")
+    db.commit()
+
+    c = as_principal(principal_of(naan=long_naan, manager=manager))
+    r = c.post("/api/mint", json={"url": "https://long.example.org/1"})
+    assert r.status_code == 201
+    key = r.json()["ark"].removeprefix("ark:")
+    assert key.startswith(f"{long_naan}/")
+    assert c.get(f"/ark:/{key}").headers["location"] == "https://long.example.org/1"
+
+
+def test_F1_名前は仕様の下限まで受け_超えたら理由を返す(world, principal_of, as_principal):
+    """§3.1「Base Name ＋ Qualifier は 255 オクテットまで対応しなければならない」。
+
+    **超えたぶんは DB のエラーで落とさない。** 索引できないという我々の事情なので、
+    そう言って 400 を返す（仕様も「長い文字列を作る側は、受け取る実装が索引でき
+    ないかもしれないと理解すべき」と書いている）。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"]
+    base = key.removeprefix("ark:").split("/", 1)[1]
+
+    fits = "/" + "z" * (255 - len(base) - 1)      # base + 修飾子でちょうど 255
+    r = c.post("/api/register", json={"ark": key, "qualifier": fits, "url": "https://x/2"})
+    assert r.status_code == 201
+    assert len(r.json()["ark"].removeprefix("ark:").split("/", 1)[1]) == 255
+
+    over = fits + "z"                              # 1 オクテット超える
+    bad = c.post("/api/register", json={"ark": key, "qualifier": over, "url": "https://x/3"})
+    assert bad.status_code == 400
+    assert bad.json()["code"] == "ARKHE-1004"
+    assert bad.json()["detail"] == {"length": 256, "limit": 255}
+
+
+def test_A5_生成は新形式_受理は旧形式も永久に(world, principal_of, as_principal):
+    """§2.2: 「新形式 `ark:` と旧形式 `ark:/` は**どちらも永久に**認識しなければ
+    ならない。実装は**新しい ARK を新形式で生成すべき**」。
+
+    **受理と生成で非対称**にする。受けるほうを狭めると既存の参照が死ぬが、
+    出すほうを旧形式のままにすると、我々が配った文字列がそのまま次の実装の
+    入力になって**旧形式が減らない**。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    ark = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"]
+    assert ark.startswith("ark:") and not ark.startswith("ark:/")
+    key = ark.removeprefix("ark:")
+
+    # **出す口はすべて新形式。** 1 か所でも旧形式が残ると、そこから漏れ続ける。
+    assert c.get(f"/ark:{key}?json").json()["ark"] == f"ark:{key}"
+    assert f"ark:{key}" in c.get(f"/ark:{key}??").text
+    missing = c.get(f"/ark:{key}zz-not-registered")
+    assert missing.status_code == 404 and "ark:/" not in missing.text
+
+    # **受けるほうは減らさない。** 旧形式でも大文字ラベルでも同じ ARK に当たる。
+    for path in (f"/ark:{key}", f"/ark:/{key}", f"/ARK:/{key}", f"/Ark:{key}"):
+        assert c.get(path, follow_redirects=False).headers["location"] == "https://x/1", path
+
+
+def test_誤りは符号と英語の文面で返る(world, principal_of, as_principal):
+    """**文面ではなく符号で判定させる。** 文面は直る（訳も語調も変わる）。
+
+    `detail` は文面を埋めた値を**構造化したまま**返す——数字を文から切り出す
+    クライアントを作らせない。
+    """
+    # **他組織の ARK を先に用意する。** `as_principal` は同じ app の差し替えを
+    # 上書きするので、あとから作った主体が有効になる（最後に A を作る）。
+    theirs = as_principal(principal_of(manager=world["b"], client_id="b")).post(
+        "/api/mint", json={}
+    ).json()["ark"]
+
+    c = as_principal(principal_of(manager=world["a"]))
+
+    over = c.post("/api/mint/bulk", json={"data": [{} for _ in range(1001)]})
+    assert over.status_code == 400
+    assert over.json() == {
+        "code": "ARKHE-1011",
+        "message": "A request holds at most 1000 rows.",
+        "detail": {"limit": 1000},
+    }
+
+    # 他組織の ARK には触れない。**符号が「範囲の話だ」と言っている。**
+    denied = c.put("/api/update", json={"ark": theirs, "url": "https://x/1"})
+    assert denied.status_code in (403, 404)
+    assert denied.json()["code"].startswith("ARKHE-1")
+
+    # 読めない ARK は 400。
+    bad = c.put("/api/update", json={"ark": "not-an-ark", "url": "https://x/1"})
+    assert bad.status_code == 400 and bad.json()["code"] == "ARKHE-1001"
+
+    # scope が足りなければ、**足りない scope を名指しする**（最後に差し替える）。
+    thin = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
+    short = thin.post("/api/mint", json={})
+    assert short.status_code == 403
+    assert short.json()["code"] == "ARKHE-1301"
+    assert short.json()["detail"]["scope"] == "ark:mint"
+
+
+def test_解決の符号は本文の行頭に出る(world, principal_of, as_principal):
+    """解決は `text/plain` を返す（人も読む）ので、**符号を行頭に置く**。"""
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
+    naan = key.split("/")[0]
+
+    # 検査桁の合わない名前は「転記ミス」だと言う。
+    mistyped = c.get(f"/ark:{naan}/x9zzzzzzzz")
+    assert mistyped.status_code == 404
+    assert mistyped.text.startswith("ARKHE-1403 ")
+
+    # ARK として読めないもの。
+    unreadable = c.get("/ark:/")
+    assert unreadable.status_code == 400 and unreadable.text.startswith("ARKHE-1001 ")
+
+
+def test_A1_ラベルの大小は経路でも無視する(world, principal_of, as_principal):
+    """§3.2 手順3「**大小非依存で** 'ark:/' または 'ark:' に最初に一致した箇所を
+    'ark:' に直す」。
+
+    `parse_ark` は最初から大小非依存だったが、**経路照合は大小を見る**ので
+    `/ARK:/…` はルータに届かず 404 になっていた。**直すのはラベルの 5 文字だけ**
+    ——名前の大小は識別子の一部なので触らない（手順5）。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
+    for label in ("ark:", "ark:/", "ARK:", "ARK:/", "Ark:", "aRk:/"):
+        r = c.get(f"/{label}{key}", follow_redirects=False)
+        assert r.headers.get("location") == "https://x/1", label
+
+    # **名前の大小は直さない。** 直すと別の識別子に当ててしまう。
+    assert c.get(f"/ARK:{key.upper()}", follow_redirects=False).status_code == 404
+
+
+def test_C7_THUMPのヘッダを付ける(world, principal_of, as_principal):
+    """§5.2。`Link` の役目は仕様が説明している——**inflection を知らない受信者に、
+    この応答が「修飾の付いていない ARK」を記述したものだと示す**。
+
+    `rel` の綴りは仕様の応答例（`<…> rel="describes";`）ではなく RFC 8288 に従う。
+    例のほうが誤りで、そのまま出すと標準の Link パーサが読めない。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
+
+    # 裸の `?` は入れない——クエリ文字列だけでは区別できず、この経路では
+    # inflection 無し（＝転送）になる（`ARKHE_RAW_URI_HEADER` の項を見よ）。
+    for q in ("??", "?info", "?json"):
+        h = c.get(f"/ark:{key}{q}").headers
+        assert h["thump-status"] == "0.6 200 OK", q
+        assert h["link"] == f'</ark:{key}>; rel="describes"', q
+
+    # 見つからないときも THUMP の応答である（符号は写す）。
+    missing = c.get(f"/ark:{key}zz-not-registered?info")
+    assert missing.status_code == 404
+    assert missing.headers["thump-status"] == "0.6 404 Not Found"
+
+    # **転送には付けない。** それは THUMP の答えではなく、対象への誘導。
+    assert "thump-status" not in c.get(f"/ark:{key}", follow_redirects=False).headers
+
+
+def test_C6_whereは転送先ではなくARK(world, principal_of, as_principal):
+    """§5.1.2「**"where" は長期的な識別子であって、一時的な転送先ではない**」。
+
+    以前は逆で、`where` に転送先の URL を入れ、ARK は URL が空のときの代替だった。
+    記述は「この識別子は何を指すか」を答えるものなので、**行き先が変わっても
+    変わらない値**が入っていなければ、記述として引用できない。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={
+        "url": "https://one.example/1", "title": "題", "who": "山田", "when": "2026",
+    }).json()["ark"].removeprefix("ark:")
+
+    body = c.get(f"/ark:{key}??").text
+    assert f"where: ark:{key}" in body
+    # **転送先は捨てない。** kernel の外に、あるときだけ出す。
+    assert "redirect: https://one.example/1" in body
+
+    j = c.get(f"/ark:{key}?json").json()
+    assert j["where"] == f"ark:{key}" and j["redirect"] == "https://one.example/1"
+
+    # 行き先を変えても `where` は動かない。**それがこの要素の意味である。**
+    c.put("/api/update", json={"ark": f"ark:{key}", "url": "https://two.example/2"})
+    j2 = c.get(f"/ark:{key}?json").json()
+    assert j2["where"] == j["where"] and j2["redirect"] == "https://two.example/2"
+
+    # 行き先が無い ARK でも `where` は答えられる（FAIR A2）。
+    c.put("/api/tombstone", json={"ark": f"ark:{key}", "commitment": "失われた"})
+    assert f"where: ark:{key}" in c.get(f"/ark:{key}??").text
+
+
+def test_A4_エンコードされたスラッシュは区切りにならない(world, principal_of, as_principal):
+    """draft-kunze-ark-42 §3.2「%-エンコードされた文字を復号形で現してはならない」。
+
+    `%2F` は**「ここに `/` はあるが成分の区切りではない」と書く唯一の方法**
+    （§3.2「予約文字を %-エンコードしてよいのは、その予約された意味を隠すときだけ」）。
+    復号すると `base/a%2Fb`（1 つの名前）が `base/a/b`（`base/a` に含まれる `b`）に
+    化け、**祖先 passthrough が base の行き先を継いでしまう**——別の識別子に
+    別の答えを返すことになる。
+
+    ASGI は経路を先に復号するので、`scope["raw_path"]` から取り直している。
+    """
+    c = as_principal(principal_of(manager=world["a"]))
+    key = c.post("/api/mint", json={"url": "https://base.example.org/1"}).json()["ark"]
+    base = key.removeprefix("ark:")
+
+    # 隠した `/` を含む修飾子を、別の行き先で登録する。
+    r = c.post("/api/register", json={"ark": key, "qualifier": "/a%2fb",
+                                      "url": "https://other.example.org/2"})
+    assert r.status_code == 201
+    # 手順5: 保存されるのは大文字に揃えた形。
+    assert r.json()["ark"] == f"ark:{base}/a%2Fb"
+
+    # **その行に当たる。** base の行き先＋`/a/b` ではない。
+    hit = c.get(f"/ark:/{base}/a%2Fb", follow_redirects=False)
+    assert hit.status_code == 302
+    assert hit.headers["location"] == "https://other.example.org/2"
+
+    # 小文字で来ても同じ行に当たる（手順5 は受け取り側でも効く）。
+    assert c.get(f"/ark:/{base}/a%2fb", follow_redirects=False).headers["location"] == (
+        "https://other.example.org/2"
+    )
+
+    # 素の `/` は別の識別子。**こちらは登録が無いので base から継ぐ。**
+    passthrough = c.get(f"/ark:/{base}/a/b", follow_redirects=False)
+    assert passthrough.status_code == 302
+    assert passthrough.headers["location"] == "https://base.example.org/1/a/b"
+
+
+def test_A4_raw_pathが無い環境では復号済みの経路に落ちる():
+    """**生の経路を渡さないサーバでも動く。** 落ちる先は今までと同じ挙動。"""
+    from types import SimpleNamespace
+
+    from arkhe.api.resolve import _raw_ark_path
+
+    url = SimpleNamespace(path="/ark:/99999/x54/c2")
+    assert _raw_ark_path(SimpleNamespace(scope={}, url=url)) == "/ark:/99999/x54/c2"
+    # query が混ざって渡るサーバがあるので、素の `?` で切る。
+    req = SimpleNamespace(scope={"raw_path": b"/ark:/99999/x54%2Fc2?info"}, url=url)
+    assert _raw_ark_path(req) == "/ark:/99999/x54%2Fc2"
+    # UTF-8 でない生バイトは**捏造せず**復号済みへ落とす。
+    bad = SimpleNamespace(scope={"raw_path": b"/ark:/99999/x\xff"}, url=url)
+    assert _raw_ark_path(bad) == "/ark:/99999/x54/c2"
+
+
+def test_well_known_arkは既定で仕様どおりのtext_plainを返す(world, principal_of, as_principal):
+    """draft-kunze-ark-42 §5.6。**`Accept` を送らない相手には仕様の表現を返す。**
+
+    `*/*` で独自の JSON を返すと、仕様どおりに読む発見クライアントからは
+    「このホストは ARK リゾルバではない」に見える。
+    """
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/.well-known/ark")
     assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/plain")
+    # 本文はリゾルバのルートパス 1 行。**末尾は `/`**——ここに Compact ARK を
+    # 継ぎ足すと解決の経路になる、というのが仕様の定め。
+    assert r.text.strip() == "/"
+    assert c.get(f"{r.text.strip()}ark:/99999/x9abc").status_code in (200, 302, 404)
+    # 同じ URL が 2 つの表現を持つので、間に挟まる cache のために要る。
+    assert r.headers["vary"] == "Accept"
+
+
+def test_well_known_arkはjsonを求められたときだけ在庫を返す(world, principal_of, as_principal):
+    c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
+    r = c.get("/.well-known/ark", headers={"Accept": "application/json"})
+    assert r.status_code == 200
     assert {n["naan"] for n in r.json()["naans"]} == {"99999", "88888"}
+    # **仕様が定める値も JSON 側に入れる。** 片方だけ見て済ませられるように。
+    assert r.json()["resolver_path"] == "/"
+    assert r.headers["vary"] == "Accept"
+
+
+@pytest.mark.parametrize(
+    ("accept", "want"),
+    [
+        ("", "text/plain"),                                   # ヘッダ無し
+        ("*/*", "text/plain"),                                # curl の既定
+        ("application/json", "application/json"),
+        ("application/json, text/plain;q=0.9", "application/json"),
+        ("text/plain, application/json", "text/plain"),       # 同点は仕様の側へ
+        ("text/html,application/xhtml+xml,*/*;q=0.8", "text/plain"),  # ブラウザ
+        ("application/*", "application/json"),
+        ("application/xml", "text/plain"),                    # どちらも出せない
+    ],
+)
+def test_well_known_arkの媒体の選び方(accept, want, world, principal_of, as_principal):
+    c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
+    r = c.get("/.well-known/ark", headers={"Accept": accept} if accept else {})
+    assert r.headers["content-type"].startswith(want)
+
+
+@pytest.mark.parametrize(
+    ("root_path", "want"),
+    [("", "/"), ("/", "/"), ("/pid", "/pid/"), ("/pid/", "/pid/"), (None, "/")],
+)
+def test_well_known_arkはマウント位置を答える(root_path, want):
+    """**前段でパスを切っているなら、その値を答える。**
+
+    仕様は「そのパスに Compact ARK を継ぎ足すと解決の要求になる」と定めている
+    ので、`/` 決め打ちにするとプレフィクス付きの構成で案内先が実際の口とずれる。
+    """
+    from types import SimpleNamespace
+
+    from arkhe.api.resolve import _resolver_path
+
+    assert _resolver_path(SimpleNamespace(scope={"root_path": root_path})) == want
 
 
 @pytest.mark.parametrize("resolver", [False, True], ids=["minter", "resolver"])
@@ -182,7 +494,7 @@ def test_公開ページに保護ヘッダが付く(world, principal_of, as_prin
     """
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/api/mint", json={"url": "https://example.org/1", "title": "x"})
-    key = r.json()["ark"].removeprefix("ark:/")
+    key = r.json()["ark"].removeprefix("ark:")
     # **200 を返す経路で見る。** 404 でもヘッダは付くので、それでは
     # 「公開ページに付いている」ことの確認にならない。
     info = c.get(f"/ark:/{key}?info")
@@ -270,7 +582,7 @@ def test_開けない行き先は転送せず記述を返す(world, principal_of
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post(
         "/api/mint", json={"url": "urn:isbn:0451450523", "title": "紙の本"}
-    ).json()["ark"].removeprefix("ark:/")
+    ).json()["ark"].removeprefix("ark:")
     r = c.get(f"/ark:/{key}")
     assert r.status_code == 200                     # 302 ではない
     assert "urn:isbn:0451450523" in r.text          # 行き先は見せる
@@ -281,7 +593,7 @@ def test_開ける行き先は転送する(world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post(
         "/api/mint", json={"url": "https://ok.example/1"}
-    ).json()["ark"].removeprefix("ark:/")
+    ).json()["ark"].removeprefix("ark:")
     r = c.get(f"/ark:/{key}")
     assert r.status_code == 302 and r.headers["location"] == "https://ok.example/1"
 
@@ -417,7 +729,7 @@ def test_解決の200は宣言した3つの媒体で返る(world, principal_of, 
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post(
         "/api/mint", json={"url": "https://example.org/1", "title": "A"}
-    ).json()["ark"].removeprefix("ark:/")
+    ).json()["ark"].removeprefix("ark:")
 
     got = {
         c.get(f"/ark:/{key}?{q}").headers["content-type"].split(";")[0]

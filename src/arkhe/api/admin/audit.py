@@ -17,11 +17,11 @@ from arkhe.api.admin._common import (
     AdminPrincipal,
     Db,
     _ctx,
+    _refuse,
     _remember_lang,
     router,
     templates,
 )
-from arkhe.auth.errors import Forbidden
 from arkhe.db.models import (
     AuditEvent,
 )
@@ -38,7 +38,7 @@ def audit(request: Request, principal: AdminPrincipal, session: Db,
     操作履歴が見えてはならない。
     """
     if not principal.is_naan_wide:
-        raise Forbidden("監査ログの閲覧は NAAN 単位以上の権限が要る")
+        raise _refuse(request, "e.audit_naan_wide")
     page = max(1, page)
     stmt = select(AuditEvent).order_by(AuditEvent.at.desc())
     if q.strip():

@@ -17,7 +17,7 @@ a resolver process, the same way it runs in production — with a ledger already
 | | URL |
 | --- | --- |
 | Admin UI and minting API | <http://localhost:8057/admin/> |
-| Resolution (**no authentication**) | <http://localhost:8058/ark:/…> |
+| Resolution (**no authentication**) | <http://localhost:8058/ark:…> |
 | API reference | <http://localhost:8057/api/docs> |
 | Keycloak console | <http://localhost:8080/> (`admin` / `admin`) |
 
@@ -118,10 +118,10 @@ uvicorn arkhe.app:create_app --factory &
 curl -X POST http://127.0.0.1:8000/api/mint \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -d '{"url": "https://example.org/records/1", "title": "First object"}'
-# → {"ark": "ark:/99999/x9…", …}
+# → {"ark": "ark:99999/x9…", …}
 
-curl -i "http://127.0.0.1:8000/ark:/99999/x9…"        # 302 to the object
-curl    "http://127.0.0.1:8000/ark:/99999/x9…??"      # the persistence statement
+curl -i "http://127.0.0.1:8000/ark:99999/x9…"        # 302 to the object
+curl    "http://127.0.0.1:8000/ark:99999/x9…??"      # the persistence statement
 ```
 
 ## What just happened

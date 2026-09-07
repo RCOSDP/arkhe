@@ -14,7 +14,7 @@ ORM の層で削除を拒む。
 対象が本当に失われたときは **tombstone** にする。識別子と記述は残り、到達性だけが落ちる。
 
 ```bash
-curl -X PUT /api/tombstone -d '{"ark": "ark:/99999/x9…", "commitment": "取り下げ"}'
+curl -X PUT /api/tombstone -d '{"ark": "ark:99999/x9…", "commitment": "取り下げ"}'
 ```
 
 以後リゾルバは、転送ではなく記述を返す。これは
@@ -31,7 +31,7 @@ curl -X PUT /api/tombstone -d '{"ark": "ark:/99999/x9…", "commitment": "取り
 ——[ARK は削除しない](#ark)と同じ経路で、識別子は生きたまま転送だけが止まる。
 
 ```bash
-arkhe hold add ark ark:/99999/x9abc --days 3 --reason "行き先を確認中"
+arkhe hold add ark ark:99999/x9abc --days 3 --reason "行き先を確認中"
 arkhe hold add shoulder 7 --days 1 --reason "委譲先のリゾルバが落ちている"
 ```
 

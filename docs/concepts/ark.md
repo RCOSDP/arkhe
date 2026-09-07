@@ -3,7 +3,7 @@
 An **ARK** (Archival Resource Key) is a persistent identifier that looks like this:
 
 ```
-ark:/99999/x9abc1234
+ark:99999/x9abc1234
     └──┬─┘ └────┬───┘
      NAAN     name
 ```
@@ -21,7 +21,7 @@ flowchart TB
         DOI["10.xxxx — DOI<br/><small>registration agencies manage the namespace;<br/>records live with the RA</small>"]
         HDL["20.500.xxxxx — CNRI Handle<br/><small>a prefix an organisation buys</small>"]
     end
-    ARK["ark:/99999/…<br/><small>plain HTTP and DNS. No substructure beneath it.</small>"]
+    ARK["ark:99999/…<br/><small>plain HTTP and DNS. No substructure beneath it.</small>"]
 ```
 
 **DOI is built on Handle.** `doi.org` is a Handle resolver, and a DOI is a name in
@@ -38,7 +38,7 @@ is part of the promise. With an ARK, **the promise is yours and you say what it 
 — which is why the scheme has a way to *ask*:
 
 ```bash
-curl "https://example.org/ark:/99999/x9abc1234??"
+curl "https://example.org/ark:99999/x9abc1234??"
 ```
 
 ```
@@ -46,7 +46,8 @@ erc:
 who: 山田太郎
 what: A dataset
 when: 2026
-where: https://repo.example.ac.jp/records/1
+where: ark:99999/x9abc1234
+redirect: https://repo.example.ac.jp/records/1
 policy: NP | NR, OP, CC | 2026 | https://example.org/policy
 commitment-level: permanent-dynamic
 ```

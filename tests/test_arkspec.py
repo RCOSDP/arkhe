@@ -23,8 +23,10 @@ from arkhe.arkspec.betanumeric import (
 from arkhe.arkspec.naming import (
     ArkParseError,
     ark_key,
+    compact_ark,
     gen_prefixes,
     is_structural_at,
+    normalize_percent,
     normalize_structural,
     parse_ark,
     split_after_normalized,
@@ -196,10 +198,16 @@ def test_n3_naan_rejects_non_betanumeric():
 # --------------------------------------------------------------------------
 
 
-def test_f1_overlong_naan_is_rejected_before_conversion():
+def test_f1_naan_up_to_the_spec_minimum_is_accepted():
+    """§2.3: "implementations **must support a minimum NAAN length of 16 octets**".
+
+    **以前は 10 で弾いていた。** arklet が NAAN を `int()` に通すための防御を
+    そのまま持っていたもので、N2（整数化しない）を決めた時点で理由は消えていた。
+    """
+    assert parse_ark("ark:/" + "9" * 16 + "/xyz").naan == "9" * 16
+    assert parse_ark("ark:/" + "bcd" * 5 + "1" + "/xyz").naan == "bcd" * 5 + "1"
     with pytest.raises(ArkParseError):
-        parse_ark("ark:/" + "9" * 11 + "/xyz")
-    assert parse_ark("ark:/" + "9" * 10 + "/xyz").naan == "9" * 10
+        parse_ark("ark:/" + "9" * 17 + "/xyz")
 
 
 def test_malformed_arks_are_rejected():
@@ -416,3 +424,69 @@ def test_a3_split_counts_past_every_hyphen_flavour():
     head, tail = split_after_normalized("kb1d–191j－10ds/entry", 12)
     assert strip_hyphens(head) == "kb1d191j10ds"
     assert tail == "/entry"
+
+
+# --------------------------------------------------------------------------
+# A4  %-エンコード（draft-kunze-ark-42 §3.1・§3.2 手順5）
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "src,want",
+    [
+        # 手順5: "the two characters following every occurrence of '%' are
+        # converted to uppercase"
+        ("x54%2fc2", "x54%2Fc2"),
+        ("x54%7d", "x54%7D"),
+        ("%2f%2e%2d", "%2F%2E%2D"),
+        # "The case of all other letters in the ARK string must be preserved."
+        ("Ab%2fCd", "Ab%2FCd"),
+        # 三つ組として成立しないものは触らない（**壊れた入力を別の文字列にしない**）
+        ("50%off", "50%off"),
+        ("x%zz", "x%zz"),
+        ("x%2", "x%2"),
+        ("x%", "x%"),
+    ],
+)
+def test_a4_percent_hex_is_uppercased_and_nothing_else(src, want):
+    assert normalize_percent(src) == want
+
+
+def test_a4_encoded_slash_is_not_a_structural_character():
+    """**`%2F` は「区切りではない `/`」を書く唯一の方法**（§3.2「隠す目的なら可」）。
+
+    復号すると `x54%2Fc2`（1 つの名前）が `x54/c2`（`x54` に含まれる `c2`）に化ける
+    ——別の識別子であり、祖先も変わる。
+    """
+    name = normalize_percent("x54%2fc2")
+    assert name == "x54%2Fc2"
+    assert normalize_structural(name) == name  # 構造文字として畳まれない
+    assert list(gen_prefixes(name)) == []      # 祖先を生やさない
+    assert list(gen_prefixes("x54/c2")) == ["x54"]  # 素の `/` はこちら
+
+
+def test_a4_encoded_hyphen_survives_hyphen_removal():
+    """`%2D` は落とさない。**ハイフンは予約文字で、隠す目的の %-エンコードは合法。**
+
+    落とすと「無意味だから無視される `-`」と「意味を持たせるために隠した `-`」の
+    区別が消える。
+    """
+    assert strip_hyphens("kb1-d%2D191j") == "kb1d%2D191j"
+
+
+# --------------------------------------------------------------------------
+# A5  ラベルの新旧（draft-kunze-ark-42 §2.2）
+# --------------------------------------------------------------------------
+
+
+def test_a5_generation_uses_the_new_label_form():
+    """生成は新形式。**表記を決める場所を 1 つにしてある**ので、ここで固定できる。"""
+    assert compact_ark("99999/x9abc") == "ark:99999/x9abc"
+    assert compact_ark("99999") == "ark:99999"  # NAAN だけの ARK も同じ
+
+
+@pytest.mark.parametrize("src", ["ark:99999/x9abc", "ark:/99999/x9abc", "ARK:/99999/x9abc"])
+def test_a5_both_label_forms_are_still_accepted(src):
+    """受理は両形式。**"must be recognized in perpetuity"** なので、狭めない。"""
+    p = parse_ark(src)
+    assert (p.naan, p.name) == ("99999", "x9abc")

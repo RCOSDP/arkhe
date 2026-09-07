@@ -20,9 +20,9 @@ from arkhe.api.admin._common import (
     Db,
     _page,
     _redirect,
+    _refuse,
     router,
 )
-from arkhe.auth.errors import Forbidden
 from arkhe.db.models import Ark, ArkChange
 from arkhe.domain import admin_ops as ops
 from arkhe.domain.queries import narrow_arks, selectable_orgs, visible_arks
@@ -76,7 +76,7 @@ def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: st
         visible_arks(principal).options(selectinload(Ark.shoulder)).where(Ark.ark == key)
     )
     if row is None:
-        raise Forbidden("この ARK はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_ark")
     changes = list(
         session.scalars(
             select(ArkChange).where(ArkChange.ark == key).order_by(ArkChange.at.desc())

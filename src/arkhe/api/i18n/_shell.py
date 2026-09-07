@@ -36,6 +36,22 @@ JA: dict[str, str] = {
     "f.saved": "保存しました。",
     "f.optional": "任意",
     "f.readonly_here": "この画面からは変えられません",
+
+    # 断りの文面。**画面の言語で返す。** 直書きしていたので、英語で使っていても
+    # 日本語が返っていた——画面が切り替わるのに断りだけ切り替わらないのは、
+    # いちばん困るところで母語から落ちるということ。
+    "e.naan_system_only": "NAAN の登録はシステム管理者のみ",
+    "e.minter_system_only": "採番の案内先の変更はシステム管理者のみ",
+    "e.manager_naan_wide": "組織のオンボードは NAAN 単位以上の権限が要る",
+    "e.shoulder_naan_wide": "shoulder の切り出しは NAAN 単位以上の権限が要る",
+    "e.audit_naan_wide": "監査ログの閲覧は NAAN 単位以上の権限が要る",
+    "e.out_of_reach_naan": "この NAAN はこの主体の範囲外",
+    "e.out_of_reach_manager": "この組織はこの主体の範囲外",
+    "e.out_of_reach_shoulder": "この shoulder はこの主体の範囲外",
+    "e.out_of_reach_ark": "この ARK はこの主体の範囲外",
+    "e.out_of_reach_client": "この利用者はこの主体の範囲外",
+    "e.cannot_add_client": "この主体は利用者を登録できない",
+    "e.mechanism_off": "この構成はこの資格情報を受け付けない（ARKHE_AUTH を確認すること）",
 }
 
 EN: dict[str, str] = {
@@ -63,4 +79,18 @@ EN: dict[str, str] = {
     "f.saved": "Saved.",
     "f.optional": "optional",
     "f.readonly_here": "cannot be changed here",
+
+    # Refusals. **Answered in the language of the screen.**
+    "e.naan_system_only": "Only a system administrator registers a NAAN.",
+    "e.minter_system_only": "Only a system administrator changes where minting happens.",
+    "e.manager_naan_wide": "Onboarding an organisation needs NAAN-wide authority.",
+    "e.shoulder_naan_wide": "Carving out a shoulder needs NAAN-wide authority.",
+    "e.audit_naan_wide": "Reading the audit log needs NAAN-wide authority.",
+    "e.out_of_reach_naan": "This NAAN is outside your reach.",
+    "e.out_of_reach_manager": "This organisation is outside your reach.",
+    "e.out_of_reach_shoulder": "This shoulder is outside your reach.",
+    "e.out_of_reach_ark": "This ARK is outside your reach.",
+    "e.out_of_reach_client": "This user is outside your reach.",
+    "e.cannot_add_client": "This principal cannot register users.",
+    "e.mechanism_off": "This deployment does not accept that credential (check ARKHE_AUTH).",
 }

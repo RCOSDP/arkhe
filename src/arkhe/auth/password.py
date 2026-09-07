@@ -86,10 +86,10 @@ def authenticate(session: Session, subject: str, password: str) -> Principal:
             _ph.verify(_DUMMY_HASH, password or "x")
         except Exception:  # noqa: BLE001 - 常に失敗する。時間を使うのが目的
             pass
-        raise AuthError("ID かパスワードが違います")
+        raise AuthError("e.bad_credentials")
 
     if _locked(cred):
-        raise AuthError("試行が続いたため一時的に受け付けません。しばらく待ってください")
+        raise AuthError("e.locked")
 
     try:
         _ph.verify(cred.hashed, password)
@@ -98,16 +98,16 @@ def authenticate(session: Session, subject: str, password: str) -> Principal:
         if cred.failed_attempts >= MAX_ATTEMPTS:
             cred.locked_until = datetime.now(UTC) + timedelta(minutes=LOCK_MINUTES)
             cred.failed_attempts = 0
-        raise AuthError("ID かパスワードが違います") from None
+        raise AuthError("e.bad_credentials") from None
 
     client = cred.client
     if client is None or not client.active or _expired(client.expires_at):
-        raise AuthError("ID かパスワードが違います")
+        raise AuthError("e.bad_credentials")
     if client.subject_type != Subject.PERSON:
         # 機械にパスワードは無いはずだが、経路として塞いでおく。
-        raise AuthError("ID かパスワードが違います")
+        raise AuthError("e.bad_credentials")
     if _expired(cred.expires_at):
-        raise AuthError("パスワードの有効期限が切れています")
+        raise AuthError("e.password_expired")
 
     cred.failed_attempts = 0
     cred.locked_until = None

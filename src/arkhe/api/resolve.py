@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import replace
+from http import HTTPStatus
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -14,7 +15,8 @@ from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 
-from arkhe.arkspec.naming import ArkParseError, parse_ark
+from arkhe import errors
+from arkhe.arkspec.naming import ArkParseError, compact_ark, parse_ark
 from arkhe.auth.deps import Config, Db
 from arkhe.db.models import Manager, Naan, Shoulder, utcnow
 from arkhe.db.repository import SqlArkRepository
@@ -42,6 +44,57 @@ COMMITMENT_LABEL_JA = {
     "permanent-unchanging": "恒久・内容は一切不変",
     "descriptive-only": "記述のみ（所在は変わりうる）",
 }
+
+
+
+# --------------------------------------------------------------- 仕様書の文面
+#
+# **公開する OpenAPI は英語**——読者はこの台帳の外にいる。docstring は日本語の
+# まま残す（実装を読む人のためのもの）。FastAPI は `description` を優先する。
+
+E_WELL_KNOWN = """\
+**Tells a client that this host has an ARK resolver** (draft-kunze-ark-42 §5.6).
+
+§5.6 registers `ark` in the Well-Known URIs registry (RFC 8615) and defines the answer
+as **plain text holding the resolver's root path, ending in `/`** — append a compact ARK
+to it and you have a resolution request. **A client that sends no `Accept`, or `*/*`,
+gets that**; answering such a client with JSON would make the host look, to anyone
+reading the specification, as though it had no ARK resolver at all.
+
+`Accept: application/json` returns arkhe's own inventory instead: **where to go when a
+NAAN's minting happens elsewhere** (`Naan.minter` / `Shoulder.minter`), and any
+namespace whose redirection is on hold.
+
+Both representations carry `Vary: Accept`.
+"""
+
+E_RESOLVE = """\
+**Resolve an ARK. No authentication.** Both `ark:99999/xyz` and the older
+`ark:/99999/xyz` are accepted, in any letter case.
+
+There is more than one way to answer, and **keeping the identifier alive comes first on
+every path**:
+
+    302  redirect to the target (the usual case; a shoulder's delegation template may
+         name 301, 303 or 307 instead)
+    200  return a description — for `?info` and `??`, for a target a browser cannot
+         open (`urn:isbn:…`), for an empty target, for a tombstone, and while a hold
+         is on
+    404  not in this ledger and nowhere to forward to. **`?info` on an unknown name is
+         still a 404** — there is nothing to say about a name we do not know
+    400  not readable as an ARK
+
+**A hold is not a 404.** The identifier exists; we are only declining to hand out its
+address for now, so the reason and the expiry come back with a 200. **The same holds for
+a tombstone** — saying "it was lost" is not the same as saying "it never was".
+
+An ARK that is only a NAAN (`ark:12345`) answers with what can be said about that NAAN.
+An unknown NAAN is forwarded to the global resolver (`ARKHE_GLOBAL_RESOLVER`, n2t.net by
+default).
+
+Every answer this resolver gives about an identifier carries the THUMP headers of §5.2
+(`THUMP-Status` and `Link: <…>; rel="describes"`); redirects carry neither.
+"""
 
 
 def _inflection(request: Request) -> Inflection:
@@ -77,6 +130,38 @@ def _inflection(request: Request) -> Inflection:
     return Inflection.NONE
 
 
+def _raw_ark_path(request: Request) -> str:
+    """**%-エンコードを保ったままの経路**を返す。
+
+    A4。`request.url.path`（＝ ASGI の `scope["path"]`）は**サーバが先に復号して
+    いる**ので、`%2F` が `/` に、`%7D` が `}` になって届く。これを鵜呑みにすると:
+
+    - `x54%2Fc2`（区切りではない `/` を隠した 1 つの名前）が `x54/c2`
+      （`x54` に含まれる `c2`）に化ける——**別の識別子**になり、祖先 passthrough が
+      別レコードの行き先を継ぐ
+    - `}` は §3.1 の文字集合に無い。`%7D` は `}` を運ぶ唯一の合法な形なので、
+      復号した文字列は**そもそも ARK として成立しない**
+    - 他所へ取り次ぐときは、**書き換わった ARK を転送先に渡す**ことになる
+
+    仕様（draft-kunze-ark-42 §3.2）は "no %-encoded character should ever appear in
+    an ARK in its decoded form" と、これを名指しで禁じている。
+
+    ASGI は生の経路を `scope["raw_path"]` に残しているので、そちらを優先する。
+    **前段が潰す構成では戻せない**——nginx なら `proxy_pass` にパスを書かない
+    （書くと再エンコードされる）、Apache なら `AllowEncodedSlashes NoDecode` が要る。
+    """
+    raw = request.scope.get("raw_path")
+    if not raw:
+        return request.url.path
+    # サーバによっては query も入る。`?` は名前の中では `%3F` なので、素の `?` で切れる。
+    raw = raw.split(b"?", 1)[0]
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        # 生バイトが UTF-8 でない。**捏造せず**、復号済みの経路に落とす。
+        return request.url.path
+
+
 def _anvl(pairs) -> str:
     """ERC/ANVL 形式。**ARK が伝統的に `?` / `??` で返してきた形。**
 
@@ -97,6 +182,83 @@ def _anvl(pairs) -> str:
     return "\n".join(lines) + "\n"
 
 
+#: C7: THUMP の版。仕様（draft-kunze-ark-42 §5.2）の応答例が `THUMP-Status: 0.6
+#: 200 OK` を示しており、[THUMP] は draft-kunze-thump-03 を指している。
+THUMP_VERSION = "0.6"
+
+
+def _thump(status: int, requested: str = "") -> dict[str, str]:
+    """THUMP の応答ヘッダ（§5.2）。
+
+    C7。仕様の応答例:
+
+        S: THUMP-Status: 0.6 200 OK
+        S: Link: </ark:67531/metadc107835> rel="describes";
+
+    `Link` の役目は仕様に書いてある——**inflection を知らない受信者に対して、
+    この応答が「修飾の付いていない ARK」を記述したものだと示す**。これが無いと、
+    `?info` の応答は「その URL 自体の表現」と読まれる。
+
+    **`rel` の書き方は仕様の例に従わない。** 例は `<…> rel="describes";` だが、
+    RFC 8288 のリンク値は `<URI>; rel="…"` で、区切りのセミコロンが前に要る
+    ——例のほうが誤りで、そのまま出すと標準の Link パーサが読めない。
+    **通じないものを出すより、通じる形で同じことを言う。**
+    """
+    headers = {"THUMP-Status": f"{THUMP_VERSION} {status} {HTTPStatus(status).phrase}"}
+    if requested:
+        # 相対参照。解決の経路そのものなので、ホストを書かずに済む（NMA は
+        # identity inert。§2.1）。
+        headers["Link"] = f'</{compact_ark(requested)}>; rel="describes"'
+    return headers
+
+
+def _negotiate(accept: str, offers: tuple[str, ...]) -> str:
+    """`Accept` から出す媒体を 1 つ選ぶ。**同点なら `offers` の先頭**。
+
+    q 値と限定の強さ（`text/plain` > `text/*` > `*/*`）を見る。ヘッダが無い、
+    空、`*/*` のいずれでも先頭の申し出に落ちる——**仕様が定める表現を既定に
+    したいので、呼ぶ側はそれを先頭に置くこと**。
+    """
+    best = dict.fromkeys(offers, 0.0)
+    for part in accept.split(","):
+        media, _, params = part.strip().partition(";")
+        media = media.strip().lower()
+        if not media:
+            continue
+        q = 1.0
+        for param in params.split(";"):
+            key, _, value = param.partition("=")
+            if key.strip().lower() == "q":
+                try:
+                    q = float(value.strip())
+                except ValueError:
+                    q = 0.0
+        for offer in offers:
+            kind = offer.split("/")[0]
+            if media in (offer, f"{kind}/*", "*/*"):
+                best[offer] = max(best[offer], q)
+    # `max` は同点なら先に見たものを残すので、`offers` の順がそのまま優先順になる。
+    chosen = max(offers, key=lambda o: best[o])
+    return chosen if best[chosen] > 0 else offers[0]
+
+
+#: `/.well-known/ark` で出せる表現。**text/plain が先頭**——仕様が定めるのは
+#: そちらで、`Accept` を送らない相手（curl、発見クライアント）はこれを受け取る。
+WELL_KNOWN_OFFERS = ("text/plain", "application/json")
+
+
+def _resolver_path(request: Request) -> str:
+    """このホスト上での ARK リゾルバのルートパス。**必ず `/` で終える。**
+
+    ARK ルートは app の直下（`/ark:…`）に生やしてあるので、前段でパスを
+    切っていなければ `/`。プレフィクス付きでマウントするなら ASGI の
+    `root_path`（uvicorn なら `--root-path`）を設定すること——**その値を
+    そのまま答える**ので、設定し忘れると案内先が実際の口とずれる。
+    """
+    root = "/" + (request.scope.get("root_path") or "").strip("/")
+    return root if root.endswith("/") else root + "/"
+
+
 def _erc(session, res) -> dict:
     ark = res.ark
     manager = None
@@ -104,15 +266,31 @@ def _erc(session, res) -> dict:
         manager = session.get(Manager, ark.shoulder.manager_id)
     naan = session.get(Naan, ark.naan)
     return {
-        "ark": f"ark:/{res.requested}",
+        "ark": compact_ark(res.requested),
         "who": ark.who,
         "what": ark.title,
         "when": ark.when,
-        "where": ark.url + res.suffix if ark.url else "",
+        # C6: **`where` は ARK であって、転送先ではない。**
+        #
+        # 仕様（draft-kunze-ark-42 §5.1.2）: "A description must at a minimum answer
+        # the who, what, when, and where questions (**"where" being the long-term
+        # identifier as opposed to a transient redirect target**)".
+        #
+        # 以前はここに転送先の URL を入れ、ARK は URL が空のときの代替にしていた
+        # ——**逆である**。記述は「この識別子は何を指すか」を答えるものなので、
+        # 行き先が変わっても変わらない値が入っていなければ、記述として引用できない。
+        #
+        # ホスト付きの mapping ARK にはしない。前段の書き換え次第で**内部ホスト名を
+        # 公開の記述に焼き付ける**ことになるし、compact ARK だけで長期識別子として
+        # 完結している（NMA は identity inert。§2.1）。
+        "where": compact_ark(res.requested),
+        # 転送先は捨てずに別の要素で出す。**kernel の外**に置くのは、これが
+        # 「今どこにあるか」であって「何であるか」ではないため。
+        "redirect": ark.url + res.suffix if ark.url else "",
         # **リンクにしてよいかは、値と一緒に運ぶ。** テンプレートで判定させると、
         # 別の画面を足したときに付け忘れる。
         # リンクにしてよいか。**登録は妨げないが、開かせるかは別。**
-        "where_safe": is_followable(ark.url),
+        "redirect_safe": is_followable(ark.url),
         **{f: getattr(ark, f) for f in DC_FIELDS},
         "commitment_level": manager.commitment_level if manager else "",
         # `permanent-dynamic` だけ見せられても意味が伝わらないので、人間向けの
@@ -121,23 +299,59 @@ def _erc(session, res) -> dict:
             COMMITMENT_LABEL_JA.get(manager.commitment_level, "") if manager else ""
         ),
         "na_policy": naan.na_policy if naan else "",  # NAA ポリシー（NAAN 単位）
-        "inherited_from": f"ark:/{res.inherited_from}" if res.inherited_from else "",
+        "inherited_from": compact_ark(res.inherited_from) if res.inherited_from else "",
         "suffix": res.suffix,
         "created_at": ark.created_at.isoformat() if ark.created_at else "",
         "updated_at": ark.updated_at.isoformat() if ark.updated_at else "",
     }
 
 
-@router.get("/.well-known/ark")
-def well_known_ark(session: Db, cfg: Config):
-    """このリゾルバが何を預かっているかを機械可読で公開する。
+_WELL_KNOWN_RESPONSES = {
+    200: {
+        "description": (
+            "`text/plain` by default: the resolver's root path, one line "
+            "(draft-kunze-ark-42 §5.6). `Accept: application/json` returns the "
+            "namespaces this ledger holds."
+        ),
+        "content": {
+            "text/plain": {"schema": {"type": "string"}},
+            "application/json": {"schema": {"type": "object"}},
+        },
+    },
+}
 
-    **採番を外に委ねている NAAN があるとき、クライアントがどこへ行けばよいか**を
-    ここで分かるようにする（`Naan.minter` / `Shoulder.minter`）。
+
+@router.get("/.well-known/ark", responses=_WELL_KNOWN_RESPONSES, description=E_WELL_KNOWN)
+def well_known_ark(request: Request, session: Db, cfg: Config):
+    """**このホストに ARK リゾルバがあることを知らせる口**（draft-kunze-ark-42 §5.6）。
+
+    42 は `ark` を Well-Known URIs レジストリ（RFC 8615）に登録し、このパスの
+    応答を「**リゾルバのルートパスを含む plain text**、末尾は `/`」と定めた。
+    **`Accept` を送らない相手にはそれを返す**——`*/*` で JSON を返すと、
+    仕様どおりに読む発見クライアントからは「ARK リゾルバではない」に見える。
+
+    `Accept: application/json` のときだけ、arkhe 独自の在庫を返す:
+    **採番を外に委ねている NAAN があるとき、クライアントがどこへ行けばよいか**
+    （`Naan.minter` / `Shoulder.minter`）と、止まっている名前空間。
+
+    同じ URL が 2 つの表現を持つので、どちらにも `Vary: Accept` を付ける。
     """
+    vary = {"Vary": "Accept"}
+    if _negotiate(request.headers.get("accept", ""), WELL_KNOWN_OFFERS) == "text/plain":
+        # **末尾に改行を置く。** 仕様の言う "plain text file" であり、応答例も
+        # 1 行として書かれている。読む側は前後の空白を落として使うこと。
+        return PlainTextResponse(
+            _resolver_path(request) + "\n",
+            media_type="text/plain; charset=utf-8",
+            headers=vary,
+        )
+
     naans = session.scalars(select(Naan).order_by(Naan.naan)).all()
     return JSONResponse(
-        {
+        headers=vary,
+        content={
+            # 仕様が定める値も JSON に入れておく。**片方だけ見て済ませられる。**
+            "resolver_path": _resolver_path(request),
             "resolver": "arkhe",
             "global_resolver": cfg.global_resolver,
             "naans": [
@@ -188,25 +402,27 @@ _TEXT = {"text/plain": {"schema": {"type": "string"}}}
 #: （`_STATUS_PREFIX`。N2T に合わせて 301 / 302 / 303 / 307 だけ受ける）。
 _RESOLVE_RESPONSES = {
     200: {
-        "description": "記述を返す（`?info` / `?` / `??` / `?json`、開けない行き先、"
-                       "墓碑、保留、NAAN だけの ARK）",
+        "description": (
+            "a description (`?info` / `?` / `??` / `?json`, a target that cannot be "
+            "opened, a tombstone, a hold, an ARK that is only a NAAN)"
+        ),
         "content": {
             "application/json": {"schema": {"type": "object"}},
             "text/plain": {"schema": {"type": "string"}},   # ANVL
             "text/html": {"schema": {"type": "string"}},
         },
     },
-    301: {"description": "行き先へ転送する（委譲テンプレートが `301 ` を指定）"},
-    302: {"description": "行き先へ転送する（既定）"},
-    303: {"description": "行き先へ転送する（委譲テンプレートが `303 ` を指定）"},
-    307: {"description": "行き先へ転送する（委譲テンプレートが `307 ` を指定）"},
-    400: {"description": "ARK として読めない", "content": _TEXT},
-    404: {"description": "この台帳に無く、取次先も無い", "content": _TEXT},
+    301: {"description": "redirect to the target (a delegation template named `301 `)"},
+    302: {"description": "redirect to the target (the default)"},
+    303: {"description": "redirect to the target (a delegation template named `303 `)"},
+    307: {"description": "redirect to the target (a delegation template named `307 `)"},
+    400: {"description": "not readable as an ARK", "content": _TEXT},
+    404: {"description": "not in this ledger, and nowhere to forward to", "content": _TEXT},
 }
 
 
-@router.get("/ark:/{rest:path}", responses=_RESOLVE_RESPONSES)
-@router.get("/ark:{rest:path}", responses=_RESOLVE_RESPONSES)
+@router.get("/ark:/{rest:path}", responses=_RESOLVE_RESPONSES, description=E_RESOLVE)
+@router.get("/ark:{rest:path}", responses=_RESOLVE_RESPONSES, description=E_RESOLVE)
 def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
     """**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の
     どちらの表記でも受ける。
@@ -225,21 +441,28 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
     しないだけなので、理由と期限を添えて 200 で返す。**墓碑（tombstone）も同じ**
     ——「失われた」と述べることと、「無かった」と言うことは違う。
 
-    NAAN だけの ARK（`ark:/12345`）には、その NAAN について答えられることを返す。
+    NAAN だけの ARK（`ark:12345`）には、その NAAN について答えられることを返す。
     知らない NAAN は上位のリゾルバ（`ARKHE_GLOBAL_RESOLVER`、既定 n2t.net）へ取り次ぐ。
     """
-    raw = str(request.url.path)
+    # A4: **復号済みの経路を使わない。** `%2F` が `/` に化けると別の識別子になる。
+    raw = _raw_ark_path(request)
     try:
         parsed = parse_ark(raw.lstrip("/"), allow_naan_only=True)  # D4
     except ArkParseError as exc:
-        return PlainTextResponse(str(exc), status_code=400)
+        # **符号を先頭に置く。** 解決の口は text/plain を返す（人も読む）ので、
+        # 機械に判定させるなら行頭が読みやすい。
+        return PlainTextResponse(
+            f"{errors.ARK_UNREADABLE.number} {errors.ARK_UNREADABLE.say(reason=exc)}\n",
+            status_code=400,
+            headers=_thump(400),
+        )
 
     if not parsed.name:
         # D4: NAAN だけの ARK。**その NAAN について答えられることを返す。**
         naan = session.get(Naan, parsed.naan)
         if naan is None:
             return RedirectResponse(
-                f"{cfg.global_resolver.rstrip('/')}/ark:/{parsed.naan}", status_code=302
+                f"{cfg.global_resolver.rstrip('/')}/{compact_ark(parsed.naan)}", status_code=302
             )
         return JSONResponse(
             {"naan": naan.naan, "name": naan.name, "na_policy": naan.na_policy,
@@ -271,34 +494,45 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
         return PlainTextResponse(
             _anvl(
                 [
-                    ("where", f"ark:/{res.requested}"),
+                    ("where", compact_ark(res.requested)),
                     ("hold", res.hold.reason if res.hold else ""),
                     ("hold-until", res.hold.until.isoformat() if res.hold else ""),
                     ("hold-scope", res.hold.scope if res.hold else ""),
                 ]
             ),
             media_type="text/plain; charset=utf-8",
+            headers=_thump(200, res.requested),
         )
 
     if res.outcome is Outcome.NOT_FOUND:
-        return PlainTextResponse(f"ark:/{res.requested} — {res.reason}", status_code=404)
+        code = res.code or errors.ARK_UNKNOWN_NAME
+        return PlainTextResponse(
+            f"{code.number} {compact_ark(res.requested)} — {res.reason}\n",
+            status_code=404,
+            headers=_thump(404, res.requested),
+        )
 
     erc = _erc(session, res)
     kernel = [
         ("who", erc["who"]),
         ("what", erc["what"]),
         ("when", erc["when"]),
-        ("where", erc["where"] or erc["ark"]),
+        ("where", erc["where"]),
     ]
 
     if res.inflection is Inflection.BRIEF:
         # `?` — ERC の 4 要素だけを簡潔に返す。**対象に到達できなくても、これは
-        # 答えられる**（FAIR A2）。
-        return PlainTextResponse(_anvl(kernel), media_type="text/plain; charset=utf-8")
+        # 答えられる**（FAIR A2）。転送先は kernel の外に、あるときだけ添える。
+        return PlainTextResponse(
+            _anvl([*kernel, ("redirect", erc["redirect"] or None)]),
+            media_type="text/plain; charset=utf-8",
+            headers=_thump(200, res.requested),
+        )
 
     if res.inflection is Inflection.JSON:
         return JSONResponse(
-            {
+            headers=_thump(200, res.requested),
+            content={
                 **erc,
                 "commitment": res.ark.commitment,
                 # **止まっていることは隠さない。** 機械にも分かる形で出す。
@@ -315,6 +549,7 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
             _anvl(
                 [
                     *kernel,
+                    ("redirect", erc["redirect"] or None),
                     ("about", erc["ark"]),
                     # NAA ポリシー（NAAN 単位・名前空間に対して負う約束）
                     ("policy", erc["na_policy"]),
@@ -331,11 +566,13 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
                 ]
             ),
             media_type="text/plain; charset=utf-8",
+            headers=_thump(200, res.requested),
         )
 
     return templates.TemplateResponse(
         request,
         "info.html",
         {"erc": erc, "res": res, "hold": res.hold.as_dict() if res.hold else None},
+        headers=_thump(200, res.requested),
     )
 

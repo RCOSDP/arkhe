@@ -51,14 +51,80 @@ arklet は順序不定の問い合わせ結果を入力と `zip` しており、
 
 | 要求 | 応答 |
 | --- | --- |
-| `/ark:/99999/x9abc` | `302` で対象へ。行き先が無ければ記述を返す |
-| `/ark:/99999/x9abc/page/3` | `302` で *対象*`/page/3` へ。**suffix passthrough。子に識別子は要らない** |
-| `/ark:/99999/x9abc?` | ERC/ANVL の kernel（who / what / when / where） |
-| `/ark:/99999/x9abc??` | 上に加えて**永続性宣言** |
-| `/ark:/99999/x9abc?info` | 同じ内容を人に向けて |
-| `/ark:/99999/x9abc?json` | 同じ内容を機械に向けて |
-| `/ark:/12345/…`（未知 NAAN） | `302` でグローバルリゾルバへ |
-| `/.well-known/ark` | このリゾルバが何を預かっているか。採番を外に委ねているならその案内先 |
+| `/ark:99999/x9abc` | `302` で対象へ。行き先が無ければ記述を返す |
+| `/ark:99999/x9abc/page/3` | `302` で *対象*`/page/3` へ。**suffix passthrough。子に識別子は要らない** |
+| `/ark:99999/x9abc?` | ERC/ANVL の kernel（who / what / when / where） |
+| `/ark:99999/x9abc??` | 上に加えて**永続性宣言** |
+| `/ark:99999/x9abc?info` | 同じ内容を人に向けて |
+| `/ark:99999/x9abc?json` | 同じ内容を機械に向けて |
+| `/ark:12345/…`（未知 NAAN） | `302` でグローバルリゾルバへ |
+| `/.well-known/ark` | `text/plain`。リゾルバのルートパス（末尾は `/`） |
+| `/.well-known/ark`＋`Accept: application/json` | このリゾルバが何を預かっているか。採番を外に委ねているならその案内先 |
 
 裸の `?` は、プロトコルの層でクエリ文字列なしと区別できない（**ASGI でも同じ**）。
 前段が生の URI を渡せるなら `ARKHE_RAW_URI_HEADER` を設定する。
+
+誤りには符号（`ARKHE-1011`）と英語の `message`、構造化された `detail` が付く。
+**文面ではなく符号で判定すること**——一覧は[エラー](errors.md)にある。
+
+### THUMP のヘッダと `where`
+
+識別子について**リゾルバ自身が答える**応答——`?` `??` `?info` `?json`、行き先の無い
+記述、保留、`404`——には §5.2 の 2 つのヘッダが付く。
+
+```
+THUMP-Status: 0.6 404 Not Found
+Link: </ark:99999/x9abc>; rel="describes"
+```
+
+`Link` は、inflection を知らない受信者に対して「この応答は取得した URL の表現では
+なく、**修飾の付いていない ARK を記述したもの**である」と示すためにある。仕様の
+応答例は `<…> rel="describes";` と書いているが、これは
+[RFC 8288](https://www.rfc-editor.org/rfc/rfc8288) のリンク値として不正なので、
+arkhe は `<…>; rel="describes"` を出す——**同じことを、標準のパーサが読める形で
+言う**。転送にはどちらも付けない。転送は識別子についての答えではなく、対象への誘導
+だからである。
+
+ERC の **`where` は ARK であって、転送先ではない**。§5.1.2 が「一時的な転送先では
+なく長期的な識別子」と定めている要素で、**行き先を付け替えても `where` は動かない**
+——それがこの要素の価値そのものである。今の行き先は kernel の外の `redirect` として、
+あるときだけ出す。
+
+### %-エンコードされた文字
+
+予約文字（`%` `-` `.` `/`）は、**その予約された意味を隠す目的でなら** %-エンコード
+してよい——`%2F` は「ここに `/` はあるが成分の区切りではない」と書く唯一の方法である。
+したがって `ark:99999/x54%2Fc2` と `ark:99999/x54/c2` は**別の識別子**で、仕様は
+エンコードされた文字が復号形で現れることを禁じている（`draft-kunze-ark-42` §3.2）。
+arkhe は ASGI の `raw_path` から**エンコードを保ったまま**経路を読み、16 進の大小
+だけ揃える（`%2f` → `%2F`。手順5）。復号はしない。
+
+**前段もエンコードを素通しにすること。** nginx なら `proxy_pass` にパスを書かない
+（`proxy_pass http://backend;`。書くと復号済みのものを再エンコードする）。Apache なら
+`AllowEncodedSlashes NoDecode`。前段が `%2F` を潰す構成では復元できず、その種の名前は
+解決できない。
+
+### `/.well-known/ark`
+
+`draft-kunze-ark-42` §5.6 は `ark` を Well-Known URIs レジストリ
+（[RFC 8615](https://www.rfc-editor.org/rfc/rfc8615)）に登録し、応答を
+**「リゾルバのルートパスを含む plain text、末尾は `/`」**と定めた——そこに
+compact ARK を継ぎ足すと解決の要求になる、という約束である。**`Accept` を
+送らない相手にも `*/*` の相手にもこれを返す**。ここで JSON を返すと、仕様どおりに
+読む発見クライアントからは「このホストに ARK リゾルバは無い」に見える。
+
+```console
+$ curl https://ark.example.ac.jp/.well-known/ark
+/
+```
+
+arkhe 独自の在庫——預かっている名前空間、委譲した shoulder とその `minter`、
+止めている名前空間——は同じ URL の JSON 表現なので、名指しで求める:
+
+```console
+$ curl -H 'Accept: application/json' https://ark.example.ac.jp/.well-known/ark
+```
+
+どちらにも `Vary: Accept` が付く。パスは ASGI の `root_path` から採るので、
+プレフィクス付きでマウントするなら設定すること（`uvicorn --root-path /pid`）
+——さもないと、無い口を案内することになる。

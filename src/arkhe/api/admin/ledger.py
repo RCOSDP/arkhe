@@ -21,12 +21,12 @@ from arkhe.api.admin._common import (
     _ctx,
     _page,
     _redirect,
+    _refuse,
     _remember_lang,
     _visible_naans,
     router,
     templates,
 )
-from arkhe.auth.errors import Forbidden
 from arkhe.db.models import (
     Ark,
     CommitmentLevel,
@@ -108,7 +108,7 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
 @router.get("/naan/new", response_class=HTMLResponse)
 def naan_new(request: Request, principal: AdminPrincipal):
     if not principal.is_system:
-        raise Forbidden("NAAN の登録はシステム管理者のみ")
+        raise _refuse(request, "e.naan_system_only")
     return _page(request, principal, "naan_form.html", "overview", naan=None,
                  mechanisms=ops.MECHANISMS, scopes=authz.SCOPES)
 
@@ -157,7 +157,7 @@ def naan_edit(request: Request, principal: AdminPrincipal, session: Db, naan: st
     # 開けてしまい、編集できるように見えるフォームが保存で 403 になる。
     # 出し分けと認可がずれているのと同じことなので、ここで揃える。
     if obj is None or not principal.is_naan_wide or not principal.reaches_naan(naan):
-        raise Forbidden(f"NAAN {naan} はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_naan")
     return _page(request, principal, "naan_form.html", "overview", naan=obj,
                  mechanisms=ops.MECHANISMS, scopes=authz.SCOPES,
                  hold_max=get_settings().hold_max_days)
@@ -195,7 +195,7 @@ def naan_save(
     obj = session.get(Naan, naan)
     if minter.strip() != obj.minter:
         if not principal.is_system:
-            raise Forbidden("採番の案内先の変更はシステム管理者のみ")
+            raise _refuse(request, "e.minter_system_only")
         obj.minter = minter.strip()
         authz.audit(session, principal, "set_minter", naan, minter=obj.minter)
     _apply_hold(
@@ -225,7 +225,7 @@ def _apply_hold(session, principal, *, kind, key, days: int, reason: str, releas
 @router.get("/manager/new", response_class=HTMLResponse)
 def manager_new(request: Request, principal: AdminPrincipal, session: Db):
     if not principal.is_naan_wide:
-        raise Forbidden("組織のオンボードは NAAN 単位以上の権限が要る")
+        raise _refuse(request, "e.manager_naan_wide")
     return _page(
         request, principal, "manager_form.html", "overview",
         manager=None, naans=_visible_naans(session, principal), levels=list(CommitmentLevel),
@@ -271,7 +271,7 @@ def manager_create(
 def manager_edit(request: Request, principal: AdminPrincipal, session: Db, manager_id: int):
     m = session.get(Manager, manager_id)
     if m is None:
-        raise Forbidden("この組織はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_manager")
     ops.require_manager(session, principal, m)
     return _page(
         request, principal, "manager_form.html", "overview",
@@ -323,7 +323,7 @@ def manager_save(
 @router.get("/shoulder/new", response_class=HTMLResponse)
 def shoulder_new(request: Request, principal: AdminPrincipal, session: Db):
     if not principal.is_naan_wide:
-        raise Forbidden("shoulder の切り出しは NAAN 単位以上の権限が要る")
+        raise _refuse(request, "e.shoulder_naan_wide")
     return _page(
         request, principal, "shoulder_form.html", "overview",
         shoulder=None, naans=_visible_naans(session, principal),
@@ -355,7 +355,7 @@ def shoulder_create(
 def shoulder_edit(request: Request, principal: AdminPrincipal, session: Db, shoulder_id: int):
     sh = session.get(Shoulder, shoulder_id)
     if sh is None or not principal.reaches_naan(sh.naan):
-        raise Forbidden("この shoulder はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_shoulder")
     return _page(
         request, principal, "shoulder_form.html", "overview",
         shoulder=sh, naans=[], statuses=list(ShoulderStatus),
@@ -380,7 +380,7 @@ def shoulder_save(
     """**retired からは戻せない。** その判定は `admin_ops` 側が持っている。"""
     sh = session.get(Shoulder, shoulder_id)
     if sh is None:
-        raise Forbidden("この shoulder はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_shoulder")
     if status and status != sh.status:
         ops.set_shoulder_status(
             session, principal, shoulder_id=shoulder_id, status=status,

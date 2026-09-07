@@ -98,7 +98,10 @@ def login_submit(
             mechanism="password", ok=False, reason=str(exc.detail),
         )
         session.commit()  # 失敗回数と施錠、そして記録
-        return _login_page(request, cfg, error=str(exc.detail), status=401)
+        # **画面の言語で見せる。** `password.py` は語彙の鍵で投げる（あちらは
+        # 要求も言語も知らない層）。鍵でない文字列はそのまま返る。
+        shown = i18n.translator(i18n.pick(request))(str(exc.detail))
+        return _login_page(request, cfg, error=shown, status=401)
     authz.record_sign_in(
         session, action="sign_in", client_id=principal.client_id,
         authority=principal.authority, ip=ip, mechanism="password",

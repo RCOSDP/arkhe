@@ -37,7 +37,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
-from arkhe.arkspec.naming import MAX_NAAN_LENGTH
+from arkhe.arkspec.naming import MAX_ARK_LENGTH, MAX_NAAN_LENGTH, MAX_NAME_LENGTH
 
 #: JSONB は Postgres だけ。テストの SQLite では JSON に落とす。
 JSONType = JSON().with_variant(JSONB(), "postgresql")
@@ -326,10 +326,11 @@ class Ark(Base, HoldMixin):
     __tablename__ = "ark"
 
     #: `<naan>/<name>`。N2 のため naan は文字列のまま連結する。
-    ark: Mapped[str] = mapped_column(String(200), primary_key=True)
+    #: 幅は仕様の下限から決める（NAAN 16 ＋ `/` ＋ Base Name+Qualifier 255）。
+    ark: Mapped[str] = mapped_column(String(MAX_ARK_LENGTH), primary_key=True)
     naan: Mapped[str] = mapped_column(ForeignKey("naan.naan"), index=True)
     shoulder_id: Mapped[int] = mapped_column(ForeignKey("shoulder.id"), index=True)
-    assigned_name: Mapped[str] = mapped_column(String(100))
+    assigned_name: Mapped[str] = mapped_column(String(MAX_NAME_LENGTH))
 
     url: Mapped[str] = mapped_column(String(2000), default="")
     commitment: Mapped[str] = mapped_column(Text, default="")
@@ -567,7 +568,7 @@ class AuditEvent(Base):
     client_id: Mapped[str] = mapped_column(String(255), index=True)
     authority: Mapped[str] = mapped_column(String(16))
     action: Mapped[str] = mapped_column(String(32))
-    target: Mapped[str] = mapped_column(String(200), default="")
+    target: Mapped[str] = mapped_column(String(MAX_ARK_LENGTH), default="")
     detail: Mapped[dict] = mapped_column(JSONType, default=dict)
 
     #: 接続元のアドレス。**前段を信じた結果**であって、証拠ではない

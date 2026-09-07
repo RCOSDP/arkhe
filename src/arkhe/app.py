@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+import re
+
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import text
@@ -23,42 +25,47 @@ from arkhe.settings import Settings, get_settings
 
 #: Swagger UI の冒頭に出る説明。**仕様上の要点を、試す前に読めるところに置く。**
 API_DESCRIPTION = """\
-ARK 識別子の採番と解決。
+Minting and resolution of ARK identifiers.
 
-**ARK は再割当てしない（NR）。** この一点が API の形をほぼ決めている。
+**An ARK is never re-assigned (NR).** That one commitment shapes most of this API.
 
-* **採番した ARK は取り消せない。** 削除の口は無く、対象が失われたときは
-  `tombstone`（記述は残り、到達性だけが落ちる）。
-* **再送で番号を増やさない。** `request_id` を付けて送れば、同じ値の再送には
-  前回と同じ ARK が返る。万オーダーの投入は途中で切れる方が普通なので、
-  切れた塊はそのまま再送してよい。
-* **shoulder はリクエストで指定しても広がらない。** 到達範囲は資格情報の
-  登録属性で決まる。省略すれば組織の既定が使われる。
-* **子リソースは採番しない。** `ark:/99999/x9abc/page/3` のような深い参照は
-  suffix passthrough が賄うので、1 レコード 1 採番で足りる。
+* **A minted ARK cannot be withdrawn.** There is no delete; when an object is lost you
+  `tombstone` it (the description stays, only reachability goes).
+* **A resend does not mint again.** Send a `request_id` and the same value resent
+  returns the same ARK. Batches of tens of thousands are interrupted more often than
+  not, so an interrupted batch can simply be sent again.
+* **Naming a shoulder in a request does not widen anything.** Reach comes from the
+  credential's registration; omit it and the organisation's default is used.
+* **Child resources are not minted.** A deep reference such as
+  `ark:99999/x9abc/page/3` is covered by suffix passthrough, so one record per minting
+  is enough.
 
-### 認証
+### Authentication
 
-`Authorize` から Bearer トークンを入れる。受け付ける資格情報は起動時の
-`ARKHE_AUTH` で決まり、API キー・arkhe が発行したトークン・外部の認可サーバが
-発行した JWT のいずれか（併用可）。
+Put a bearer token in via `Authorize`. Which credentials are accepted is set at start-up
+by `ARKHE_AUTH`: an API key, a token arkhe issued, or a JWT from an external
+authorisation server (any combination).
 
-**公開情報の読取に認証は要らない。** リポジトリは公開レコードを誰にでも見せる
-ものだから。
+**Reading public information needs no authentication**, because a repository shows its
+public records to anyone.
 """
 
 TAGS = [
     {
         "name": "ark",
-        "description": "採番と更新。**書き込みは到達範囲の内側にしか届かない。**",
+        "description": (
+            "Minting and updating. "
+            "**A write never reaches outside the caller's registered reach.**"
+        ),
     },
     {
         "name": "resolve",
         "description": (
-            "解決。`?`（簡潔な記述）・`??`（永続性宣言）・`?info`（人間向け）・"
-            "`?json`（機械可読）の inflection を持つ。"
-            "**対象に到達できなくても記述は答えられる**（FAIR A2）。"
-            "`ARKHE_RESOLVER=1` で起動したときだけ現れる。"
+            "Resolution, with the `?` (a brief description), `??` (the persistence "
+            "statement), `?info` (for a person) and `?json` (for a program) "
+            "inflections. **A description can be answered even when the object "
+            "cannot be reached** (FAIR A2). Present only when started with "
+            "`ARKHE_RESOLVER=1`."
         ),
     },
 ]
@@ -70,7 +77,7 @@ def _install_handlers(app: FastAPI) -> None:
     @app.exception_handler(AuthError)
     async def _auth(request: Request, exc: AuthError):  # noqa: ARG001
         return JSONResponse(
-            {"detail": exc.detail}, status_code=401, headers={"WWW-Authenticate": exc.challenge}
+            exc.body(), status_code=401, headers={"WWW-Authenticate": exc.challenge}
         )
 
     @app.exception_handler(ShoulderDelegated)
@@ -78,8 +85,8 @@ def _install_handlers(app: FastAPI) -> None:
         # **プロキシせず 307 で行き先を案内する。** 代理で呼ぶと、応答が失われた
         # ときに「向こうでは採番されたがこちらは知らない ARK」が生まれる。
         if exc.minter:
-            return JSONResponse(exc.detail, status_code=307, headers={"Location": exc.minter})
-        return JSONResponse(exc.detail, status_code=403)
+            return JSONResponse(exc.body(), status_code=307, headers={"Location": exc.minter})
+        return JSONResponse(exc.body(), status_code=403)
 
     from arkhe.api.admin import NeedsLogin
 
@@ -95,8 +102,9 @@ def _install_handlers(app: FastAPI) -> None:
 
         @app.exception_handler(exc_type)
         async def _h(request: Request, exc, _code=code):  # noqa: ARG001
-            detail = exc.detail if isinstance(exc.detail, dict) else {"detail": exc.detail}
-            return JSONResponse(detail, status_code=_code)
+            # **符号が付いていればその状態符号を使う。** 例外の型と符号がずれた
+            # ときに、型のほうを信じて別の符号を返すと診断がぶれる。
+            return JSONResponse(exc.body(), status_code=getattr(exc, "status", _code))
 
 
 #: 画面に付ける保護。**CSP が本体**で、ほかは補助。
@@ -138,6 +146,34 @@ DOCS_CSP = (
 DOCS_PATHS = ("/api/docs", "/api/redoc")
 
 
+#: A1: ラベルの照合は**大小非依存**。仕様（draft-kunze-ark-42 §3.2 手順3）:
+#: "The **first case-insensitive match** on 'ark:/' or 'ark:' is converted to 'ark:'".
+_LABEL_IN_PATH = re.compile(r"^/ark:", re.IGNORECASE)
+
+
+def _install_ark_label_case(app: FastAPI) -> None:
+    """経路の `ark:` ラベルだけを小文字に直してから経路照合に渡す。
+
+    `parse_ark` は最初から大小非依存だが、**経路照合は大小を見る**ので
+    `/ARK:/99999/x9abc` はルータに届かず 404 になっていた。仕様は手順3 で
+    ラベルの大小非依存を求めており、これは受理の話（**狭めてはいけない**側）である。
+
+    **直すのはラベルの 5 文字だけ。** 名前の大小は識別子の一部なので
+    （手順5「the case of all other letters must be preserved」）、
+    `path` の残りには触らない。
+
+    `raw_path` は直さない。`parse_ark` がラベルを大小非依存で切るので不要で、
+    触ると %-エンコードを保つ経路（A4）に余計な書き換えが入る。
+    """
+
+    @app.middleware("http")
+    async def _label(request: Request, call_next):
+        path = request.scope.get("path", "")
+        if _LABEL_IN_PATH.match(path) and not path.startswith("/ark:"):
+            request.scope["path"] = "/ark:" + path[5:]
+        return await call_next(request)
+
+
 def _install_security_headers(app: FastAPI) -> None:
     @app.middleware("http")
     async def _headers(request: Request, call_next):
@@ -177,6 +213,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.dependency_overrides[get_settings] = lambda: s
 
     _install_handlers(app)
+    _install_ark_label_case(app)
     _install_security_headers(app)
     observability.configure(s.log_level)
     observability.install(app)

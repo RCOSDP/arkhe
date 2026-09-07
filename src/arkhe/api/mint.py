@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Response, Security
 from sqlalchemy import select
 
+from arkhe import errors
 from arkhe.api.schemas import (
     ArkOut,
     BulkMintIn,
@@ -46,8 +47,103 @@ def needs(scope: str) -> list:
     return [Security(oauth2_scheme, scopes=[scope])]
 
 
+
+# --------------------------------------------------------------- 仕様書の文面
+#
+# **公開する OpenAPI は英語**——読者はこの台帳の外にいて、日本語を読むとは限らない。
+# docstring は日本語のまま残す。**あれは実装を読む人のためのもの**で、仕様書の
+# 読者とは別。FastAPI は `description` を渡すと docstring より優先するので、
+# 出す文面はここに置き、コードの説明は下の docstring に残る。
+
+E_MINT = """\
+**Mint one new ARK.** Requires `ark:mint`.
+
+The shoulder defaults to the organisation's own. Naming one in the request only asks
+whether it lies inside the caller's registered reach — it never widens it.
+
+**Send a `request_id` and a resend will not mint again.** The same principal resending
+the same `request_id` gets back the ARK minted the first time, so a lost response does
+not leave a dead identifier behind. The status code says which happened:
+
+    201  minted
+    200  returned an earlier minting (a resend)
+
+**An ARK is never reissued**, so minting cannot be undone.
+"""
+
+E_BULK_MINT = """\
+**Mint in bulk.** Requires `ark:mint`. One request holds at most `ARKHE_BULK_LIMIT`
+rows (1000 by default).
+
+**One row out of reach and nothing is created.** Reach and shoulder are checked for
+every row before any minting, so a half-minted batch cannot be left behind.
+
+**The answer keeps the order of the input**, because resent rows (a `request_id`
+already seen) and new ones are mixed and the caller has to line them up. `created` and
+`replayed` carry the two counts; all resends answer 200, one new minting makes it 201.
+
+Give each row a `request_id` and **an interrupted batch can be sent again as it is** —
+rows already minted are skipped. **The same `request_id` twice inside one request still
+mints once**: it is one request, so it gets one number.
+"""
+
+E_REGISTER = """\
+**Register a row for a qualified ARK** — an existing base name plus a qualifier.
+
+Suffix passthrough already covers a reference of any depth; this endpoint **overrides
+that default at a single point**: "this subtree lives in another store", "this
+derivative sits elsewhere".
+
+**It requires `ark:mint`.** Nothing is minted, but a new resolvable identifier does
+appear, so it must not be handed to a principal that holds update rights alone.
+"""
+
+E_UPDATE = """\
+Update an existing ARK. **The manager of the target's shoulder is checked.**
+"""
+
+E_BULK_UPDATE = """\
+Update in bulk. Rows are matched by key, and **nothing is applied unless every row
+is found and in reach** — there is no partial application.
+"""
+
+E_TOMBSTONE = """\
+**Declare that the object is gone.** The ARK is not deleted.
+
+Under NR (no re-assignment) an identifier cannot be removed; only reachability can be.
+**The identifier and its metadata stay**, and the resolver answers with the description.
+
+**Its scope is separate from `ark:update`.** A tombstone says "this is gone", not "this
+is elsewhere" — a different meaning with different consequences. It is hard to walk back
+and it is public, so it does not belong to routine writers such as an ingest batch.
+"""
+
+E_HOLD = """\
+**Stop redirecting, temporarily.** Resolution is not stopped — the description keeps
+being returned.
+
+For when a delegate is down, a wrong target went out, or an object is moving: you have
+to stop quickly without killing the identifier. `404` would be a lie (the identifier
+exists) and `503` makes a permanent identifier look broken, so a hold answers **200 with
+the description**, the same path a tombstone takes.
+
+**Its scope is separate from `ark:update`**, because stopping is a different decision
+from repointing and the reason is published. It is separate from a tombstone too: that
+is a permanent declaration, while this is **dated, and keeps the previous target**.
+"""
+
+E_HOLD_RELEASE = """\
+Lift a hold before its expiry. **An expired hold lifts itself by the clock**, so this
+is only for lifting one early.
+"""
+
+E_BULK_QUERY = """\
+Look up ARKs in bulk. **Reads are confined to the caller's reach**, exactly as writes
+are.
+"""
+
 def _key(raw: str) -> str:
-    """`ark:/99999/xyz` でも `99999/xyz` でも受ける。
+    """`ark:99999/xyz` でも、旧形式の `ark:/99999/xyz` でも、`99999/xyz` でも受ける。
 
     **正規化は `domain.queries` の 1 か所**（画面・CLI・API が同じ式を通る）。
     ここで独自に書くと、API では触れる ARK が CLI では 404 になる。
@@ -55,7 +151,25 @@ def _key(raw: str) -> str:
     try:
         return ark_key_from_input(raw)
     except ValueError as exc:
-        raise authz.Invalid({"ark": str(exc)}) from exc
+        raise authz.Invalid(errors.ARK_UNREADABLE, reason=str(exc)) from exc
+
+
+
+def _qualifier_error(exc: Exception) -> authz.Invalid:
+    """`register_qualified` が投げた理由を符号に写す。
+
+    **符号はドメインの側で決めない。** あちらは HTTP も API の語彙も知らない層
+    なので、例外の型を見てここで符号を選ぶ。
+    """
+    if isinstance(exc, minting.AlreadyRegistered):
+        return authz.Invalid(errors.ALREADY_REGISTERED, ark=str(exc))
+    if isinstance(exc, minting.QualifierForm):
+        return authz.Invalid(errors.QUALIFIER_FORM)
+    if isinstance(exc, minting.QualifierOutsideBase):
+        return authz.Invalid(errors.QUALIFIER_OUTSIDE_BASE, qualifier=exc.qualifier)
+    if isinstance(exc, minting.NameTooLong):
+        return authz.Invalid(errors.NAME_TOO_LONG, length=exc.length, limit=exc.limit)
+    return authz.Invalid(errors.ARK_UNREADABLE, reason=str(exc))
 
 
 def _replay(session, principal, request_id: str) -> Ark | None:
@@ -97,9 +211,10 @@ def _apply(ark: Ark, data: dict, principal) -> Ark:
     dependencies=needs("ark:mint"),
     response_model=ArkOut,
     status_code=201,
+    description=E_MINT,
     # **再送は 201 では返らない。** 宣言しないと、生成クライアントが 200 を
     # 「知らない応答」として扱う。
-    responses={200: {"model": ArkOut, "description": "以前の採番を返した（再送）"}},
+    responses={200: {"model": ArkOut, "description": "returned an earlier minting (a resend)"}},
 )
 def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Response):
     """**新しい ARK を 1 つ発行する。** `ark:mint` が要る。
@@ -138,7 +253,8 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
     dependencies=needs("ark:mint"),
     response_model=BulkMintOut,
     status_code=201,
-    responses={200: {"model": BulkMintOut, "description": "全件が再送だった"}},
+    description=E_BULK_MINT,
+    responses={200: {"model": BulkMintOut, "description": "every row was a resend"}},
 )
 def bulk_mint(
     body: BulkMintIn, principal: CurrentPrincipal, session: Db, cfg: Config, response: Response
@@ -160,7 +276,7 @@ def bulk_mint(
     authz.require_scope(principal, "ark:mint")
     rows = body.data
     if len(rows) > cfg.bulk_limit:
-        raise authz.Invalid({"data": f"1 リクエストは {cfg.bulk_limit} 件まで"})
+        raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
 
     # F4: **既に採番済みの行は飛ばす。** 切れた塊をそのまま再送できるようにする。
     wanted = {r.request_id for r in rows if r.request_id}
@@ -215,7 +331,13 @@ def bulk_mint(
     )
 
 
-@router.post("/register", dependencies=needs("ark:mint"), response_model=ArkOut, status_code=201)
+@router.post(
+    "/register",
+    dependencies=needs("ark:mint"),
+    response_model=ArkOut,
+    status_code=201,
+    description=E_REGISTER,
+)
 def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
     """B4: **既存 ARK に修飾子を付けた行を登録する。**
 
@@ -239,7 +361,7 @@ def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
             **body.writable(),
         )
     except (minting.AlreadyRegistered, ValueError) as exc:
-        raise authz.Invalid({"qualifier": str(exc)}) from exc
+        raise _qualifier_error(exc) from exc
     authz.audit(session, principal, "register_qualified", ark.ark)
     session.commit()
     return ArkOut.of(ark)
@@ -252,6 +374,7 @@ def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
     "/update",
     dependencies=needs("ark:update"),
     response_model=ArkOut,
+    description=E_UPDATE,
 )
 def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
     """既存 ARK を更新する。**対象の shoulder の manager を照合する**（M3）。"""
@@ -271,13 +394,14 @@ def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
     "/update/bulk",
     dependencies=needs("ark:update"),
     response_model=BulkUpdateOut,
+    description=E_BULK_UPDATE,
 )
 def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     """M5: **辞書で引き当て、部分適用しない。**"""
     authz.require_scope(principal, "ark:update")
     rows = body.data
     if len(rows) > cfg.bulk_limit:
-        raise authz.Invalid({"data": f"1 リクエストは {cfg.bulk_limit} 件まで"})
+        raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
     keys = [_key(r.ark) for r in rows]
     found = authz.fetch_for_update(session, principal, keys)  # 欠けが 1 件でもあれば 404
     for key, row in zip(keys, rows, strict=True):
@@ -295,6 +419,7 @@ def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cf
     "/tombstone",
     dependencies=needs("ark:tombstone"),
     response_model=ArkOut,
+    description=E_TOMBSTONE,
 )
 def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
     """**対象が失われたと宣言する。** ARK は削除しない。
@@ -328,6 +453,7 @@ def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
     "/hold",
     dependencies=needs("ark:hold"),
     response_model=ArkOut,
+    description=E_HOLD,
 )
 def hold(body: HoldIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     """**転送を一時的に止める。** 解決は止めない——記述は返り続ける。
@@ -355,6 +481,7 @@ def hold(body: HoldIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     "/hold/release",
     dependencies=needs("ark:hold"),
     response_model=ArkOut,
+    description=E_HOLD_RELEASE,
 )
 def hold_release(body: HoldReleaseIn, principal: CurrentPrincipal, session: Db):
     """期限を待たずに保留を外す。**期限切れは時計が勝手に外す**ので、これは前倒し。"""
@@ -369,6 +496,7 @@ def hold_release(body: HoldReleaseIn, principal: CurrentPrincipal, session: Db):
     "/query",
     dependencies=needs("ark:read"),
     response_model=BulkQueryOut,
+    description=E_BULK_QUERY,
 )
 def bulk_query(body: BulkQueryIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     """M4: **読み取りも到達範囲に絞る**（arklet は認可を一切していなかった）。"""

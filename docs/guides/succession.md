@@ -2,7 +2,7 @@
 
 Organisations merge, split and leave. **The identifiers must not notice.**
 
-`ark:/99999/x9abc` was handed out. Under NR it cannot be reissued, so it cannot be
+`ark:99999/x9abc` was handed out. Under NR it cannot be reissued, so it cannot be
 replaced by a new name at a new organisation — that would kill the original. What can
 change is who mints next, and where the target points.
 
@@ -31,7 +31,7 @@ arkhe depart 1 --resolver 'https://repo.univ.ac.jp/ark/${blade}' \
 ```
 
 **Minting stops; resolution continues forever.** Having handed out
-`ark:/<our NAAN>/…`, we cannot reissue those names, so the NAAN holder goes on
+`ark:<our NAAN>/…`, we cannot reissue those names, so the NAAN holder goes on
 answering `302` for them indefinitely.
 
 `--resolver` is the part worth understanding. It rewrites every existing target to the

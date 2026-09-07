@@ -38,7 +38,7 @@ cd compose/oidc && docker compose up -d --build
 | | |
 | --- | --- |
 | Admin UI and minting API | <http://localhost:8057/admin/> |
-| Resolution (**no authentication**) | <http://localhost:8058/ark:/…> |
+| Resolution (**no authentication**) | <http://localhost:8058/ark:…> |
 | API reference | <http://localhost:8057/api/docs> |
 
 Sign in as `ops`, `naan-admin` or `org-admin` (all `arkhe-demo-2026`) to see the same

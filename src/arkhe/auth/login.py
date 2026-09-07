@@ -131,7 +131,7 @@ def finish(
     with httpx.Client(timeout=15) as c:
         r = c.post(_endpoint(settings, "token_endpoint"), data=data)
     if r.status_code != 200:
-        raise AuthError(f"トークン要求に失敗しました: {r.status_code} {r.text[:200]}")
+        raise AuthError(f"token request failed: {r.status_code} {r.text[:200]}")
     tok = r.json()
 
     from arkhe.auth.oidc import OidcVerifier
@@ -159,11 +159,11 @@ def by_subject(session: Session, subject: str, *, mechanism: str) -> Principal:
         .options(selectinload(Client.manager))
     )
     if client is None or _expired(client.expires_at):
-        raise AuthError(f"{subject} はこのリゾルバに登録されていません")
+        raise AuthError(f"subject {subject} is not registered with this resolver")
     # **機械用の主体を外部ログインで名乗らせない。** 前段の設定が緩んで
     # ヘッダが外から通っても、一括投入バッチや採番クライアントには化けられない。
     if client.subject_type != Subject.PERSON:
-        raise AuthError(f"{subject} は人の主体ではありません（ログインには使えません）")
+        raise AuthError(f"subject {subject} is not a person and cannot sign in")
     return _to_principal(client, mechanism=mechanism)
 
 
@@ -176,7 +176,7 @@ def from_proxy(session: Session, settings: Settings, headers) -> Principal:
     """
     subject = headers.get(settings.proxy_user_header.lower(), "")
     if not subject:
-        raise AuthError(f"{settings.proxy_user_header} が立っていません")
+        raise AuthError(f"{settings.proxy_user_header} is not set")
     return by_subject(session, subject, mechanism="proxy")
 
 

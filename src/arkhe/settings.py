@@ -139,39 +139,47 @@ class Settings(BaseSettings):
         if self.resolver:
             return
         if not self.auth:
-            raise ValueError("ARKHE_AUTH が空です。apikey / oauth2 / oidc から選んでください")
+            raise ValueError(
+                "ARKHE_AUTH is empty. Choose from apikey / oauth2 / oidc."
+            )
         if "oauth2" in self.auth:
             if not self.token_secret:
                 raise ValueError(
-                    "ARKHE_AUTH に oauth2 を含めるなら ARKHE_TOKEN_SECRET が要ります"
-                    "（自前でトークンを発行するための署名鍵。既定値は持ちません）"
+                    "ARKHE_AUTH includes oauth2, so ARKHE_TOKEN_SECRET is required "
+                    "(the signing key for tokens arkhe issues itself; there is no "
+                    "default)."
                 )
             # RFC 7518 §3.2: HS256 の鍵はハッシュ長（32 バイト）以上であること。
             # 短い鍵でも PyJWT は警告を出すだけで動いてしまうので、ここで止める。
             if len(self.token_secret.encode()) < 32:
                 raise ValueError(
-                    "ARKHE_TOKEN_SECRET が短すぎます（32 バイト以上。RFC 7518 §3.2）。"
-                    "例: python -c \"import secrets;print(secrets.token_urlsafe(48))\""
+                    "ARKHE_TOKEN_SECRET is too short (32 bytes or more, RFC 7518 "
+                    "§3.2). For example: "
+                    "python -c \"import secrets;print(secrets.token_urlsafe(48))\""
                 )
         if self.admin_login != "bearer" and not self.session_secret:
             raise ValueError(
-                f"ARKHE_ADMIN_LOGIN={self.admin_login} には ARKHE_SESSION_SECRET が要ります"
-                "（セッション Cookie の署名鍵。既定値は持ちません）"
+                f"ARKHE_ADMIN_LOGIN={self.admin_login} requires ARKHE_SESSION_SECRET "
+                "(the signing key for the session cookie; there is no default)."
             )
         if self.admin_login != "bearer" and len(self.session_secret.encode()) < 32:
-            raise ValueError("ARKHE_SESSION_SECRET が短すぎます（32 バイト以上）")
+            raise ValueError("ARKHE_SESSION_SECRET is too short (32 bytes or more).")
         if self.admin_login == "oidc":
             if not self.oidc_issuer:
-                raise ValueError("ARKHE_ADMIN_LOGIN=oidc には ARKHE_OIDC_ISSUER が要ります")
+                raise ValueError(
+                    "ARKHE_ADMIN_LOGIN=oidc requires ARKHE_OIDC_ISSUER."
+                )
             if not self.admin_client_id:
                 raise ValueError(
-                    "ARKHE_ADMIN_LOGIN=oidc には ARKHE_ADMIN_CLIENT_ID が要ります"
-                    "（認可サーバに登録した arkhe 自身のクライアント）"
+                    "ARKHE_ADMIN_LOGIN=oidc requires ARKHE_ADMIN_CLIENT_ID "
+                    "(arkhe's own client, as registered with the authorisation "
+                    "server)."
                 )
         if "oidc" in self.auth and not self.oidc_issuer:
             raise ValueError(
-                "ARKHE_AUTH に oidc を含めるなら ARKHE_OIDC_ISSUER が要ります"
-                "（委譲先の認可サーバ。例 https://keycloak.example.org/realms/arkhe）"
+                "ARKHE_AUTH includes oidc, so ARKHE_OIDC_ISSUER is required (the "
+                "authorisation server it delegates to, e.g. "
+                "https://keycloak.example.org/realms/arkhe)."
             )
 
     @property

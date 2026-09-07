@@ -82,8 +82,8 @@ flowchart LR
 flowchart TD
     U[誰でも] --> A["arkhe A<br/><small>99999 に権威</small>"]
     U --> B["arkhe B<br/><small>12345 に権威</small>"]
-    A -->|"ark:/12345/… を 302"| B
-    B -->|"ark:/99999/… を 302"| A
+    A -->|"ark:12345/… を 302"| B
+    B -->|"ark:99999/… を 302"| A
     A -.->|"未知 NAAN"| N[n2t.net]
 ```
 
@@ -124,7 +124,7 @@ flowchart TD
 ```bash
 arkhe shoulder add 99999 /s7 --note "拠点 B へ委譲"
 arkhe shoulder status <id> delegated --minter https://ark.b.example.ac.jp
-arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:/$id'
+arkhe shoulder redirect <id> '303 https://ark.b.example.ac.jp/ark:$id'
 ```
 
 下位の台帳:
@@ -145,7 +145,7 @@ sequenceDiagram
     T-->>O: 307 + 行き先（minter）
     Note over T: 代理では呼ばない
     O->>S: POST /api/mint
-    S-->>O: 201 ark:/99999/s7abc
+    S-->>O: 201 ark:99999/s7abc
     Note over S: 名前を作るのは下位の台帳だけ
 ```
 
@@ -154,9 +154,9 @@ sequenceDiagram
     participant U as 外の利用者
     participant T as 上位 arkhe
     participant S as 下位 arkhe B
-    U->>T: GET /ark:/99999/s7abc
-    T-->>U: 302 https://ark.b…/ark:/…
-    U->>S: GET /ark:/99999/s7abc
+    U->>T: GET /ark:99999/s7abc
+    T-->>U: 302 https://ark.b…/ark:…
+    U->>S: GET /ark:99999/s7abc
     S-->>U: 302 対象の URL
     Note over T,S: 上位が落ちると、下位が生きていても外から届かない
 ```
@@ -172,7 +172,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    R["ark:/99999/s7abc が<br/>上位に届く"] --> E{"上位の台帳に<br/>完全一致"}
+    R["ark:99999/s7abc が<br/>上位に届く"] --> E{"上位の台帳に<br/>完全一致"}
     E -->|ある| A1["上位が答える<br/><small>② 委譲前に採った名前</small>"]
     E -->|ない| P{"祖先が<br/>ある"}
     P -->|ある| A2["祖先から記述・転送"]
@@ -223,7 +223,8 @@ arkhe hold release shoulder <id>            # 直ったら外す（期限が来�
 `?info` も `??` も答え続けるので、永続性の宣言を引っ込めることにはならない。
 期限は必須で、切れれば時計だけで元に戻る（[壊さないもの](../concepts/invariants.md)）。
 
-止めている名前空間は `/.well-known/ark` の `held` に出る。**下位から見て、上位が
+止めている名前空間は `/.well-known/ark` の `held` に出る（JSON 表現。`Accept:
+application/json` を付けて求める）。**下位から見て、上位が
 止めたことを機械的に確かめられる**——連絡が付かないときに効く。
 
 ### 何が上位に残り、何が下位に移るか
@@ -292,7 +293,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    U["外の利用者<br/>ark:/99999/s7abc"] --> C1["C-1<br/><small>上位が名前と記述を持つ</small><br/>200 記述を返す"]
+    U["外の利用者<br/>ark:99999/s7abc"] --> C1["C-1<br/><small>上位が名前と記述を持つ</small><br/>200 記述を返す"]
     U --> C2["C-2<br/><small>上位は名前を知らない</small><br/>303 説明ページ"]
     C1 --> R1["存在は言える<br/>行き先は無い<br/><small>＝制限公開そのもの</small>"]
     C2 --> R2["名前の存在も漏れない<br/><small>誤記と区別がつかない</small>"]
@@ -322,7 +323,7 @@ flowchart TB
 ## クローズド PID とオープン PID {#pid}
 
 **同じ NAAN の中に、公開の識別子と閉じた識別子を並べて置く。** 分けるのは shoulder であって、
-**識別子の形は分けない**——`ark:/99999/…` のままにしておくことが、この構成の目的そのものである。
+**識別子の形は分けない**——`ark:99999/…` のままにしておくことが、この構成の目的そのものである。
 
 ### なぜ形を分けないのか
 
@@ -338,9 +339,9 @@ flowchart TD
     N["NAAN 99999<br/><small>na_policy（?? の答え）はここ</small>"]
     N --> SO["shoulder /s7<br/><small>オープン PID</small>"]
     N --> SC["shoulder /c7<br/><small>クローズド PID</small>"]
-    SO --> AO["ark:/99999/s7abc<br/><small>url = 公開の対象</small>"]
-    SC --> AC["ark:/99999/c7xyz<br/><small>url = 空／申請窓口</small>"]
-    AC -->|"公開になったら url だけ付け替える"| AC2["ark:/99999/c7xyz<br/><small>url = 公開の対象</small>"]
+    SO --> AO["ark:99999/s7abc<br/><small>url = 公開の対象</small>"]
+    SC --> AC["ark:99999/c7xyz<br/><small>url = 空／申請窓口</small>"]
+    AC -->|"公開になったら url だけ付け替える"| AC2["ark:99999/c7xyz<br/><small>url = 公開の対象</small>"]
 ```
 
 **右下の 2 つは同じ識別子である。** 行も、名前も、shoulder も変わっていない。変わったのは
@@ -349,7 +350,7 @@ flowchart TD
 
 ### 外から何が見えるか（3 段）
 
-| 段 | 公開側の台帳が持つもの | 外から `ark:/…` を引くと | 使いどころ |
+| 段 | 公開側の台帳が持つもの | 外から `ark:…` を引くと | 使いどころ |
 | --- | --- | --- | --- |
 | **見せない** | 名前を持たない（[C-2](#c-arkhe)） | `303` 説明ページ | **存在すること自体が機微** |
 | **記述だけ** | 名前と記述、`url` は空 | **`200` 記述を返す**（D6） | 目録は公開、実体は非公開 |
@@ -402,14 +403,14 @@ curl -X POST https://ark.example.ac.jp/api/mint \
        "what_title": "（外に出してよい範囲の題）",
        "commitment": "制限公開。利用には申請が要る",
        "url": ""}'
-# → ark:/99999/c7xyz…
+# → ark:99999/c7xyz…
 
 # 申請窓口を付ける（3 段目に上げる）
-curl -X PUT …/api/update -d '{"ark": "ark:/99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
                               "url": "https://apply.example.ac.jp/dataset/…"}'
 
 # 禁止期間が明けたら、実体へ向け替える。**識別子は変わらない**
-curl -X PUT …/api/update -d '{"ark": "ark:/99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
                               "url": "https://repo.example.ac.jp/records/123"}'
 ```
 
@@ -461,7 +462,7 @@ who / what / when をそのまま入れると、**題名から中身が推測で
 
 ```mermaid
 flowchart TD
-    X["arkhe X<br/><small>99999/s7 を採番</small>"] --> N["ark:/99999/s7abc"]
+    X["arkhe X<br/><small>99999/s7 を採番</small>"] --> N["ark:99999/s7abc"]
     Y["arkhe Y<br/><small>99999/s7 も採番</small>"] --> N
     N --> Z["✗ 同じ名前が 2 つの対象を指す<br/><small>NR の下では取り返しがつかない</small>"]
 ```

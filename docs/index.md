@@ -6,7 +6,7 @@ processes.
 ```mermaid
 flowchart LR
     R["Organisation's<br/>repository"] -->|mint| M[minter]
-    U[Anyone] -->|ark:/99999/…| S[resolver]
+    U[Anyone] -->|ark:99999/…| S[resolver]
     M --> D[(ledger)]
     S --> D
     S -->|302| T[The object]

@@ -11,7 +11,7 @@
 <div class="card" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('mint.done') }}</span></div>
   <div class="card-b">
-    <div class="secret">ark:/{{ minted.ark }}</div>
+    <div class="secret">ark:{{ minted.ark }}</div>
     <div class="note info"><span>{{ t('mint.irreversible')|safe }}</span></div>
     {% if minted.url %}<p class="dim">{{ t('mint.target') }} <span class="mono">{{ minted.url }}</span></p>{% endif %}
   </div>

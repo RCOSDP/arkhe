@@ -24,12 +24,12 @@ from arkhe.api.admin._common import (
     _may_register,
     _page,
     _redirect,
+    _refuse,
     _remember_lang,
     _visible_shoulders,
     router,
     templates,
 )
-from arkhe.auth.errors import Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import (
     Client,
@@ -116,15 +116,17 @@ def clients(
 # 発行は POST で受け、そのレスポンスに載せる（リダイレクトすると消える）。
 
 
-def _reachable_client(session: Session, principal: Principal, client_id: int) -> Client:
+def _reachable_client(
+    request: Request, session: Session, principal: Principal, client_id: int
+) -> Client:
     """届く範囲の利用者だけを返す。判定は `admin_ops` と同じものを使う。"""
     c = session.get(Client, client_id)
     if c is None:
-        raise Forbidden("この利用者はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_client")
     if not principal.reaches_naan(c.naan):
-        raise Forbidden("この利用者はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_client")
     if not principal.is_naan_wide and c.manager_id != principal.manager_id:
-        raise Forbidden("この利用者はこの主体の範囲外")
+        raise _refuse(request, "e.out_of_reach_client")
     return c
 
 
@@ -163,7 +165,7 @@ def client_new(
 ):
     # 出し分けと同じ述語で閉じる。
     if not _may_register(session, principal):
-        raise Forbidden("この主体は利用者を登録できない")
+        raise _refuse(request, "e.cannot_add_client")
     # **未登録の一覧から渡ってきた識別子を初期値にする。** 認可サーバが署名した
     # 値そのものなので、打ち直させると綴り違いを作る機会をわざわざ増やすことになる。
     return _client_page(request, principal, session, cfg, None, prefill=client_id.strip())
@@ -208,7 +210,7 @@ def client_create(
 @router.get("/client/{client_id}", response_class=HTMLResponse)
 def client_detail(request: Request, principal: AdminPrincipal, session: Db, cfg: Config,
                   client_id: int):
-    c = _reachable_client(session, principal, client_id)
+    c = _reachable_client(request, session, principal, client_id)
     return _client_page(request, principal, session, cfg, c)
 
 
@@ -226,10 +228,10 @@ def client_issue_key(
 
     リダイレクトで一覧に戻さないのはそのため——戻した先では、もう取り出せない。
     """
-    c = _reachable_client(session, principal, client_id)
+    c = _reachable_client(request, session, principal, client_id)
     # 出し分けと同じ述語で閉じる。**使えない鍵を作らせない。**
     if kind not in _issuable_kinds(cfg):
-        raise Forbidden(f"この構成は {kind} を受け付けない（ARKHE_AUTH を確認すること）")
+        raise _refuse(request, "e.mechanism_off")
     issued = ops.issue_credential(
         session, principal, client_pk=c.id, kind=kind, label=label.strip()
     )
@@ -248,7 +250,7 @@ def client_revoke_key(
     credential_id: Annotated[int, Form()],
 ):
     """**行は消さない。** いつ失効したかが残る。"""
-    _reachable_client(session, principal, client_id)
+    _reachable_client(request, session, principal, client_id)
     ops.revoke_credential(session, principal, credential_id=credential_id)
     session.commit()
     return _redirect(f"/admin/client/{client_id}?saved=1")
@@ -267,7 +269,7 @@ def client_toggle_active(
     **認可サーバに寄せた構成では、これが arkhe 側の唯一の止め方。** 資格情報を
     arkhe が持たないので、失効させるものが無い。
     """
-    c = _reachable_client(session, principal, client_id)
+    c = _reachable_client(request, session, principal, client_id)
     ops.set_client_active(session, principal, client_pk=c.id, active=bool(active))
     session.commit()
     return _redirect(f"/admin/client/{client_id}?saved=1")
@@ -282,7 +284,7 @@ def client_set_password(
     password: Annotated[str, Form()],
 ):
     """人の主体にパスワードを設定する（`ARKHE_ADMIN_LOGIN=password` の構成用）。"""
-    c = _reachable_client(session, principal, client_id)
+    c = _reachable_client(request, session, principal, client_id)
     ops.set_password(session, principal, client_pk=c.id, password=password)
     session.commit()
     return _redirect(f"/admin/client/{client_id}?saved=1")

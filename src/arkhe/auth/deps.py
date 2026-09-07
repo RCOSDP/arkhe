@@ -17,7 +17,7 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from arkhe import observability
+from arkhe import errors, observability
 from arkhe.auth import apikey, oauth2
 from arkhe.auth.errors import AuthError, UnregisteredSubject
 from arkhe.auth.oidc import OidcVerifier
@@ -45,9 +45,9 @@ def oidc_verifier(settings: Settings) -> OidcVerifier:
 bearer_scheme = HTTPBearer(
     scheme_name="bearer",
     description=(
-        "API キー（apikey モード）、arkhe が発行したトークン（oauth2 モード）、"
-        "外部の認可サーバが発行した JWT（oidc モード）のいずれか。"
-        "有効な機構は ARKHE_AUTH で決まる。"
+        "An API key (apikey mode), a token arkhe issued (oauth2 mode), or a JWT from "
+        "an external authorisation server (oidc mode). Which mechanisms are live is "
+        "set by ARKHE_AUTH."
     ),
     auto_error=False,
 )
@@ -75,7 +75,7 @@ def authenticate(
 ) -> Principal:
     """機構を順に試す。**どれも通らなければ 401。**"""
     if not token:
-        raise AuthError("no credentials", challenge=challenge_for(settings))
+        raise AuthError(errors.NO_CREDENTIALS, challenge=challenge_for(settings))
 
     tried: list[str] = []
     unregistered: UnregisteredSubject | None = None
@@ -107,7 +107,7 @@ def authenticate(
     observability.log("auth failed", mechanisms=tried)
     if unregistered is not None:
         _remember(session, unregistered, ip)
-    raise AuthError("invalid credentials", challenge=challenge_for(settings))
+    raise AuthError(errors.INVALID_CREDENTIALS, challenge=challenge_for(settings))
 
 
 def _remember(session: Session, exc: UnregisteredSubject, ip: str) -> None:
@@ -159,7 +159,7 @@ def current_principal(
     _cred: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
 ) -> Principal:
     # トークンは `bearer()` で取る。`_cred` は OpenAPI に載せるためだけの依存で、
-    # **値は使わない**——`ark:/…` のようにヘッダ以外から来る経路と扱いを揃えるため。
+    # **値は使わない**——`ark:…` のようにヘッダ以外から来る経路と扱いを揃えるため。
     # **接続元は要求の層でだけ分かる。** 監査に残すために運ぶ——
     # 未登録の主体を残すときにも要るので、認証より先に求める。
     ip = client_ip(request, settings)

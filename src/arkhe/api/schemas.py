@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from arkhe import errors
+from arkhe.arkspec.naming import compact_ark
 from arkhe.domain.resolution import DANGEROUS_SCHEMES, is_registrable
 
 #: 呼び出し側が設定できる項目。**`shoulder` はここに無い**——主体から引く。
@@ -24,8 +26,22 @@ WRITABLE = (
 )
 
 
+
+def _spec(description: str) -> ConfigDict:
+    """スキーマの説明を**英語で**上書きする。
+
+    **公開する OpenAPI は英語**——読者はこの台帳の外にいる。Pydantic は
+    クラスの docstring をスキーマの `description` に使うので、そのままだと
+    日本語が仕様書に出る。docstring は**実装を読む人のために日本語で残し**、
+    出す文面だけここで差し替える。
+    """
+    return ConfigDict(json_schema_extra={"description": description})
+
+
 class ArkFields(BaseModel):
     """ERC / Dublin Core の受け皿。すべて任意。"""
+
+    model_config = _spec("ERC / Dublin Core fields. All optional.")
 
     @field_validator("url")
     @classmethod
@@ -40,8 +56,7 @@ class ArkFields(BaseModel):
         """
         if not is_registrable(v):
             raise ValueError(
-                "ブラウザに解釈させると危ないスキームは行き先にできません"
-                f"（{'/'.join(sorted(DANGEROUS_SCHEMES))}）"
+                errors.URL_SCHEME_REFUSED.say(schemes="/".join(sorted(DANGEROUS_SCHEMES)))
             )
         return v
 
@@ -69,12 +84,22 @@ class MintIn(ArkFields):
     検証するだけ）。`naan` は受け取らない——主体が決めるものだから。
     """
 
+    model_config = _spec(
+        "Input for minting. `shoulder` is optional: omitted, the organisation's "
+        "default is used; named, it is only checked against the caller's registered "
+        "reach, never widening it. `naan` is not accepted — it follows from the "
+        "principal."
+    )
+
     shoulder: str = ""
     #: F4: **再送しても二重に採番しないための鍵。** 呼び出し側が付ける。
     request_id: str = Field(
         default="",
         max_length=200,
-        description="冪等鍵。同じ値で再送すると、前回採番した ARK をそのまま返す",
+        description=(
+            "Idempotency key. Resending the same value returns the ARK minted the "
+            "first time, instead of minting again."
+        ),
     )
 
 
@@ -85,8 +110,14 @@ class RegisterIn(ArkFields):
     採番ではないので NOID もチェックディジットも生成しない。
     """
 
-    ark: str = Field(description="既存の base ARK（`ark:/99999/xyz`）")
-    qualifier: str = Field(description="`/`（包含）か `.`（変種）で始める")
+    model_config = _spec(
+        "A qualified ARK: `ark` is an existing base name and `qualifier` the part "
+        "reference appended to it. Nothing is minted, so no NOID and no check digit "
+        "are generated."
+    )
+
+    ark: str = Field(description="An existing base ARK (`ark:99999/xyz`).")
+    qualifier: str = Field(description="Begins with `/` (a part) or `.` (a variant).")
 
 
 class HoldIn(BaseModel):
@@ -97,13 +128,28 @@ class HoldIn(BaseModel):
     要るから——理由の無い保留は、掛けた本人以外に外せない。
     """
 
+    model_config = _spec(
+        "A temporary stop on redirection. **Resolution is not stopped** — the "
+        "description keeps being returned. `until` is required because a "
+        "\"temporary\" left to memory becomes permanent; `reason` is required "
+        "because it is published, and because lifting the hold needs it."
+    )
+
     ark: str
-    until: datetime = Field(description="この時点まで転送しない。過去は受けない")
-    reason: str = Field(min_length=1, max_length=500, description="止めている理由")
+    until: datetime = Field(
+        description="No redirection until this moment. A time in the past is refused."
+    )
+    reason: str = Field(
+        min_length=1,
+        max_length=500,
+        description="Why redirection is stopped. **This is published.**",
+    )
 
 
 class HoldReleaseIn(BaseModel):
     """期限を待たずに保留を外す。"""
+
+    model_config = _spec("Lift a hold before its expiry.")
 
     ark: str
 
@@ -114,6 +160,11 @@ class UpdateIn(ArkFields):
 
 class TombstoneIn(BaseModel):
     """**対象が失われたと宣言する。** ARK は削除しない。"""
+
+    model_config = _spec(
+        "Declare that the object is gone. **The ARK is not deleted** — the identifier "
+        "and its metadata stay, only reachability goes."
+    )
 
     ark: str
     #: 空なら、リゾルバが記述そのものを返す（D6 と同じ経路）。
@@ -157,7 +208,7 @@ class ArkOut(BaseModel):
     @classmethod
     def of(cls, ark) -> ArkOut:
         return cls(
-            ark=f"ark:/{ark.ark}",
+            ark=compact_ark(ark.ark),
             **{f: getattr(ark, "metadata_" if f == "metadata" else f) for f in WRITABLE},
             created_at=ark.created_at,
             updated_at=ark.updated_at,

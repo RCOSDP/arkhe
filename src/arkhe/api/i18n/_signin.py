@@ -29,6 +29,11 @@ JA: dict[str, str] = {
     "login.submit": "ログイン",
     "login.failed": "ID かパスワードが違います",
     "login.logout": "ログアウト",
+
+    # ログインの断り。**画面の言語で出す。**（`auth/password.py` が鍵で投げる）
+    "e.bad_credentials": "ID かパスワードが違います",
+    "e.locked": "試行が続いたため一時的に受け付けません。しばらく待ってください",
+    "e.password_expired": "パスワードの有効期限が切れています",
 }
 
 EN: dict[str, str] = {
@@ -53,4 +58,9 @@ EN: dict[str, str] = {
     "login.submit": "Sign in",
     "login.failed": "That ID and password do not match",
     "login.logout": "Sign out",
+
+    # Refusals on the login screen (raised by key from `auth/password.py`).
+    "e.bad_credentials": "Wrong ID or password.",
+    "e.locked": "Too many attempts; sign-in is locked for a short while.",
+    "e.password_expired": "The password has expired.",
 }

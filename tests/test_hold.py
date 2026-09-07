@@ -309,7 +309,8 @@ def test_保留した名前空間は_well_known_に出る(api, db, root, world):
         reason="委譲先が落ちている",
     )
     db.commit()
-    held = api.get("/.well-known/ark").json()["held"]
+    # 在庫は JSON を求めたときだけ返る（既定は仕様の text/plain。§5.6）。
+    held = api.get("/.well-known/ark", headers={"Accept": "application/json"}).json()["held"]
     assert held and held[0]["reason"] == "委譲先が落ちている"
 
 

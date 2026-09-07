@@ -51,7 +51,7 @@ def test_ark_listは発行したarkを出す(db, factory, world):
     _mint(db, world["sh_a"], 2)
     r = _run(factory, "ark", "list")
     assert r.exit_code == 0
-    assert r.stdout.count("ark:/99999/a1") == 2
+    assert r.stdout.count("ark:99999/a1") == 2
     # **行き先が出ること。** 一覧から目で追って写す列なので、これが無いと使えない。
     assert "https://例.jp/0" in r.stdout
 
@@ -67,7 +67,7 @@ def test_打ち切ったことを知らせる(db, factory, world):
     r = _run(factory, "ark", "list", "--limit", "2")
     assert r.exit_code == 0
     # 上限ちょうどで止まり、**続きの入り口を示す**。示さなければ「これで全部」と読まれる。
-    assert r.stdout.count("ark:/") == 2
+    assert r.stdout.count("ark:") == 2
     assert "--offset 2" in r.output
 
 
@@ -81,7 +81,7 @@ def test_offsetで続きが取れる(db, factory, world):
     _mint(db, world["sh_a"], 5)
     first = _run(factory, "ark", "list", "--limit", "2").stdout
     rest = _run(factory, "ark", "list", "--limit", "2", "--offset", "2").stdout
-    got = {ln.split()[0] for ln in (first + rest).splitlines() if ln.startswith("ark:/")}
+    got = {ln.split()[0] for ln in (first + rest).splitlines() if ln.startswith("ark:")}
     assert len(got) == 4  # 重複なく続いている
 
 
@@ -90,9 +90,9 @@ def test_naanと組織で絞る(db, factory, world):
     _mint(db, world["sh_b"], 1)
     _mint(db, world["sh_c"], 1)  # 別 NAAN
 
-    assert _run(factory, "ark", "list", "--naan", "88888").stdout.count("ark:/") == 1
+    assert _run(factory, "ark", "list", "--naan", "88888").stdout.count("ark:") == 1
     out = _run(factory, "ark", "list", "--org", str(world["a"].id)).stdout
-    assert "ark:/99999/a1" in out and "ark:/99999/b2" not in out
+    assert "ark:99999/a1" in out and "ark:99999/b2" not in out
 
 
 def test_検索はark行き先題名の3つを見る(db, factory, world):
@@ -100,10 +100,10 @@ def test_検索はark行き先題名の3つを見る(db, factory, world):
     _mint(db, world["sh_a"], 1, url="https://見つかる.jp/x", title="無関係")
     _mint(db, world["sh_b"], 1, url="https://別.jp/y", title="探したい題名")
 
-    assert _run(factory, "ark", "list", "-q", "見つかる").stdout.count("ark:/") == 1
-    assert _run(factory, "ark", "list", "-q", "探したい").stdout.count("ark:/") == 1
+    assert _run(factory, "ark", "list", "-q", "見つかる").stdout.count("ark:") == 1
+    assert _run(factory, "ark", "list", "-q", "探したい").stdout.count("ark:") == 1
     # ARK そのものでも引ける
-    assert _run(factory, "ark", "list", "-q", "a1").stdout.count("ark:/") == 1
+    assert _run(factory, "ark", "list", "-q", "a1").stdout.count("ark:") == 1
 
 
 def test_絞り込みは到達範囲の外に出る鍵にならない(db, world):

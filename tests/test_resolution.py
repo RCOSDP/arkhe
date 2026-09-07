@@ -182,7 +182,8 @@ def test_d3_authoritative_naan_returns_404_not_a_redirect():
 def test_d2_unknown_naan_is_forwarded_to_the_global_resolver():
     r = resolve(FakeRepo(), "12345", "abcde")
     assert r.outcome is Outcome.FORWARD
-    assert r.location == "https://n2t.net/ark:/12345/abcde"
+    # §2.2: 取り次ぐときも新形式で出す（n2t は両方受ける）。
+    assert r.location == "https://n2t.net/ark:12345/abcde"
 
 
 def test_d2_metadata_for_an_unknown_naan_is_404_not_a_forward():

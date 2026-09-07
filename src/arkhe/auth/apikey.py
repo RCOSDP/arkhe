@@ -21,6 +21,7 @@ from argon2.exceptions import VerifyMismatchError
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from arkhe import errors
 from arkhe.auth.errors import AuthError
 from arkhe.auth.principal import Principal
 from arkhe.db.models import Client, Credential, CredentialKind, Subject
@@ -57,7 +58,7 @@ def authenticate(session: Session, raw: str) -> Principal:
     有効な鍵の存在を総当たりで探れてしまう。
     """
     if not raw:
-        raise AuthError("no api key")
+        raise AuthError(errors.NO_CREDENTIALS)
 
     rows = session.scalars(
         select(Credential)
@@ -92,7 +93,7 @@ def authenticate(session: Session, raw: str) -> Principal:
 
     # 一致が無いときも、照合と同程度の時間を使う（存在の有無を時間差で漏らさない）。
     hmac.compare_digest(raw, raw)
-    raise AuthError("invalid api key")
+    raise AuthError(errors.INVALID_CREDENTIALS)
 
 
 def _mechanism_allowed(session: Session, client: Client, mechanism: str) -> bool:

@@ -451,8 +451,11 @@ def test_oidcでは止める手段が要る(db, world, root):
     db.commit()
     # **「登録が無い」ではなく「止めてある」。** 返す答えは同じ 401 だが、
     # 未登録の一覧に混ぜないために区別している。
-    with pytest.raises(AuthError, match="not usable"):
+    with pytest.raises(AuthError) as stopped:
         v.authenticate(db, "t")
+    # 外に返る文面は generic だが、**理由は detail に残る**（診断のために要る）。
+    assert stopped.value.code.number == "ARKHE-1202"
+    assert "not usable" in stopped.value.detail["reason"]
 
 
 def test_止めても戻せる(db, world, root):
@@ -933,7 +936,7 @@ def test_ページ送りができる(db, world, root, principal_of, as_principal
     db.commit()
     c = as_principal(principal_of(manager=world["a"]))
     first = c.get("/admin/arks").text
-    assert first.count("ark:/") >= PAGE
+    assert first.count("ark:") >= PAGE
     assert "page=2" in first                       # 次があると分かる
     assert c.get("/admin/arks?page=2").status_code == 200
 
@@ -953,7 +956,7 @@ def test_履歴が画面から辿れる(db, world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://one.example/1"}).json()["ark"]
     c.put("/api/update", json={"ark": key, "url": "https://two.example/2"})
-    page = c.get("/admin/arks/" + key.removeprefix("ark:/")).text
+    page = c.get("/admin/arks/" + key.removeprefix("ark:")).text
     assert "https://one.example/1" in page and "https://two.example/2" in page
 
 
@@ -1077,7 +1080,7 @@ def test_ark詳細に記述が出る(db, world, principal_of, as_principal):
     key = c.post("/api/mint", json={
         "url": "https://x/1", "title": "題", "who": "山田", "when": "2026",
         "type": "Dataset", "source": "どこか",
-    }).json()["ark"].removeprefix("ark:/")
+    }).json()["ark"].removeprefix("ark:")
     page = c.get(f"/admin/arks/{key}").text
     for v in ("題", "山田", "2026", "Dataset", "どこか"):
         assert v in page, v
@@ -1280,7 +1283,8 @@ def test_401はそのまま401で返る(db, world):
 
     返す理由も増やさない——どの主体が台帳に在るかを教えないため。
     """
-    assert _reject(db, "誰でもない").detail == "invalid credentials"
+    rejected = _reject(db, "誰でもない")
+    assert rejected.code.number == "ARKHE-1202" and rejected.detail == {}
 
 
 def test_登録すれば一覧から消える(db, world, root, principal_of, as_principal):
@@ -1329,5 +1333,38 @@ def test_止めた主体は未登録として並べない(db, world, root):
     ops.set_client_active(db, root, client_pk=c.id, active=False)
     db.commit()
 
-    assert _reject(db, "kc-stopped").detail == "invalid credentials"
+    stopped = _reject(db, "kc-stopped")
+    assert stopped.code.number == "ARKHE-1202" and stopped.detail == {}
     assert db.scalar(db.query(UnknownSubject).statement) is None
+
+
+# --------------------------------------------------------------------------
+# 断りも画面の言語で返す
+# --------------------------------------------------------------------------
+
+
+def test_断りは画面の言語で返る(db, world, root, principal_of, as_principal):
+    """**画面が切り替わるのに断りだけ切り替わらない**のは、いちばん困っている
+    ときに母語から落ちるということ。
+
+    語彙は画面と同じ catalogue から採るので、片方の言語しか無ければ起動時に落ちる。
+    """
+    c = as_principal(principal_of(manager=world["a"]))  # 組織単位＝NAAN の管理は不可
+
+    ja = c.get("/admin/naan/new?lang=ja")
+    en = c.get("/admin/naan/new?lang=en")
+    assert ja.status_code == en.status_code == 403
+    assert ja.json()["detail"] == "NAAN の登録はシステム管理者のみ"
+    assert en.json()["detail"] == "Only a system administrator registers a NAAN."
+
+    # Accept-Language でも切り替わる（明示の `?lang=` が無いとき）。
+    header = c.get("/admin/naan/new", headers={"Accept-Language": "en-GB,en;q=0.9"})
+    assert header.json()["detail"].startswith("Only a system administrator")
+
+
+def test_ログインの断りも画面の言語で返る(db, root, factory):
+    """`auth/password.py` は**語彙の鍵で投げる**——あちらは要求も言語も知らない層。"""
+    from arkhe.api.i18n import EN, JA
+
+    for key in ("e.bad_credentials", "e.locked", "e.password_expired"):
+        assert JA[key] and EN[key] and JA[key] != EN[key]

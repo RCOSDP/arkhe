@@ -17,6 +17,7 @@ from fastapi.openapi.models import OAuthFlowClientCredentials, OAuthFlows
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2
 
+from arkhe import errors
 from arkhe.api import i18n
 from arkhe.auth import oauth2
 from arkhe.auth.deps import Config, Db
@@ -37,7 +38,7 @@ router = APIRouter(prefix="/oauth", tags=["oauth"])
 #: **3 か所目を作らない**——増えると、登録できるのに説明の無い scope が生まれる。
 scheme = OAuth2(
     scheme_name="oauth2",
-    description="arkhe が自分で発行するトークン（RFC 6749 §4.4 client_credentials）。",
+    description="Tokens arkhe issues itself (RFC 6749 §4.4 client_credentials).",
     flows=OAuthFlows(
         clientCredentials=OAuthFlowClientCredentials(
             tokenUrl=f"{router.prefix}/token",
@@ -48,7 +49,16 @@ scheme = OAuth2(
 )
 
 
-@router.post("/token", summary="アクセストークンを発行する（client_credentials）")
+@router.post(
+    "/token",
+    summary="Issue an access token (client_credentials)",
+    description=(
+        "RFC 6749 §4.4 client_credentials.\n\n"
+        "Credentials are accepted **in the body or by Basic authentication** "
+        "(§2.3.1 recommends Basic and permits the body; client libraries in the "
+        "wild use both)."
+    ),
+)
 def token(
     request: Request,
     session: Db,
@@ -67,14 +77,16 @@ def token(
     if "oauth2" not in cfg.auth:
         return JSONResponse(
             {"error": "unsupported_grant_type",
-             "error_description": "この構成は自前でトークンを発行しません（ARKHE_AUTH）"},
+             "error_description": errors.TOKEN_ENDPOINT_DISABLED.message,
+             "code": errors.TOKEN_ENDPOINT_DISABLED.number},
             status_code=404,
         )
     if grant_type != "client_credentials":
         # **他の grant は持たない。** 実装しないものを明示して返す。
         return JSONResponse(
             {"error": "unsupported_grant_type",
-             "error_description": "client_credentials のみ対応しています"},
+             "error_description": errors.UNSUPPORTED_GRANT_TYPE.message,
+             "code": errors.UNSUPPORTED_GRANT_TYPE.number},
             status_code=400,
         )
 

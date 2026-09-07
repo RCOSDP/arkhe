@@ -25,6 +25,7 @@ from argon2.exceptions import VerifyMismatchError
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from arkhe import errors
 from arkhe.auth.apikey import _expired, _mechanism_allowed, _to_principal
 from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.auth.principal import Principal
@@ -48,7 +49,7 @@ def _verify_secret(session: Session, client_id: str, secret: str) -> Client:
         .options(selectinload(Client.credentials), selectinload(Client.manager))
     )
     if client is None or _expired(client.expires_at):
-        raise AuthError("invalid client")
+        raise AuthError(errors.INVALID_CREDENTIALS)
     for cred in client.credentials:
         if cred.kind != CredentialKind.CLIENT_SECRET.value or not cred.active:
             continue
@@ -59,7 +60,7 @@ def _verify_secret(session: Session, client_id: str, secret: str) -> Client:
         except (VerifyMismatchError, Exception):  # noqa: B014
             continue
         return client
-    raise AuthError("invalid client")
+    raise AuthError(errors.INVALID_CREDENTIALS)
 
 
 def issue_token(
@@ -86,7 +87,20 @@ def issue_token(
         if unknown:
             # RFC 6749 §5.2 の invalid_scope。**黙って削らない**——クライアントが
             # 「取れたつもり」で動いて後段の 403 に驚くのを避ける。
-            raise Forbidden({"error": "invalid_scope", "not_allowed": sorted(unknown)})
+            #
+            # **ここだけ本文の形が違う。** トークンの口の誤りは `error` で読むと
+            # 決まっており（§5.2）、既存のクライアントライブラリもそう読む。
+            # 我々の符号はその形を崩さずに併記する。
+            raise Forbidden(
+                {
+                    "error": "invalid_scope",
+                    "error_description": errors.INVALID_SCOPE.say(
+                        scopes=", ".join(sorted(unknown))
+                    ),
+                    "code": errors.INVALID_SCOPE.number,
+                    "not_allowed": sorted(unknown),
+                }
+            )
         granted = asked
     else:
         granted = allowed
@@ -127,7 +141,7 @@ def authenticate(session: Session, token: str, *, secret_key: str, issuer: str =
             options=options,
         )
     except jwt.PyJWTError as exc:
-        raise AuthError(f"invalid token: {exc}") from exc
+        raise AuthError(errors.INVALID_CREDENTIALS, reason=str(exc)) from exc
 
     client = session.scalar(
         select(Client)
@@ -135,10 +149,11 @@ def authenticate(session: Session, token: str, *, secret_key: str, issuer: str =
         .options(selectinload(Client.manager))
     )
     if client is None or _expired(client.expires_at):
-        raise AuthError("client is no longer active")
+        raise AuthError(errors.INVALID_CREDENTIALS, reason="client is no longer active")
     # **組織に許されていない機構では通さない**（apikey と同じ）。
     if not _mechanism_allowed(session, client, "oauth2"):
-        raise AuthError("this mechanism is not allowed for the organisation")
+        raise AuthError(errors.INVALID_CREDENTIALS,
+                        reason="this mechanism is not allowed for the organisation")
 
     principal = _to_principal(client, mechanism="oauth2")
     # トークンに載った scope で**絞る**（広げはしない）。

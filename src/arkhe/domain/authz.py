@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from arkhe import errors
 from arkhe.auth.errors import Forbidden, InsufficientScope
 from arkhe.auth.principal import Principal
 from arkhe.db.models import (
@@ -25,30 +26,19 @@ from arkhe.db.models import (
     ShoulderStatus,
     UnknownSubject,
 )
+from arkhe.errors import ApiError
 
 
-class NotFound(Exception):
+class NotFound(ApiError):
     status = 404
 
-    def __init__(self, detail):
-        self.detail = detail
-        super().__init__(str(detail))
 
-
-class Invalid(Exception):
+class Invalid(ApiError):
     status = 400
 
-    def __init__(self, detail):
-        self.detail = detail
-        super().__init__(str(detail))
 
-
-class Throttled(Exception):
+class Throttled(ApiError):
     status = 429
-
-    def __init__(self, detail):
-        self.detail = detail
-        super().__init__(str(detail))
 
 
 class ShoulderDelegated(Forbidden):
@@ -62,11 +52,10 @@ class ShoulderDelegated(Forbidden):
     def __init__(self, shoulder: Shoulder):
         self.minter = shoulder.minter
         super().__init__(
-            {
-                "detail": f"shoulder {shoulder.shoulder} の採番は委譲されている",
-                "minter": shoulder.minter,
-                "note": shoulder.note,
-            }
+            errors.SHOULDER_DELEGATED,
+            shoulder=shoulder.shoulder,
+            minter=shoulder.minter,
+            note=shoulder.note,
         )
 
 
@@ -92,45 +81,42 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
         # NAAN 配下（system は全 NAAN）ならどれでも使えるが、**明示が必須**
         # ——既定を持たないので、誤って他組織の shoulder に打つ事故を防ぐ。
         if not requested:
-            raise Invalid(
-                {"shoulder": f"authority={principal.authority} の主体は shoulder を明示すること"}
-            )
+            raise Invalid(errors.SHOULDER_REQUIRED, authority=principal.authority)
         stmt = select(Shoulder).where(Shoulder.shoulder == requested)
         if not principal.is_system:
             stmt = stmt.where(Shoulder.naan == principal.naan)
         found = session.scalars(stmt).all()
         if not found:
-            raise Invalid({"shoulder": f"shoulder {requested} は存在しない"})
+            raise Invalid(errors.SHOULDER_UNKNOWN, shoulder=requested)
         if len(found) > 1:
             # system は全 NAAN に届くので、同じ shoulder 文字列が複数 NAAN に
             # ありうる。**どれか 1 つを勝手に選ばない。**
             raise Invalid(
-                {
-                    "shoulder": f"shoulder {requested} が複数の NAAN にある。naan も指定すること",
-                    "naans": sorted(x.naan for x in found),
-                }
+                errors.SHOULDER_AMBIGUOUS,
+                shoulder=requested,
+                naans=sorted(x.naan for x in found),
             )
         return found[0]
 
     if principal.manager_id is None:
-        raise Forbidden("主体に有効な組織が紐づいていない")
+        raise Forbidden(errors.NO_ORGANISATION)
     manager = session.get(Manager, principal.manager_id)
     if manager is None or not manager.active:
-        raise Forbidden("主体に有効な組織が紐づいていない")
+        raise Forbidden(errors.NO_ORGANISATION)
 
     # **主体が shoulder に固定されている場合はそれだけ。**
     # 同じ shoulder を複数の主体が使うのは正常（鍵は共有しない）。
     if principal.shoulder_id is not None:
         fixed = session.get(Shoulder, principal.shoulder_id)
         if fixed is None:
-            raise Forbidden("主体に紐づく shoulder が見つからない")
+            raise Forbidden(errors.NO_ORGANISATION, shoulder_id=principal.shoulder_id)
         if requested and requested != fixed.shoulder:
-            raise Forbidden(f"shoulder {requested} はこの主体の範囲外")
+            raise Forbidden(errors.OUT_OF_REACH, target=requested)
         return fixed
 
     if not requested:
         if manager.default_shoulder_id is None:
-            raise Invalid({"shoulder": "この組織に default_shoulder が設定されていない"})
+            raise Invalid(errors.NO_DEFAULT_SHOULDER)
         return session.get(Shoulder, manager.default_shoulder_id)
 
     found = session.scalar(
@@ -142,7 +128,7 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
     )
     if found is None:
         # **他組織の shoulder を指定しても、存在の有無を漏らさず一律に拒む。**
-        raise Forbidden(f"shoulder {requested} はこの主体の範囲外")
+        raise Forbidden(errors.OUT_OF_REACH, target=requested)
     return found
 
 
@@ -153,10 +139,10 @@ def assert_shoulder_mintable(shoulder: Shoulder) -> None:
     if shoulder.status == ShoulderStatus.DELEGATED:
         raise ShoulderDelegated(shoulder)
     raise Forbidden(
-        {
-            "detail": f"shoulder {shoulder.shoulder} は status={shoulder.status} で採番できない",
-            "note": shoulder.note,
-        }
+        errors.SHOULDER_NOT_MINTABLE,
+        shoulder=shoulder.shoulder,
+        status=shoulder.status,
+        note=shoulder.note,
     )
 
 
@@ -167,12 +153,12 @@ def assert_may_touch(session: Session, principal: Principal, ark: Ark) -> None:
     内の任意の ARK の解決先を書き換えられた。採番より重い——**永続識別子の乗っ取り**。
     """
     if not principal.reaches_naan(ark.naan):
-        raise Forbidden("ARK が別の NAAN に属している")
+        raise Forbidden(errors.OUT_OF_REACH, target=ark.ark, reason="another NAAN")
     if principal.is_naan_wide:
         return
     shoulder = ark.shoulder or session.get(Shoulder, ark.shoulder_id)
     if principal.manager_id is None or shoulder.manager_id != principal.manager_id:
-        raise Forbidden("ARK がこの主体の範囲外")
+        raise Forbidden(errors.OUT_OF_REACH, target=ark.ark)
 
 
 def visible_arks(session: Session, principal: Principal, keys: list[str]):
@@ -199,7 +185,7 @@ def fetch_for_update(session: Session, principal: Principal, keys: list[str]) ->
     found = {a.ark: a for a in visible_arks(session, principal, keys)}
     missing = [k for k in keys if k not in found]
     if missing:
-        raise NotFound({"missing": missing[:20], "count": len(missing)})
+        raise NotFound(errors.ARK_NOT_FOUND, missing=missing[:20], count=len(missing))
     return found
 
 
@@ -223,7 +209,7 @@ def assert_within_quota(session: Session, principal: Principal, count: int = 1) 
     )
     if used + count > manager.quota_per_day:
         raise Throttled(
-            {"quota_per_day": manager.quota_per_day, "used_last_24h": used, "requested": count}
+            errors.QUOTA_EXCEEDED, quota=manager.quota_per_day, used=used, requested=count
         )
 
 

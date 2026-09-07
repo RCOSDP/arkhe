@@ -82,7 +82,7 @@ arkhe shoulder status 3 retired --note "移行完了"
 ### 転送を止める
 
 ```bash
-arkhe hold add ark ark:/99999/x9abc --days 3 --reason "行き先を確認中"
+arkhe hold add ark ark:99999/x9abc --days 3 --reason "行き先を確認中"
 arkhe hold add shoulder 3 --days 1 --reason "委譲先のリゾルバが落ちている"
 arkhe hold list
 arkhe hold release shoulder 3

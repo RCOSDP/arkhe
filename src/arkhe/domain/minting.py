@@ -12,7 +12,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from arkhe.arkspec.betanumeric import check_digit_base, generate_noid, noid_check_digit
-from arkhe.arkspec.naming import ark_key, normalize_structural, strip_hyphens
+from arkhe.arkspec.naming import (
+    MAX_NAME_LENGTH,
+    ark_key,
+    compact_ark,
+    normalize_percent,
+    normalize_structural,
+    strip_hyphens,
+)
 from arkhe.db.models import Ark, Shoulder
 
 MINT_COLLISION_RETRIES = 10
@@ -21,6 +28,26 @@ NOID_LENGTH = 8
 
 class AlreadyRegistered(Exception):
     """B4: 修飾子付き ARK が既に在る。**上書きせず呼び出し側に返す。**"""
+
+
+class QualifierForm(ValueError):
+    """修飾子が `/` でも `.` でも始まっていない。"""
+
+
+class QualifierOutsideBase(ValueError):
+    """修飾子が base の内側を指していない。"""
+
+    def __init__(self, qualifier: str):
+        self.qualifier = qualifier
+        super().__init__(f"qualifier does not point inside the base: {qualifier!r}")
+
+
+class NameTooLong(ValueError):
+    """名前が索引できる長さを超えた。**仕様の下限（255）まで**は受ける。"""
+
+    def __init__(self, length: int, limit: int):
+        self.length, self.limit = length, limit
+        super().__init__(f"name is {length} octets, limit is {limit}")
 
 
 def mint(
@@ -74,10 +101,17 @@ def register_qualified(
     修飾子は base の名前空間の内側にあるものだから。
     """
     if not qualifier.startswith(("/", ".")):
-        raise ValueError("修飾子は '/'（包含）か '.'（変種）で始めること")
-    name = strip_hyphens(normalize_structural(base.assigned_name + qualifier))
+        raise QualifierForm("a qualifier must begin with '/' or '.'")
+    # A4: 修飾子にも %-エンコードは来る（`%2F` は「区切りではない `/`」）。
+    # **解決側と同じ式を通す**——揃えないと、登録できたのに解決できない行ができる。
+    name = strip_hyphens(normalize_structural(normalize_percent(base.assigned_name + qualifier)))
     if name == base.assigned_name or not name.startswith(base.assigned_name):
-        raise ValueError(f"修飾子が base を指していない: {qualifier!r}")
+        raise QualifierOutsideBase(qualifier)
+    if len(name) > MAX_NAME_LENGTH:
+        # **DB のエラーで落とさない。** 仕様（§3.1）が受け取る側に義務づけるのは
+        # 255 オクテットまでで、我々もそこまでを索引できる。長い名前を作る側は
+        # 「受け取る実装が索引できないかもしれない」と仕様に警告されている。
+        raise NameTooLong(len(name), MAX_NAME_LENGTH)
     ark = Ark(
         ark=ark_key(base.naan, name),
         naan=base.naan,
@@ -93,5 +127,7 @@ def register_qualified(
             session.flush()
     except IntegrityError as exc:
         # E1: 既に在るものを黙って上書きしない。更新は `update` の仕事。
-        raise AlreadyRegistered(f"ark:/{ark_key(base.naan, name)} は既に登録済み") from exc
+        raise AlreadyRegistered(
+            f"{compact_ark(ark_key(base.naan, name))} は既に登録済み"
+        ) from exc
     return ark

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}ark:/{{ ark.ark }} — arkhe{% endblock %}
+{% block title %}ark:{{ ark.ark }} — arkhe{% endblock %}
 {% block crumb %}{{ t('ak.detail') }}{% endblock %}
 {% block body %}
 <div class="head">
-  <h1 class="mono">ark:/{{ ark.ark }}</h1>
+  <h1 class="mono">ark:{{ ark.ark }}</h1>
   <p class="lede">{{ ark.title }}</p>
 </div>
 
@@ -24,7 +24,7 @@
       <span class="v mono dim">{{ ark.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
     </div>
     <div class="actions" style="margin-top:14px">
-      <a class="btn sm" href="/ark:/{{ ark.ark }}??">{{ t('ak.resolve') }}</a>
+      <a class="btn sm" href="/ark:{{ ark.ark }}??">{{ t('ak.resolve') }}</a>
     </div>
   </div>
 </div>

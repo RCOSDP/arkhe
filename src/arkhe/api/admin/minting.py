@@ -22,6 +22,7 @@ from arkhe.api.admin._common import (
     router,
     templates,
 )
+from arkhe.arkspec.naming import compact_ark
 from arkhe.domain import authz, minting
 
 # ------------------------------------------------------------------ 採番
@@ -92,7 +93,7 @@ def mint_submit(
                 needs_shoulder=principal.is_naan_wide,
                 types=RESOURCE_TYPES,
                 minted=ark,
-                flash=f"ark:/{ark.ark} "
+                flash=f"{compact_ark(ark.ark)} "
                 + i18n.translator(i18n.pick(request))("mint.flash"),
             ),
         ),

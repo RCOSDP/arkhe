@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 import typer
 from sqlalchemy import select
 
+from arkhe.arkspec.naming import compact_ark
 from arkhe.auth.principal import Principal
 from arkhe.cli_i18n import t
 from arkhe.db.models import (
@@ -365,7 +366,7 @@ def ark_list(
         )
         for a in rows[:limit]:
             typer.echo(
-                f"ark:/{a.ark:<24}  {a.created_at:%Y-%m-%d}  "
+                f"{compact_ark(a.ark):<28}  {a.created_at:%Y-%m-%d}  "
                 f"{a.created_by or '-':<14}  {a.url}"
             )
         if not rows:
@@ -380,7 +381,7 @@ def ark_list(
 def _hold_key(kind: str, key: str):
     """CLI の入力を台帳の鍵に直す。
 
-    **ARK は API と同じ正規化を通す**（`ark:/` を付けても付けなくても、
+    **ARK は API と同じ正規化を通す**（`ark:` でも `ark:/` でも付けなくても、
     ハイフン入りでも同じ行に当たる）。ここだけ素通しにすると、画面や API で
     止められる ARK が CLI では 404 になる。
     """

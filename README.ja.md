@@ -32,7 +32,7 @@ cd compose/oidc && docker compose up -d --build
 | | |
 | --- | --- |
 | 管理画面・採番 API | <http://localhost:8057/admin/> |
-| 解決（**認証不要**） | <http://localhost:8058/ark:/…> |
+| 解決（**認証不要**） | <http://localhost:8058/ark:…> |
 | API ドキュメント | <http://localhost:8057/api/docs> |
 
 `ops` / `naan-admin` / `org-admin`（いずれもパスワードは `arkhe-demo-2026`）で入り比べると、

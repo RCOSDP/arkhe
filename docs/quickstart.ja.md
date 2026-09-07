@@ -16,7 +16,7 @@ Keycloak・PostgreSQL・arkhe が立ち、台帳も入った状態になる。ar
 | | URL |
 | --- | --- |
 | 管理画面・採番 API | <http://localhost:8057/admin/> |
-| 解決（**認証不要**） | <http://localhost:8058/ark:/…> |
+| 解決（**認証不要**） | <http://localhost:8058/ark:…> |
 | API ドキュメント | <http://localhost:8057/api/docs> |
 | Keycloak 管理コンソール | <http://localhost:8080/>（`admin` / `admin`） |
 
@@ -116,10 +116,10 @@ uvicorn arkhe.app:create_app --factory &
 curl -X POST http://127.0.0.1:8000/api/mint \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
   -d '{"url": "https://example.org/records/1", "title": "最初の対象"}'
-# → {"ark": "ark:/99999/x9…", …}
+# → {"ark": "ark:99999/x9…", …}
 
-curl -i "http://127.0.0.1:8000/ark:/99999/x9…"        # 302 で対象へ
-curl    "http://127.0.0.1:8000/ark:/99999/x9…??"      # 永続性宣言
+curl -i "http://127.0.0.1:8000/ark:99999/x9…"        # 302 で対象へ
+curl    "http://127.0.0.1:8000/ark:99999/x9…??"      # 永続性宣言
 ```
 
 ## いま何が起きたか
