@@ -2224,6 +2224,26 @@ migration only widens columns.</p>
   set it (<code>uvicorn --root-path /pid</code>) or it will publish a door that is not there.</p>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>shoulder.minter</code> was carrying two incompatible meanings.</strong> It is published in
+  <code>/.well-known/ark</code> and used as the <code>Location</code> of the <code>307</code> that answers a minting
+  request — both of which claim, in machine-readable form, "call this to mint". For a
+  namespace delegated into a closed network there is no such endpoint an outsider can
+  call, and the guidance was to write a human explanation page there instead. <strong>That makes
+  the claim false</strong>: a client follows the <code>307</code> and <code>POST</code>s to a web page, and nothing in
+  the response distinguishes an API from a page.</li>
+</ul>
+<p><code>shoulder.about</code> now holds the page for people. A delegated shoulder needs one or the
+  other (the check constraint moved from <code>minter &lt;&gt; ''</code> to <code>minter &lt;&gt; '' OR about &lt;&gt; ''</code>),
+  and a minting request is answered:</p>
+<div class="highlight"><pre><span></span><code>  minter present  →  307, Location: the minter          (unchanged)
+  about only      →  403, ARKHE-1309, the URL in the body
+</code></pre></div>
+<p><strong>The 403 branch already existed</strong> in the exception handler and could never be reached,
+  because delegation required a <code>minter</code>. <code>/.well-known/ark</code> now reports the two fields
+  separately, so a client can tell a callable endpoint from a page. Existing rows are left
+  alone — which <code>minter</code> values are really explanation pages is not something the ledger
+  can know.</p>
+<ul>
 <li>
 <p><strong>"A typo lands on the same page" was wrong.</strong> The check digit is verified <em>before</em> the
   shoulder is consulted, so a mistyped identifier under a delegated shoulder answers

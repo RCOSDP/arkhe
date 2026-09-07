@@ -1980,10 +1980,13 @@ pattern different from the others.</p>
   hostname to people who cannot reach it. Point at a <strong>public explanation page</strong>
   instead — <code>shoulder.redirect</code> accepts a leading status code, e.g.
   <code>303 https://…/closed-namespace</code>.</li>
-<li><strong><code>minter</code> is published too.</strong> <code>/.well-known/ark</code> exposes delegated shoulders and
-  their <code>minter</code> in machine-readable form. An internal minter URL written there leaves
-  the closed network — and it is an address nobody outside can use anyway, so write the
-  explanation page instead.</li>
+<li><strong>Leave <code>minter</code> empty and set <code>about</code> instead.</strong> <code>/.well-known/ark</code> and the <code>307</code>
+  that answers a minting request both say "call this to mint" — a machine-readable claim.
+  An internal minter URL there leaks the closed network <em>and</em> is useless to anyone
+  outside; a human explanation page there makes the claim false, because a client will
+  <code>POST</code> to it. <code>about</code> is the field for a page people read, and a shoulder that has only
+  <code>about</code> answers a minting request with <strong><code>403</code> and that URL in the body</strong> rather than a
+  <code>307</code> nobody can follow.</li>
 <li><strong>A <code>307</code> delegation from above does not work here</strong>, because outside callers cannot
   reach the closed minter. Inside users call the closed arkhe directly. Marking the
   shoulder <code>delegated</code> above is still worth doing: it is what guarantees, in the ledger
@@ -2147,13 +2150,14 @@ and the public side learns nothing until you hand a name over — <strong>which 
 a whole delegated shoulder at once. That is what turns C-2 into C-1 <strong>without changing
 the identifier</strong>, so a name handed out while it was closed keeps working when it opens.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Public side: record in the ledger that we do not mint in this namespace</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--minter<span class="w"> </span>https://ark.closed.example.ac.jp
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.example.ac.jp/closed-namespace'</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1">#   (not an internal hostname — it is published at /.well-known/ark)</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Closed side: the same NAAN and shoulder, held as authoritative here</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"The closed organisation"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>status<span class="w"> </span>&lt;id&gt;<span class="w"> </span>delegated<span class="w"> </span>--about<span class="w"> </span>https://ark.example.ac.jp/closed-namespace
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">#   (--about, not --minter: nobody outside can call the closed minter)</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>shoulder<span class="w"> </span>redirect<span class="w"> </span>&lt;id&gt;<span class="w"> </span><span class="s1">'303 https://ark.example.ac.jp/closed-namespace'</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1">#   (not an internal hostname — it is published at /.well-known/ark)</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Closed side: the same NAAN and shoulder, held as authoritative here</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>arkhe<span class="w"> </span>naan<span class="w"> </span>add<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"(the same NAAN as above)"</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>arkhe<span class="w"> </span>onboard<span class="w"> </span><span class="m">99999</span><span class="w"> </span><span class="s2">"The closed organisation"</span><span class="w"> </span>--shoulder<span class="w"> </span>/c7
 </code></pre></div>
 <h3 id="handing-the-names-over">Handing the names over<a class="headerlink" href="#handing-the-names-over" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># One at a time</span>

@@ -2212,6 +2212,24 @@
   設定すること（<code>uvicorn --root-path /pid</code>）——さもないと無い口を案内する。</p>
 <h3 id="修正">修正<a class="headerlink" href="#修正" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>shoulder.minter</code> が、両立しない 2 つの意味を背負っていた。</strong> これは
+  <code>/.well-known/ark</code> に公開され、採番要求に返す <code>307</code> の <code>Location</code> にもなる
+  ——どちらも<strong>機械可読で</strong>「ここを叩けば採番できる」と言う。ところが閉域へ委譲した
+  名前空間には、外の人が叩ける口が存在しない。それで文書は「代わりに人向けの説明
+  ページを書け」と案内していた——<strong>それは契約を嘘にする</strong>。クライアントは <code>307</code> を
+  追ってウェブページに <code>POST</code> し、応答からは API とページを見分けられない。</li>
+</ul>
+<p>人が読むページは <code>shoulder.about</code> に置くことにした。委譲にはどちらか一方が要る
+  （CHECK 制約を <code>minter &lt;&gt; ''</code> から <code>minter &lt;&gt; '' OR about &lt;&gt; ''</code> に移した）。
+  採番要求への答えはこうなる。</p>
+<div class="highlight"><pre><span></span><code>  minter がある  →  307、Location: その minter        （従来どおり）
+  about だけ     →  403、ARKHE-1309、本文に URL
+</code></pre></div>
+<p><strong>403 の枝は元から例外ハンドラに在り、一度も通らなかった</strong>——委譲に <code>minter</code> を
+  必須にしていたからである。<code>/.well-known/ark</code> は 2 つを別々の鍵で出すので、読む側が
+  叩ける口とページを区別できる。既存の行は動かさない——どの <code>minter</code> が実は説明
+  ページだったかは、台帳には分からない。</p>
+<ul>
 <li>
 <p><strong>「打ち間違いも同じページに着く」は誤りだった。</strong> 検査桁は shoulder を見る<em>前</em>に
   検証されるので、委譲した shoulder の下の綴りの壊れた識別子は説明ページではなく
