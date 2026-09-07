@@ -71,6 +71,21 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $R/ark:99999/x9tn1qkq2g7
 302 https://repo.example.ac.jp/records/1/page/3
 ```
 
+!!! warning "The tail is appended to the target as it stands"
+    It is a plain concatenation, so **a target that carries a query string ends up with
+    the tail inside it**:
+
+    ```
+    target  https://repo.example.ac.jp/view?id=1
+    request …/x9tn1qkq2g7/page/3
+    result  https://repo.example.ac.jp/view?id=1/page/3   ← inside the query value
+    ```
+
+    A target ending in `/` likewise yields `//`, which most servers absorb. If the
+    objects behind an ARK are addressed by query string, either point the ARK at a path
+    form, or register the parts you need explicitly (next section) instead of relying on
+    passthrough.
+
 ## 3. Ask about the identifier instead of following it
 
 Appending `??` asks what the resolver *promises* about the name. The answer is

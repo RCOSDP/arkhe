@@ -103,6 +103,11 @@ migration only widens columns.
 
 ### Fixed
 
+- **The walkthrough now warns that the tail is concatenated as it stands.** Suffix
+  passthrough appends what follows the name to the target, so a target carrying a query
+  string ends up with the tail inside it (`…/view?id=1` + `/page/3` →
+  `…/view?id=1/page/3`). The behaviour is unchanged; it was simply not written down.
+
 - **The federation guide still listed holds as missing.** "A way to suspend redirection
   temporarily" sat under *What does not exist yet* — it shipped in 0.0.9, per ARK, per
   shoulder and per NAAN, with the reason and the expiry published and the clock lifting

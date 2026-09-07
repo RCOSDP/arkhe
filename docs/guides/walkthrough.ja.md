@@ -69,6 +69,19 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $R/ark:99999/x9tn1qkq2g7
 302 https://repo.example.ac.jp/records/1/page/3
 ```
 
+!!! warning "尾は行き先にそのまま連結される"
+    単純な文字列結合なので、**行き先がクエリを持っていると、尾がその中に潜り込む**。
+
+    ```
+    行き先  https://repo.example.ac.jp/view?id=1
+    要求    …/x9tn1qkq2g7/page/3
+    結果    https://repo.example.ac.jp/view?id=1/page/3   ← クエリの値の中
+    ```
+
+    末尾が `/` の行き先も `//` になる（こちらは大抵のサーバが吸収する）。ARK の先の
+    対象をクエリで指す構成なら、**パス形の URL を行き先にする**か、passthrough に
+    頼らず必要な部分を明示的に登録する（次節）。
+
 ## 3. 追いかけずに、識別子について尋ねる
 
 `??` を付けると、その名前について**リゾルバが何を約束しているか**を訊ける。返るのは
