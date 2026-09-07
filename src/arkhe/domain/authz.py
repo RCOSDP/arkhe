@@ -52,12 +52,23 @@ class ShoulderDelegated(Forbidden):
 
     def __init__(self, shoulder: Shoulder):
         self.minter = shoulder.minter
-        super().__init__(
-            errors.SHOULDER_DELEGATED,
-            shoulder=shoulder.shoulder,
-            minter=shoulder.minter,
-            note=shoulder.note,
-        )
+        if shoulder.minter:
+            # **機械が叩ける口がある。** 307 で案内し、代理では呼ばない。
+            super().__init__(
+                errors.SHOULDER_DELEGATED,
+                shoulder=shoulder.shoulder,
+                minter=shoulder.minter,
+                note=shoulder.note,
+            )
+        else:
+            # **叩ける口が無い**（閉域など）。307 で人向けのページへ送ると、
+            # クライアントはそこへ POST しにいく——**403 で止め、案内は本文に置く**。
+            super().__init__(
+                errors.SHOULDER_DELEGATED_UNREACHABLE,
+                shoulder=shoulder.shoulder,
+                about=shoulder.about,
+                note=shoulder.note,
+            )
 
 
 #: arkhe が実際に検査する scope。**ここが語彙の全体。**

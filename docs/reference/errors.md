@@ -54,6 +54,7 @@ alongside. **The admin interface** answers from its own catalogue, in the langua
 | `ARKHE-1306` | 307 | Minting for shoulder {shoulder} is delegated; go to the minter in Location. |
 | `ARKHE-1307` | 403 | Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into. |
 | `ARKHE-1308` | 403 | This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it. |
+| `ARKHE-1309` | 403 | Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. See {about} |
 | `ARKHE-1401` | 404 | No such ARK in this ledger. |
 | `ARKHE-1402` | 404 | This resolver is authoritative for the NAAN and has no such name. |
 | `ARKHE-1403` | 404 | Check digit mismatch: the identifier looks mistranscribed. |

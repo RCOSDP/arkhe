@@ -283,9 +283,22 @@ class Shoulder(Base, HoldMixin):
     #: 先頭の `303 ` に対応する（展開は `domain.resolution.expand_redirect`）。
     redirect: Mapped[str] = mapped_column(String(500), default="")
 
-    #: N2T の `minter`。**採番の委譲先。** `status=delegated` のとき、mint 要求は
-    #: ここへ案内する（**プロキシしない**）。
+    #: N2T の `minter`。**採番の委譲先——機械が叩ける口。** `status=delegated` の
+    #: とき、mint 要求は 307 でここへ案内する（**プロキシしない**）。
+    #:
+    #: **外から到達できないなら、ここは空にする。** 説明ページを入れてはいけない
+    #: ——`/.well-known/ark` と 307 の `Location` は「ここを叩けば採番できる」と
+    #: 言う契約で、人向けのページを置くと**受け取った側に見分ける手段が無くなる**。
+    #: そういう委譲は `about` を使う。
     minter: Mapped[str] = mapped_column(String(500), default="")
+
+    #: **人に読ませる案内。** 「この名前空間の採番は外で行っている。事情はここ」。
+    #:
+    #: `minter` と分けてあるのは、**機械が叩ける口と、人が読むページは別物**だから。
+    #: 閉域へ委譲した shoulder では `minter` が空で `about` だけが在り、mint 要求は
+    #: **403 と本文の案内**で返る（307 で人向けのページへ送ると、クライアントは
+    #: そこへ POST しにいく）。
+    about: Mapped[str] = mapped_column(String(500), default="")
 
     status: Mapped[str] = mapped_column(
         String(16), default=ShoulderStatus.ACTIVE.value, index=True
@@ -304,10 +317,14 @@ class Shoulder(Base, HoldMixin):
 
     __table_args__ = (
         UniqueConstraint("shoulder", "naan", name="uniq_shoulder_per_naan"),
-        # 委譲するなら行き先が要る。無いと mint 要求を案内できない。
+        # **委譲するなら行き先が要る。** 無いと mint 要求を案内できず、採番しようと
+        # した人が 403 だけ受け取って手詰まりになる。
+        #
+        # ただし行き先は 2 種類ある——`minter`（機械が叩ける口）と `about`（人が
+        # 読む案内）。**閉域への委譲では前者が存在しない**ので、どちらか 1 つでよい。
         CheckConstraint(
-            "status <> 'delegated' OR minter <> ''",
-            name="delegated_shoulder_needs_a_minter",
+            "status <> 'delegated' OR minter <> '' OR about <> ''",
+            name="delegated_shoulder_needs_a_destination",
         ),
     )
 

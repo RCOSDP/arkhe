@@ -130,11 +130,13 @@ def shoulder_status(
     shoulder_id: int,
     status: str = typer.Argument(..., help=t("shoulder.status.arg")),
     minter: str = typer.Option("", help=t("shoulder.status.minter")),
+    about: str = typer.Option("", help=t("shoulder.status.about")),
     note: str = typer.Option("", help=t("opt.note")),
 ):
     with _session() as s:
         sh = ops.set_shoulder_status(
-            s, _root(), shoulder_id=shoulder_id, status=status, minter=minter, note=note
+            s, _root(), shoulder_id=shoulder_id, status=status,
+            minter=minter, about=about, note=note,
         )
         s.commit()
         typer.echo(f"{sh.naan}{sh.shoulder} → {sh.status}")

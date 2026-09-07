@@ -372,8 +372,14 @@ def well_known_ark(request: Request, session: Db, cfg: Config):
                 }
                 for n in naans
             ],
+            # **`minter` は「叩ける口」だけ。** 人向けの案内は `about` に分ける
+            # ——同じ鍵に混ぜると、読む側が API とページを見分けられない。
             "delegated_shoulders": [
-                {"shoulder": f"{s.naan}{s.shoulder}", "minter": s.minter}
+                {
+                    "shoulder": f"{s.naan}{s.shoulder}",
+                    "minter": s.minter or None,
+                    "about": s.about or None,
+                }
                 for s in session.scalars(
                     select(Shoulder).where(Shoulder.status == "delegated")
                 ).all()

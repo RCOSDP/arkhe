@@ -54,6 +54,7 @@ ARKHE-1403 ark:99999/x9abcd — Check digit mismatch: the identifier looks mistr
 | `ARKHE-1306` | 307 | その shoulder の採番は外に委譲されている。**代理では呼ばない**——応答が失われると「向こうにはあるがこちらは知らない ARK」が生まれる | Minting for shoulder {shoulder} is delegated; go to the minter in Location. |
 | `ARKHE-1307` | 403 | 委譲していない shoulder には取り込めない。**自分で採番している名前空間に外から名前を入れると、採番と衝突しうる**——委譲したからこそ、外で採られた名前がある | Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into. |
 | `ARKHE-1308` | 403 | 取り次いでいるだけの NAAN には取り込めない。**他所の名前空間の保管者を名乗ることになる** | This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it. |
+| `ARKHE-1309` | 403 | その shoulder の採番は外で行われており、**ここから叩ける口は無い**（閉域など）。人向けの案内だけを返す——`Location` に人向けのページを載せると、クライアントはそこへ POST しにいく | Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. See {about} |
 | `ARKHE-1401` | 404 | 台帳にその ARK が無い（一括操作では 1 件でも欠ければ全体が失敗する） | No such ARK in this ledger. |
 | `ARKHE-1402` | 404 | その NAAN はこのリゾルバが権威を持つ。**だから「無い」と言い切れる** | This resolver is authoritative for the NAAN and has no such name. |
 | `ARKHE-1403` | 404 | 検査桁が合わない。**打ち間違い・転記ミスの疑い**（NOID の NCDA が単一文字誤りと隣接転置を検出する） | Check digit mismatch: the identifier looks mistranscribed. |

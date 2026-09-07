@@ -350,7 +350,7 @@ Carved out 99999/c7 (id 2)
 
 # That id is what the other shoulder commands take. `arkhe shoulder list` shows it again.
 # /c7 is minted elsewhere: record that, and give the outside an explanation
-$ arkhe shoulder status 2 delegated --minter https://ark.closed.example.ac.jp
+$ arkhe shoulder status 2 delegated --about https://ark.example.ac.jp/closed/99999
 99999/c7 → delegated
 $ arkhe shoulder redirect 2 '303 https://ark.example.ac.jp/closed-namespace'
 resolution for 99999/c7 now goes to 303 https://ark.example.ac.jp/closed-namespace
@@ -389,22 +389,25 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/s75h5rdvnm
 302 https://repo.example.ac.jp/records/7
 ```
 
-**The public side cannot mint in `/c7`, and says where to go instead:**
+**The public side cannot mint in `/c7`, and says so:**
 
 ```console
 $ curl -i -X POST $P/api/mint -H "Authorization: Bearer $PK" -d '{"shoulder": "/c7"}'
-HTTP/1.1 307 Temporary Redirect
-location: https://ark.closed.example.ac.jp
+HTTP/1.1 403 Forbidden
 
-{"code": "ARKHE-1306",
- "message": "Minting for shoulder /c7 is delegated; go to the minter in Location.",
- "detail": {"shoulder": "/c7", "minter": "https://ark.closed.example.ac.jp",
+{"code": "ARKHE-1309",
+ "message": "Minting for shoulder /c7 happens elsewhere and is not reachable from here.
+             See https://ark.example.ac.jp/closed/99999",
+ "detail": {"shoulder": "/c7", "about": "https://ark.example.ac.jp/closed/99999",
             "note": "closed PIDs"}}
 ```
 
-It answers `307` and **does not proxy the call**. Minting on someone's behalf means that
-when the response is lost, a name exists over there that nobody here knows about — and
-under NR that cannot be cleaned up.
+**`403`, and no `Location`.** A delegate that a caller *can* reach is answered with a
+`307` at its `minter` instead — arkhe never proxies the call either way, because minting
+on someone's behalf means that when the response is lost, a name exists over there that
+nobody here knows about, and under NR that cannot be cleaned up. But a closed minter is
+not reachable, and `Location` means "send the same request here": pointing it at a page
+for people would have clients `POST` to it. The page belongs in the body, as `about`.
 
 ```console
 # ── Inside the closed network ─────────────────────────────────

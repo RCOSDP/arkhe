@@ -213,6 +213,15 @@ IMPORT_SHOULDER_NOT_DELEGATED = Code(
     "名前を入れると、採番と衝突しうる**——委譲したからこそ、外で採られた名前がある",
 )
 
+SHOULDER_DELEGATED_UNREACHABLE = Code(
+    "ARKHE-1309", 403,
+    "Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. "
+    "See {about}",
+    "その shoulder の採番は外で行われており、**ここから叩ける口は無い**（閉域など）。"
+    "人向けの案内だけを返す——`Location` に人向けのページを載せると、クライアントは"
+    "そこへ POST しにいく",
+)
+
 SHOULDER_DELEGATED = Code(
     "ARKHE-1306", 307,
     "Minting for shoulder {shoulder} is delegated; go to the minter in Location.",

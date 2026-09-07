@@ -267,9 +267,12 @@ flowchart TD
 - **上位の `redirect` に内部 URL を書かない。** `302` で内部ホスト名を返すと、
   到達できない相手にもホスト名は届く。`303 https://…/closed-namespace` のように
   **公開の説明ページ**へ向ける（`shoulder.redirect` は先頭にステータスコードを書ける）。
-- **`minter` も公開される。** `/.well-known/ark` は委譲した shoulder とその `minter` を
-  機械可読で出す。閉域の minter URL をそのまま書けば、それも外に出る。
-  外から使えない案内でもあるので、書くなら**説明ページの URL**にする。
+- **`minter` は空にして、`about` を使う。** `/.well-known/ark` も、採番要求に返す
+  `307` も、「ここを叩けば採番できる」と**機械可読で言う**契約である。そこに閉域の
+  minter URL を書けば構成が漏れるうえ外の誰にも使えず、人向けの説明ページを書けば
+  **契約が嘘になる**——クライアントはそこへ `POST` しにいく。人が読むページは
+  `about` に置く。`about` だけを持つ shoulder は、採番要求に **`403` と本文の案内**
+  を返す（追えない `307` を返さない）。
 - **上位からの `307` 委譲は成立しない。** 外の利用者が閉域の minter に到達できないため。
   閉域の利用者は閉域の arkhe を直接叩く。上位の shoulder を `delegated` にする意味は、
   **上位でその名前空間が採番されないこと**を台帳と制約で保証する点にある。
@@ -434,7 +437,8 @@ shoulder ごとまとめてでも）。**C-2 から C-1 へ、識別子を変え
 
 ```bash
 # 公開側: この名前空間では自分は採番しない、と台帳に刻む
-arkhe shoulder status <id> delegated --minter https://ark.closed.example.ac.jp
+arkhe shoulder status <id> delegated --about https://ark.example.ac.jp/closed-namespace
+#   （--minter ではなく --about。閉域の minter は外の誰にも叩けない）
 arkhe shoulder redirect <id> '303 https://ark.example.ac.jp/closed-namespace'
 #   （内部ホスト名を書かない。/.well-known/ark に載る）
 

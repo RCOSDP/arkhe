@@ -108,7 +108,14 @@ JA: dict[str, str] = {
     "hold.f.release": "保留を外す",
     "hold.none": "止めている転送はありません。",
     "shoulder.f.minter": "採番の行き先",
-    "shoulder.f.minter_hint": "<b>delegated</b> のときだけ意味を持ちます。",
+    "shoulder.f.minter_hint": "<b>delegated</b> のときだけ意味を持ちます。"
+                              "<b>機械が叩ける口</b>を書いてください——"
+                              "<code>/.well-known/ark</code> と 307 の宛先になります。"
+                              "外から届かないなら空にし、下の案内を使います。",
+    "shoulder.f.about": "人向けの案内",
+    "shoulder.f.about_hint": "外から到達できない委譲のときに出す説明ページ。"
+                             "<b>内部ホスト名は書かない。</b>採番の要求には "
+                             "<code>403</code> とこの URL を返します。",
     "shoulder.f.redirect": "解決の委譲先",
     "shoulder.f.redirect_hint": "<code>${blade}</code> が名前に置き換わります。",
     "shoulder.f.note": "運用の記録",
@@ -248,7 +255,15 @@ EN: dict[str, str] = {
     "hold.f.release": "Lift the hold",
     "hold.none": "No redirection is being held.",
     "shoulder.f.minter": "Where minting goes",
-    "shoulder.f.minter_hint": "Meaningful only when <b>delegated</b>.",
+    "shoulder.f.minter_hint": "Meaningful only when <b>delegated</b>. Write "
+                              "<b>an endpoint a client can call</b> — it becomes the "
+                              "target of <code>/.well-known/ark</code> and of the 307. "
+                              "Leave it empty if it cannot be reached from outside, and "
+                              "use the notice below.",
+    "shoulder.f.about": "A page for people",
+    "shoulder.f.about_hint": "Shown when the delegate cannot be reached from outside. "
+                             "<b>Never an internal hostname.</b> Minting requests get "
+                             "<code>403</code> and this URL.",
     "shoulder.f.redirect": "Delegate resolution to",
     "shoulder.f.redirect_hint": "<code>${blade}</code> is replaced by the name.",
     "shoulder.f.note": "Operational note",

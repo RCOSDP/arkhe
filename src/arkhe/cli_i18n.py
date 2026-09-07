@@ -86,7 +86,9 @@ JA: dict[str, str] = {
     "shoulder.status.help": "状態を変える。**retired からは戻せない**"
                             "（引退した名前空間の再開は NR 違反の芽）。",
     "shoulder.status.arg": "active / reserved / delegated / retired",
-    "shoulder.status.minter": "delegated のときの採番の行き先",
+    "shoulder.status.minter": "delegated のときの採番の行き先"
+                              "（機械が叩ける口。外から届かないなら空のまま）",
+    "shoulder.status.about": "外から到達できない委譲のときの、人向けの案内ページ",
     # manager
     "manager.list.help": "組織を並べる。**id は他のコマンドの入力になる。**",
     "manager.commitment.help": "組織の約束の水準を言い直す。\n\n"
@@ -232,7 +234,9 @@ EN: dict[str, str] = {
     "shoulder.status.help": "Change the status. **There is no way back from retired** "
                             "(reopening a retired namespace is the seed of an NR violation).",
     "shoulder.status.arg": "active / reserved / delegated / retired",
-    "shoulder.status.minter": "where minting goes when delegated",
+    "shoulder.status.minter": "where minting goes when delegated (an endpoint a "
+                              "client can call; leave empty if unreachable)",
+    "shoulder.status.about": "a page for people, when the delegate cannot be reached from outside",
     "manager.list.help": "List organisations. **The ids are input to other commands.**",
     "manager.commitment.help": "Restate an organisation's commitment level.\n\n"
                                "**This is published verbatim by `??`.** Put in only what the "

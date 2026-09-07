@@ -54,6 +54,11 @@
           <p class="hint">{{ t('shoulder.f.minter_hint')|safe }}</p>
         </div>
         <div class="field">
+          <label for="about">{{ t('shoulder.f.about') }} <span class="opt">— {{ t('f.optional') }}</span></label>
+          <input id="about" name="about" value="{{ shoulder.about }}">
+          <p class="hint">{{ t('shoulder.f.about_hint')|safe }}</p>
+        </div>
+        <div class="field">
           <label for="redirect">{{ t('shoulder.f.redirect') }} <span class="opt">— {{ t('f.optional') }}</span></label>
           <input id="redirect" name="redirect" value="{{ shoulder.redirect }}"
                  placeholder="https://repo.example.ac.jp/ark/${blade}">

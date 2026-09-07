@@ -464,6 +464,7 @@ def set_shoulder_status(
     shoulder_id: int,
     status: str,
     minter: str = "",
+    about: str = "",
     note: str = "",
 ) -> Shoulder:
     """shoulder の状態を変える。**遷移は表で縛る。**"""
@@ -486,11 +487,18 @@ def set_shoulder_status(
                 ),
             }
         )
-    if new is ShoulderStatus.DELEGATED and not (minter or sh.minter):
-        raise Invalid({"minter": "委譲するなら採番の行き先が要る"})
+    # **委譲には行き先が要る**が、`minter`（機械が叩ける口）と `about`（人が読む
+    # 案内）のどちらでもよい。閉域への委譲では前者が存在しない——外から到達できない
+    # 口の URL を配っても、誰も使えないうえ内部の構成が漏れるだけである。
+    if new is ShoulderStatus.DELEGATED and not (minter or about or sh.minter or sh.about):
+        raise Invalid(
+            {"minter": "委譲するなら採番の行き先（minter）か、人向けの案内（about）が要る"}
+        )
     sh.status = new.value
     if minter:
         sh.minter = minter
+    if about:
+        sh.about = about
     if note:
         sh.note = note
     audit(session, p, "set_shoulder_status", f"{sh.naan}{sh.shoulder}", status=new.value)

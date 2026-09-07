@@ -212,6 +212,83 @@ def _valid_name(naan: str, stem: str) -> str:
     return stem + noid_check_digit(check_digit_base(naan, stem))
 
 
+def test_到達できない委譲は403と案内を返す(db, world, root, principal_of, as_principal):
+    """**`Location` は「同じ要求をここへ出し直せ」という意味。**
+
+    人が読むページをそこに載せると、クライアントはそこへ `POST` しにいく。叩ける口が
+    無い委譲（閉域など）は、`307` ではなく **403 と本文の案内**で答える。
+    """
+    from arkhe.domain import admin_ops as ops
+
+    # ① 叩ける口がある委譲 → 307 で機械が追える
+    ops.set_shoulder_status(
+        db, root, shoulder_id=world["sh_a"].id, status="delegated",
+        minter="https://mint.example.org",
+    )
+    db.commit()
+    c = as_principal(principal_of(manager=world["a"]))
+    r = c.post("/api/mint", json={})
+    assert r.status_code == 307
+    assert r.headers["location"] == "https://mint.example.org"
+    assert r.json()["code"] == "ARKHE-1306"
+
+    # ② 叩ける口が無く、人向けの案内だけ → 403。**Location は付けない**
+    ops.set_shoulder_status(
+        db, root, shoulder_id=world["sh_b"].id, status="delegated",
+        about="https://ark.example.ac.jp/closed/99999",
+    )
+    db.commit()
+    c2 = as_principal(principal_of(manager=world["b"]))
+    r2 = c2.post("/api/mint", json={})
+    assert r2.status_code == 403
+    assert "location" not in r2.headers
+    assert r2.json()["code"] == "ARKHE-1309"
+    assert r2.json()["detail"]["about"] == "https://ark.example.ac.jp/closed/99999"
+
+
+def test_委譲には行き先か案内のどちらかが要る(db, world, root):
+    """**どちらも無い委譲は作れない。** 採番しようとした人が手詰まりになる。"""
+    import pytest as _pytest
+
+    from arkhe.domain import admin_ops as ops
+    from arkhe.domain.authz import Invalid
+
+    with _pytest.raises(Invalid):
+        ops.set_shoulder_status(db, root, shoulder_id=world["sh_c"].id, status="delegated")
+    db.rollback()
+
+    # `about` だけでも委譲できる（閉域の形）。
+    sh = ops.set_shoulder_status(
+        db, root, shoulder_id=world["sh_c"].id, status="delegated",
+        about="https://ark.example.ac.jp/closed",
+    )
+    db.commit()
+    assert sh.status == "delegated" and sh.minter == ""
+
+
+def test_well_knownはminterと案内を分けて出す(db, world, root, principal_of, as_principal):
+    """**同じ鍵に混ぜない。** 読む側が API と人向けのページを見分けられなくなる。"""
+    from arkhe.domain import admin_ops as ops
+
+    ops.set_shoulder_status(
+        db, root, shoulder_id=world["sh_a"].id, status="delegated",
+        minter="https://mint.example.org",
+    )
+    ops.set_shoulder_status(
+        db, root, shoulder_id=world["sh_b"].id, status="delegated",
+        about="https://ark.example.ac.jp/closed/99999",
+    )
+    db.commit()
+    c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
+    rows = {s["shoulder"]: s for s in
+            c.get("/.well-known/ark", headers={"Accept": "application/json"})
+             .json()["delegated_shoulders"]}
+    assert rows["99999/a1"]["minter"] == "https://mint.example.org"
+    assert rows["99999/a1"]["about"] is None
+    assert rows["99999/b2"]["minter"] is None
+    assert rows["99999/b2"]["about"] == "https://ark.example.ac.jp/closed/99999"
+
+
 def test_取り込みは委譲した名前空間にしか入らない(db, world, root, principal_of, as_principal):
     """**閉じた側で採番した名前を、あとから公開側に出すための口**（C-2 → C-1）。
 

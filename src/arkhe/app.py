@@ -84,6 +84,9 @@ def _install_handlers(app: FastAPI) -> None:
     async def _delegated(request: Request, exc: ShoulderDelegated):  # noqa: ARG001
         # **プロキシせず 307 で行き先を案内する。** 代理で呼ぶと、応答が失われた
         # ときに「向こうでは採番されたがこちらは知らない ARK」が生まれる。
+        #
+        # **叩ける口が無いときは 403。** `Location` は「同じ要求をここへ出し直せ」と
+        # いう意味なので、人向けのページを載せてはいけない（本文に案内を置く）。
         if exc.minter:
             return JSONResponse(exc.body(), status_code=307, headers={"Location": exc.minter})
         return JSONResponse(exc.body(), status_code=403)

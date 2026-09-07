@@ -137,6 +137,27 @@ migration only widens columns.
 
 ### Fixed
 
+- **`shoulder.minter` was carrying two incompatible meanings.** It is published in
+  `/.well-known/ark` and used as the `Location` of the `307` that answers a minting
+  request — both of which claim, in machine-readable form, "call this to mint". For a
+  namespace delegated into a closed network there is no such endpoint an outsider can
+  call, and the guidance was to write a human explanation page there instead. **That makes
+  the claim false**: a client follows the `307` and `POST`s to a web page, and nothing in
+  the response distinguishes an API from a page.
+
+  `shoulder.about` now holds the page for people. A delegated shoulder needs one or the
+  other (the check constraint moved from `minter <> ''` to `minter <> '' OR about <> ''`),
+  and a minting request is answered:
+
+      minter present  →  307, Location: the minter          (unchanged)
+      about only      →  403, ARKHE-1309, the URL in the body
+
+  **The 403 branch already existed** in the exception handler and could never be reached,
+  because delegation required a `minter`. `/.well-known/ark` now reports the two fields
+  separately, so a client can tell a callable endpoint from a page. Existing rows are left
+  alone — which `minter` values are really explanation pages is not something the ledger
+  can know.
+
 - **"A typo lands on the same page" was wrong.** The check digit is verified *before* the
   shoulder is consulted, so a mistyped identifier under a delegated shoulder answers
   `404 ARKHE-1403`, not the explanation page. What is actually indistinguishable is a name

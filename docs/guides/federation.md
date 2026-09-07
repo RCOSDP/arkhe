@@ -285,10 +285,13 @@ pattern different from the others.
   hostname to people who cannot reach it. Point at a **public explanation page**
   instead — `shoulder.redirect` accepts a leading status code, e.g.
   `303 https://…/closed-namespace`.
-- **`minter` is published too.** `/.well-known/ark` exposes delegated shoulders and
-  their `minter` in machine-readable form. An internal minter URL written there leaves
-  the closed network — and it is an address nobody outside can use anyway, so write the
-  explanation page instead.
+- **Leave `minter` empty and set `about` instead.** `/.well-known/ark` and the `307`
+  that answers a minting request both say "call this to mint" — a machine-readable claim.
+  An internal minter URL there leaks the closed network *and* is useless to anyone
+  outside; a human explanation page there makes the claim false, because a client will
+  `POST` to it. `about` is the field for a page people read, and a shoulder that has only
+  `about` answers a minting request with **`403` and that URL in the body** rather than a
+  `307` nobody can follow.
 - **A `307` delegation from above does not work here**, because outside callers cannot
   reach the closed minter. Inside users call the closed arkhe directly. Marking the
   shoulder `delegated` above is still worth doing: it is what guarantees, in the ledger
@@ -465,7 +468,8 @@ the identifier**, so a name handed out while it was closed keeps working when it
 
 ```bash
 # Public side: record in the ledger that we do not mint in this namespace
-arkhe shoulder status <id> delegated --minter https://ark.closed.example.ac.jp
+arkhe shoulder status <id> delegated --about https://ark.example.ac.jp/closed-namespace
+#   (--about, not --minter: nobody outside can call the closed minter)
 arkhe shoulder redirect <id> '303 https://ark.example.ac.jp/closed-namespace'
 #   (not an internal hostname — it is published at /.well-known/ark)
 

@@ -342,7 +342,7 @@ Carved out 99999/c7 (id 2)
 
 # この id が、以降の shoulder コマンドの入力になる（`arkhe shoulder list` でも引ける）
 # /c7 は外で採番する。台帳にそう刻み、外向きには説明を用意する
-$ arkhe shoulder status 2 delegated --minter https://ark.closed.example.ac.jp
+$ arkhe shoulder status 2 delegated --about https://ark.example.ac.jp/closed/99999
 99999/c7 → delegated
 $ arkhe shoulder redirect 2 '303 https://ark.example.ac.jp/closed-namespace'
 resolution for 99999/c7 now goes to 303 https://ark.example.ac.jp/closed-namespace
@@ -380,21 +380,25 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $PR/ark:99999/s75h5rdvnm
 302 https://repo.example.ac.jp/records/7
 ```
 
-**公開側は `/c7` には採番できず、どこへ行けばよいかを答える。**
+**公開側は `/c7` には採番できず、そう答える。**
 
 ```console
 $ curl -i -X POST $P/api/mint -H "Authorization: Bearer $PK" -d '{"shoulder": "/c7"}'
-HTTP/1.1 307 Temporary Redirect
-location: https://ark.closed.example.ac.jp
+HTTP/1.1 403 Forbidden
 
-{"code": "ARKHE-1306",
- "message": "Minting for shoulder /c7 is delegated; go to the minter in Location.",
- "detail": {"shoulder": "/c7", "minter": "https://ark.closed.example.ac.jp",
+{"code": "ARKHE-1309",
+ "message": "Minting for shoulder /c7 happens elsewhere and is not reachable from here.
+             See https://ark.example.ac.jp/closed/99999",
+ "detail": {"shoulder": "/c7", "about": "https://ark.example.ac.jp/closed/99999",
             "note": "closed PIDs"}}
 ```
 
-`307` を返し、**代理では呼ばない**。代理で採ると、応答が失われたときに
-**向こうには在るがこちらは知らない ARK** が生まれる——NR の下では片付けられない。
+**`403` で、`Location` は付けない。** 呼び出し側が到達できる委譲先なら、その `minter`
+へ `307` を返す——どちらにせよ**代理では呼ばない**（代理で採ると、応答が失われたときに
+向こうには在るがこちらは知らない ARK が生まれる。NR の下では片付けられない）。
+ただし閉域の minter には届かないし、`Location` は「同じ要求をここへ出し直せ」という
+意味である。人向けのページをそこに載せれば、クライアントはそこへ `POST` しにいく。
+ページは本文の `about` に置く。
 
 ```console
 # ── 閉域の中 ──────────────────────────────────────────────────

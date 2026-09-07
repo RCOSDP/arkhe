@@ -371,6 +371,7 @@ def shoulder_save(
     shoulder_id: int,
     status: Annotated[str, Form()] = "",
     minter: Annotated[str, Form()] = "",
+    about: Annotated[str, Form()] = "",
     redirect: Annotated[str, Form()] = "",
     note: Annotated[str, Form()] = "",
     hold_days: Annotated[int, Form()] = 0,
@@ -384,7 +385,14 @@ def shoulder_save(
     if status and status != sh.status:
         ops.set_shoulder_status(
             session, principal, shoulder_id=shoulder_id, status=status,
-            minter=minter.strip(), note=note.strip(),
+            minter=minter.strip(), about=about.strip(), note=note.strip(),
+        )
+    elif about.strip() != sh.about or minter.strip() != sh.minter:
+        # 状態を変えずに案内だけ直す経路。**内部ホスト名を入れてしまったときに、
+        # ここから差し替えられる**必要がある。
+        ops.set_shoulder_status(
+            session, principal, shoulder_id=shoulder_id, status=sh.status,
+            minter=minter.strip(), about=about.strip(),
         )
     if redirect.strip() != sh.redirect:
         ops.set_shoulder_redirect(
