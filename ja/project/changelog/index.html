@@ -2179,6 +2179,12 @@
 <h3 id="修正">修正<a class="headerlink" href="#修正" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong>尾が行き先にそのまま連結されることを、手引きに書いた。</strong> suffix passthrough は
+  名前より後ろを行き先に足すので、<strong>クエリを持つ行き先では尾がその中に潜り込む</strong>
+  （<code>…/view?id=1</code> ＋ <code>/page/3</code> → <code>…/view?id=1/page/3</code>）。挙動は変えていない
+  ——書かれていなかっただけである。</p>
+</li>
+<li>
 <p><strong>分散の手引きが、保留をまだ「無い」と書いていた。</strong> 「転送を一時的に止める手段」が
   <strong>無いもの</strong>の節に残っていた——0.0.9 で入っている（ARK / shoulder / NAAN 単位、
   理由と期限は公開され、時計で戻る）。そのとき消し忘れただけの項目である。</p>

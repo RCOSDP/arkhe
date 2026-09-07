@@ -2188,6 +2188,12 @@ migration only widens columns.</p>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
+<p><strong>The walkthrough now warns that the tail is concatenated as it stands.</strong> Suffix
+  passthrough appends what follows the name to the target, so a target carrying a query
+  string ends up with the tail inside it (<code>…/view?id=1</code> + <code>/page/3</code> →
+  <code>…/view?id=1/page/3</code>). The behaviour is unchanged; it was simply not written down.</p>
+</li>
+<li>
 <p><strong>The federation guide still listed holds as missing.</strong> "A way to suspend redirection
   temporarily" sat under <em>What does not exist yet</em> — it shipped in 0.0.9, per ARK, per
   shoulder and per NAAN, with the reason and the expiry published and the clock lifting
