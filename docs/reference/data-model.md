@@ -172,6 +172,43 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 depth — `ark:99999/x9abc/page/3` needs no row of its own — so **one record per
 minting** is enough. Nothing else matters as much for capacity.
 
+Capacity has two axes — **how many names can exist** and **how large the ledger
+gets**. The first follows from the number of characters, the second from the number
+of mintings.
+
+### Namespace capacity
+
+**The length of a shoulder fixes how many namespaces one NAAN can carve out.** Under
+the first-digit convention a shoulder is a run of consonants ending in a single digit:
+19 consonants (betanumeric less the vowels and `l`) and 10 digits. Counting the
+characters after the slash,
+
+```
+shoulders = 19^(length − 1) × 10
+```
+
+| shoulder length | example | shoulders |
+| --- | --- | --- |
+| 2 | `/x9` | 190 |
+| 3 (default) | `/bc7` | **3,610** |
+| 4 | `/bcd7` | 68,590 |
+
+3,610 is **22.2% used at 800 organisations** — 4.5× headroom. Shoulders are drawn at
+random, though (a sequence would **leak the order organisations joined**), so
+collisions begin before the ceiling, and a `retired` shoulder never comes back.
+**The headroom is not there to be spent to the last one.**
+
+**The length of the blade fixes how many ARKs one shoulder can mint.** arkhe draws a
+blade of 8 characters from the 29 betanumeric ones and appends a check digit — 29⁸ =
+**about 500 billion** per shoulder.
+
+**Neither ceiling arrives first in practice.** A hundred million ARKs is a ledger of
+about 40 GB (below); size binds long before names run out. Length shows up as a
+**collision rate** rather than as a ceiling — `mint` counts collisions instead of
+swallowing them and draws again (giving up after ten), and a rising rate is the only
+signal that a namespace is filling up (the minting API does not return that count
+today).
+
 ### What a row costs
 
 Measured on PostgreSQL 17, a million rows, table and every index included:
