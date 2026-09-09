@@ -9,6 +9,28 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The example ARKs in the documentation were not identifiers this ledger can mint.**
+  The reference and concept pages showed `ark:99999/x9abc` — a three-character blade, no
+  check digit, and an `a`, which betanumeric does not contain. Only the walkthrough
+  showed a real one (`ark:99999/c7w545sj4z5`), so the pages disagreed with each other
+  about how long a name is. **Readers learn the shape from the examples**, and the shape
+  being taught was one `mint` cannot produce.
+
+  Every example is now a shoulder plus eight betanumeric characters plus a check digit,
+  computed with the implementation's own `noid_check_digit`. `ark:99999/x9tn1qkq2g7` —
+  the name the walkthrough actually mints — now runs through the whole site, and the
+  mistranscription example is one character away from it (`…g8`), so why `ARKHE-1403` is
+  a different answer from "no such ARK" can be read off the example itself. The examples
+  inside the OpenAPI descriptions moved with them.
+
+  **A test holds the line** (`test_docs`): every `ark:99999/…` in the documentation and
+  in the generated OpenAPI must be betanumeric and must verify. The two deliberately
+  wrong ones are listed with the reason each exists, and the test also checks that they
+  still fail and are still in the documentation — a stale allowance cannot open a hole
+  quietly.
+
 ## [0.2.0] — 2026-09-07
 
 **The release that lets a closed ledger hand its names to a public one.** An ARK minted
