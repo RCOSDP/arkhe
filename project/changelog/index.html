@@ -1182,6 +1182,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Unreleased">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1208,7 +1225,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1258,7 +1275,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1297,7 +1314,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1431,7 +1448,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_3" class="md-nav__link">
+  <a href="#fixed_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1492,7 +1509,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_4" class="md-nav__link">
+  <a href="#fixed_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1542,7 +1559,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_5" class="md-nav__link">
+  <a href="#fixed_6" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1570,7 +1587,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed_6" class="md-nav__link">
+  <a href="#fixed_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1686,6 +1703,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Unreleased">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1712,7 +1746,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1762,7 +1796,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1801,7 +1835,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1935,7 +1969,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_3" class="md-nav__link">
+  <a href="#fixed_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1996,7 +2030,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_4" class="md-nav__link">
+  <a href="#fixed_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2046,7 +2080,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_5" class="md-nav__link">
+  <a href="#fixed_6" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2074,7 +2108,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed_6" class="md-nav__link">
+  <a href="#fixed_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2170,6 +2204,26 @@ Versioning: <a href="https://semver.org/">SemVer</a> — see
 <a href="https://rcosdp.github.io/arkhe/project/versioning/">the policy</a> for what counts as
 breaking in a system whose identifiers cannot be reissued.</p>
 <h2 id="unreleased"><a href="https://github.com/RCOSDP/arkhe/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>The example ARKs in the documentation were not identifiers this ledger can mint.</strong>
+  The reference and concept pages showed <code>ark:99999/x9abc</code> — a three-character blade, no
+  check digit, and an <code>a</code>, which betanumeric does not contain. Only the walkthrough
+  showed a real one (<code>ark:99999/c7w545sj4z5</code>), so the pages disagreed with each other
+  about how long a name is. <strong>Readers learn the shape from the examples</strong>, and the shape
+  being taught was one <code>mint</code> cannot produce.</li>
+</ul>
+<p>Every example is now a shoulder plus eight betanumeric characters plus a check digit,
+  computed with the implementation's own <code>noid_check_digit</code>. <code>ark:99999/x9tn1qkq2g7</code> —
+  the name the walkthrough actually mints — now runs through the whole site, and the
+  mistranscription example is one character away from it (<code>…g8</code>), so why <code>ARKHE-1403</code> is
+  a different answer from "no such ARK" can be read off the example itself. The examples
+  inside the OpenAPI descriptions moved with them.</p>
+<p><strong>A test holds the line</strong> (<code>test_docs</code>): every <code>ark:99999/…</code> in the documentation and
+  in the generated OpenAPI must be betanumeric and must verify. The two deliberately
+  wrong ones are listed with the reason each exists, and the test also checks that they
+  still fail and are still in the documentation — a stale allowance cannot open a hole
+  quietly.</p>
 <h2 id="020--2026-09-07"><a href="https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0">0.2.0</a> — 2026-09-07<a class="headerlink" href="#020--2026-09-07" title="Permanent link">&para;</a></h2>
 <p><strong>The release that lets a closed ledger hand its names to a public one.</strong> An ARK minted
 inside a network the outside cannot reach can now be taken into the public ledger and
@@ -2238,7 +2292,7 @@ is now measured rather than asserted.</p>
   merely forward would be claiming to be its keeper. Reach follows the usual rule —
   <strong>higher authority covers lower</strong> — and the bulk form creates nothing at all if any row
   fails, because names that did land cannot be taken back.</p>
-<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Delegation no longer requires a destination at all.</strong> Splitting <code>minter</code> from
   <code>about</code> fixed which field to write in, but left the pressure that put the wrong value
@@ -2397,7 +2451,7 @@ migration only widens columns.</p>
   Both representations carry <code>Vary: Accept</code>.</p>
 <p>The path comes from the ASGI <code>root_path</code>, so a deployment mounted under a prefix must
   set it (<code>uvicorn --root-path /pid</code>) or it will publish a door that is not there.</p>
-<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p><strong>The ARK concept page said too little, and pointed nowhere.</strong> Its diagram labelled
@@ -2665,7 +2719,7 @@ and replaces CI with local scripts for checking and publishing.</p>
   both to prevent <strong>content that is on the site but cannot be traced in the repository</strong>,
   which is exactly what loosens when publishing happens from a laptop. Dependabot's
   <code>github-actions</code> ecosystem was dropped along with the workflows it watched.</p>
-<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li>
 <p><strong>The committed OpenAPI specs had fallen behind the implementation</strong>
@@ -2791,7 +2845,7 @@ the interface.</p>
   constraint</strong> — ERC's <code>what</code> defines no vocabulary, so anything can still be typed.</li>
 <li>A logo: the <strong>α</strong> of ἀρχή, drawn as paths, also used as the favicon.</li>
 </ul>
-<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>A stored XSS on the public resolver.</strong> Targets had no scheme restriction, so
   <code>javascript:</code> could be minted — and <code>?info</code> needs no authentication, so anyone
@@ -2853,7 +2907,7 @@ interface saying one thing while the implementation did another.</p>
   (the Keycloak console and its Admin API) and a table of where to rotate and where to
   stop.</li>
 </ul>
-<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Where authentication is delegated, there was no way to stop a user from arkhe's
   side.</strong> Under <code>oidc</code> arkhe holds no credential, so <code>revoke</code> has nothing to act on,
@@ -2956,7 +3010,7 @@ none of them showed up in the test suite.</p>
 <li>The documentation states that "users" in the interface and "principals" in the API
   and CLI are the same thing. <strong>The two words stay</strong>, because the readers differ.</li>
 </ul>
-<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_6">Fixed<a class="headerlink" href="#fixed_6" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Logging out did not log you out.</strong> The session cookie was cleared, but the
   authorization server's session was left standing, so opening the interface again
@@ -2980,7 +3034,7 @@ none of them showed up in the test suite.</p>
 <p>Everything here was found by putting 0.0.1 on Kubernetes and in the compose stack.
 None of it showed up in the test suite, because all four defects live in the gap
 between <em>the code is correct</em> and <em>the code can be deployed</em>.</p>
-<h3 id="fixed_6">Fixed<a class="headerlink" href="#fixed_6" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_7">Fixed<a class="headerlink" href="#fixed_7" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>/healthz</code> is now served in every mode. It only existed on the resolve router, so a
   minter or an admin process answered 404 to its liveness probe and was killed and
