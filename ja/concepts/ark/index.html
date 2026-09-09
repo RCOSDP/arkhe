@@ -1386,14 +1386,14 @@
 ぶんだけである。</p>
 </div>
 <h2 id="ark-を構成するもの">ARK を構成するもの<a class="headerlink" href="#ark-を構成するもの" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     \________________________/\__/\___/ \/\_____/\_/\_____/
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                NMA           label NAAN    blade part variant
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     \________________________/\__/\___/ \/\_______/\_/\_____/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                NMA           label NAAN     blade  part variant
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                     shoulder
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                               \_________________/\________/
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                                base compact name qualifiers
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                               \___________________/\________/
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                                 base compact name  qualifiers
 </code></pre></div>
 <table>
 <thead>
@@ -1437,8 +1437,8 @@
 NMA は鍵が入っていた<strong>カバー</strong>、<code>ark:99999</code> は手で持つ<strong>弓（bow）</strong>、shoulder と
 blade が実際に働く部分である。<strong>捨てられるのはカバーだけ。</strong></p>
 <p><code>/</code> と <code>.</code> があるおかげで、受け取った側は<strong>文字列だけから構造を推測できる</strong>。
-<code>ark:99999/x9abc1234/c3/s5.pdf</code> を公開するということは、メタデータを引かなくても
-「<code>s5.pdf</code> は <code>s5</code> の変種で、それは <code>x9abc1234</code> に含まれる」と述べたことになる。</p>
+<code>ark:99999/x9tn1qkq2g7/c3/s5.pdf</code> を公開するということは、メタデータを引かなくても
+「<code>s5.pdf</code> は <code>s5</code> の変種で、それは <code>x9tn1qkq2g7</code> に含まれる」と述べたことになる。</p>
 <p><strong>HTTP と DNS の上に直接建っている。</strong> この一点が DOI や Handle との違いを生み、
 以下のほとんどはそこから出てくる。</p>
 <h2 id="ark-は-doi-や-handle-と横並びではない">ARK は DOI や Handle と横並びではない<a class="headerlink" href="#ark-は-doi-や-handle-と横並びではない" title="Permanent link">&para;</a></h2>
@@ -1457,13 +1457,13 @@ Handle の <code>10.x</code> 名前空間の名前である。<strong>ARK だけ
 維持する会員資格も無い。</p>
 <p><strong>誰も代わりに永続性を保証しない。</strong> DOI では登録組織が約束の一部だが、ARK では
 <strong>約束はあなたのもので、その中身も自分で述べる</strong>。だからこそ<strong>尋ねる手段</strong>が用意されている。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:99999/x9abc1234??"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:99999/x9tn1qkq2g7??"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>erc:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>who: 山田太郎
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>what: あるデータセット
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>when: 2026
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: ark:99999/x9abc1234
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: ark:99999/x9tn1qkq2g7
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>redirect: https://repo.example.ac.jp/records/1
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>policy: NP | NR, OP, CC | 2026 | https://example.org/policy
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>commitment-level: permanent-dynamic
@@ -1505,7 +1505,7 @@ ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して�
 </tr>
 <tr>
 <td><strong>suffix passthrough</strong></td>
-<td><code>…/x9abc1234/page/3</code> は <code>…/x9abc1234</code> のレコードで解決される。子に識別子を振らなくてよい——<strong>1 レコード 1 採番</strong>で足りる</td>
+<td><code>…/x9tn1qkq2g7/page/3</code> は <code>…/x9tn1qkq2g7</code> のレコードで解決される。子に識別子を振らなくてよい——<strong>1 レコード 1 採番</strong>で足りる</td>
 </tr>
 </tbody>
 </table>

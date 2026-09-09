@@ -1425,7 +1425,7 @@ side" appears, and before long nobody looks at the other side.</p>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w"> </span>--publish<span class="w">    </span><span class="c1"># tag, push, GitHub release</span>
 </code></pre></div>
 <p>And one that is <strong>not</strong> a check:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9abc<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
 </code></pre></div>
 <p><code>check.sh</code> does not call it. A benchmark takes time and its result depends on the machine
 and on what else that machine is doing, so it cannot be spoken about in green and red.

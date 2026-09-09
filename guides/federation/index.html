@@ -1859,15 +1859,15 @@ same string can exist under more than one NAAN.</p>
     T--&gt;&gt;O: 307 + minter address
     Note over T: never called on their behalf
     O-&gt;&gt;S: POST /api/mint
-    S--&gt;&gt;O: 201 ark:99999/s7abc
+    S--&gt;&gt;O: 201 ark:99999/s7gbpqxm3kx
     Note over S: only the lower ledger creates the name</code></pre>
 <pre class="mermaid"><code>sequenceDiagram
     participant U as outside user
     participant T as upper arkhe
     participant S as arkhe B
-    U-&gt;&gt;T: GET /ark:99999/s7abc
+    U-&gt;&gt;T: GET /ark:99999/s7gbpqxm3kx
     T--&gt;&gt;U: 302 https://ark.b…/ark:…
-    U-&gt;&gt;S: GET /ark:99999/s7abc
+    U-&gt;&gt;S: GET /ark:99999/s7gbpqxm3kx
     S--&gt;&gt;U: 302 the target URL
     Note over T,S: if the upper instance is down, the lower one is unreachable</code></pre>
 <p><strong>Minting is never proxied.</strong> A mint request that reaches the upper instance gets a
@@ -1878,7 +1878,7 @@ undone.</p>
 <p>The upper resolver decides in <a href="../../reference/data-model/">this order</a>, and <strong>the order
 is what determines the outcome</strong>, so it is worth reading before wiring a delegation.</p>
 <pre class="mermaid"><code>flowchart TD
-    R["ark:99999/s7abc&lt;br/&gt;arrives at the upper instance"] --&gt; E{"exact match&lt;br/&gt;in the ledger"}
+    R["ark:99999/s7gbpqxm3kx&lt;br/&gt;arrives at the upper instance"] --&gt; E{"exact match&lt;br/&gt;in the ledger"}
     E --&gt;|yes| A1["the upper instance answers&lt;br/&gt;&lt;small&gt;② minted before the delegation&lt;/small&gt;"]
     E --&gt;|no| P{"an ancestor"}
     P --&gt;|yes| A2["describe / redirect from it"]
@@ -2020,7 +2020,7 @@ explanation page — well-formed names are indistinguishable from one another, m
 ones are told they are malformed.</p>
 <p>Pulling the same identifier from outside <strong>returns different things</strong>.</p>
 <pre class="mermaid"><code>flowchart LR
-    U["outside user&lt;br/&gt;ark:99999/s7abc"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;name and description held above&lt;/small&gt;&lt;br/&gt;200, a description"]
+    U["outside user&lt;br/&gt;ark:99999/s7gbpqxm3kx"] --&gt; C1["C-1&lt;br/&gt;&lt;small&gt;name and description held above&lt;/small&gt;&lt;br/&gt;200, a description"]
     U --&gt; C2["C-2&lt;br/&gt;&lt;small&gt;the name is not known above&lt;/small&gt;&lt;br/&gt;303, an explanation page"]
     C1 --&gt; R1["existence can be stated&lt;br/&gt;no target&lt;br/&gt;&lt;small&gt;= restricted access itself&lt;/small&gt;"]
     C2 --&gt; R2["existence does not leak&lt;br/&gt;&lt;small&gt;real and never-minted look alike;&lt;br/&gt;a typo gets 404&lt;/small&gt;"]</code></pre>
@@ -2057,9 +2057,9 @@ it means.</p>
     N["NAAN 99999&lt;br/&gt;&lt;small&gt;na_policy — what ?? answers — lives here&lt;/small&gt;"]
     N --&gt; SO["shoulder /s7&lt;br/&gt;&lt;small&gt;open PIDs&lt;/small&gt;"]
     N --&gt; SC["shoulder /c7&lt;br/&gt;&lt;small&gt;closed PIDs&lt;/small&gt;"]
-    SO --&gt; AO["ark:99999/s7abc&lt;br/&gt;&lt;small&gt;url = the public target&lt;/small&gt;"]
-    SC --&gt; AC["ark:99999/c7xyz&lt;br/&gt;&lt;small&gt;url = empty / an application form&lt;/small&gt;"]
-    AC --&gt;|"when it opens, only the url changes"| AC2["ark:99999/c7xyz&lt;br/&gt;&lt;small&gt;url = the public target&lt;/small&gt;"]</code></pre>
+    SO --&gt; AO["ark:99999/s7gbpqxm3kx&lt;br/&gt;&lt;small&gt;url = the public target&lt;/small&gt;"]
+    SC --&gt; AC["ark:99999/c76m0jmznv4&lt;br/&gt;&lt;small&gt;url = empty / an application form&lt;/small&gt;"]
+    AC --&gt;|"when it opens, only the url changes"| AC2["ark:99999/c76m0jmznv4&lt;br/&gt;&lt;small&gt;url = the public target&lt;/small&gt;"]</code></pre>
 <p><strong>The bottom two are the same identifier.</strong> The row, the name and the shoulder are
 untouched; only the target moved, and <code>ArkChange</code> keeps the before and after — <strong>which is
 why publication is compatible with a declaration of NR</strong>: what changed was not the name.</p>
@@ -2131,14 +2131,14 @@ network, and the public side can state that the identifier exists.</p>
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="s1">       "what_title": "(only what may leave the closed network)",</span>
 <a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="s1">       "commitment": "Restricted access; use requires an application",</span>
 <a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="s1">       "url": ""}'</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># → ark:99999/c7xyz…</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># → ark:99999/c76m0jmznv4</span>
 <a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
 <a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># Add the door (raise it to the third level)</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7xyz…",</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c76m0jmznv4",</span>
 <a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="s1">                              "url": "https://apply.example.ac.jp/dataset/…"}'</span>
 <a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
 <a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="c1"># When the embargo lifts, point it at the object. **The identifier does not change**</span>
-<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7xyz…",</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>…/api/update<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c76m0jmznv4",</span>
 <a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="s1">                              "url": "https://repo.example.ac.jp/records/123"}'</span>
 </code></pre></div>
 <p>The closed side keeps no ledger — only the mapping from the names it was given to the
@@ -2162,11 +2162,11 @@ the identifier</strong>, so a name handed out while it was closed keeps working 
 <h3 id="handing-the-names-over">Handing the names over<a class="headerlink" href="#handing-the-names-over" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># One at a time</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>…/api/import<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7xyz1", "title": "(only what may leave the closed network)"}'</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7962c644f8", "title": "(only what may leave the closed network)"}'</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># Or the whole delegated shoulder at once — all or nothing</span>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>…/api/import/bulk<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"data": [{"ark": "ark:99999/c7xyz1"}, {"ark": "ark:99999/c7abc2"}]}'</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"data": [{"ark": "ark:99999/c7962c644f8"}, {"ark": "ark:99999/c7bk6pmvhq7"}]}'</span>
 </code></pre></div>
 <p><strong>Import is not minting, and its scope is separate</strong> (<code>ark:import</code>): minting hands you a
 name, importing asserts one. Three things are checked and none can be waived — the
@@ -2202,7 +2202,7 @@ inventing a description for a ledger you do not hold is not an option.</p>
 <p>These are not policy. <strong>Each division moves them from the code into the hands of the
 people operating it</strong> — with one ledger, arkhe enforced them.</p>
 <pre class="mermaid"><code>flowchart TD
-    X["arkhe X&lt;br/&gt;&lt;small&gt;mints 99999/s7&lt;/small&gt;"] --&gt; N["ark:99999/s7abc"]
+    X["arkhe X&lt;br/&gt;&lt;small&gt;mints 99999/s7&lt;/small&gt;"] --&gt; N["ark:99999/s7gbpqxm3kx"]
     Y["arkhe Y&lt;br/&gt;&lt;small&gt;also mints 99999/s7&lt;/small&gt;"] --&gt; N
     N --&gt; Z["✗ one name pointing at two things&lt;br/&gt;&lt;small&gt;under NR this cannot be undone&lt;/small&gt;"]</code></pre>
 <p><strong>Nothing on the far side of the split prevents this.</strong> With one ledger, "minting never

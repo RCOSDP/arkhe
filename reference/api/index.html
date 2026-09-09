@@ -1461,27 +1461,27 @@ behaviour that depends on the suffix.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>/ark:99999/x9abc</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7</code></td>
 <td><code>302</code> to the target, or a description if there is none</td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc/page/3</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7/page/3</code></td>
 <td><code>302</code> to <em>target</em><code>/page/3</code> — suffix passthrough, no record of its own</td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc?</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7?</code></td>
 <td>ERC/ANVL kernel — who, what, when, where</td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc??</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7??</code></td>
 <td>The above plus the persistence statement</td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc?info</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7?info</code></td>
 <td>The same again — as a page, as JSON or as ANVL, by <code>Accept</code></td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc?json</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7?json</code></td>
 <td>The JSON of <code>?info</code>, named directly</td>
 </tr>
 <tr>
@@ -1507,7 +1507,7 @@ in ASGI. Set <code>ARKHE_RAW_URI_HEADER</code> if something in front passes the 
 <p>Every answer the resolver gives about an identifier — <code>?</code>, <code>??</code>, <code>?info</code>, <code>?json</code>, a
 description with no target, a hold, a <code>404</code> — carries the two headers from §5.2:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>THUMP-Status: 0.6 404 Not Found
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Link: &lt;/ark:99999/x9abc&gt;; rel="describes"
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Link: &lt;/ark:99999/x9tn1qkq2g7&gt;; rel="describes"
 </code></pre></div>
 <p>The <code>Link</code> is what tells a recipient who knows nothing about inflections that the
 response <em>describes</em> the uninflected ARK rather than being a representation of the URL
@@ -1532,10 +1532,11 @@ the language goes after an <code>&amp;</code>.</p>
 <h3 id="-encoded-characters"><code>%</code>-encoded characters<a class="headerlink" href="#-encoded-characters" title="Permanent link">&para;</a></h3>
 <p>A reserved character (<code>%</code>, <code>-</code>, <code>.</code>, <code>/</code>) may be <code>%</code>-encoded <strong>to conceal its reserved
 meaning</strong> — <code>%2F</code> is the only way to write "there is a slash here, but it does not
-separate components". So <code>ark:99999/x54%2Fc2</code> and <code>ark:99999/x54/c2</code> are <strong>different
-identifiers</strong>, and the specification forbids the encoded form from ever appearing
-decoded (<code>draft-kunze-ark-42</code> §3.2). arkhe reads the still-encoded path from the ASGI
-<code>raw_path</code> and normalises only the hex case (<code>%2f</code> → <code>%2F</code>, step 5); it never decodes.</p>
+separate components". So <code>ark:99999/x9tn1qkq2g7%2Fc2</code> and <code>ark:99999/x9tn1qkq2g7/c2</code>
+are <strong>different identifiers</strong>, and the specification forbids the encoded form from ever
+appearing decoded (<code>draft-kunze-ark-42</code> §3.2). arkhe reads the still-encoded path from
+the ASGI <code>raw_path</code> and normalises only the hex case (<code>%2f</code> → <code>%2F</code>, step 5); it never
+decodes.</p>
 <p><strong>Anything in front must pass the encoding through.</strong> With nginx, <code>proxy_pass</code> without
 a URI part (<code>proxy_pass http://backend;</code>) — adding a path makes nginx re-encode the
 decoded one. With Apache, <code>AllowEncodedSlashes NoDecode</code>. Where a proxy normalises

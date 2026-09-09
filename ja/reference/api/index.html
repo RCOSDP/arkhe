@@ -1456,27 +1456,27 @@ arklet は順序不定の問い合わせ結果を入力と <code>zip</code> し�
 </thead>
 <tbody>
 <tr>
-<td><code>/ark:99999/x9abc</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7</code></td>
 <td><code>302</code> で対象へ。行き先が無ければ記述を返す</td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc/page/3</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7/page/3</code></td>
 <td><code>302</code> で <em>対象</em><code>/page/3</code> へ。<strong>suffix passthrough。子に識別子は要らない</strong></td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc?</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7?</code></td>
 <td>ERC/ANVL の kernel（who / what / when / where）</td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc??</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7??</code></td>
 <td>上に加えて<strong>永続性宣言</strong></td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc?info</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7?info</code></td>
 <td>同じ内容を、<code>Accept</code> に応じて<strong>ページ・JSON・ANVL</strong> で</td>
 </tr>
 <tr>
-<td><code>/ark:99999/x9abc?json</code></td>
+<td><code>/ark:99999/x9tn1qkq2g7?json</code></td>
 <td><code>?info</code> の JSON を名指しする別名</td>
 </tr>
 <tr>
@@ -1501,7 +1501,7 @@ arklet は順序不定の問い合わせ結果を入力と <code>zip</code> し�
 <p>識別子について<strong>リゾルバ自身が答える</strong>応答——<code>?</code> <code>??</code> <code>?info</code> <code>?json</code>、行き先の無い
 記述、保留、<code>404</code>——には §5.2 の 2 つのヘッダが付く。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>THUMP-Status: 0.6 404 Not Found
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Link: &lt;/ark:99999/x9abc&gt;; rel="describes"
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Link: &lt;/ark:99999/x9tn1qkq2g7&gt;; rel="describes"
 </code></pre></div>
 <p><code>Link</code> は、inflection を知らない受信者に対して「この応答は取得した URL の表現では
 なく、<strong>修飾の付いていない ARK を記述したもの</strong>である」と示すためにある。仕様の
@@ -1526,10 +1526,10 @@ arkhe は <code>&lt;…&gt;; rel="describes"</code> を出す——<strong>同�
 <h3 id="-エンコードされた文字">%-エンコードされた文字<a class="headerlink" href="#-エンコードされた文字" title="Permanent link">&para;</a></h3>
 <p>予約文字（<code>%</code> <code>-</code> <code>.</code> <code>/</code>）は、<strong>その予約された意味を隠す目的でなら</strong> %-エンコード
 してよい——<code>%2F</code> は「ここに <code>/</code> はあるが成分の区切りではない」と書く唯一の方法である。
-したがって <code>ark:99999/x54%2Fc2</code> と <code>ark:99999/x54/c2</code> は<strong>別の識別子</strong>で、仕様は
-エンコードされた文字が復号形で現れることを禁じている（<code>draft-kunze-ark-42</code> §3.2）。
-arkhe は ASGI の <code>raw_path</code> から<strong>エンコードを保ったまま</strong>経路を読み、16 進の大小
-だけ揃える（<code>%2f</code> → <code>%2F</code>。手順5）。復号はしない。</p>
+したがって <code>ark:99999/x9tn1qkq2g7%2Fc2</code> と <code>ark:99999/x9tn1qkq2g7/c2</code> は<strong>別の識別子</strong>
+で、仕様はエンコードされた文字が復号形で現れることを禁じている（<code>draft-kunze-ark-42</code>
+§3.2）。arkhe は ASGI の <code>raw_path</code> から<strong>エンコードを保ったまま</strong>経路を読み、16 進の
+大小だけ揃える（<code>%2f</code> → <code>%2F</code>。手順5）。復号はしない。</p>
 <p><strong>前段もエンコードを素通しにすること。</strong> nginx なら <code>proxy_pass</code> にパスを書かない
 （<code>proxy_pass http://backend;</code>。書くと復号済みのものを再エンコードする）。Apache なら
 <code>AllowEncodedSlashes NoDecode</code>。前段が <code>%2F</code> を潰す構成では復元できず、その種の名前は

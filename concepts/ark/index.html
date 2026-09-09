@@ -1387,14 +1387,14 @@ anything this page states too briefly — everything below is only the part that
 explains why arkhe is shaped the way it is.</p>
 </div>
 <h2 id="the-parts-of-an-ark">The parts of an ARK<a class="headerlink" href="#the-parts-of-an-ark" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     \________________________/\__/\___/ \/\_____/\_/\_____/
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                NMA           label NAAN    blade part variant
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     \________________________/\__/\___/ \/\_______/\_/\_____/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                NMA           label NAAN     blade  part variant
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                     shoulder
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                               \_________________/\________/
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                                base compact name qualifiers
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                               \___________________/\________/
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                                 base compact name  qualifiers
 </code></pre></div>
 <table>
 <thead>
@@ -1439,8 +1439,9 @@ through the whole string: the NMA is the <strong>cover</strong> the key comes in
 <strong>bow</strong> you hold, and the shoulder and blade are the parts that do the work. <strong>Only the
 cover is disposable.</strong></p>
 <p><code>/</code> and <code>.</code> are the reason a recipient can infer structure from the string alone.
-Publishing <code>ark:99999/x9abc1234/c3/s5.pdf</code> says, without anyone having to fetch a
-metadata record, that <code>s5.pdf</code> is a variant of <code>s5</code>, which is contained in <code>x9abc1234</code>.</p>
+Publishing <code>ark:99999/x9tn1qkq2g7/c3/s5.pdf</code> says, without anyone having to fetch a
+metadata record, that <code>s5.pdf</code> is a variant of <code>s5</code>, which is contained in
+<code>x9tn1qkq2g7</code>.</p>
 <p>It sits on plain HTTP and DNS. That single fact separates it from DOI and Handle, and
 most of what follows comes from it.</p>
 <h2 id="ark-is-not-a-peer-of-doi-and-handle">ARK is not a peer of DOI and Handle<a class="headerlink" href="#ark-is-not-a-peer-of-doi-and-handle" title="Permanent link">&para;</a></h2>
@@ -1460,13 +1461,13 @@ ARK Alliance. There is no registration agency to pay and no membership to mainta
 <p><strong>Nobody guarantees persistence on your behalf.</strong> With a DOI, the registration agency
 is part of the promise. With an ARK, <strong>the promise is yours and you say what it is</strong>
 — which is why the scheme has a way to <em>ask</em>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:99999/x9abc1234??"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span><span class="s2">"https://example.org/ark:99999/x9tn1qkq2g7??"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>erc:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>who: 山田太郎
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>what: A dataset
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>when: 2026
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: ark:99999/x9abc1234
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>where: ark:99999/x9tn1qkq2g7
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>redirect: https://repo.example.ac.jp/records/1
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>policy: NP | NR, OP, CC | 2026 | https://example.org/policy
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>commitment-level: permanent-dynamic
@@ -1511,7 +1512,7 @@ appear throughout this documentation are not parts of the string at all:</p>
 </tr>
 <tr>
 <td><strong>suffix passthrough</strong></td>
-<td><code>…/x9abc1234/page/3</code> resolves through the record for <code>…/x9abc1234</code>, so children need no identifiers of their own — one record per minting is enough</td>
+<td><code>…/x9tn1qkq2g7/page/3</code> resolves through the record for <code>…/x9tn1qkq2g7</code>, so children need no identifiers of their own — one record per minting is enough</td>
 </tr>
 </tbody>
 </table>

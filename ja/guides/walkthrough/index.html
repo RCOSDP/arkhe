@@ -1911,8 +1911,8 @@ inflection だから——ので、言語は <code>&amp;</code> の後ろに書�
 <a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="go"> "detail": {"reason": "missing name part"}}</span>
 </code></pre></div>
 <p>解決の口は text/plain で、符号を行頭に置く。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9zzzzzzzz
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">ARKHE-1403 ark:99999/x9zzzzzzzz — Check digit mismatch: the identifier looks mistranscribed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="nv">$R</span>/ark:99999/x9tn1qkq2g8
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks mistranscribed.</span>
 </code></pre></div>
 <p><strong>これは「そんな ARK は無い」とは別の答えである。</strong> 検査桁は「ここへ来る途中で
 打ち間違えられた・写し間違えられた」と言っている——印刷された識別子とにらめっこ
@@ -2091,7 +2091,7 @@ shoulder を切り出すのは CLI（または管理画面）の仕事である�
 <p><strong>1 件でも検査に落ちれば、1 件も作らない。</strong> 入ってしまった名前は引っ込められないので、
 中途半端に取り込まれた名前空間は、何もしないより悪い。</p>
 <h3 id="断られるもの">断られるもの<a class="headerlink" href="#断られるもの" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/s7abc1234"}'</span><span class="w">      </span><span class="c1"># 委譲していない</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/s71sqcdz09r"}'</span><span class="w">    </span><span class="c1"># 委譲していない</span>
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="go">ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.</span>
 <a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>
 <a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="gp">$ </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$P</span>/api/import<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/c7w545sj4zz"}'</span><span class="w">    </span><span class="c1"># 検査桁</span>
