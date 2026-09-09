@@ -14,14 +14,14 @@ them**.
 ## The parts of an ARK
 
 ```
-     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-     \________________________/\__/\___/ \/\_____/\_/\_____/
-                NMA           label NAAN    blade part variant
+     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+     \________________________/\__/\___/ \/\_______/\_/\_____/
+                NMA           label NAAN     blade  part variant
                                      shoulder
 
-     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-                               \_________________/\________/
-                                base compact name qualifiers
+     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+                               \___________________/\________/
+                                 base compact name  qualifiers
 ```
 
 | | |
@@ -40,8 +40,9 @@ through the whole string: the NMA is the **cover** the key comes in, `ark:99999`
 cover is disposable.**
 
 `/` and `.` are the reason a recipient can infer structure from the string alone.
-Publishing `ark:99999/x9abc1234/c3/s5.pdf` says, without anyone having to fetch a
-metadata record, that `s5.pdf` is a variant of `s5`, which is contained in `x9abc1234`.
+Publishing `ark:99999/x9tn1qkq2g7/c3/s5.pdf` says, without anyone having to fetch a
+metadata record, that `s5.pdf` is a variant of `s5`, which is contained in
+`x9tn1qkq2g7`.
 
 It sits on plain HTTP and DNS. That single fact separates it from DOI and Handle, and
 most of what follows comes from it.
@@ -73,7 +74,7 @@ is part of the promise. With an ARK, **the promise is yours and you say what it 
 — which is why the scheme has a way to *ask*:
 
 ```bash
-curl "https://example.org/ark:99999/x9abc1234??"
+curl "https://example.org/ark:99999/x9tn1qkq2g7??"
 ```
 
 ```
@@ -81,7 +82,7 @@ erc:
 who: 山田太郎
 what: A dataset
 when: 2026
-where: ark:99999/x9abc1234
+where: ark:99999/x9tn1qkq2g7
 redirect: https://repo.example.ac.jp/records/1
 policy: NP | NR, OP, CC | 2026 | https://example.org/policy
 commitment-level: permanent-dynamic
@@ -124,7 +125,7 @@ appear throughout this documentation are not parts of the string at all:
 | | |
 | --- | --- |
 | **inflection** | A `?`, `??` or `?info` suffix that asks the resolver **about** the identifier instead of following it. `?info` is the one the specification requires |
-| **suffix passthrough** | `…/x9abc1234/page/3` resolves through the record for `…/x9abc1234`, so children need no identifiers of their own — one record per minting is enough |
+| **suffix passthrough** | `…/x9tn1qkq2g7/page/3` resolves through the record for `…/x9tn1qkq2g7`, so children need no identifiers of their own — one record per minting is enough |
 
 ## Read on
 

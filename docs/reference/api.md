@@ -56,12 +56,12 @@ behaviour that depends on the suffix.
 
 | Request | Answer |
 | --- | --- |
-| `/ark:99999/x9abc` | `302` to the target, or a description if there is none |
-| `/ark:99999/x9abc/page/3` | `302` to *target*`/page/3` — suffix passthrough, no record of its own |
-| `/ark:99999/x9abc?` | ERC/ANVL kernel — who, what, when, where |
-| `/ark:99999/x9abc??` | The above plus the persistence statement |
-| `/ark:99999/x9abc?info` | The same again — as a page, as JSON or as ANVL, by `Accept` |
-| `/ark:99999/x9abc?json` | The JSON of `?info`, named directly |
+| `/ark:99999/x9tn1qkq2g7` | `302` to the target, or a description if there is none |
+| `/ark:99999/x9tn1qkq2g7/page/3` | `302` to *target*`/page/3` — suffix passthrough, no record of its own |
+| `/ark:99999/x9tn1qkq2g7?` | ERC/ANVL kernel — who, what, when, where |
+| `/ark:99999/x9tn1qkq2g7??` | The above plus the persistence statement |
+| `/ark:99999/x9tn1qkq2g7?info` | The same again — as a page, as JSON or as ANVL, by `Accept` |
+| `/ark:99999/x9tn1qkq2g7?json` | The JSON of `?info`, named directly |
 | `/ark:12345/…` (unknown NAAN) | `302` to the global resolver |
 | `/.well-known/ark` | `text/plain`: the resolver's root path, ending in `/` |
 | `/.well-known/ark` with `Accept: application/json` | What this resolver holds, and where minting happens if elsewhere |
@@ -80,7 +80,7 @@ description with no target, a hold, a `404` — carries the two headers from §5
 
 ```
 THUMP-Status: 0.6 404 Not Found
-Link: </ark:99999/x9abc>; rel="describes"
+Link: </ark:99999/x9tn1qkq2g7>; rel="describes"
 ```
 
 The `Link` is what tells a recipient who knows nothing about inflections that the
@@ -112,10 +112,11 @@ the language goes after an `&`.
 
 A reserved character (`%`, `-`, `.`, `/`) may be `%`-encoded **to conceal its reserved
 meaning** — `%2F` is the only way to write "there is a slash here, but it does not
-separate components". So `ark:99999/x54%2Fc2` and `ark:99999/x54/c2` are **different
-identifiers**, and the specification forbids the encoded form from ever appearing
-decoded (`draft-kunze-ark-42` §3.2). arkhe reads the still-encoded path from the ASGI
-`raw_path` and normalises only the hex case (`%2f` → `%2F`, step 5); it never decodes.
+separate components". So `ark:99999/x9tn1qkq2g7%2Fc2` and `ark:99999/x9tn1qkq2g7/c2`
+are **different identifiers**, and the specification forbids the encoded form from ever
+appearing decoded (`draft-kunze-ark-42` §3.2). arkhe reads the still-encoded path from
+the ASGI `raw_path` and normalises only the hex case (`%2f` → `%2F`, step 5); it never
+decodes.
 
 **Anything in front must pass the encoding through.** With nginx, `proxy_pass` without
 a URI part (`proxy_pass http://backend;`) — adding a path makes nginx re-encode the

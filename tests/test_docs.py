@@ -6,12 +6,15 @@
 落ちていた。
 
 対象は**表に並べる参照ページだけ**。散文の解説まで機械で縛ると、書く手が
-止まって誰も直さなくなる。
+止まって誰も直さなくなる。**例外は例示する ARK** ——あれは文面ではなく、
+検査桁が合うかどうかという機械で確かめられる事実だから、散文の中にあっても
+縛ってよい。
 """
 
 from __future__ import annotations
 
 import pathlib
+import re
 
 import pytest
 
@@ -138,3 +141,72 @@ def test_日本語の説明と英語の文面が両方ある():
         # 本文に日本語を混ぜない（`§` のような記号は英語の文でも使う）。
         assert c.message.strip() and not cjk.search(c.message), c.number
         assert cjk.search(c.ja), c.number
+
+
+# --------------------------------------------------------------------------
+# 例示する ARK は、実際に採番される形をしている
+# --------------------------------------------------------------------------
+
+#: 例示に使う NAAN。他所の NAAN（`ark:12345/…`、実在の `ark:67531/…`）は、
+#: 名前の形もその機関のものなので、こちらの規約を当てない。
+EXAMPLE_NAAN = "99999"
+
+#: **わざと合わない例。** 検査桁が何を守っているかは、合わない例でしか見せられない。
+DELIBERATELY_WRONG = {
+    "x9tn1qkq2g8": "転記ミスを 404 と区別して見せる（ARKHE-1403）",
+    "c7w545sj4zz": "外から来た名前を import が拒む（ARKHE-1012）",
+}
+
+#: `ark:99999/x9…` のように読者が自分の採番結果を入れる場所は、末尾の `…` で除く。
+#: 修飾子（`/c3`・`.pdf`・`%2F…`）はここで切れる——N7 のとおり検査桁は base name に
+#: 対して計算されるので、切れたところがちょうど検査すべき範囲になる。
+_ARK = re.compile(r"ark:/?(\d{5})/([0-9a-z]+)(\u2026?)")
+
+#: OpenAPI は実装から生成する。ここに含めると、**src の docstring に書いた例**も縛れる。
+_PAGES = sorted(DOCS.rglob("*.md")) + sorted(DOCS.glob("assets/openapi-*.json"))
+
+
+def _example_arks():
+    """文書に出てくる `ark:99999/…` を (ページ, 行, 名前) で返す。"""
+    for path in _PAGES:
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for naan, name, elided in _ARK.findall(line):
+                if naan == EXAMPLE_NAAN and not elided:
+                    yield path.relative_to(DOCS), lineno, name
+
+
+def test_例示するARKは実際に採番される形をしている():
+    """**読者は例からその形を覚える。** 採番されない形を見せると、桁数も文字集合も
+    間違って伝わり、「配られる名前はこの長さか」と思われる。
+
+    見るのは 2 つ——**betanumeric だけでできていること**（母音と `l` は入らない）と、
+    **検査桁が合うこと**。どちらも `arkspec` が実際に課している規則なので、
+    例が実装から離れれば必ずここで落ちる。
+    """
+    from arkhe.arkspec.betanumeric import BETANUMERIC, verify_ark_check_digit
+
+    bad = []
+    for page, lineno, name in _example_arks():
+        if name in DELIBERATELY_WRONG:
+            continue
+        if outside := set(name) - set(BETANUMERIC):
+            bad.append(f"{page}:{lineno} ark:99999/{name} — betanumeric に無い文字 "
+                       f"{sorted(outside)}")
+        elif not verify_ark_check_digit(EXAMPLE_NAAN, name):
+            bad.append(f"{page}:{lineno} ark:99999/{name} — 検査桁が合わない")
+    assert not bad, "採番されない形の例:\n  " + "\n  ".join(bad)
+
+
+def test_わざと合わない例は本当に合わない():
+    """**許可した例が腐るのを止める。** 名前を書き換えたのに `DELIBERATELY_WRONG` を
+    直し忘れると、上の検査に穴が開いたまま気づけない。だから**合わないことを確かめ、
+    文書にまだ在ることも確かめる**。
+    """
+    from arkhe.arkspec.betanumeric import verify_ark_check_digit
+
+    for name, why in DELIBERATELY_WRONG.items():
+        assert not verify_ark_check_digit(EXAMPLE_NAAN, name), f"{name} は合ってしまう（{why}）"
+
+    used = {name for _, _, name in _example_arks()}
+    assert not (set(DELIBERATELY_WRONG) - used), \
+        f"文書に無い例が許可されたまま: {sorted(set(DELIBERATELY_WRONG) - used)}"

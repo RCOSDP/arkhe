@@ -51,12 +51,12 @@ arklet は順序不定の問い合わせ結果を入力と `zip` しており、
 
 | 要求 | 応答 |
 | --- | --- |
-| `/ark:99999/x9abc` | `302` で対象へ。行き先が無ければ記述を返す |
-| `/ark:99999/x9abc/page/3` | `302` で *対象*`/page/3` へ。**suffix passthrough。子に識別子は要らない** |
-| `/ark:99999/x9abc?` | ERC/ANVL の kernel（who / what / when / where） |
-| `/ark:99999/x9abc??` | 上に加えて**永続性宣言** |
-| `/ark:99999/x9abc?info` | 同じ内容を、`Accept` に応じて**ページ・JSON・ANVL** で |
-| `/ark:99999/x9abc?json` | `?info` の JSON を名指しする別名 |
+| `/ark:99999/x9tn1qkq2g7` | `302` で対象へ。行き先が無ければ記述を返す |
+| `/ark:99999/x9tn1qkq2g7/page/3` | `302` で *対象*`/page/3` へ。**suffix passthrough。子に識別子は要らない** |
+| `/ark:99999/x9tn1qkq2g7?` | ERC/ANVL の kernel（who / what / when / where） |
+| `/ark:99999/x9tn1qkq2g7??` | 上に加えて**永続性宣言** |
+| `/ark:99999/x9tn1qkq2g7?info` | 同じ内容を、`Accept` に応じて**ページ・JSON・ANVL** で |
+| `/ark:99999/x9tn1qkq2g7?json` | `?info` の JSON を名指しする別名 |
 | `/ark:12345/…`（未知 NAAN） | `302` でグローバルリゾルバへ |
 | `/.well-known/ark` | `text/plain`。リゾルバのルートパス（末尾は `/`） |
 | `/.well-known/ark`＋`Accept: application/json` | このリゾルバが何を預かっているか。採番を外に委ねているならその案内先 |
@@ -74,7 +74,7 @@ arklet は順序不定の問い合わせ結果を入力と `zip` しており、
 
 ```
 THUMP-Status: 0.6 404 Not Found
-Link: </ark:99999/x9abc>; rel="describes"
+Link: </ark:99999/x9tn1qkq2g7>; rel="describes"
 ```
 
 `Link` は、inflection を知らない受信者に対して「この応答は取得した URL の表現では
@@ -106,10 +106,10 @@ ERC の **`where` は ARK であって、転送先ではない**。§5.1.2 が�
 
 予約文字（`%` `-` `.` `/`）は、**その予約された意味を隠す目的でなら** %-エンコード
 してよい——`%2F` は「ここに `/` はあるが成分の区切りではない」と書く唯一の方法である。
-したがって `ark:99999/x54%2Fc2` と `ark:99999/x54/c2` は**別の識別子**で、仕様は
-エンコードされた文字が復号形で現れることを禁じている（`draft-kunze-ark-42` §3.2）。
-arkhe は ASGI の `raw_path` から**エンコードを保ったまま**経路を読み、16 進の大小
-だけ揃える（`%2f` → `%2F`。手順5）。復号はしない。
+したがって `ark:99999/x9tn1qkq2g7%2Fc2` と `ark:99999/x9tn1qkq2g7/c2` は**別の識別子**
+で、仕様はエンコードされた文字が復号形で現れることを禁じている（`draft-kunze-ark-42`
+§3.2）。arkhe は ASGI の `raw_path` から**エンコードを保ったまま**経路を読み、16 進の
+大小だけ揃える（`%2f` → `%2F`。手順5）。復号はしない。
 
 **前段もエンコードを素通しにすること。** nginx なら `proxy_pass` にパスを書かない
 （`proxy_pass http://backend;`。書くと復号済みのものを再エンコードする）。Apache なら

@@ -13,14 +13,14 @@ ARK Alliance 自身の言葉では、**ARK（Archival Resource Key）識別子�
 ## ARK を構成するもの
 
 ```
-     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-     \________________________/\__/\___/ \/\_____/\_/\_____/
-                NMA           label NAAN    blade part variant
+     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+     \________________________/\__/\___/ \/\_______/\_/\_____/
+                NMA           label NAAN     blade  part variant
                                      shoulder
 
-     https://ark.example.ac.jp/ark:99999/x9abc1234/c3/s5.pdf
-                               \_________________/\________/
-                                base compact name qualifiers
+     https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c3/s5.pdf
+                               \___________________/\________/
+                                 base compact name  qualifiers
 ```
 
 | | |
@@ -38,8 +38,8 @@ NMA は鍵が入っていた**カバー**、`ark:99999` は手で持つ**弓（b
 blade が実際に働く部分である。**捨てられるのはカバーだけ。**
 
 `/` と `.` があるおかげで、受け取った側は**文字列だけから構造を推測できる**。
-`ark:99999/x9abc1234/c3/s5.pdf` を公開するということは、メタデータを引かなくても
-「`s5.pdf` は `s5` の変種で、それは `x9abc1234` に含まれる」と述べたことになる。
+`ark:99999/x9tn1qkq2g7/c3/s5.pdf` を公開するということは、メタデータを引かなくても
+「`s5.pdf` は `s5` の変種で、それは `x9tn1qkq2g7` に含まれる」と述べたことになる。
 
 **HTTP と DNS の上に直接建っている。** この一点が DOI や Handle との違いを生み、
 以下のほとんどはそこから出てくる。
@@ -70,7 +70,7 @@ Handle の `10.x` 名前空間の名前である。**ARK だけが別系統**で
 **約束はあなたのもので、その中身も自分で述べる**。だからこそ**尋ねる手段**が用意されている。
 
 ```bash
-curl "https://example.org/ark:99999/x9abc1234??"
+curl "https://example.org/ark:99999/x9tn1qkq2g7??"
 ```
 
 ```
@@ -78,7 +78,7 @@ erc:
 who: 山田太郎
 what: あるデータセット
 when: 2026
-where: ark:99999/x9abc1234
+where: ark:99999/x9tn1qkq2g7
 redirect: https://repo.example.ac.jp/records/1
 policy: NP | NR, OP, CC | 2026 | https://example.org/policy
 commitment-level: permanent-dynamic
@@ -118,7 +118,7 @@ ARK は **NR（No Re-assignment、再割当てしない）** を宣言する。�
 | | |
 | --- | --- |
 | **inflection** | `?` `??` `?info` の接尾。**対象へ行く**のではなく、**識別子について尋ねる**。仕様が必須としているのは `?info` |
-| **suffix passthrough** | `…/x9abc1234/page/3` は `…/x9abc1234` のレコードで解決される。子に識別子を振らなくてよい——**1 レコード 1 採番**で足りる |
+| **suffix passthrough** | `…/x9tn1qkq2g7/page/3` は `…/x9tn1qkq2g7` のレコードで解決される。子に識別子を振らなくてよい——**1 レコード 1 採番**で足りる |
 
 ## この先を読む
 

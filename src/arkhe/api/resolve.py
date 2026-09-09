@@ -65,8 +65,8 @@ Both representations carry `Vary: Accept`.
 """
 
 E_RESOLVE = """\
-**Resolve an ARK. No authentication.** Both `ark:99999/xyz` and the older
-`ark:/99999/xyz` are accepted, in any letter case.
+**Resolve an ARK. No authentication.** Both `ark:99999/x9tn1qkq2g7` and the older
+`ark:/99999/x9tn1qkq2g7` are accepted, in any letter case.
 
 There is more than one way to answer, and **keeping the identifier alive comes first on
 every path**:
@@ -438,7 +438,7 @@ _RESOLVE_RESPONSES = {
 @router.get("/ark:/{rest:path}", responses=_RESOLVE_RESPONSES, description=E_RESOLVE)
 @router.get("/ark:{rest:path}", responses=_RESOLVE_RESPONSES, description=E_RESOLVE)
 def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
-    """**ARK を解決する。認証は要らない。** `ark:/12345/xyz` と `ark:12345/xyz` の
+    """**ARK を解決する。認証は要らない。** `ark:/99999/x9tn1qkq2g7` と `ark:99999/x9tn1qkq2g7` の
     どちらの表記でも受ける。
 
     返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:

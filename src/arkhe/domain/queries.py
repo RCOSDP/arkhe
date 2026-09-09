@@ -25,7 +25,8 @@ from arkhe.db.models import Ark, Manager, Shoulder
 
 
 def ark_key_from_input(raw: str) -> str:
-    """`ark:99999/xyz` でも、旧形式の `ark:/99999/xyz` でも、`99999/xyz` でも、台帳の鍵に直す。
+    """`ark:99999/x9tn1qkq2g7` でも、旧形式の `ark:/99999/x9tn1qkq2g7` でも、
+    `99999/x9tn1qkq2g7` でも、台帳の鍵に直す。
 
     **解決側と同じ正規化を通す。** ここだけ素通しにすると、`…/x/` や `…/x..v` を
     送った側が「同じ ARK」に触れず 404 になる。画面・CLI・API が別々に書くと、

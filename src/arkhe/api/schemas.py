@@ -116,7 +116,7 @@ class RegisterIn(ArkFields):
         "are generated."
     )
 
-    ark: str = Field(description="An existing base ARK (`ark:99999/xyz`).")
+    ark: str = Field(description="An existing base ARK (`ark:99999/x9tn1qkq2g7`).")
     qualifier: str = Field(description="Begins with `/` (a part) or `.` (a variant).")
 
 
@@ -135,7 +135,7 @@ class ImportIn(ArkFields):
     )
 
     ark: str = Field(
-        description="The ARK as it was minted elsewhere (`ark:99999/c7xyz1`)."
+        description="The ARK as it was minted elsewhere (`ark:99999/c7962c644f8`)."
     )
 
 

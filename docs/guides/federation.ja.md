@@ -150,7 +150,7 @@ sequenceDiagram
     T-->>O: 307 + 行き先（minter）
     Note over T: 代理では呼ばない
     O->>S: POST /api/mint
-    S-->>O: 201 ark:99999/s7abc
+    S-->>O: 201 ark:99999/s7gbpqxm3kx
     Note over S: 名前を作るのは下位の台帳だけ
 ```
 
@@ -159,9 +159,9 @@ sequenceDiagram
     participant U as 外の利用者
     participant T as 上位 arkhe
     participant S as 下位 arkhe B
-    U->>T: GET /ark:99999/s7abc
+    U->>T: GET /ark:99999/s7gbpqxm3kx
     T-->>U: 302 https://ark.b…/ark:…
-    U->>S: GET /ark:99999/s7abc
+    U->>S: GET /ark:99999/s7gbpqxm3kx
     S-->>U: 302 対象の URL
     Note over T,S: 上位が落ちると、下位が生きていても外から届かない
 ```
@@ -177,7 +177,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    R["ark:99999/s7abc が<br/>上位に届く"] --> E{"上位の台帳に<br/>完全一致"}
+    R["ark:99999/s7gbpqxm3kx が<br/>上位に届く"] --> E{"上位の台帳に<br/>完全一致"}
     E -->|ある| A1["上位が答える<br/><small>② 委譲前に採った名前</small>"]
     E -->|ない| P{"祖先が<br/>ある"}
     P -->|ある| A2["祖先から記述・転送"]
@@ -307,7 +307,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    U["外の利用者<br/>ark:99999/s7abc"] --> C1["C-1<br/><small>上位が名前と記述を持つ</small><br/>200 記述を返す"]
+    U["外の利用者<br/>ark:99999/s7gbpqxm3kx"] --> C1["C-1<br/><small>上位が名前と記述を持つ</small><br/>200 記述を返す"]
     U --> C2["C-2<br/><small>上位は名前を知らない</small><br/>303 説明ページ"]
     C1 --> R1["存在は言える<br/>行き先は無い<br/><small>＝制限公開そのもの</small>"]
     C2 --> R2["存在が漏れない<br/><small>実在も未採番も同じ答え。<br/>誤記は 404</small>"]
@@ -353,9 +353,9 @@ flowchart TD
     N["NAAN 99999<br/><small>na_policy（?? の答え）はここ</small>"]
     N --> SO["shoulder /s7<br/><small>オープン PID</small>"]
     N --> SC["shoulder /c7<br/><small>クローズド PID</small>"]
-    SO --> AO["ark:99999/s7abc<br/><small>url = 公開の対象</small>"]
-    SC --> AC["ark:99999/c7xyz<br/><small>url = 空／申請窓口</small>"]
-    AC -->|"公開になったら url だけ付け替える"| AC2["ark:99999/c7xyz<br/><small>url = 公開の対象</small>"]
+    SO --> AO["ark:99999/s7gbpqxm3kx<br/><small>url = 公開の対象</small>"]
+    SC --> AC["ark:99999/c76m0jmznv4<br/><small>url = 空／申請窓口</small>"]
+    AC -->|"公開になったら url だけ付け替える"| AC2["ark:99999/c76m0jmznv4<br/><small>url = 公開の対象</small>"]
 ```
 
 **右下の 2 つは同じ識別子である。** 行も、名前も、shoulder も変わっていない。変わったのは
@@ -417,14 +417,14 @@ curl -X POST https://ark.example.ac.jp/api/mint \
        "what_title": "（外に出してよい範囲の題）",
        "commitment": "制限公開。利用には申請が要る",
        "url": ""}'
-# → ark:99999/c7xyz…
+# → ark:99999/c76m0jmznv4
 
 # 申請窓口を付ける（3 段目に上げる）
-curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c76m0jmznv4",
                               "url": "https://apply.example.ac.jp/dataset/…"}'
 
 # 禁止期間が明けたら、実体へ向け替える。**識別子は変わらない**
-curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c76m0jmznv4",
                               "url": "https://repo.example.ac.jp/records/123"}'
 ```
 
@@ -453,11 +453,11 @@ arkhe onboard 99999 "閉域の組織" --shoulder /c7
 ```bash
 # 1 本ずつ
 curl -X POST …/api/import -H "Authorization: Bearer $KEY" \
-  -d '{"ark": "ark:99999/c7xyz1", "title": "（閉域から出してよいものだけ）"}'
+  -d '{"ark": "ark:99999/c7962c644f8", "title": "（閉域から出してよいものだけ）"}'
 
 # 委譲した shoulder ごとまとめて——**全部入るか、1 件も入らないか**
 curl -X POST …/api/import/bulk -H "Authorization: Bearer $KEY" \
-  -d '{"data": [{"ark": "ark:99999/c7xyz1"}, {"ark": "ark:99999/c7abc2"}]}'
+  -d '{"data": [{"ark": "ark:99999/c7962c644f8"}, {"ark": "ark:99999/c7bk6pmvhq7"}]}'
 ```
 
 **取り込みは採番ではなく、scope も別**（`ark:import`）。採番は「番号をもらう」操作、
@@ -503,7 +503,7 @@ who / what / when をそのまま入れると、**題名から中身が推測で
 
 ```mermaid
 flowchart TD
-    X["arkhe X<br/><small>99999/s7 を採番</small>"] --> N["ark:99999/s7abc"]
+    X["arkhe X<br/><small>99999/s7 を採番</small>"] --> N["ark:99999/s7gbpqxm3kx"]
     Y["arkhe Y<br/><small>99999/s7 も採番</small>"] --> N
     N --> Z["✗ 同じ名前が 2 つの対象を指す<br/><small>NR の下では取り返しがつかない</small>"]
 ```

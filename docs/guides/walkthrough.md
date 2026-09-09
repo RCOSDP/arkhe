@@ -277,8 +277,8 @@ $ curl -X PUT $M/api/update -H "Authorization: Bearer $KEY" \
 Resolution answers in plain text, with the code first:
 
 ```console
-$ curl $R/ark:99999/x9zzzzzzzz
-ARKHE-1403 ark:99999/x9zzzzzzzz — Check digit mismatch: the identifier looks mistranscribed.
+$ curl $R/ark:99999/x9tn1qkq2g8
+ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks mistranscribed.
 ```
 
 **That is a different answer from "no such ARK".** The check digit says the string was
@@ -498,7 +498,7 @@ taken back, so a half-imported namespace is worse than none.
 ### What gets refused
 
 ```console
-$ curl -X POST $P/api/import -d '{"ark": "ark:99999/s7abc1234"}'      # not delegated
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/s71sqcdz09r"}'    # not delegated
 ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.
 
 $ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7w545sj4zz"}'    # check digit

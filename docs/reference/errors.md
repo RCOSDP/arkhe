@@ -18,7 +18,7 @@ never has to cut a number back out of a sentence.
 Resolution answers in `text/plain` (a person reads it too), with the code first:
 
 ```
-ARKHE-1403 ark:99999/x9abcd — Check digit mismatch: the identifier looks mistranscribed.
+ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks mistranscribed.
 ```
 
 Two places keep a different shape on purpose. **`/oauth/token` follows

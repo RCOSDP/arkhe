@@ -31,7 +31,7 @@ curl -X PUT /api/tombstone -d '{"ark": "ark:99999/x9…", "commitment": "取り�
 ——[ARK は削除しない](#ark-は削除しない)と同じ経路で、識別子は生きたまま転送だけが止まる。
 
 ```bash
-arkhe hold add ark ark:99999/x9abc --days 3 --reason "行き先を確認中"
+arkhe hold add ark ark:99999/x9tn1qkq2g7 --days 3 --reason "行き先を確認中"
 arkhe hold add shoulder 7 --days 1 --reason "委譲先のリゾルバが落ちている"
 ```
 

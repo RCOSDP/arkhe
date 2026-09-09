@@ -40,7 +40,7 @@ bash scripts/release.sh vX.Y.Z --publish    # tag, push, GitHub release
 And one that is **not** a check:
 
 ```bash
-python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
+python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7 -n 3000 -c 8
 ```
 
 `check.sh` does not call it. A benchmark takes time and its result depends on the machine

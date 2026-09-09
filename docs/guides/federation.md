@@ -158,7 +158,7 @@ sequenceDiagram
     T-->>O: 307 + minter address
     Note over T: never called on their behalf
     O->>S: POST /api/mint
-    S-->>O: 201 ark:99999/s7abc
+    S-->>O: 201 ark:99999/s7gbpqxm3kx
     Note over S: only the lower ledger creates the name
 ```
 
@@ -167,9 +167,9 @@ sequenceDiagram
     participant U as outside user
     participant T as upper arkhe
     participant S as arkhe B
-    U->>T: GET /ark:99999/s7abc
+    U->>T: GET /ark:99999/s7gbpqxm3kx
     T-->>U: 302 https://ark.b…/ark:…
-    U->>S: GET /ark:99999/s7abc
+    U->>S: GET /ark:99999/s7gbpqxm3kx
     S-->>U: 302 the target URL
     Note over T,S: if the upper instance is down, the lower one is unreachable
 ```
@@ -186,7 +186,7 @@ is what determines the outcome**, so it is worth reading before wiring a delegat
 
 ```mermaid
 flowchart TD
-    R["ark:99999/s7abc<br/>arrives at the upper instance"] --> E{"exact match<br/>in the ledger"}
+    R["ark:99999/s7gbpqxm3kx<br/>arrives at the upper instance"] --> E{"exact match<br/>in the ledger"}
     E -->|yes| A1["the upper instance answers<br/><small>② minted before the delegation</small>"]
     E -->|no| P{"an ancestor"}
     P -->|yes| A2["describe / redirect from it"]
@@ -331,7 +331,7 @@ Pulling the same identifier from outside **returns different things**.
 
 ```mermaid
 flowchart LR
-    U["outside user<br/>ark:99999/s7abc"] --> C1["C-1<br/><small>name and description held above</small><br/>200, a description"]
+    U["outside user<br/>ark:99999/s7gbpqxm3kx"] --> C1["C-1<br/><small>name and description held above</small><br/>200, a description"]
     U --> C2["C-2<br/><small>the name is not known above</small><br/>303, an explanation page"]
     C1 --> R1["existence can be stated<br/>no target<br/><small>= restricted access itself</small>"]
     C2 --> R2["existence does not leak<br/><small>real and never-minted look alike;<br/>a typo gets 404</small>"]
@@ -381,9 +381,9 @@ flowchart TD
     N["NAAN 99999<br/><small>na_policy — what ?? answers — lives here</small>"]
     N --> SO["shoulder /s7<br/><small>open PIDs</small>"]
     N --> SC["shoulder /c7<br/><small>closed PIDs</small>"]
-    SO --> AO["ark:99999/s7abc<br/><small>url = the public target</small>"]
-    SC --> AC["ark:99999/c7xyz<br/><small>url = empty / an application form</small>"]
-    AC -->|"when it opens, only the url changes"| AC2["ark:99999/c7xyz<br/><small>url = the public target</small>"]
+    SO --> AO["ark:99999/s7gbpqxm3kx<br/><small>url = the public target</small>"]
+    SC --> AC["ark:99999/c76m0jmznv4<br/><small>url = empty / an application form</small>"]
+    AC -->|"when it opens, only the url changes"| AC2["ark:99999/c76m0jmznv4<br/><small>url = the public target</small>"]
 ```
 
 **The bottom two are the same identifier.** The row, the name and the shoulder are
@@ -445,14 +445,14 @@ curl -X POST https://ark.example.ac.jp/api/mint \
        "what_title": "(only what may leave the closed network)",
        "commitment": "Restricted access; use requires an application",
        "url": ""}'
-# → ark:99999/c7xyz…
+# → ark:99999/c76m0jmznv4
 
 # Add the door (raise it to the third level)
-curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c76m0jmznv4",
                               "url": "https://apply.example.ac.jp/dataset/…"}'
 
 # When the embargo lifts, point it at the object. **The identifier does not change**
-curl -X PUT …/api/update -d '{"ark": "ark:99999/c7xyz…",
+curl -X PUT …/api/update -d '{"ark": "ark:99999/c76m0jmznv4",
                               "url": "https://repo.example.ac.jp/records/123"}'
 ```
 
@@ -483,11 +483,11 @@ arkhe onboard 99999 "The closed organisation" --shoulder /c7
 ```bash
 # One at a time
 curl -X POST …/api/import -H "Authorization: Bearer $KEY" \
-  -d '{"ark": "ark:99999/c7xyz1", "title": "(only what may leave the closed network)"}'
+  -d '{"ark": "ark:99999/c7962c644f8", "title": "(only what may leave the closed network)"}'
 
 # Or the whole delegated shoulder at once — all or nothing
 curl -X POST …/api/import/bulk -H "Authorization: Bearer $KEY" \
-  -d '{"data": [{"ark": "ark:99999/c7xyz1"}, {"ark": "ark:99999/c7abc2"}]}'
+  -d '{"data": [{"ark": "ark:99999/c7962c644f8"}, {"ark": "ark:99999/c7bk6pmvhq7"}]}'
 ```
 
 **Import is not minting, and its scope is separate** (`ark:import`): minting hands you a
@@ -537,7 +537,7 @@ people operating it** — with one ledger, arkhe enforced them.
 
 ```mermaid
 flowchart TD
-    X["arkhe X<br/><small>mints 99999/s7</small>"] --> N["ark:99999/s7abc"]
+    X["arkhe X<br/><small>mints 99999/s7</small>"] --> N["ark:99999/s7gbpqxm3kx"]
     Y["arkhe Y<br/><small>also mints 99999/s7</small>"] --> N
     N --> Z["✗ one name pointing at two things<br/><small>under NR this cannot be undone</small>"]
 ```

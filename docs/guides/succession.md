@@ -2,7 +2,7 @@
 
 Organisations merge, split and leave. **The identifiers must not notice.**
 
-`ark:99999/x9abc` was handed out. Under NR it cannot be reissued, so it cannot be
+`ark:99999/x9tn1qkq2g7` was handed out. Under NR it cannot be reissued, so it cannot be
 replaced by a new name at a new organisation — that would kill the original. What can
 change is who mints next, and where the target points.
 

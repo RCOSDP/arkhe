@@ -37,8 +37,8 @@ Minting and resolution of ARK identifiers.
 * **Naming a shoulder in a request does not widen anything.** Reach comes from the
   credential's registration; omit it and the organisation's default is used.
 * **Child resources are not minted.** A deep reference such as
-  `ark:99999/x9abc/page/3` is covered by suffix passthrough, so one record per minting
-  is enough.
+  `ark:99999/x9tn1qkq2g7/page/3` is covered by suffix passthrough, so one record per
+  minting is enough.
 
 ### Authentication
 

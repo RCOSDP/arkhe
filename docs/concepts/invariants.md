@@ -35,7 +35,7 @@ same path as [An ARK is never deleted](#an-ark-is-never-deleted), so the identif
 alive while only the redirect stops.
 
 ```bash
-arkhe hold add ark ark:99999/x9abc --days 3 --reason "verifying the target"
+arkhe hold add ark ark:99999/x9tn1qkq2g7 --days 3 --reason "verifying the target"
 arkhe hold add shoulder 7 --days 1 --reason "the delegate's resolver is down"
 ```
 

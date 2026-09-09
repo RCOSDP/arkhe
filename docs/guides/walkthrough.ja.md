@@ -271,8 +271,8 @@ $ curl -X PUT $M/api/update -H "Authorization: Bearer $KEY" \
 解決の口は text/plain で、符号を行頭に置く。
 
 ```console
-$ curl $R/ark:99999/x9zzzzzzzz
-ARKHE-1403 ark:99999/x9zzzzzzzz — Check digit mismatch: the identifier looks mistranscribed.
+$ curl $R/ark:99999/x9tn1qkq2g8
+ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks mistranscribed.
 ```
 
 **これは「そんな ARK は無い」とは別の答えである。** 検査桁は「ここへ来る途中で
@@ -489,7 +489,7 @@ $ curl -X POST $P/api/import/bulk -H "Authorization: Bearer $PK" \
 ### 断られるもの
 
 ```console
-$ curl -X POST $P/api/import -d '{"ark": "ark:99999/s7abc1234"}'      # 委譲していない
+$ curl -X POST $P/api/import -d '{"ark": "ark:99999/s71sqcdz09r"}'    # 委譲していない
 ARKHE-1307  Shoulder /s7 has status=active; only a delegated shoulder can be imported into.
 
 $ curl -X POST $P/api/import -d '{"ark": "ark:99999/c7w545sj4zz"}'    # 検査桁

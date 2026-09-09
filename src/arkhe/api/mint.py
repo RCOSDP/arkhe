@@ -196,7 +196,8 @@ are.
 """
 
 def _key(raw: str) -> str:
-    """`ark:99999/xyz` でも、旧形式の `ark:/99999/xyz` でも、`99999/xyz` でも受ける。
+    """`ark:99999/x9tn1qkq2g7` でも、旧形式の `ark:/99999/x9tn1qkq2g7` でも、
+    `99999/x9tn1qkq2g7` でも受ける。
 
     **正規化は `domain.queries` の 1 か所**（画面・CLI・API が同じ式を通る）。
     ここで独自に書くと、API では触れる ARK が CLI では 404 になる。

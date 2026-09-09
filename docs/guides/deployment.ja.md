@@ -108,7 +108,7 @@ arkhe のプロセスは役割によらず **常駐 100 MB 程度**。PostgreSQL
 
 ```bash
 # 1 つの口へ 3000 要求、同時 8
-python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
+python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7 -n 3000 -c 8
 
 # 積み上げの上限: DB も認証も通らない口。
 # ほかの数字がこれに近づいていたら、**測っているのはクライアント**である

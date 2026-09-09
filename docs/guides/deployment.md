@@ -117,7 +117,7 @@ answering the public.
 
 ```bash
 # One endpoint, 3000 requests, 8 at a time
-python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
+python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7 -n 3000 -c 8
 
 # The ceiling of the stack: no database, no authentication.
 # If your other numbers approach this, you are measuring the client

@@ -169,7 +169,7 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 ## On capacity
 
 **Child resources are never minted.** Suffix passthrough covers a reference of any
-depth — `ark:99999/x9abc/page/3` needs no row of its own — so **one record per
+depth — `ark:99999/x9tn1qkq2g7/page/3` needs no row of its own — so **one record per
 minting** is enough. Nothing else matters as much for capacity.
 
 Capacity has two axes — **how many names can exist** and **how large the ledger

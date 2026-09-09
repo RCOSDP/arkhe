@@ -39,7 +39,7 @@ bash scripts/release.sh vX.Y.Z --publish    # タグ → push → GitHub のリ�
 **検査ではない**ものが 1 つ。
 
 ```bash
-python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
+python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7 -n 3000 -c 8
 ```
 
 `check.sh` からは呼ばない。負荷測定は時間がかかるうえ、結果が機械とその日の状態に

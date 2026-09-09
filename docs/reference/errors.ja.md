@@ -17,7 +17,7 @@
 解決の口は `text/plain` で答える（人も読む）。**符号を行頭に置く。**
 
 ```
-ARKHE-1403 ark:99999/x9abcd — Check digit mismatch: the identifier looks mistranscribed.
+ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks mistranscribed.
 ```
 
 2 か所だけ意図して形が違う。**`/oauth/token` は
