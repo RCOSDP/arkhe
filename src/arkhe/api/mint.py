@@ -19,17 +19,21 @@ from arkhe.api.schemas import (
     BulkQueryOut,
     BulkUpdateIn,
     BulkUpdateOut,
+    DeleteIn,
+    DeleteOut,
     HoldIn,
     HoldReleaseIn,
     ImportIn,
     MintIn,
     PatchIn,
+    PublishIn,
+    PurgeIn,
     RegisterIn,
     TombstoneIn,
     UpdateIn,
 )
 from arkhe.api.token import scheme as oauth2_scheme
-from arkhe.arkspec.naming import ArkParseError, parse_ark
+from arkhe.arkspec.naming import ArkParseError, compact_ark, parse_ark
 from arkhe.arkspec.shoulder import split_shoulder
 from arkhe.auth.deps import Config, CurrentPrincipal, Db
 from arkhe.db.models import Ark, MintReceipt, Shoulder
@@ -160,6 +164,56 @@ Update in bulk. Rows are matched by key, and **nothing is applied unless every r
 is found and in reach** — there is no partial application.
 """
 
+E_PUBLISH = """\
+**Publish a reserved ARK.** Requires `ark:mint`.
+
+Until it is published an ARK does not resolve and can still be deleted; from here on
+it resolves and **it can never be deleted**, only tombstoned. There is no way back:
+un-publishing would mean taking back a name that has already gone out.
+
+Publishing twice is not an error — the second call returns the same record, so a lost
+response can simply be resent.
+"""
+
+E_DELETE = """\
+**Delete an ARK that has not been published.** Requires `ark:delete`.
+
+This is the one case where an ARK goes away. NR (no re-assignment) binds the names that
+were **put out into the world**; a reserved one, minted for an object whose publication
+was then abandoned, is better removed than left pointing at nothing forever.
+
+A published ARK is refused with `409` — tombstone it instead. So is one that still has
+qualified names under it: withdraw those first.
+
+**The name is not freed.** It is kept in the ledger of withdrawn names and never
+assigned again, because a reserved identifier has usually already been handed to
+someone — re-using it would be indistinguishable, from the outside, from breaking NR.
+"""
+
+E_PURGE = """\
+**Purge a published ARK.** Requires `ark:purge` **and** `authority=system`.
+
+Everything else in this service exists so that a published identifier keeps resolving.
+This endpoint is the one way out, and it is here because **reality sometimes brings a
+demand that outweighs an identifier** — a removal order, personal data that should never
+have been published, a mass ingest that went in wrong. Without a way out, someone ends up
+deleting rows straight from the database, and **a deletion that leaves no trace is the
+worst kind.**
+
+So the way is narrow and it is recorded:
+
+* **the registration authority's operator only** — never a NAAN administrator, never an
+  organisation;
+* **a reason is required**, and it is kept with the name;
+* **`confirm` must repeat the ARK**, so that a script walking a list cannot empty the
+  ledger by accident;
+* **the name is not freed** — it is never assigned again.
+
+That last point is what survives: the target and the description go, but **the name can
+never come to mean something else**. A stale reference gets `404`; it never gets a
+different object.
+"""
+
 E_TOMBSTONE = """\
 **Declare that the object is gone.** The ARK is not deleted.
 
@@ -235,14 +289,14 @@ def _parse(raw: str):
         raise authz.Invalid(errors.ARK_UNREADABLE, reason=str(exc)) from exc
 
 
-def _check_importable(shoulder, name: str, raw: str) -> None:
+def _check_importable(session, shoulder, name: str, raw: str) -> None:
     """**書かずに済む検査を、書く前に済ませる。**
 
     委譲されているか・名前がその内側か・検査桁が合うか。ここを通らない行が
     1 つでもあれば、一括は 1 件も入れない。
     """
     try:
-        minting.check_importable(shoulder, name)
+        minting.check_importable(session, shoulder, name)
     except minting.NotDelegated as exc:
         raise authz.Forbidden(
             errors.IMPORT_SHOULDER_NOT_DELEGATED, shoulder=exc.shoulder, status=exc.status
@@ -257,6 +311,8 @@ def _check_importable(shoulder, name: str, raw: str) -> None:
         ) from exc
     except minting.NameTooLong as exc:
         raise authz.Invalid(errors.NAME_TOO_LONG, length=exc.length, limit=exc.limit) from exc
+    except minting.Withdrawn as exc:
+        raise authz.Invalid(errors.NAME_WITHDRAWN, ark=exc.ark) from exc
 
 
 def _insert_import(session, principal, shoulder, row) -> Ark:
@@ -282,7 +338,7 @@ def _import_one(session, principal, row) -> Ark:
     """
     parsed = _parse(row.ark)
     shoulder = _shoulder_holding(session, principal, parsed)
-    _check_importable(shoulder, parsed.name, row.ark)
+    _check_importable(session, shoulder, parsed.name, row.ark)
     return _insert_import(session, principal, shoulder, row)
 
 
@@ -373,7 +429,9 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
       201  採番した
       200  以前の採番を返した（再送）
 
-    ARK は**振り直せない**。採番は取り消せない操作である。
+    ARK は**振り直せない**。採番は取り消せない操作である——ただし
+    **`reserve` を付けて採れば、公開するまでは取り下げられる**（`/api/publish`
+    と `/api/delete`）。公開してしまえば、そこから先は今までどおり消えない。
     """
     authz.require_scope(principal, "ark:mint")
     # F4: **再送なら採番しない。** 応答が失われただけのときに番号を増やさない。
@@ -384,10 +442,11 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
     authz.assert_shoulder_mintable(shoulder)
     authz.assert_within_quota(session, principal)
     ark, _ = minting.mint(
-        session, shoulder=shoulder, created_by=principal.client_id, **body.writable()
+        session, shoulder=shoulder, created_by=principal.client_id,
+        reserve=body.reserve, **body.writable()
     )
     _keep_receipt(session, principal, body.request_id, ark)
-    authz.audit(session, principal, "mint", ark.ark)
+    authz.audit(session, principal, "mint", ark.ark, reserved=body.reserve)
     session.commit()
     return ArkOut.of(ark)
 
@@ -454,7 +513,8 @@ def bulk_mint(
     minted: dict[int, Ark] = {}
     for sh, row in zip(shoulders, fresh, strict=True):
         ark, _ = minting.mint(
-            session, shoulder=sh, created_by=principal.client_id, **row.writable()
+            session, shoulder=sh, created_by=principal.client_id,
+            reserve=row.reserve, **row.writable()
         )
         _keep_receipt(session, principal, row.request_id, ark)
         minted[id(row)] = ark
@@ -561,7 +621,7 @@ def bulk_import(body: BulkImportIn, principal: CurrentPrincipal, session: Db, cf
     # ——取り込みは名前を増やす操作で、増えた名前は引っ込められない。
     checked = [(_shoulder_holding(session, principal, _parse(row.ark)), row) for row in rows]
     for shoulder, row in checked:
-        _check_importable(shoulder, _parse(row.ark).name, row.ark)
+        _check_importable(session, shoulder, _parse(row.ark).name, row.ark)
 
     out: list[Ark] = [_insert_import(session, principal, sh, row) for sh, row in checked]
     authz.audit(session, principal, "bulk_import", count=len(out))
@@ -640,6 +700,88 @@ def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cf
     authz.audit(session, principal, "bulk_update", count=len(rows))
     session.commit()
     return BulkUpdateOut(updated=len(rows))
+
+
+# --------------------------------------------------------- 公開と取り下げ
+
+
+@router.post(
+    "/publish",
+    dependencies=needs("ark:mint"),
+    response_model=ArkOut,
+    description=E_PUBLISH,
+)
+def publish(body: PublishIn, principal: CurrentPrincipal, session: Db):
+    """**予約していた ARK をグローバルに公開する。** 以後は解決し、消せない。
+
+    **scope は `ark:mint`。** 公開は採番の後半であって、別の判断ではない
+    ——予約した主体がそのまま出せないと、下書きのたびに別の鍵が要る。
+
+    **二度呼んでも落ちない。** 応答だけが失われることがあるので、再送に 409 を
+    返すと、呼び出し側は「公開できたのか」を別の口で確かめに行くことになる。
+    """
+    authz.require_scope(principal, "ark:mint")
+    ark = admin_ops.publish_ark(session, principal, ark=_key(body.ark))
+    session.commit()
+    return ArkOut.of(ark)
+
+
+@router.post(
+    "/delete",
+    dependencies=needs("ark:delete"),
+    response_model=DeleteOut,
+    description=E_DELETE,
+)
+def delete_ark(body: DeleteIn, principal: CurrentPrincipal, session: Db):
+    """**公開前の ARK を取り下げる。** 公開したものは 409 で断る。
+
+    **`DELETE` ではなく `POST`。** ほかの書き込みと同じく本文で ARK を受け取る
+    ——`DELETE` の本文は前段（プロキシ・クライアント）に落とされることがあり、
+    「理由が消えたまま通る」のはこの操作でいちばん避けたい壊れ方である。
+
+    **scope を `ark:tombstone` と分けてある。** 墓碑は「もう無い」と公開の口で
+    述べる操作で、こちらは**まだ誰にも見えていないものを引っ込める**操作。
+    意味も、取り返しのつかなさも違う。
+    """
+    authz.require_scope(principal, "ark:delete")
+    gone = admin_ops.withdraw_ark(
+        session, principal, ark=_key(body.ark), reason=body.reason
+    )
+    out = DeleteOut(
+        ark=compact_ark(gone.ark), withdrawn_at=gone.withdrawn_at, reason=gone.reason
+    )
+    session.commit()
+    return out
+
+
+@router.post(
+    "/purge",
+    dependencies=needs("ark:purge"),
+    response_model=DeleteOut,
+    description=E_PURGE,
+)
+def purge(body: PurgeIn, principal: CurrentPrincipal, session: Db):
+    """**公開した ARK を破棄する。** RA の運用者だけが通れる。
+
+    ここだけは「できない」と言い切らずに口を開けてある——逃げ道が無いと、必要に
+    迫られた誰かが DB を直接叩くことになり、**跡の残らない削除**が起きる。詳しい
+    理由と守りは `admin_ops.purge_ark` に書いた。
+
+    **scope も到達範囲も別で要求する。** `ark:delete`（公開前の取り下げ）を
+    持っているだけでは通らない——意味も取り返しのつかなさも違う操作である。
+    """
+    authz.require_scope(principal, "ark:purge")
+    gone = admin_ops.purge_ark(
+        session, principal, ark=_key(body.ark), reason=body.reason, confirm=body.confirm
+    )
+    out = DeleteOut(
+        ark=compact_ark(gone.ark),
+        withdrawn_at=gone.withdrawn_at,
+        reason=gone.reason,
+        was_published_at=gone.published_at,
+    )
+    session.commit()
+    return out
 
 
 @router.put(

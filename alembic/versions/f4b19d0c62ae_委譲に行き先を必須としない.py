@@ -29,13 +29,15 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.drop_constraint("delegated_shoulder_needs_a_destination", "shoulder", type_="check")
+    # **SQLite に制約を落とす ALTER は無い**ので batch（表の作り直し）を通す。
+    with op.batch_alter_table("shoulder") as batch_op:
+        batch_op.drop_constraint("delegated_shoulder_needs_a_destination", type_="check")
 
 
 def downgrade() -> None:
     # **行き先の無い委譲が既にあれば、ここで落ちる。** 戻すなら先に埋めること。
-    op.create_check_constraint(
-        "delegated_shoulder_needs_a_destination",
-        "shoulder",
-        "status <> 'delegated' OR minter <> '' OR about <> ''",
-    )
+    with op.batch_alter_table("shoulder") as batch_op:
+        batch_op.create_check_constraint(
+            "delegated_shoulder_needs_a_destination",
+            "status <> 'delegated' OR minter <> '' OR about <> ''",
+        )

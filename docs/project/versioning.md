@@ -28,7 +28,8 @@ anything under `compose/` (those are demonstrations).
 [These refusals](../concepts/invariants.md) are what arkhe is for. Weakening one is a
 **major** change even if no signature moves:
 
-- an ARK or a namespace becomes deletable
+- a **published** ARK or a namespace becomes deletable
+- a withdrawn name becomes mintable again
 - `retired` becomes reversible
 - minting can silently become an update
 - reach becomes widenable by a request

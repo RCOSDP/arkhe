@@ -10,10 +10,15 @@ web-api / web-ui / worker のように役割で鍵を分ける普通の構成が
 鍵を共有させる圧力になっていた。
 
 autogenerate は index の `where` 節を比較しないので、手で書いている。
+
+**`where` 節は `sa.text()` で渡す。** 素の文字列でも PostgreSQL は通るが、
+SQLite の方言は受け取った式をそのままコンパイラに渡すので `AttributeError` で
+落ちる——**PostgreSQL だけで検証していたあいだ、それが見えなかった**。
 """
 
 from collections.abc import Sequence
 
+import sqlalchemy as sa
 from alembic import op
 
 revision: str = "56e5e54db345"
@@ -31,8 +36,8 @@ def upgrade() -> None:
         "client",
         ["manager_id", "label"],
         unique=True,
-        postgresql_where="active AND label <> ''",
-        sqlite_where="active AND label <> ''",
+        postgresql_where=sa.text("active AND label <> ''"),
+        sqlite_where=sa.text("active AND label <> ''"),
     )
 
 
@@ -45,6 +50,6 @@ def downgrade() -> None:
         "client",
         ["manager_id", "label"],
         unique=True,
-        postgresql_where="active",
-        sqlite_where="active",
+        postgresql_where=sa.text("active"),
+        sqlite_where=sa.text("active"),
     )

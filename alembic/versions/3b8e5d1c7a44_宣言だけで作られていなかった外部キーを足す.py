@@ -16,6 +16,10 @@ SQLAlchemy が CREATE TABLE の順番を解くための指示で、Alembic の
 毎回これを検出し、本当のずれを覆い隠す。
 
 宙に浮いた参照があると外部キーを張れないので、先に掃除する（あれば）。
+
+**SQLite には制約を後から足す ALTER が無い**ので、batch（表を作り直して
+移し替える）で足す。PostgreSQL では今までどおり素の ALTER になる
+——`batch_alter_table` が方言を見て分けるので、**移行を 2 本に割らない**。
 """
 
 from collections.abc import Sequence
@@ -36,10 +40,12 @@ def upgrade() -> None:
         "WHERE default_shoulder_id IS NOT NULL "
         "AND default_shoulder_id NOT IN (SELECT id FROM shoulder)"
     )
-    op.create_foreign_key(
-        NAME, "manager", "shoulder", ["default_shoulder_id"], ["id"], ondelete="SET NULL"
-    )
+    with op.batch_alter_table("manager") as batch_op:
+        batch_op.create_foreign_key(
+            NAME, "shoulder", ["default_shoulder_id"], ["id"], ondelete="SET NULL"
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint(NAME, "manager", type_="foreignkey")
+    with op.batch_alter_table("manager") as batch_op:
+        batch_op.drop_constraint(NAME, type_="foreignkey")

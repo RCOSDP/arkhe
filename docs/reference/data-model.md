@@ -55,11 +55,12 @@ erDiagram
     }
 
     ARK {
-        string ark PK "naan/name. never deleted"
+        string ark PK "naan/name. never deleted once published"
         string naan FK
         int    shoulder_id FK
         string assigned_name
         string url "empty: return a description (D6)"
+        date   published_at "null: not published. **does not resolve, can be deleted**"
         string commitment "commitment to this object"
         string metadata
         string who "ERC"
@@ -104,7 +105,7 @@ erDiagram
         int    id PK
         string ark FK
         date   at
-        string action "update / tombstone"
+        string action "update / tombstone / hold / publish"
         string before_url "**what you want back**"
         string after_url
         string by
@@ -119,6 +120,18 @@ erDiagram
         string action "mint / update / succeed / depart …"
         string target
         json   detail
+    }
+    WITHDRAWN_NAME {
+        string ark PK "withdrawn before publication. **never assigned again**"
+        string naan
+        string assigned_name
+        int    shoulder_id "whose namespace it consumed"
+        date   minted_at
+        string minted_by
+        date   withdrawn_at
+        string withdrawn_by
+        string reason "the only account of a row that is gone"
+        string ip
     }
     UNKNOWN_SUBJECT {
         int    id PK
@@ -148,6 +161,9 @@ changes that matter. Declaring `NR` and saying the identifier does not change me
 being able to show what changed, when and by whom — otherwise the promise cannot be
 checked from outside.
 
+`WITHDRAWN_NAME` has no foreign keys either: **the row it names is gone**, and a
+record should outlive what it describes.
+
 `AUDIT_EVENT` has no foreign keys into the rest. **A record should outlive what it
 describes**, and referential integrity would push the other way: it makes deleting the
 record the easy way out.
@@ -158,7 +174,8 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 
 | | |
 | --- | --- |
-| **An ARK is never deleted** | Deleting the row stops resolution — the identifier breaks. `before_delete` refuses. When a target is lost you tombstone it, or empty `url` so a description is returned |
+| **A published ARK is never deleted** | Deleting the row stops resolution — the identifier breaks. `before_delete` refuses. When a target is lost you tombstone it, or empty `url` so a description is returned |
+| **A reserved one can be** | Only while `published_at` is null. A name that never went out is not what NR binds — but the name still moves to `WITHDRAWN_NAME` and is never assigned again |
 | **A shoulder is never deleted either** | Random assignment could hand out the same string again — the seed of an NR violation. Set `status=retired` |
 | **`retired` is one-way** | Reviving a retired namespace cannot rule out that something outside used the name meanwhile |
 | **Minting never becomes an update** | A primary key collision must fail. This was the worst defect in arklet |

@@ -32,6 +32,7 @@ curl -X POST $M/api/mint \
   "who": "山田 太郎",
   "when": "2026",
   "created_at": "2026-09-07T09:54:10.571278Z",
+  "published_at": "2026-09-07T09:54:10.571278Z",
   "hold_until": null
 }
 ```
@@ -39,6 +40,16 @@ curl -X POST $M/api/mint \
 `201`。この名前は**もう戻せない**。`x9` は組織に切り出した shoulder、`tn1qkq2g` は
 乱数、末尾の `7` は[チェックディジット](../concepts/ark.md)である——**打ち間違えた
 ARK と、ここに無いだけの ARK を区別できる**のはこの 1 文字による。
+
+!!! tip "対象がまだ下書きなら、先に押さえておく"
+    ```bash
+    -d '{"reserve": true, "url": "…"}'          # published_at は null
+    curl -X POST $M/api/publish -d '{"ark": "ark:99999/x9tn1qkq2g7"}'
+    curl -X POST $M/api/delete  -d '{"ark": "ark:99999/x9tn1qkq2g7"}'
+    ```
+    公開前の ARK は**公開のリゾルバでは解決せず**、**削除できる**。公開がその境目で、
+    取り下げた名前は二度と採られない（閉域のリゾルバは `ARKHE_RESOLVE_UNPUBLISHED` で
+    公開前も解決する）。
 
 !!! tip "量を投入するなら `request_id` を付ける"
     ```bash
@@ -227,7 +238,8 @@ curl -X PUT $M/api/hold/release -H "Authorization: Bearer $KEY" \
 
 ## 7. 対象が失われたとき
 
-削除の口は無い。**もう無い**なら、そう述べる。
+公開した ARK に削除の口は無い（消せるのは[外に出す前](../concepts/invariants.md#before-publication)だけ）。
+**もう無い**なら、そう述べる。
 
 ```bash
 curl -X PUT $M/api/tombstone \
@@ -538,5 +550,5 @@ flowchart LR
 
 - [API リファレンス](../reference/api.md) — 全部の口と、解決が返すもの
 - [エラー](../reference/errors.md) — 全部の符号
-- [壊さないもの](../concepts/invariants.md) — なぜ削除の口が無いのか
+- [壊さないもの](../concepts/invariants.md) — なぜ公開した ARK に削除の口が無いのか
 - [分散して運用する](federation.md) — 10 節の公開／非公開の構成をひととおり

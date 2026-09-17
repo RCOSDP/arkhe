@@ -3,7 +3,9 @@
 {% block crumb %}{{ t('ak.detail') }}{% endblock %}
 {% block body %}
 <div class="head">
-  <h1 class="mono">ark:{{ ark.ark }}</h1>
+  <h1 class="mono">ark:{{ ark.ark }}
+    {% if not ark.published_at %}
+      <span class="pill reserved">{{ t('ak.reserved') }}</span>{% endif %}</h1>
   <p class="lede">{{ ark.title }}</p>
 </div>
 
@@ -22,10 +24,62 @@
       <span class="v mono dim">{{ ark.created_by }}</span>
       <span class="k">{{ t('ak.updated') }}</span>
       <span class="v mono dim">{{ ark.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+      <span class="k">{{ t('ak.published_at') }}</span>
+      <span class="v mono dim">
+        {% if ark.published_at %}{{ ark.published_at.strftime('%Y-%m-%d %H:%M') }}
+        {% else %}{{ t('ak.reserved') }}{% endif %}</span>
     </div>
     <div class="actions" style="margin-top:14px">
       <a class="btn sm" href="/ark:{{ ark.ark }}??">{{ t('ak.resolve') }}</a>
     </div>
+  </div>
+</div>
+
+{# **公開したかどうかで、できることが変わる。** 公開前だけが消せる——
+   その境目を画面でも 1 か所に見せる（判定は `admin_ops` 側と同じ）。 #}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('ak.publication') }}</span>
+    <span class="pill {{ 'active' if ark.published_at else 'reserved' }}">
+      {{ t('ak.public') if ark.published_at else t('ak.reserved') }}</span>
+  </div>
+  <div class="card-b">
+    {% if ark.published_at %}
+    <p class="hint" style="margin-top:0">{{ t('ak.pub_done_lede')|safe }}</p>
+    {% if can_purge %}
+    {# **RA の運用者だけに出す。** 出し分けと認可は同じ判定（`arks.ark_detail`）。
+       確認は ARK の打ち直し——この画面は JS を持たない（CSP）ので、
+       ダイアログではなく入力で確かめる。 #}
+    <div class="note stop" style="margin-top:14px">
+      <span>{{ t('ak.purge_lede')|safe }}</span></div>
+    <form method="post" action="/admin/arks/{{ ark.ark }}/purge" style="margin-top:14px">
+      <p class="hint">{{ t('ak.purge_keeps')|safe }}</p>
+      <label>{{ t('ak.purge_reason') }}
+        <input type="text" name="reason" maxlength="500" required>
+        <span class="hint">{{ t('ak.purge_reason_hint')|safe }}</span></label>
+      <label>{{ t('ak.purge_confirm') }}
+        <input type="text" name="confirm" placeholder="ark:{{ ark.ark }}" required>
+        <span class="hint">{{ t('ak.purge_confirm_hint') }}</span></label>
+      <button class="btn sm" type="submit">{{ t('ak.purge') }}</button>
+    </form>
+    {% endif %}
+    {% else %}
+    <p class="hint" style="margin-top:0">{{ t('ak.pub_lede')|safe }}</p>
+    {% if can_publish %}
+    <form method="post" action="/admin/arks/{{ ark.ark }}/publish" style="margin-top:14px">
+      <button class="btn primary sm" type="submit">{{ t('ak.publish') }}</button>
+      <p class="hint">{{ t('ak.publish_warn')|safe }}</p>
+    </form>
+    {% endif %}
+    {% if can_withdraw %}
+    <form method="post" action="/admin/arks/{{ ark.ark }}/delete" style="margin-top:14px">
+      <p class="hint">{{ t('ak.withdraw_lede')|safe }}</p>
+      <label>{{ t('ak.withdraw_reason') }}
+        <input type="text" name="reason" maxlength="500">
+        <span class="hint">{{ t('ak.withdraw_reason_hint') }}</span></label>
+      <button class="btn sm" type="submit">{{ t('ak.withdraw') }}</button>
+    </form>
+    {% endif %}
+    {% endif %}
   </div>
 </div>
 
@@ -109,7 +163,8 @@
         <td class="mono dim" data-label="{{ t('ak.hist_when') }}">
           {{ ch.at.strftime('%Y-%m-%d %H:%M') }}</td>
         <td data-label="{{ t('ak.hist_what') }}">
-          <span class="pill {{ 'retired' if ch.action == 'tombstone' else 'reserved' }}">
+          <span class="pill {{ 'retired' if ch.action == 'tombstone'
+                          else ('active' if ch.action == 'publish' else 'reserved') }}">
             {{ t('ak.act.' ~ ch.action) }}</span></td>
         <td class="mono dim" data-label="{{ t('ak.hist_from') }}">
           {{ ch.before_url or t('ak.gone') }}</td>

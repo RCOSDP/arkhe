@@ -92,6 +92,15 @@ class MintIn(ArkFields):
     )
 
     shoulder: str = ""
+    #: **公開前として採る。** 解決せず、要らなくなれば削除できる。
+    reserve: bool = Field(
+        default=False,
+        description=(
+            "Mint it **without publishing it**. A reserved ARK does not resolve, and "
+            "it can still be deleted; publish it when the object goes public. The "
+            "default mints and publishes in one step, as before."
+        ),
+    )
     #: F4: **再送しても二重に採番しないための鍵。** 呼び出し側が付ける。
     request_id: str = Field(
         default="",
@@ -207,6 +216,71 @@ class PatchIn(ArkFields):
                 if k in self.model_fields_set}
 
 
+class PublishIn(BaseModel):
+    """**予約していた ARK をグローバルに公開する。** 以後は消せない。"""
+
+    model_config = _spec(
+        "Publish a reserved ARK. From then on it resolves and **it can no longer be "
+        "deleted** — only tombstoned. Publishing twice is not an error; the second "
+        "call returns the same record."
+    )
+
+    ark: str
+
+
+class DeleteIn(BaseModel):
+    """**公開前の ARK を取り下げる。** 公開したものには効かない。"""
+
+    model_config = _spec(
+        "Withdraw an ARK that has not been published. **A published ARK is never "
+        "deleted** (409). The name itself is remembered and never assigned again."
+    )
+
+    ark: str
+    reason: str = Field(
+        default="",
+        max_length=500,
+        description="Why it was withdrawn. Kept with the name; not published.",
+    )
+
+
+class PurgeIn(BaseModel):
+    """**公開した ARK を破棄する。** RA の運用者だけ。"""
+
+    model_config = _spec(
+        "Purge a **published** ARK. For the registration authority's operator alone "
+        "(`authority=system`), for a legal removal order or data that should never have "
+        "been published. A reason is required and `confirm` must repeat the ARK."
+    )
+
+    ark: str
+    reason: str = Field(
+        min_length=1,
+        max_length=500,
+        description=(
+            "Why it is being purged. **Required**: this and the audit log are all that "
+            "will be left about the identifier."
+        ),
+    )
+    confirm: str = Field(
+        description="The ARK again, to be sure of the target. Anything else is refused."
+    )
+
+
+class DeleteOut(BaseModel):
+    """取り下げた結果。**行は消え、名前は残る。**"""
+
+    model_config = _spec(
+        "The row is gone; the name is kept so that it is never assigned again."
+    )
+
+    ark: str
+    withdrawn_at: datetime
+    reason: str = ""
+    #: 公開した名前の破棄なら、いつ公開していたか。`null` は公開前の取り下げ。
+    was_published_at: datetime | None = None
+
+
 class TombstoneIn(BaseModel):
     """**対象が失われたと宣言する。** ARK は削除しない。"""
 
@@ -267,6 +341,9 @@ class ArkOut(BaseModel):
     when: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    #: **グローバルに公開した時刻。`null` はまだ公開していない**
+    #: ——解決せず、まだ削除できる状態である。
+    published_at: datetime | None = None
     #: 転送を止めているなら、その期限と理由。**止まっていることは隠さない。**
     hold_until: datetime | None = None
     hold_reason: str = ""
@@ -278,6 +355,7 @@ class ArkOut(BaseModel):
             **{f: getattr(ark, "metadata_" if f == "metadata" else f) for f in WRITABLE},
             created_at=ark.created_at,
             updated_at=ark.updated_at,
+            published_at=ark.published_at,
             hold_until=ark.hold_until,
             hold_reason=ark.hold_reason,
         )

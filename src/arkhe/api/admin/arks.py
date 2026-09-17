@@ -25,7 +25,8 @@ from arkhe.api.admin._common import (
 )
 from arkhe.db.models import Ark, ArkChange
 from arkhe.domain import admin_ops as ops
-from arkhe.domain.queries import narrow_arks, selectable_orgs, visible_arks
+from arkhe.domain import authz
+from arkhe.domain.queries import ARK_STATES, narrow_arks, selectable_orgs, visible_arks
 from arkhe.settings import get_settings
 
 # ------------------------------------------------------------ 発行した ARK
@@ -41,11 +42,13 @@ def arks(
     session: Db,
     q: str = "",
     org: str = "",
+    state: str = "",
     page: int = 1,
 ):
     """発行した ARK の一覧。"""
     stmt = narrow_arks(
-        visible_arks(principal).options(selectinload(Ark.shoulder)), org=org, q=q
+        visible_arks(principal).options(selectinload(Ark.shoulder)),
+        org=org, q=q, state=state,
     )
     page = max(1, page)
     rows = list(
@@ -60,7 +63,7 @@ def arks(
     return _page(
         request, principal, "arks.html", "arks",
         arks=rows[:PAGE], q=q.strip(), page_no=page, more=more,
-        org=org.strip(), orgs=orgs,
+        org=org.strip(), orgs=orgs, state=state.strip(), states=ARK_STATES,
     )
 
 
@@ -85,7 +88,70 @@ def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: st
     return _page(
         request, principal, "ark_detail.html", "arks",
         ark=row, changes=changes, hold_max=get_settings().hold_max_days,
+        # **押せるものだけ見せる。** 公開前にしか出ない操作なので、状態と
+        # scope の両方を見る（判定は `admin_ops` 側と同じものが効く）。
+        can_publish=row.published_at is None and principal.has("ark:mint"),
+        can_withdraw=row.published_at is None and principal.has("ark:delete"),
+        # **公開したものを消せるのは RA の運用者だけ。** 出し分けと認可に同じ
+        # 判定を使う（`admin_ops.purge_ark` が同じ条件で弾く）。
+        can_purge=row.published_at is not None
+        and principal.is_system
+        and principal.has("ark:purge"),
     )
+
+
+@router.post("/arks/{ark:path}/publish")
+def ark_publish(request: Request, principal: AdminPrincipal, session: Db, ark: str):
+    """**グローバルに公開する。** 画面と CLI と API が同じ操作を呼ぶ。
+
+    scope の検査もここでする——ボタンを出し分けるだけでは、URL を直接叩く道が
+    残る（`_ctx` の出し分けと同じ判定を使うのはそのため）。
+    """
+    key = ark.removeprefix("ark:/").removeprefix("ark:")
+    authz.require_scope(principal, "ark:mint")
+    ops.publish_ark(session, principal, ark=key)
+    session.commit()
+    return _redirect(f"/admin/arks/{key}")
+
+
+@router.post("/arks/{ark:path}/delete")
+def ark_delete(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    ark: str,
+    reason: Annotated[str, Form()] = "",
+):
+    """**公開前の ARK を取り下げる。** 公開済みなら `admin_ops` が 409 で断る。
+
+    戻り先は詳細ではなく一覧——**その詳細ページはもう無い**。
+    """
+    key = ark.removeprefix("ark:/").removeprefix("ark:")
+    authz.require_scope(principal, "ark:delete")
+    ops.withdraw_ark(session, principal, ark=key, reason=reason)
+    session.commit()
+    return _redirect("/admin/arks")
+
+
+@router.post("/arks/{ark:path}/purge")
+def ark_purge(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    ark: str,
+    reason: Annotated[str, Form()] = "",
+    confirm: Annotated[str, Form()] = "",
+):
+    """**公開した ARK を破棄する。** RA の運用者だけ。
+
+    画面には確認の入力（ARK の打ち直し）と理由を置いてあるが、**弾くのは
+    `admin_ops` 側**である——画面の required 属性は親切であって、防御ではない。
+    """
+    key = ark.removeprefix("ark:/").removeprefix("ark:")
+    authz.require_scope(principal, "ark:purge")
+    ops.purge_ark(session, principal, ark=key, reason=reason, confirm=confirm)
+    session.commit()
+    return _redirect("/admin/arks")
 
 
 @router.post("/arks/{ark:path}/hold")

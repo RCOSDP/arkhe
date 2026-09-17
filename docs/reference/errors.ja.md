@@ -42,6 +42,9 @@ ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks 
 | `ARKHE-1011` | 400 | 1 リクエストの件数上限（`ARKHE_BULK_LIMIT`）を超えた | A request holds at most {limit} rows. |
 | `ARKHE-1012` | 400 | 取り込もうとした名前の検査桁が合わない。**外で採番された名前を信じる唯一の手段**なので、ここは緩めない | Check digit mismatch: {ark} was not minted by a NOID minter, or was mistyped. |
 | `ARKHE-1013` | 400 | 取り込む名前が、その NAAN のどの shoulder にも属していない | The name {name} does not fall inside a shoulder of NAAN {naan}. |
+| `ARKHE-1014` | 400 | 公開前に取り下げられた名前。**二度と採らない**——予約した文字列は既に人の手に渡っているので、別の対象に付け直せば外からは NR 違反と見分けがつかない | {ark} was withdrawn before publication; that name is never assigned again. |
+| `ARKHE-1015` | 400 | 公開した ARK の破棄には理由が要る。**残らない破棄は、無かったことと同じ**——消えた識別子について後から言えることが、これしか残らない | Purging a published ARK requires a reason; it is kept with the name. |
+| `ARKHE-1016` | 400 | 破棄する ARK を `confirm` に打ち直す。**一覧を回すスクリプトが、意図せず全件消すことのないように** | Send `confirm` with the ARK itself ({ark}) to purge it. |
 | `ARKHE-1201` | 401 | 資格情報が無い。**公開情報の読取には要らない**ので、これは書き込みの口 | No credentials. |
 | `ARKHE-1202` | 401 | 資格情報が受け付けられない。有効な機構は `ARKHE_AUTH` で決まる | Invalid credentials. |
 | `ARKHE-1203` | 404 | この構成は自前でトークンを発行しない。**口の無い構成で広告しない**ため 404 | This deployment does not issue tokens itself (see ARKHE_AUTH). |
@@ -55,8 +58,11 @@ ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks 
 | `ARKHE-1307` | 403 | 委譲していない shoulder には取り込めない。**自分で採番している名前空間に外から名前を入れると、採番と衝突しうる**——委譲したからこそ、外で採られた名前がある | Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into. |
 | `ARKHE-1308` | 403 | 取り次いでいるだけの NAAN には取り込めない。**他所の名前空間の保管者を名乗ることになる** | This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it. |
 | `ARKHE-1309` | 403 | その shoulder の採番は外で行われており、**ここから叩ける口は無い**（閉域など）。人向けの案内だけを返す——`Location` に人向けのページを載せると、クライアントはそこへ POST しにいく | Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. See {about} |
+| `ARKHE-1310` | 403 | 公開した ARK の破棄は RA の運用者（`authority=system`）だけが行える。**NAAN 管理者にも組織にも渡さない**——名前空間を預かることと、配った名前を消せることは別の権限である | Purging a published ARK is for the registration authority's operator (authority=system); this principal is {authority}. |
 | `ARKHE-1401` | 404 | 台帳にその ARK が無い（一括操作では 1 件でも欠ければ全体が失敗する） | No such ARK in this ledger. |
 | `ARKHE-1402` | 404 | その NAAN はこのリゾルバが権威を持つ。**だから「無い」と言い切れる** | This resolver is authoritative for the NAAN and has no such name. |
 | `ARKHE-1403` | 404 | 検査桁が合わない。**打ち間違い・転記ミスの疑い**（NOID の NCDA が単一文字誤りと隣接転置を検出する） | Check digit mismatch: the identifier looks mistranscribed. |
 | `ARKHE-1404` | 404 | 知らない NAAN について述べられることは無い。inflection 無しなら上位リゾルバへ取り次ぐ | Metadata for an unknown NAAN is not held by this resolver. |
+| `ARKHE-1501` | 409 | **公開した ARK は削除できない。** 消せるのは公開前のものだけで、公開した後は tombstone に付け替えるか `url` を空にする（`NR` を宣言している以上、解決が止まることは許されない） | {ark} is public; a published ARK is never deleted. Tombstone it instead. |
+| `ARKHE-1502` | 409 | 修飾子付きの名前がぶら下がっている。**先に下から取り下げる**——親だけ消すと、行き先を継ぐ先の無い部分参照が残る | {ark} has {count} qualified name(s) under it; withdraw those first. |
 | `ARKHE-1601` | 429 | 1 日の採番上限に達した（組織ごとの `quota_per_day`） | Daily quota exhausted: {used} of {quota} used in the last 24 hours. |

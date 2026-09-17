@@ -43,21 +43,23 @@ def upgrade() -> None:
     # 台帳からは判別できない——運用者が見て分けるほかない。
 
     # 「委譲には行き先が要る」は残す。**行き先が 2 種類になっただけ**である。
-    op.drop_constraint("delegated_shoulder_needs_a_minter", "shoulder", type_="check")
-    op.create_check_constraint(
-        "delegated_shoulder_needs_a_destination",
-        "shoulder",
-        "status <> 'delegated' OR minter <> '' OR about <> ''",
-    )
+    # **SQLite に制約を差し替える ALTER は無い**ので batch（表の作り直し）を通す。
+    # PostgreSQL では今までどおり素の ALTER になる。
+    with op.batch_alter_table("shoulder") as batch_op:
+        batch_op.drop_constraint("delegated_shoulder_needs_a_minter", type_="check")
+        batch_op.create_check_constraint(
+            "delegated_shoulder_needs_a_destination",
+            "status <> 'delegated' OR minter <> '' OR about <> ''",
+        )
 
 
 def downgrade() -> None:
     # **`about` だけで委譲している行があれば、ここで落ちる。** 戻すと「行き先の
     # 無い委譲」になるので、黙って通してはいけない。
-    op.drop_constraint("delegated_shoulder_needs_a_destination", "shoulder", type_="check")
-    op.create_check_constraint(
-        "delegated_shoulder_needs_a_minter",
-        "shoulder",
-        "status <> 'delegated' OR minter <> ''",
-    )
-    op.drop_column("shoulder", "about")
+    with op.batch_alter_table("shoulder") as batch_op:
+        batch_op.drop_constraint("delegated_shoulder_needs_a_destination", type_="check")
+        batch_op.create_check_constraint(
+            "delegated_shoulder_needs_a_minter",
+            "status <> 'delegated' OR minter <> ''",
+        )
+        batch_op.drop_column("about")

@@ -132,8 +132,12 @@ curl    "http://127.0.0.1:8001/ark:99999/x9…??"      # 永続性宣言
 ## いま何が起きたか
 
 **取り消せない識別子**を 1 本作った。ARK は再割当てしないと宣言する体系なので、
-arkhe に削除は無い。対象が失われたときは削除ではなく
-[tombstone](concepts/invariants.md) にする。
+公開した ARK に削除は無い。対象が失われたときは削除ではなく
+[tombstone](concepts/invariants.md#no-delete) にする。
+
+引き返せるのは**外に出す前**だけである。`{"reserve": true}` を付けて採れば、その
+ARK は公開のリゾルバではまだ解決せず、削除もできる——`POST /api/publish` がその境目になる
+（[外に出す前なら、まだ引き返せる](concepts/invariants.md#before-publication)）。
 
 末尾の `??` は、その識別子について**何を約束しているか**をリゾルバに尋ねたもの。
 **対象が失われていても答えられる**問いである。

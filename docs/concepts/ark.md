@@ -109,7 +109,7 @@ something else.
 
 That one commitment is why arkhe:
 
-- has **no delete** for an ARK or for a namespace,
+- has **no delete** for a published ARK or for a namespace (only one that never went out can go),
 - refuses to move a shoulder back out of `retired`,
 - makes a primary key collision *fail* rather than quietly become an update,
 - keeps resolving through mergers, splits and departures.

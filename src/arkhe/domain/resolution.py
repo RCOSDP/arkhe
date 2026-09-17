@@ -3,7 +3,7 @@
 一本の流れとして書く（`arklet_ark_conformance.md` §7-1）:
 
     正規化（A1・N4）
-      → 完全一致
+      → 完全一致（公開のリゾルバでは**公開したものだけ**。閉域のリゾルバは公開前も答える）
       → 祖先 passthrough（D5・D6・B3）
       → チェックディジット検証（D1。**自分が権威を持つ NAAN のときだけ**）
       → shoulder の redirect
@@ -186,6 +186,35 @@ class Resolution:
     hold: Hold | None = None
 
 
+#: `published_at` を持たない相手（テストの差し替え repo など）は**公開済みとみなす**。
+#: 公開前は台帳が明示するものであって、属性の有無で決まるものではない。
+_ASSUME_PUBLIC = object()
+
+
+def is_public(ark) -> bool:
+    """**グローバルに公開した ARK か。**"""
+    return getattr(ark, "published_at", _ASSUME_PUBLIC) is not None
+
+
+def serves(ark, *, unpublished: bool) -> bool:
+    """**このリゾルバがこの行を答えてよいか。**
+
+    公開前の ARK を解決するかどうかは、**ARK の状態だけでは決まらない**
+    ——どのリゾルバが答えているかで決まる:
+
+      閉域のリゾルバ  … 自分の領域の ARK は公開前でも解決する（`unpublished=True`）
+      公開のリゾルバ  … 公開したものだけ。公開前は**未登録の名前と同じに扱う**
+                        （祖先としても使わない）
+
+    閉じた網の中で採番した ARK を、その網のリゾルバが解決できないなら、
+    **閉じた対象に PID を配る意味が無い**。一方で公開の口（`?info` / `??`）は
+    認証を要さないので、そちらで公開前が引けると、まだ公開していない対象の
+    存在・題名・行き先がそのまま外に出る。**同じ 1 つの判断を、置き場所で
+    分ける**のが正しい形である。
+    """
+    return unpublished or is_public(ark)
+
+
 def base_name(name: str) -> str:
     """修飾子より前の base name を返す。
 
@@ -251,11 +280,15 @@ def resolve(
     *,
     global_resolver: str = DEFAULT_GLOBAL_RESOLVER,
     now: datetime | None = None,
+    unpublished: bool = False,
 ) -> Resolution:
     """ARK を解決する。
 
     `now` は保留（hold）の判定にだけ使う。**引数にしてあるのはテストのため**で、
     渡さなければ現在時刻を見る。
+
+    `unpublished` は**このリゾルバが閉域に置かれているか**（`serves` を見よ）。
+    既定は公開のリゾルバ——公開前の ARK は未登録の名前と同じに扱う。
     """
     now = now or datetime.now(UTC)
     # A4: **%-エンコードは復号しない。** 16 進の大小だけ揃える（手順5）。
@@ -270,7 +303,10 @@ def resolve(
     # 保存済みの表記を先に当てる（ハイフンを含む旧レコードを生かすため）。
     for key in dict.fromkeys([ark_key(naan, name), ark_key(naan, normalized)]):
         ark = repo.get_ark(key)
-        if ark is not None:
+        # **公開のリゾルバでは、公開前は「まだ無い名前」。** 予約しただけの
+        # 番号で 200 を返すと、公開していない対象の存在と記述が外に出る。
+        # 閉域のリゾルバは答える——そこは配った先の内側だから。
+        if ark is not None and serves(ark, unpublished=unpublished):
             return _deliver(ark, requested=requested, inflection=inflection, now=now)
 
     # --- 祖先 passthrough（D5: 最長一致） -----------------------------------
@@ -281,7 +317,7 @@ def resolve(
         found = repo.get_arks([ark_key(naan, c) for c in candidates])
         for cand in candidates:
             ancestor = found.get(ark_key(naan, cand))
-            if ancestor is None:
+            if ancestor is None or not serves(ancestor, unpublished=unpublished):
                 continue
             _, suffix = split_after_normalized(name, len(cand))
             return _deliver(

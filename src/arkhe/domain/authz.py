@@ -38,6 +38,17 @@ class Invalid(ApiError):
     status = 400
 
 
+class Conflict(ApiError):
+    """**値も権限も正しいが、対象が今その状態にない。**
+
+    400 でも 403 でもないのは、**送り直せば通るとは限らないが、送り方が
+    間違っているわけでもない**から——公開してしまった ARK を消そうとした、
+    子のある名前を先に消そうとした、といった場合がここに来る。
+    """
+
+    status = 409
+
+
 class Throttled(ApiError):
     status = 429
 
@@ -77,7 +88,10 @@ class ShoulderDelegated(Forbidden):
 #: arkhe が実際に検査する scope。**ここが語彙の全体。**
 #: 画面の選択肢も認可サーバに登録する client scope も、これに揃える——
 #: 散らばると「登録できるのに検査されない scope」が生まれる。
-SCOPES = ("ark:mint", "ark:update", "ark:read", "ark:tombstone", "ark:hold", "ark:import")
+SCOPES = (
+    "ark:mint", "ark:update", "ark:read", "ark:tombstone", "ark:hold", "ark:import",
+    "ark:delete", "ark:purge",
+)
 
 
 def require_scope(principal: Principal, scope: str) -> None:

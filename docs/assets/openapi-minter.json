@@ -484,6 +484,162 @@
         ]
       }
     },
+    "/api/publish": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Publish",
+        "description": "**Publish a reserved ARK.** Requires `ark:mint`.\n\nUntil it is published an ARK does not resolve and can still be deleted; from here on\nit resolves and **it can never be deleted**, only tombstoned. There is no way back:\nun-publishing would mean taking back a name that has already gone out.\n\nPublishing twice is not an error — the second call returns the same record, so a lost\nresponse can simply be resent.",
+        "operationId": "publish_api_publish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:mint"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/delete": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Delete Ark",
+        "description": "**Delete an ARK that has not been published.** Requires `ark:delete`.\n\nThis is the one case where an ARK goes away. NR (no re-assignment) binds the names that\nwere **put out into the world**; a reserved one, minted for an object whose publication\nwas then abandoned, is better removed than left pointing at nothing forever.\n\nA published ARK is refused with `409` — tombstone it instead. So is one that still has\nqualified names under it: withdraw those first.\n\n**The name is not freed.** It is kept in the ledger of withdrawn names and never\nassigned again, because a reserved identifier has usually already been handed to\nsomeone — re-using it would be indistinguishable, from the outside, from breaking NR.",
+        "operationId": "delete_ark_api_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:delete"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/purge": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Purge",
+        "description": "**Purge a published ARK.** Requires `ark:purge` **and** `authority=system`.\n\nEverything else in this service exists so that a published identifier keeps resolving.\nThis endpoint is the one way out, and it is here because **reality sometimes brings a\ndemand that outweighs an identifier** — a removal order, personal data that should never\nhave been published, a mass ingest that went in wrong. Without a way out, someone ends up\ndeleting rows straight from the database, and **a deletion that leaves no trace is the\nworst kind.**\n\nSo the way is narrow and it is recorded:\n\n* **the registration authority's operator only** — never a NAAN administrator, never an\n  organisation;\n* **a reason is required**, and it is kept with the name;\n* **`confirm` must repeat the ARK**, so that a script walking a list cannot empty the\n  ledger by accident;\n* **the name is not freed** — it is never assigned again.\n\nThat last point is what survives: the target and the description go, but **the name can\nnever come to mean something else**. A stale reference gets `404`; it never gets a\ndifferent object.",
+        "operationId": "purge_api_purge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurgeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:purge"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/tombstone": {
       "put": {
         "tags": [
@@ -780,6 +936,18 @@
             ],
             "title": "Updated At"
           },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
           "hold_until": {
             "anyOf": [
               {
@@ -971,6 +1139,64 @@
         ],
         "title": "BulkUpdateOut"
       },
+      "DeleteIn": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Reason",
+            "description": "Why it was withdrawn. Kept with the name; not published.",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "DeleteIn",
+        "description": "Withdraw an ARK that has not been published. **A published ARK is never deleted** (409). The name itself is remembered and never assigned again."
+      },
+      "DeleteOut": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          },
+          "withdrawn_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Withdrawn At"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": ""
+          },
+          "was_published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Was Published At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark",
+          "withdrawn_at"
+        ],
+        "title": "DeleteOut",
+        "description": "The row is gone; the name is kept so that it is never assigned again."
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1159,6 +1385,12 @@
             "title": "Shoulder",
             "default": ""
           },
+          "reserve": {
+            "type": "boolean",
+            "title": "Reserve",
+            "description": "Mint it **without publishing it**. A reserved ARK does not resolve, and it can still be deleted; publish it when the object goes public. The default mints and publishes in one step, as before.",
+            "default": false
+          },
           "request_id": {
             "type": "string",
             "maxLength": 200,
@@ -1239,6 +1471,48 @@
         ],
         "title": "PatchIn",
         "description": "Input for a merging update. **Only the fields actually sent are written**; everything else is left as it is. Sending a field as \"\" clears it, which is how a value is removed."
+      },
+      "PublishIn": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark"
+        ],
+        "title": "PublishIn",
+        "description": "Publish a reserved ARK. From then on it resolves and **it can no longer be deleted** — only tombstoned. Publishing twice is not an error; the second call returns the same record."
+      },
+      "PurgeIn": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "description": "Why it is being purged. **Required**: this and the audit log are all that will be left about the identifier."
+          },
+          "confirm": {
+            "type": "string",
+            "title": "Confirm",
+            "description": "The ARK again, to be sure of the target. Anything else is refused."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark",
+          "reason",
+          "confirm"
+        ],
+        "title": "PurgeIn",
+        "description": "Purge a **published** ARK. For the registration authority's operator alone (`authority=system`), for a legal removal order or data that should never have been published. A reason is required and `confirm` must repeat the ARK."
       },
       "RegisterIn": {
         "properties": {
@@ -1462,7 +1736,9 @@
               "ark:read": "Read",
               "ark:tombstone": "Declare it lost",
               "ark:hold": "Suspend forwarding",
-              "ark:import": "Import a name minted elsewhere"
+              "ark:import": "Import a name minted elsewhere",
+              "ark:delete": "Withdraw one not yet published",
+              "ark:purge": "Purge a published one"
             },
             "tokenUrl": "/oauth/token"
           }

@@ -426,6 +426,43 @@ Clearing `url` removes reachability again, but **a description and a target once
 published cannot be withdrawn**. So **start from the closed end**: descriptions can be
 added later, never removed.
 
+### A reserved ARK, and the resolver inside the closed network {#closed-resolver}
+
+The three levels above are about **where a name points**; the name itself resolved from
+the start. Separately from that, an ARK can be **minted but not yet published**
+([reserved](../concepts/invariants.md#before-publication)): a number taken for a deposit
+that is still a draft, withdrawn if that deposit is abandoned. **Only while it is
+reserved can it be deleted.**
+
+**Whether it resolves is not decided by the ARK's state alone.** It depends on which
+resolver is answering.
+
+| | A reserved ARK | A published ARK |
+| --- | --- | --- |
+| **Resolver inside the closed network** (`ARKHE_RESOLVE_UNPUBLISHED=1`) | **resolves** | resolves |
+| **Public resolver** (the default) | `404`, as for a name it has never seen | resolves |
+
+A name minted inside a closed network **is worthless if that network's own resolver will
+not resolve it** — which would defeat the very point of [not changing the
+shape](#why-the-shape-must-not-differ). But `?info` and `??` need no authentication, so
+turning this on where the open network can reach it puts the existence, title and target
+of objects that are not public yet straight out. **One decision, split by where it sits.**
+
+```bash
+# The resolver inside the closed network (its reach itself must be closed)
+ARKHE_RESOLVER=1 ARKHE_RESOLVE_UNPUBLISHED=1 uvicorn arkhe.app:create_app --factory
+```
+
+Going public is `POST /api/publish`. **The name does not move** — what changes is only
+whether it has gone out, exactly as [repointing](#pid) leaves the identifier itself
+untouched. After that it cannot be deleted (`409`; tombstone it instead).
+
+**Withdrawing an ARK that was resolving inside the closed network does stop it
+resolving there.** What cannot happen is that the name comes to mean something else: a
+withdrawn name is never assigned again, so a stale reference gets `404` and nothing
+worse. That is what `NR` protects, and whether to withdraw is for the operators — who
+know who received it inside — to decide.
+
 ### What it looks like to build
 
 **A. Mint on the public side and hand the names inward**

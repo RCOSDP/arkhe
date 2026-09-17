@@ -18,6 +18,7 @@
   1200 番台  認証（401）
   1300 番台  認可（403）と委譲の案内（307）
   1400 番台  見つからない（404）
+  1500 番台  **状態が合わない**（409）——値も権限も正しいが、対象が今その状態にない
   1600 番台  上限（429）
 """
 
@@ -143,6 +144,26 @@ IMPORT_NAME_OUTSIDE_SHOULDER = Code(
     "取り込む名前が、その NAAN のどの shoulder にも属していない",
 )
 
+NAME_WITHDRAWN = Code(
+    "ARKHE-1014", 400,
+    "{ark} was withdrawn before publication; that name is never assigned again.",
+    "公開前に取り下げられた名前。**二度と採らない**——予約した文字列は既に人の手に"
+    "渡っているので、別の対象に付け直せば外からは NR 違反と見分けがつかない",
+)
+
+PURGE_NEEDS_REASON = Code(
+    "ARKHE-1015", 400,
+    "Purging a published ARK requires a reason; it is kept with the name.",
+    "公開した ARK の破棄には理由が要る。**残らない破棄は、無かったことと同じ**"
+    "——消えた識別子について後から言えることが、これしか残らない",
+)
+PURGE_NOT_CONFIRMED = Code(
+    "ARKHE-1016", 400,
+    "Send `confirm` with the ARK itself ({ark}) to purge it.",
+    "破棄する ARK を `confirm` に打ち直す。**一覧を回すスクリプトが、意図せず"
+    "全件消すことのないように**",
+)
+
 BULK_LIMIT = Code(
     "ARKHE-1011", 400,
     "A request holds at most {limit} rows.",
@@ -228,6 +249,15 @@ SHOULDER_DELEGATED = Code(
     "——応答が失われると「向こうにはあるがこちらは知らない ARK」が生まれる",
 )
 
+PURGE_IS_SYSTEM_ONLY = Code(
+    "ARKHE-1310", 403,
+    "Purging a published ARK is for the registration authority's operator "
+    "(authority=system); this principal is {authority}.",
+    "公開した ARK の破棄は RA の運用者（`authority=system`）だけが行える。"
+    "**NAAN 管理者にも組織にも渡さない**——名前空間を預かることと、配った名前を"
+    "消せることは別の権限である",
+)
+
 # ------------------------------------------------------------- 404 見つからない
 ARK_NOT_FOUND = Code(
     "ARKHE-1401", 404,
@@ -250,6 +280,21 @@ NO_METADATA_FOR_UNKNOWN_NAAN = Code(
     "Metadata for an unknown NAAN is not held by this resolver.",
     "知らない NAAN について述べられることは無い。"
     "inflection 無しなら上位リゾルバへ取り次ぐ",
+)
+
+# --------------------------------------------------------- 409 状態が合わない
+ARK_ALREADY_PUBLIC = Code(
+    "ARKHE-1501", 409,
+    "{ark} is public; a published ARK is never deleted. Tombstone it instead.",
+    "**公開した ARK は削除できない。** 消せるのは公開前のものだけで、公開した後は "
+    "tombstone に付け替えるか `url` を空にする（`NR` を宣言している以上、"
+    "解決が止まることは許されない）",
+)
+ARK_HAS_PARTS = Code(
+    "ARKHE-1502", 409,
+    "{ark} has {count} qualified name(s) under it; withdraw those first.",
+    "修飾子付きの名前がぶら下がっている。**先に下から取り下げる**"
+    "——親だけ消すと、行き先を継ぐ先の無い部分参照が残る",
 )
 
 # ------------------------------------------------------------------ 429 上限

@@ -347,6 +347,7 @@ def ark_list(
     naan: str = typer.Option("", help=t("opt.only_naan")),
     org: int = typer.Option(None, help=t("ark.list.org")),
     q: str = typer.Option("", "--search", "-q", help=t("ark.list.search")),
+    state: str = typer.Option("", help=t("ark.list.state")),
     limit: int = typer.Option(50, help=t("ark.list.limit")),
     offset: int = typer.Option(0, help=t("ark.list.offset")),
 ):
@@ -361,7 +362,7 @@ def ark_list(
     ときは `-q` が見ている（画面と同じ 3 項目）。
     """
     with _session() as s:
-        stmt = narrow_arks(visible_arks(_root()), naan=naan, org=org or "", q=q)
+        stmt = narrow_arks(visible_arks(_root()), naan=naan, org=org or "", q=q, state=state)
         # 1 件多く取って、続きがあるかを**数えずに**知る。件数の COUNT は
         # 台帳が大きくなるほど重く、ここで欲しいのは有無だけ。
         rows = list(
@@ -370,14 +371,66 @@ def ark_list(
             )
         )
         for a in rows[:limit]:
+            # **公開前だけ印を付ける。** 行の形は変えない——今まで出ていた行は
+            # すべて公開済みなので、読んでいるスクリプトの見え方は変わらない。
+            mark = "" if a.published_at else f"  [{t('ark.mark.reserved')}]"
             typer.echo(
                 f"{compact_ark(a.ark):<28}  {a.created_at:%Y-%m-%d}  "
-                f"{a.created_by or '-':<14}  {a.url}"
+                f"{a.created_by or '-':<14}  {a.url}{mark}"
             )
         if not rows:
             typer.echo(t("ark.list.empty"), err=True)
         elif len(rows) > limit:
             typer.echo(t("ark.list.more", next=max(0, offset) + limit), err=True)
+
+
+@ark_app.command("publish", help=t("ark.publish.help"))
+def ark_publish(ark: str):
+    """**グローバルに公開する。** 画面・API と同じ `admin_ops` を通る。"""
+    with _session() as s:
+        key = ark_key_from_input(ark)
+        before = s.get(Ark, key)
+        already = before is not None and before.published_at is not None
+        row = ops.publish_ark(s, _root(), ark=key)
+        s.commit()
+        key = "ark.publish.already" if already else "ark.publish.done"
+        typer.echo(t(key, ark=compact_ark(row.ark)))
+
+
+@ark_app.command("delete", help=t("ark.delete.help"))
+def ark_delete(
+    ark: str,
+    reason: str = typer.Option("", help=t("ark.delete.reason")),
+):
+    """**公開前の ARK を取り下げる。** 公開済みなら `admin_ops` が断る。"""
+    with _session() as s:
+        gone = ops.withdraw_ark(s, _root(), ark=ark_key_from_input(ark), reason=reason)
+        name = compact_ark(gone.ark)
+        s.commit()
+        typer.echo(t("ark.delete.done", ark=name))
+
+
+@ark_app.command("purge", help=t("ark.purge.help"))
+def ark_purge(
+    ark: str,
+    reason: str = typer.Option(..., help=t("ark.purge.reason")),
+    yes: bool = typer.Option(False, "--yes", "-y", help=t("ark.purge.yes")),
+):
+    """**公開した ARK を破棄する。** 画面・API と同じ `admin_ops` を通る。
+
+    **確かめてから消す。** CLI はシステム管理者として動くので、ここでの誤打は
+    そのまま通ってしまう——`--yes` を付けないかぎり一度訊く（`admin_ops` 側の
+    `confirm` はこの入力から埋める。**打ち直しの照合は 1 か所**にしておく）。
+    """
+    key = ark_key_from_input(ark)
+    if not yes and not typer.confirm(t("ark.purge.confirm", ark=compact_ark(key))):
+        typer.echo(t("ark.purge.aborted"))
+        raise typer.Exit(1)
+    with _session() as s:
+        gone = ops.purge_ark(s, _root(), ark=key, reason=reason, confirm=key)
+        name = compact_ark(gone.ark)
+        s.commit()
+        typer.echo(t("ark.purge.done", ark=name))
 
 
 # ------------------------------------------------------------------ 転送の保留

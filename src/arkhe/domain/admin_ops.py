@@ -19,27 +19,33 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
+from arkhe import errors
+from arkhe.arkspec.naming import compact_ark
 from arkhe.auth import apikey, oauth2
 from arkhe.auth import password as pw
 from arkhe.auth.errors import Forbidden
 from arkhe.auth.principal import Principal
 from arkhe.db.models import (
     Ark,
+    ArkChange,
     Authority,
     Client,
     CommitmentLevel,
     Credential,
     CredentialKind,
     Manager,
+    MintReceipt,
     Naan,
     Shoulder,
     ShoulderStatus,
     Subject,
+    WithdrawnName,
+    sanctioned_purge,
 )
-from arkhe.domain.authz import Invalid, NotFound, audit
+from arkhe.domain.authz import Conflict, Invalid, NotFound, audit
 
 
 def _require_system(p: Principal) -> None:
@@ -1021,3 +1027,184 @@ def held(session: Session, p: Principal, now: datetime | None = None) -> list[di
                 }
             )
     return out
+
+
+# --------------------------------------------------------------- 公開と取り下げ
+#
+# **NR が縛るのは、外へ出した名前である。** 採番した瞬間から縛られるわけではない
+# ——下書きの対象に先に番号を振り、公開をやめたときに、その番号が誰も指さないまま
+# 台帳に残り続けるのは、約束を守っていることにはならない。
+#
+# だから公開前という状態を置く（`Ark.published_at`）。境目は 1 か所だけ:
+#
+#   公開前  解決しない。**消せる**。名前は `WithdrawnName` に移り、二度と採られない
+#   公開後  従来どおり。何があっても消えない。tombstone か url を空にする
+#
+# **公開に戻す道は作らない。** 「公開を取り消す」は、外に出た名前を無かったことに
+# する操作で、それができるなら公開前の削除に意味が無い。
+
+
+def publish_ark(session: Session, p: Principal, *, ark: str) -> Ark:
+    """**グローバルに公開する。** 以後この ARK は解決し、そして消せない。
+
+    **二度呼んでも落ちない。** 公開は網の向こうから来る要求で、応答だけが
+    失われることがある——そこで 409 を返すと、呼び出し側は「公開できたのか」を
+    別の口で確かめに行くことになる。既に公開済みなら、その行をそのまま返す。
+    """
+    row = _ark_in_reach(session, p, ark)
+    if row.published_at is not None:
+        return row  # 再送。**同じ結果を返す**（F4 の受け控えと同じ考え方）
+    row.published_at = datetime.now(UTC)
+    row.updated_by = p.client_id
+    from arkhe.domain import authz  # 循環 import を避ける
+
+    # **識別子そのものの履歴に残す。** 監査は NAAN 単位以上しか残さないが、
+    # 公開するのは組織である——「いつ外に出たか」は後から必ず要る。
+    authz.record_change(session, p, row, action="publish", before_url=row.url)
+    audit(session, p, "publish", row.ark)
+    return row
+
+
+def withdraw_ark(
+    session: Session, p: Principal, *, ark: str, reason: str = ""
+) -> WithdrawnName:
+    """**公開前の ARK を取り下げる。** 行は消え、名前は使われないまま残る。
+
+    消せる条件は 2 つだけで、どちらも緩められない:
+
+    1. **まだ公開していないこと。** 公開した名前を消すのは NR 違反である
+    2. **修飾子付きの名前がぶら下がっていないこと。** 親だけ消すと、継ぐ先の
+       無い部分参照が残る——先に下から取り下げる
+
+    消した名前は `WithdrawnName` に移る。**行を消すこと自体は記録を消すことでは
+    ない**——予約した文字列は既に人の手に渡っているので、別の対象に振り直せば
+    外からは NR 違反と見分けがつかない。
+
+    `ArkChange` と `MintReceipt` はこの ARK を指しているので一緒に落とす。
+    履歴を消すのは気が進まないが、**一度も公開していない識別子の履歴**であり、
+    残せば外部キーの整合性のために行だけが生き残る。取り下げたという事実は
+    `WithdrawnName` と監査に残る。
+    """
+    row = _ark_in_reach(session, p, ark)
+    if row.published_at is not None:
+        raise Conflict(errors.ARK_ALREADY_PUBLIC, ark=compact_ark(row.ark))
+    return _remove_ark(session, p, row, reason=reason, action="withdraw")
+
+
+def purge_ark(
+    session: Session, p: Principal, *, ark: str, reason: str, confirm: str = ""
+) -> WithdrawnName:
+    """**公開した ARK を破棄する。RA の運用者だけが行える。**
+
+    この基盤は「一度配った名前が、別のものを指すようにならない」ためにできて
+    いて、**公開した ARK が消えないこと**はその約束の中心にある。それでも口を
+    開けてあるのは、**現実の運用に、識別子より重い要求が来ることがある**から:
+    裁判所の削除命令、公開してはならなかった個人情報、取り違えて一括投入した
+    大量の行。逃げ道が無いと、そのとき誰かが DB を直接叩くことになる——
+    **跡の残らない削除が、いちばん悪い削除である。**
+
+    だから「できないこと」にはせず、**通れる道を 1 本だけ作って、跡を残す**:
+
+      1. **RA の運用者（`authority=system`）だけ。** NAAN 管理者にも組織にも渡さない
+      2. **理由が要る。** 空では通らない——残らない破棄は、無かったことと同じ
+      3. **対象を打ち直す。** `confirm` に ARK そのものを渡させる（一覧を回す
+         スクリプトが、意図せず全件消すことがないように）
+      4. **名前は返さない。** `WithdrawnName` に移り、二度と採られない
+      5. **監査に残る。** system の操作なので `audit` が全件記録する
+
+    4 が効いている。**行き先と記述は消えるが、その名前が別のものを指すことは
+    絶対にない**——残っている参照は `404` になるだけで、`NR`（再割当てしない）
+    という約束そのものは破らずに済む。破れるのは「解決し続ける」のほうである。
+    """
+    if not p.is_system:
+        raise Forbidden(errors.PURGE_IS_SYSTEM_ONLY, authority=p.authority)
+    if not reason.strip():
+        raise Invalid(errors.PURGE_NEEDS_REASON)
+    row = _ark_in_reach(session, p, ark)
+    # **打ち直させる。** 鍵の形（`ark:` あり・なし）は問わないが、別の ARK は通さない。
+    if _key_of(confirm) != row.ark:
+        raise Invalid(errors.PURGE_NOT_CONFIRMED, ark=compact_ark(row.ark))
+    if row.published_at is None:
+        # 公開前のものは `withdraw` の領分。**同じ操作に 2 つの入口を作らない。**
+        return _remove_ark(session, p, row, reason=reason, action="withdraw")
+    return _remove_ark(session, p, row, reason=reason, action="purge")
+
+
+def _remove_ark(
+    session: Session, p: Principal, row: Ark, *, reason: str, action: str
+) -> WithdrawnName:
+    """**行を落とし、名前を取り下げ済みとして残す。** 取り下げも破棄もここを通る。
+
+    違うのは入口の条件だけで、**出口は 1 つ**——名前が二度と採られないことと、
+    跡が残ることは、どちらの入口から来ても同じでなければならない。
+    """
+    parts = session.scalar(
+        select(func.count())
+        .select_from(Ark)
+        .where(Ark.ark.like(_like_prefix(row.ark), escape="\\"), Ark.ark != row.ark)
+    )
+    if parts:
+        # **先に下から。** 親だけ消すと、継ぐ先の無い部分参照が残る。
+        raise Conflict(errors.ARK_HAS_PARTS, ark=compact_ark(row.ark), count=parts)
+
+    gone = WithdrawnName(
+        ark=row.ark,
+        naan=row.naan,
+        assigned_name=row.assigned_name,
+        shoulder_id=row.shoulder_id,
+        minted_at=row.created_at,
+        minted_by=row.created_by,
+        # **公開していたかを残す。** 取り下げと破棄は扱いが同じでも意味が違う。
+        published_at=row.published_at,
+        withdrawn_by=p.client_id,
+        reason=reason.strip()[:500],
+        ip=p.ip,
+    )
+    session.add(gone)
+    # **先に参照を落とす。** どちらもこの ARK を外部キーで指している。
+    session.execute(delete(ArkChange).where(ArkChange.ark == row.ark))
+    session.execute(delete(MintReceipt).where(MintReceipt.ark == row.ark))
+    with sanctioned_purge(session, row.ark):
+        # **公開した行はここでしか落ちない**（`models._no_published_ark_delete`）。
+        session.delete(row)
+        session.flush()
+    audit(session, p, action, gone.ark, reason=gone.reason, published=bool(row.published_at))
+    return gone
+
+
+def _ark_in_reach(session: Session, p: Principal, ark: str) -> Ark:
+    """台帳の行を引き、**触ってよい主体か**を確かめる。
+
+    判定は `authz.assert_may_touch` ——更新や tombstone と同じ式を通す。
+    公開も取り下げも「既存の ARK に触る」操作で、届く範囲が違ってよい理由が無い。
+    """
+    row = session.get(Ark, ark)
+    if row is None:
+        raise NotFound(errors.ARK_NOT_FOUND, missing=[ark], count=1)
+    from arkhe.domain import authz
+
+    authz.assert_may_touch(session, p, row)
+    return row
+
+
+def _key_of(raw: str) -> str:
+    """`ark:99999/x9…` でも `99999/x9…` でも台帳の鍵に直す。**読めなければ空。**
+
+    ここで例外を投げないのは、`confirm` は**打ち直しの照合**であって入力の検証
+    ではないから——読めない文字列は「一致しなかった」と扱えばよい。
+    """
+    from arkhe.domain.queries import ark_key_from_input
+
+    try:
+        return ark_key_from_input(raw)
+    except ValueError:
+        return ""
+
+
+def _like_prefix(key: str) -> str:
+    """**前方一致の LIKE を作る。** `%` と `_` を含む名前が来る（`%2F` など）。
+
+    素のまま渡すと `x9…%2Fa` の `%` がワイルドカードになり、**別の ARK を
+    子として数える**。逃がす文字を先に潰しておく。
+    """
+    return key.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"

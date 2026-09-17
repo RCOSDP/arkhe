@@ -12,7 +12,13 @@
   <div class="card-h"><span class="t">{{ t('mint.done') }}</span></div>
   <div class="card-b">
     <div class="secret">ark:{{ minted.ark }}</div>
+    {# **採ったものがどちらなのかを、採った直後に言う。** 公開前の採番は
+       「できたのに解決しない」ので、何も言わないと壊れて見える。 #}
+    {% if minted.published_at %}
     <div class="note info"><span>{{ t('mint.irreversible')|safe }}</span></div>
+    {% else %}
+    <div class="note info"><span>{{ t('mint.reserved_note')|safe }}</span></div>
+    {% endif %}
     {% if minted.url %}<p class="dim">{{ t('mint.target') }} <span class="mono">{{ minted.url }}</span></p>{% endif %}
   </div>
 </div>
@@ -55,6 +61,10 @@
       <div class="grid2">
         <div class="field"><label for="who">who <span class="opt">— ERC</span></label><input id="who" name="who"></div>
         <div class="field"><label for="when">when <span class="opt">— ERC</span></label><input id="when" name="when"></div>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" name="reserve" value="1"> {{ t('mint.reserve') }}</label>
+        <p class="hint">{{ t('mint.reserve_hint')|safe }}</p>
       </div>
       <div class="actions"><button class="btn primary" type="submit">{{ t('mint.submit') }}</button></div>
     </form>

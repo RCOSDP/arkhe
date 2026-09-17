@@ -61,7 +61,14 @@ def visible_arks(p: Principal) -> Select:
     return stmt
 
 
-def narrow_arks(stmt: Select, *, naan: str = "", org: str = "", q: str = "") -> Select:
+#: 公開の状態で絞る値。**画面の選択肢も CLI の引数もここから採る**——
+#: 別々に持つと、片方でしか指定できない値が生まれる。
+ARK_STATES = ("public", "reserved")
+
+
+def narrow_arks(
+    stmt: Select, *, naan: str = "", org: str = "", q: str = "", state: str = ""
+) -> Select:
     """絞り込みを重ねる。**到達範囲を広げる手段ではない。**
 
     `visible_arks` で先に絞ったものに重ねるので、届かない NAAN や組織を指定しても
@@ -69,6 +76,9 @@ def narrow_arks(stmt: Select, *, naan: str = "", org: str = "", q: str = "") -> 
 
     `naan` は今のところ CLI からしか渡らない（画面は組織で絞る）。片方にしか
     無いのは入口の違いで、**どちらも同じ式を通る**。
+
+    `state` は公開したものだけ／公開前のものだけ（`ARK_STATES`）。知らない値は
+    **黙って無視する**——絞り込みの引数で 400 を返しても、できることは増えない。
     """
     if naan.strip():
         stmt = stmt.where(Ark.naan == naan.strip())
@@ -77,6 +87,12 @@ def narrow_arks(stmt: Select, *, naan: str = "", org: str = "", q: str = "") -> 
             Ark.shoulder_id.in_(
                 select(Shoulder.id).where(Shoulder.manager_id == int(str(org).strip()))
             )
+        )
+    if (want := state.strip().lower()) in ARK_STATES:
+        # **公開前は放っておくと溜まる。** 予約したまま公開も取り下げもされない
+        # 番号は、誰も指さないまま台帳に残る——見えるようにしておく。
+        stmt = stmt.where(
+            Ark.published_at.is_(None) if want == "reserved" else Ark.published_at.is_not(None)
         )
     term = q.strip()
     if term:

@@ -134,8 +134,12 @@ resolution, suffix passthrough, a hold, a tombstone — with real responses.
 ## What just happened
 
 You minted an identifier that **cannot be taken back**. ARK declares that names are
-never re-assigned, so arkhe has no delete: an object that is lost gets a
-[tombstone](concepts/invariants.md), not a deletion.
+never re-assigned, so a published ARK is never deleted: an object that is lost gets a
+[tombstone](concepts/invariants.md#no-delete), not a deletion.
+
+The one way back is **before** the name goes out. Mint with `{"reserve": true}` and a
+public resolver does not resolve it yet and it can still be deleted; `POST /api/publish` is the point of no
+return. See [before it goes out](concepts/invariants.md#before-publication).
 
 The `??` at the end asked the resolver what it promises about that identifier — a
 question you can ask **even when the object itself is gone**.

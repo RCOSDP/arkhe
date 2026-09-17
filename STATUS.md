@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-08-31 時点の arkhe の現在地。** 作業を止めて再開するときに、まずここを読む。
+**2026-09-17 時点の arkhe の現在地。** 作業を止めて再開するときに、まずここを読む。
 
 設計の意図は[不変条件](docs/concepts/invariants.md)、手順と踏んだ罠は
 [AGENTS.md](AGENTS.md)、変更の履歴は [CHANGELOG.ja.md](CHANGELOG.ja.md) にある。
@@ -15,12 +15,12 @@
 
 | | |
 | --- | --- |
-| 版 | **0.0.9**（2026-08-31 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
-| テスト | **427 件すべて green**（`uv run pytest -q`、約 14 秒） |
+| 版 | **0.2.0**（2026-09-07 リリース）。タグと `pyproject.toml` は一致。`main` はこの先に未リリースの変更を持つ |
+| テスト | **548 件すべて green**（`uv run pytest -q`、約 20 秒） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
-| 文書 | `mkdocs build --strict` 警告 0。日英 2 言語で 18 ページ |
-| マイグレーション | head は単一（`a3f1c9e2d570`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回す |
-| 実装規模 | `src/arkhe/` 51 ファイル・約 9,000 行 |
+| 文書 | `mkdocs build --strict` 警告 0。日英 2 言語で 20 ページ |
+| マイグレーション | head は単一（`a7c3e51d9f20`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回し、`tests/test_migrations.py` が SQLite で頭まで流す |
+| 実装規模 | `src/arkhe/` 53 ファイル・約 11,800 行 |
 | Python | 3.12 以上。本体の依存は **optional**（`arkspec` と `domain.resolution` は何も入れずに import できる） |
 
 ## 何が動くか
@@ -32,6 +32,7 @@
 | ARK 仕様の純関数層 | NOID 生成、検査桁、shoulder 分割、正規化・インフレクション | `arkspec/` |
 | 解決 | 完全一致 → 祖先 passthrough → 検査桁 → shoulder 委譲 → 404／取次。`?` `??` `?info` `?json` | `domain/resolution.py` |
 | 採番 | 衝突は握りつぶさず数えて採り直す。冪等鍵（`request_id`）、一括採番、quota | `domain/minting.py` |
+| 公開と取り下げ | **公開前として採り、公開するまでは削除できる。** 公開前を解決するかはリゾルバの置き場所で決まる（閉域は解決する）。取り下げた名前は二度と採らない | `domain/admin_ops.py` |
 | 委譲 | shoulder の 4 状態、`delegated` は `307` で行き先を返す（**プロキシしない**） | `domain/admin_ops.py` |
 | 転送の保留 | ARK / shoulder / NAAN を**期限つきで**止める。解決は止めない（`200` と記述） | `domain/resolution.py` |
 | 承継・離脱 | `arkhe succeed` / `arkhe depart --resolver`。**`Ark` の行には触れない** | `domain/admin_ops.py` |
@@ -44,7 +45,7 @@
 | 観測性 | `/healthz` `/readyz`、構造化ログ、`/.well-known/ark` | `observability.py`, `api/resolve.py` |
 | 体験環境 | Keycloak ＋ PostgreSQL ＋ minter/resolver の compose | `compose/oidc/` |
 
-テストの内訳（403 件）:
+テストの内訳:
 
 ```
 test_admin_forms.py  画面のフォーム        test_authz.py       到達範囲（負の場合を厚く）
@@ -53,6 +54,8 @@ test_arkspec.py      仕様の純関数層        test_api.py         API
 test_auth.py         3 機構の認証          test_models.py      不変条件（削除拒否ほか）
 test_succession.py   承継と離脱            test_cli.py         運用コマンド
 test_cli_i18n.py     訳の抜け             test_docs.py        参照ページの追随
+test_hold.py         転送の保留            test_publication.py 公開と、公開前の取り下げ
+test_migrations.py   移行が頭まで流れること
 ```
 
 ## 分かっている穴
@@ -137,6 +140,42 @@ test_cli_i18n.py     訳の抜け             test_docs.py        参照ペー�
 - **クローラにどう伝えるか。** `200` を返す以上 `Retry-After` は使えない。人には
   説明が届くが、機械には「今は行き先が無い」としか伝わらない。
 - **委譲先の NAAN を上位が止められるべきか。** 今は自 NAAN に届く主体だけが止められる。
+
+## 入っているもの: 公開前の削除
+
+**`NR` が縛るのは、外へ出した名前である。** 採番した瞬間から縛られるわけではない
+——下書きの対象に先に番号を振るのは普通の運用で、その登録が取りやめになったとき、
+誰も指さない番号が永久に残るほうが約束を守っていることにはならない。
+
+境目は `Ark.published_at` 1 つで、**一方通行**である。
+
+| | 公開前（`published_at` が null） | 公開後 |
+| --- | --- | --- |
+| 解決 | **公開のリゾルバでは しない**（知らない名前と同じ 404）。**閉域のリゾルバは する**（`ARKHE_RESOLVE_UNPUBLISHED`） | する |
+| 削除 | **できる**（`/api/delete`・`arkhe ark delete`） | できない（`409`。tombstone にする） |
+| 名前 | 取り下げれば `withdrawn_name` へ移り、**二度と採られない** | 台帳に残り続ける |
+
+決めたこと:
+
+- **既定は「採番と同時に公開」。** 公開の一手間を既存の呼び出し側に課すと、足すのを
+  忘れた側で「採番できているのに解決しない」が静かに積もる。
+- **公開を取り消す道は作らない。** 取り消せるなら、公開前の削除に意味が無い。
+- **名前は解放しない。** 予約した文字列は既に誰かの手にあることが多い（それが予約の
+  目的そのもの）ので、振り直せば外からは `NR` 違反と見分けがつかない。
+- **scope を分けた**（`ark:delete`）。採番できることと取り下げられることは別の判断。
+- **修飾子付きの子がいる名前は取り下げられない。** 親だけ消すと、継ぐ先の無い部分
+  参照が残る。
+- **公開前を解決するかは、リゾルバの置き場所で決める**（`ARKHE_RESOLVE_UNPUBLISHED`）。
+  閉域で採番した ARK をその網のリゾルバが引けないなら配る意味が無い一方、`?info` は
+  認証を要さないので、**既定は漏れない側**にしてある。
+- **閉域で引けていた ARK を取り下げると、その網では引けなくなる。** それでも名前が
+  別のものを指すことは無い（`404` になるだけ）——`NR` が守るのはそこである。
+
+まだ決めていないこと:
+
+- **公開前のまま放置されたものをどうするか。** 一覧では `--state reserved` で引けるが、
+  **期限も通知も無い**。溜まっていることに気づく手立ては、今は運用の側にある。
+- **一括の公開・取り下げが無い。** 1 本ずつ。投入の規模で必要になったら足す。
 
 ## 環境まわりのメモ
 

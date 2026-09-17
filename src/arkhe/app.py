@@ -20,7 +20,7 @@ from sqlalchemy import text
 from arkhe import __version__, observability
 from arkhe.auth.errors import AuthError, Forbidden
 from arkhe.db.session import session_factory
-from arkhe.domain.authz import Invalid, NotFound, ShoulderDelegated, Throttled
+from arkhe.domain.authz import Conflict, Invalid, NotFound, ShoulderDelegated, Throttled
 from arkhe.settings import Settings, get_settings
 
 #: Swagger UI の冒頭に出る説明。**仕様上の要点を、試す前に読めるところに置く。**
@@ -101,7 +101,10 @@ def _install_handlers(app: FastAPI) -> None:
 
         return RedirectResponse(f"/admin/login?next={quote(exc.next_url)}", status_code=302)
 
-    for exc_type, code in ((Forbidden, 403), (NotFound, 404), (Invalid, 400), (Throttled, 429)):
+    for exc_type, code in (
+        (Forbidden, 403), (NotFound, 404), (Invalid, 400), (Conflict, 409),
+        (Throttled, 429),
+    ):
 
         @app.exception_handler(exc_type)
         async def _h(request: Request, exc, _code=code):  # noqa: ARG001

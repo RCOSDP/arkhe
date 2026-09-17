@@ -61,6 +61,7 @@ def mint_submit(
     type: Annotated[str, Form()] = "",  # noqa: A002 - ERC の項目名
     who: Annotated[str, Form()] = "",
     when: Annotated[str, Form()] = "",
+    reserve: Annotated[str, Form()] = "",
 ):
     """画面からの採番。**API と同じ経路**（authz → minting）を通る。"""
     authz.require_scope(principal, "ark:mint")
@@ -70,6 +71,8 @@ def mint_submit(
     ark, _ = minting.mint(
         session,
         shoulder=sh,
+        # **公開前として採れる。** 画面と API に差を作らない（`MintIn.reserve`）。
+        reserve=bool(reserve),
         created_by=principal.client_id,
         url=url,
         title=title,
@@ -77,7 +80,7 @@ def mint_submit(
         who=who,
         when=when,
     )
-    authz.audit(session, principal, "mint", ark.ark, via="admin-ui")
+    authz.audit(session, principal, "mint", ark.ark, via="admin-ui", reserved=bool(reserve))
     session.commit()
 
     return _remember_lang(

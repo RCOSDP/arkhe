@@ -113,6 +113,14 @@ MANAGER  1 組織ぶん（shoulder_id を併せると 1 shoulder に固定）
 CLI は `_root()` でシステム管理者として動く。サーバのシェルに入れる時点で DB に
 届くので権限で絞っても意味の在る防御にならない——**代わりに操作は必ず監査に残る**。
 
+### 公開前の ARK は、解決の側から見ると「無い」
+
+`Ark.published_at` が null のものは**未登録の名前と同じに扱う**（完全一致でも祖先
+passthrough でも拾わない）。落とす場所は 2 か所ある——`db/repository.py` の問い合わせと
+`domain/resolution.py` の `is_public`。**二重に見えるが、どちらも要る**: 前者は
+リゾルバに要らない行を載せないため、後者は決定ロジックが「行があるか」ではなく
+「外に出した名前か」で決めることを、差し替え可能な repo の向こう側でも守るため。
+
 ### 委譲まわりを触るなら、解決の順を先に読む
 
 `domain/resolution.py` の判断順（完全一致 → 祖先 → **検査桁** → shoulder の redirect →
@@ -131,11 +139,14 @@ shoulder を 2 か所で採らない、権威を持つ台帳は NAAN あたり 1
 | | |
 | --- | --- |
 | **`alembic check` の指摘は本物** | `use_alter` の FK は `op.create_table` が落とす。「宣言してあるのに作られない」が実際に起きた。SQLite は通す |
+| **SQLite にも一度は流す** | 制約の付け外し（`create_foreign_key` / `drop_constraint`）は SQLite に ALTER が無く、`batch_alter_table` を通さないと `NotImplementedError` で止まる。`where` 節も `sa.text()` にしないと落ちる。**PostgreSQL だけ見ていた 3 版のあいだ、Quickstart のとおりに打つと途中で死んでいた**。`tests/test_migrations.py` が頭まで流す |
 | **マイグレーションは PostgreSQL で見る** | SQLite は PostgreSQL が弾くスキーマを通す。開発中に 2 回、これがバグを隠した。`upgrade → downgrade base → upgrade → check` まで回す |
 | **CHANGELOG に `s.index("### Added")` を使わない** | ファイル先頭からの最初の一致を返すので、**リリース済みの節に追記してしまう**。2 回やった。「未リリース」の見出しを起点に探す |
 | **CSP の `script-src 'none'` は Swagger UI を白紙にする** | `/api/docs` `/api/redoc` だけ `DOCS_CSP` を当てている。触ったら実物を開いて見ること |
 | **`/healthz` は全モードに要る** | resolver / minter / admin のどれで起動しても要る。1 つに付け忘れて k8s に殺され続けた |
 | **`/readyz` に `Depends(get_session)` を使わない** | 依存がハンドラより先に落ちるので 503 でなく 500 になる。自前でセッションを開く |
+| **SQLAlchemy の `default` は None を代入しても効く** | 「値を入れていない」と「None を入れた」を区別しないので、`Column(default=utcnow)` に `published_at=None` を渡すと**予約したはずの ARK が公開済みで入る**。既定値を持たせず、`domain/minting.py` で決める |
+| **公開前の ARK を消すとき、指している行を先に落とす** | `ArkChange` と `MintReceipt` は `ark.ark` への FK を持つ。残すと外部キー違反で commit が落ちる |
 | **`dataclasses.replace` は代入しないと効かない** | `replace(res, ...)` の戻り値を捨てたまま次行で `return` していて、直したつもりが直っていなかった |
 | **i18n の訳文に `` ` `` や `**` を書かない** | 画面にそのまま出る。何度もやったのでテストで縛ってある |
 | **部分ユニーク索引** | `(manager_id, label)` の一意制約は空文字を弾いてしまう。ラベル無しの主体は 1 組織 1 つしか作れなくなる |

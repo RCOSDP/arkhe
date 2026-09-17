@@ -184,6 +184,27 @@ JA: dict[str, str] = {
     "ark.list.offset": "先頭から飛ばす件数",
     "ark.list.more": "ここまでで打ち切った。続きは --offset {next} から",
     "ark.list.empty": "該当なし",
+    "ark.list.state": "public / reserved で絞る（公開済みだけ・公開前だけ）",
+    "ark.mark.reserved": "公開前",
+    "ark.publish.help": "**グローバルに公開する。** 公開すると解決を始め、"
+                        "以後は削除できない（tombstone にするしかない）。\n\n"
+                        "二度実行しても落ちない——同じ結果になるだけ。",
+    "ark.publish.done": "{ark} を公開しました",
+    "ark.publish.already": "{ark} は既に公開済み",
+    "ark.delete.help": "**公開前の ARK を取り下げて消す。** 公開したものには効かない。\n\n"
+                       "消えるのは台帳の行だけで、**名前は二度と採られない**"
+                       "——予約した文字列は既に誰かの手にあるかもしれないため。",
+    "ark.delete.reason": "取り下げる理由。消えた行について残る唯一の説明になる",
+    "ark.delete.done": "{ark} を取り下げました（この名前は二度と採られません）",
+    "ark.purge.help": "**公開した ARK を破棄する。** これは約束を破る操作である"
+                      "——削除命令や、公開してはならなかったものへの逃げ道として"
+                      "だけ使う。\n\n"
+                      "理由は必須で、名前は二度と採られない。監査に必ず残る。",
+    "ark.purge.reason": "破棄する理由。**消えた識別子について残る唯一の説明**",
+    "ark.purge.yes": "確認を省く（スクリプト用）",
+    "ark.purge.confirm": "公開した ARK {ark} を破棄する。解決は止まり、戻せない。続ける？",
+    "ark.purge.aborted": "やめました",
+    "ark.purge.done": "{ark} を破棄しました（この名前は二度と採られません）",
     "check.help": "設定を検証する。**起動前に落としたいものをここで落とす。**",
     "check.auth": "認証機構: {auth}",
     "check.role": "役割    : {role}",
@@ -338,6 +359,30 @@ EN: dict[str, str] = {
     "ark.list.offset": "how many rows to skip",
     "ark.list.more": "stopped here; continue from --offset {next}",
     "ark.list.empty": "nothing matched",
+    "ark.list.state": "only `public` or only `reserved` ones",
+    "ark.mark.reserved": "reserved",
+    "ark.publish.help": "**Publish it globally.** From then on it resolves, and it can no "
+                        "longer be deleted — only tombstoned.\n\n"
+                        "Running it twice is not an error; the result is the same.",
+    "ark.publish.done": "published {ark}",
+    "ark.publish.already": "{ark} was already public",
+    "ark.delete.help": "**Withdraw an ARK that was never published.** It does nothing to a "
+                       "published one.\n\n"
+                       "Only the row goes: **the name is never assigned again**, because a "
+                       "reserved identifier may already be in someone's hands.",
+    "ark.delete.reason": "why it is withdrawn; the only account left of a row that is gone",
+    "ark.delete.done": "withdrew {ark} (that name is never assigned again)",
+    "ark.purge.help": "**Purge a published ARK.** This breaks the promise the service "
+                      "makes — use it only as a way out for a removal order, or for "
+                      "what should never have been published.\n\n"
+                      "A reason is required, the name is never assigned again, and the "
+                      "audit log always keeps it.",
+    "ark.purge.reason": "why it is purged. **The only account left of the identifier**",
+    "ark.purge.yes": "skip the confirmation (for scripts)",
+    "ark.purge.confirm": "Purge the published ARK {ark}? Resolution stops, and there is "
+                         "no way back. Continue?",
+    "ark.purge.aborted": "left alone",
+    "ark.purge.done": "purged {ark} (that name is never assigned again)",
     "check.help": "Validate the configuration. **Fail here rather than at startup.**",
     "check.auth": "Mechanisms: {auth}",
     "check.role": "Role      : {role}",

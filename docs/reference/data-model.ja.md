@@ -55,11 +55,12 @@ erDiagram
     }
 
     ARK {
-        string ark PK "naan/name。**削除しない**"
+        string ark PK "naan/name。**公開したら削除しない**"
         string naan FK
         int    shoulder_id FK
         string assigned_name
         string url "空なら記述を返す（D6）"
+        date   published_at "null は公開前。**解決せず、削除できる**"
         string commitment "この対象への約束"
         string metadata
         string who "ERC"
@@ -104,7 +105,7 @@ erDiagram
         int    id PK
         string ark FK
         date   at
-        string action "update / tombstone"
+        string action "update / tombstone / hold / publish"
         string before_url "**復元したいのはこれ**"
         string after_url
         string by
@@ -119,6 +120,18 @@ erDiagram
         string action "mint / update / succeed / depart ..."
         string target
         json   detail
+    }
+    WITHDRAWN_NAME {
+        string ark PK "公開前に取り下げた名前。**二度と採らない**"
+        string naan
+        string assigned_name
+        int    shoulder_id "どの名前空間の容量を使ったか"
+        date   minted_at
+        string minted_by
+        date   withdrawn_at
+        string withdrawn_by
+        string reason "消えた行の唯一の説明"
+        string ip
     }
     UNKNOWN_SUBJECT {
         int    id PK
@@ -146,6 +159,9 @@ NAAN 単位以上の操作しか残さないが、**採番も付け替えも組�
 なら、変えたのは何でいつ誰が変えたのかを示せなければならない——さもないと、
 **約束を検証する手段が利用者の側に無い。**
 
+`WITHDRAWN_NAME` も外部キーを持たない。**指す先の行がもう無い**からであり、
+記録は対象より長く残るべきだからでもある。
+
 `AUDIT_EVENT` は他の表と外部キーで結ばない。**記録は対象が消えても残るべき**もので、
 参照整合性で縛ると「消せないから記録も消す」という逆の力が働く。
 
@@ -155,7 +171,8 @@ ER 図は形しか示さない。**arkhe の設計の中身は制約のほうに
 
 | | |
 | --- | --- |
-| **ARK は削除できない** | 行を消すと解決が止まる＝識別子が壊れる。`before_delete` で拒否する。対象が失われたら tombstone にするか `url` を空にして記述を返す |
+| **公開した ARK は削除できない** | 行を消すと解決が止まる＝識別子が壊れる。`before_delete` で拒否する。対象が失われたら tombstone にするか `url` を空にして記述を返す |
+| **公開前の ARK は削除できる** | `published_at` が null のものだけ。まだ外に出していない名前は `NR` が縛る対象ではない——ただし名前は `WITHDRAWN_NAME` に移り、二度と採られない |
 | **shoulder も削除できない** | 乱数割当が同じ文字列を再び当てうる＝NR 違反の芽。`status=retired` にする |
 | **retired からは戻せない** | 引退した名前空間の再開は、その間に外部が同じ名前を使った可能性を否定できない |
 | **採番は UPDATE に化けない** | 主キー衝突は必ず失敗させる。arklet で最重大の欠陥がこれだった |

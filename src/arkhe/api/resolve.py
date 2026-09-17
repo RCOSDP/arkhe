@@ -484,11 +484,15 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
         )
 
     res = resolve(
-        SqlArkRepository(session),
+        SqlArkRepository(session, unpublished=cfg.resolve_unpublished),
         parsed.naan,
         parsed.name,
         _inflection(request),
         global_resolver=cfg.global_resolver,
+        # **閉域のリゾルバは公開前の ARK も解決する**（`ARKHE_RESOLVE_UNPUBLISHED`）。
+        # 絞りを repository と決定ロジックの両方に渡すのは、どちらか一方だけを
+        # 見ていると、差し替えた repo で判断が変わるため。
+        unpublished=cfg.resolve_unpublished,
     )
 
     # **ブラウザを転送してよい先だけ転送する。** `urn:isbn:…` のような正当な

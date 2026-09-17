@@ -28,7 +28,10 @@
 | `arkhe hold add` | 転送を一時的に止める（`ark` / `shoulder` / `naan`）。**解決は止めない**——記述は答え続ける。期限と理由は必須。 |
 | `arkhe hold release` | 期限を待たずに保留を外す。 |
 | `arkhe hold list` | 今かかっている保留を並べる。**見えないと恒久化する。** |
-| `arkhe ark list` | 発行した ARK を並べる。**既定で 50 件で打ち切る**（台帳は増える一方なので）。`--naan` `--org` で絞り、`-q` は ARK・行き先・題名を見る。 |
+| `arkhe ark list` | 発行した ARK を並べる。**既定で 50 件で打ち切る**（台帳は増える一方なので）。`--naan` `--org` で絞り、`-q` は ARK・行き先・題名を見る。 `--state public|reserved` で公開したものだけ・公開前のものだけを引ける。 |
+| `arkhe ark publish` | **グローバルに公開する。** 以後は解決し、削除できなくなる（tombstone にするしかない）。二度実行しても落ちない。 |
+| `arkhe ark delete` | **公開前の ARK を取り下げて消す。** 公開したものには効かない。消えるのは行だけで、**その名前は二度と採られない。** |
+| `arkhe ark purge` | **公開した ARK を破棄する。RA の運用者だけ。** 理由が必須で、確認を訊く（`--yes` で省ける）。**約束を破る操作**——削除命令や、公開してはならなかったものへの逃げ道 |
 
 `--help` に各コマンドの引数がある。
 
@@ -94,6 +97,25 @@ arkhe hold release shoulder 3
 
 **`retired` からは戻せない。** 予約は作成時にしか指定できない——一度採番できる状態に
 した名前空間を、後から未使用扱いにはできないから。
+
+### 名前を先に押さえ、後から公開する
+
+```bash
+curl -X POST /api/mint -d '{"reserve": true}'      # まだ解決しない
+arkhe ark list --state reserved
+arkhe ark publish ark:99999/x9tn1qkq2g7            # ここから解決を始める
+arkhe ark delete ark:99999/x9tn1qkq2g7 --reason "登録が取りやめになった"
+```
+
+**普通に消せるのは公開前だけ。** 公開した ARK は、RA の運用者が理由を残して破棄する
+以外には消えない。
+
+```bash
+arkhe ark purge ark:99999/x9tn1qkq2g7 --reason "2026-09 削除命令（事件番号 …）"
+```
+
+どちらの場合も**取り下げた名前は二度と採られない**ので、消した後にその名前が別のものを
+指すことはない。[壊さないもの](../concepts/invariants.md#no-delete)を参照。
 
 ## コマンドの言語
 

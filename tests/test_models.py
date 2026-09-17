@@ -9,9 +9,12 @@ from arkhe.db.models import Ark, Naan, NotDeletable
 from arkhe.domain import minting
 
 
-def test_NR_ARKは削除できない(db, world):
+def test_NR_公開したARKは削除できない(db, world):
     """行を消すと解決が止まる＝**識別子が壊れる**。tombstone に付け替えるか
-    url を空にする。"""
+    url を空にする。
+
+    **消せるのは公開前のものだけ**——そちらは `test_publication.py` で見る。
+    """
     ark, _ = minting.mint(db, shoulder=world["sh_a"], created_by="t")
     db.commit()
     with pytest.raises(NotDeletable):

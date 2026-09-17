@@ -25,7 +25,7 @@ from arkhe.arkspec.naming import (
     normalize_structural,
     strip_hyphens,
 )
-from arkhe.db.models import Ark, Shoulder, ShoulderStatus
+from arkhe.db.models import Ark, Shoulder, ShoulderStatus, WithdrawnName, utcnow
 
 MINT_COLLISION_RETRIES = 10
 NOID_LENGTH = 8
@@ -47,6 +47,14 @@ class QualifierOutsideBase(ValueError):
         super().__init__(f"qualifier does not point inside the base: {qualifier!r}")
 
 
+class Withdrawn(ValueError):
+    """**公開前に取り下げられた名前。** 二度と採らない（`WithdrawnName` を見よ）。"""
+
+    def __init__(self, ark: str):
+        self.ark = ark
+        super().__init__(f"{ark} was withdrawn before publication and is never re-used")
+
+
 class NameTooLong(ValueError):
     """名前が索引できる長さを超えた。**仕様の下限（255）まで**は受ける。"""
 
@@ -56,12 +64,16 @@ class NameTooLong(ValueError):
 
 
 def mint(
-    session: Session, *, shoulder: Shoulder, created_by: str = "", **fields
+    session: Session, *, shoulder: Shoulder, created_by: str = "", reserve: bool = False,
+    **fields
 ) -> tuple[Ark, int]:
     """衝突をリトライしながら 1 本採番する。戻り値は (Ark, 衝突回数)。
 
     衝突は**握りつぶさず数えて採り直す**。回数を返すのは、名前空間の枯渇が
     静かに進むのを検知できるようにするため（衝突率が上がったら桁を増やす合図）。
+
+    `reserve=True` なら**公開前**として採る——解決せず、取り下げれば消せる
+    （`Ark.published_at`）。既定は今までどおり、採番と同時に公開する。
     """
     collisions = 0
     for _ in range(MINT_COLLISION_RETRIES):
@@ -69,13 +81,20 @@ def mint(
         stem = f"{shoulder.shoulder.lstrip('/')}{noid}"
         digit = noid_check_digit(check_digit_base(shoulder.naan, stem))
         name = f"{stem}{digit}"
+        key = ark_key(shoulder.naan, name)
+        # **取り下げた名前は二度と当てない。** 行はもう無いので INSERT では
+        # 弾けない——ここで見て、衝突と同じに数えて採り直す。
+        if session.get(WithdrawnName, key) is not None:
+            collisions += 1
+            continue
         ark = Ark(
-            ark=ark_key(shoulder.naan, name),
+            ark=key,
             naan=shoulder.naan,
             shoulder_id=shoulder.id,
             assigned_name=name,
             created_by=created_by,
             updated_by=created_by,
+            published_at=None if reserve else utcnow(),
             **fields,
         )
         try:
@@ -109,7 +128,7 @@ class OutsideShoulder(ValueError):
         super().__init__(f"{name} is outside the shoulder of {naan}")
 
 
-def check_importable(shoulder: Shoulder, name: str) -> str:
+def check_importable(session: Session, shoulder: Shoulder, name: str) -> str:
     """取り込んでよい名前か。**書く前に済む検査はここに集める。**
 
     一括の取り込みが「1 件でも通らなければ何も作らない」と言えるのは、
@@ -126,6 +145,11 @@ def check_importable(shoulder: Shoulder, name: str) -> str:
     # N7: 検査桁は base name に対して計算される。修飾子付きは `register` の仕事。
     if not verify_ark_check_digit(shoulder.naan, name):
         raise BadCheckDigit(name)
+    # **取り下げた名前は受け取らない。** 外で採られた名前でも、この台帳が
+    # 一度公開前に取り下げた文字列なら、別の対象に付け直すことになる。
+    key = ark_key(shoulder.naan, name)
+    if session.get(WithdrawnName, key) is not None:
+        raise Withdrawn(compact_ark(key))
     return name
 
 
@@ -157,7 +181,7 @@ def import_minted(
     衝突は `mint` と同じく **1 本の INSERT** で弾く（E1）。既に在る名前は
     黙って上書きしない。
     """
-    name = check_importable(shoulder, name)
+    name = check_importable(session, shoulder, name)
 
     ark = Ark(
         ark=ark_key(shoulder.naan, name),
@@ -166,6 +190,9 @@ def import_minted(
         assigned_name=name,
         created_by=created_by,
         updated_by=created_by,
+        # **取り込んだ名前は公開済み。** 外で採られて既に配られている名前を
+        # 引き受ける操作なので、こちらの都合で伏せる意味が無い。
+        published_at=utcnow(),
         **fields,
     )
     try:
@@ -212,6 +239,9 @@ def register_qualified(
         assigned_name=name,
         created_by=created_by,
         updated_by=created_by,
+        # **公開状態は base から継ぐ。** 部分参照が base より先に世に出ることは
+        # ないし、公開前の base を取り下げるときに、置き去りの子を残さない。
+        published_at=base.published_at,
         **fields,
     )
     try:

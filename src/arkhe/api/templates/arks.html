@@ -25,6 +25,15 @@
         {% endfor %}
       </select>
       {% endif %}
+      {# **公開前は放っておくと溜まる。** 予約したまま公開も取り下げもされない
+         番号を、一覧から名指しで引けるようにしておく。 #}
+      <select name="state" aria-label="{{ t('ak.state') }}">
+        <option value="">{{ t('ak.state_all') }}</option>
+        {% for st in states %}
+          <option value="{{ st }}" {% if state == st %}selected{% endif %}>
+            {{ t('ak.' ~ st) }}</option>
+        {% endfor %}
+      </select>
       <button class="btn sm" type="submit">{{ t('ak.search') }}</button>
     </form>
   </div>
@@ -38,7 +47,9 @@
     {% for a in arks %}
       <tr>
         <td class="mono" data-label="{{ t('ak.ark') }}">
-          <a href="/admin/arks/{{ a.ark }}">ark:{{ a.ark }}</a></td>
+          <a href="/admin/arks/{{ a.ark }}">ark:{{ a.ark }}</a>
+          {% if not a.published_at %}
+            <span class="pill reserved">{{ t('ak.reserved') }}</span>{% endif %}</td>
         <td class="mono dim" data-label="{{ t('ak.target') }}">
           {{ a.url or t('ak.none_target') }}</td>
         <td data-label="{{ t('ak.title_col') }}">{{ a.title }}</td>
@@ -54,7 +65,7 @@
     </tbody>
   </table>
   </div>
-  {% with base='/admin/arks', extra='&org=' ~ org %}
+  {% with base='/admin/arks', extra='&org=' ~ org ~ '&state=' ~ state %}
     {% include "partials/pager.html" %}{% endwith %}
 </div>
 {% endblock %}

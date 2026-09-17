@@ -167,6 +167,13 @@ JA: dict[str, str] = {
     "sc.ark:hold": "転送を止める",
     "sc.ark:hold.d": "行き先への転送を一時的に止める。<b>解決そのものは止まらない</b>"
                      "——識別子は生きたまま、記述を返す。",
+    "sc.ark:delete": "公開前のものを取り下げる",
+    "sc.ark:delete.d": "<b>まだ公開していない</b> ARK を台帳から消す。公開したものには"
+                       "効かない——名前は二度と採られないよう記録に残ります。",
+    "sc.ark:purge": "公開したものを破棄する",
+    "sc.ark:purge.d": "<b>公開した</b> ARK を消す。<b>RA の運用者だけ</b>が使えます"
+                      "——削除命令や、公開してはならなかったものへの逃げ道で、"
+                      "理由と監査が必ず残ります。",
     "cu.f.scopes_hint": "<b>ここが上限です。</b>認可サーバのトークンに載っている scope との"
                         "積が、実際にできることになります——トークンで広がることはありません。",
 }
@@ -329,6 +336,15 @@ EN: dict[str, str] = {
     "sc.ark:hold": "Suspend forwarding",
     "sc.ark:hold.d": "Temporarily stop forwarding to the target. <b>Resolution itself does "
                      "not stop</b> — the identifier stays alive and returns a description.",
+    "sc.ark:delete": "Withdraw one not yet published",
+    "sc.ark:delete.d": "Remove an ARK that is <b>not yet public</b> from the ledger. It "
+                       "does not touch a published one, and the name is kept so that it "
+                       "is never assigned again.",
+    "sc.ark:purge": "Purge a published one",
+    "sc.ark:purge.d": "Remove a <b>published</b> ARK. <b>The registration authority's "
+                      "operator alone</b> — a way out for a removal order or for what "
+                      "should never have been published. A reason and an audit entry "
+                      "always remain.",
     "cu.f.scopes_hint": "<b>This is the ceiling.</b> What it may actually do is the "
                         "intersection with the scopes in the token — a token cannot widen "
                         "it.",

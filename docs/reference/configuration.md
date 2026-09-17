@@ -65,6 +65,12 @@ See [Authentication](../guides/authentication.md) for which mechanism suits what
 | --- | --- | --- |
 | `ARKHE_GLOBAL_RESOLVER` | `https://n2t.net` | Where an unknown NAAN is forwarded (D2) |
 | `ARKHE_RAW_URI_HEADER` | — | Header carrying the raw request URI, so a bare `?` can be detected. A `?` with no query string is indistinguishable otherwise — even in ASGI |
+| `ARKHE_RESOLVE_UNPUBLISHED` | `false` | **Also resolve ARKs that are not published yet. For a resolver inside a closed network**, where a name minted in that network is worthless if the network's own resolver will not resolve it |
+
+!!! danger "Never on a public face"
+    `?info` and `??` need no authentication. If a resolver with this on can be reached
+    from the open network, **the existence, title and target of objects that are not
+    public yet go straight out**. Turn it on only where the reach itself is closed.
 
 ## Minting
 

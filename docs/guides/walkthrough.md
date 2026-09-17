@@ -32,6 +32,7 @@ curl -X POST $M/api/mint \
   "who": "Yamada, Taro",
   "when": "2026",
   "created_at": "2026-09-07T09:54:10.571278Z",
+  "published_at": "2026-09-07T09:54:10.571278Z",
   "hold_until": null
 }
 ```
@@ -40,6 +41,16 @@ curl -X POST $M/api/mint \
 organisation was given; `tn1qkq2g` came from a random minter; the final `7` is a
 [check digit](../concepts/ark.md), which is why a mistyped ARK can be told apart from
 an ARK that simply is not here.
+
+!!! tip "Reserve it first if the object is still a draft"
+    ```bash
+    -d '{"reserve": true, "url": "…"}'          # published_at is null
+    curl -X POST $M/api/publish -d '{"ark": "ark:99999/x9tn1qkq2g7"}'
+    curl -X POST $M/api/delete  -d '{"ark": "ark:99999/x9tn1qkq2g7"}'
+    ```
+    A reserved ARK **does not resolve on a public resolver** and **can still be
+    deleted**; publishing is the point of no return, and the name of a withdrawn one is
+    never assigned again. Inside a closed network, `ARKHE_RESOLVE_UNPUBLISHED` resolves it.
 
 !!! tip "Send a `request_id` for anything at scale"
     ```bash
@@ -233,7 +244,9 @@ curl -X PUT $M/api/hold/release -H "Authorization: Bearer $KEY" \
 
 ## 7. When the object is gone
 
-There is no delete. When the thing itself is gone, say so:
+A published ARK has no delete (only [one that never went
+out](../concepts/invariants.md#before-publication) does). When the thing itself is gone,
+say so:
 
 ```bash
 curl -X PUT $M/api/tombstone \
@@ -548,5 +561,5 @@ Every dotted arrow changes where the name leads, or whether it leads anywhere at
 
 - [The API reference](../reference/api.md) — every endpoint, and what resolution answers
 - [Errors](../reference/errors.md) — every code
-- [Invariants](../concepts/invariants.md) — why there is no delete
+- [Invariants](../concepts/invariants.md) — why a published ARK has no delete
 - [Running several arkhe](federation.md) — the closed/public arrangement of section 10 in full

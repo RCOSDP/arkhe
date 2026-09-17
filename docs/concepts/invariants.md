@@ -7,7 +7,7 @@ These are enforced in the code, not in a policy document. A rule that depends on
 everyone remembering it will be broken eventually — usually at 2 a.m., by someone
 fixing something else.
 
-## An ARK is never deleted
+## A published ARK is never deleted {#no-delete}
 
 Deleting the row stops resolution, and an identifier that no longer resolves is a
 broken identifier. `Ark` refuses deletion at the ORM level.
@@ -24,6 +24,38 @@ The resolver then returns the description instead of a redirect — which is
 [FAIR A2](https://www.go-fair.org/fair-principles/): *metadata should be accessible
 even when the data are no longer available*.
 
+### Before it goes out, it can still be taken back {#before-publication}
+
+**What NR binds are the names that went out into the world.** A name is not bound the
+moment it is minted: numbers are routinely reserved for objects that are still drafts,
+and when such a deposit is abandoned, leaving a number that points at nothing forever is
+not keeping the promise either.
+
+So an ARK can be minted **reserved**. Until it is published **a public resolver does not
+resolve it** — it answers as it does for a name it has never seen — and it can be deleted.
+
+**A resolver inside a closed network is another matter** (`ARKHE_RESOLVE_UNPUBLISHED=1`):
+a name minted inside that network is worthless if the network's own resolver will not
+resolve it. **Whether an ARK resolves is decided by the ARK's state and by which resolver
+is answering** — see [Running it distributed](../guides/federation.md#closed-resolver).
+
+```bash
+curl -X POST /api/mint    -d '{"reserve": true}'        # does not resolve yet
+curl -X POST /api/publish -d '{"ark": "ark:99999/x9…"}' # from here on it resolves
+curl -X POST /api/delete  -d '{"ark": "ark:99999/x9…", "reason": "abandoned"}'
+```
+
+There is **one boundary and it only goes one way**. Publishing cannot be undone: if it
+could, deleting before publication would mean nothing. A published ARK answers `409` to
+`/api/delete`.
+
+**The name is not freed.** It moves to a ledger of withdrawn names and is never assigned
+again, by minting or by import — so withdrawing one that was resolving inside a closed
+network cannot make that name mean something else; a stale reference simply gets `404`,
+which is what `NR` actually protects — a reserved identifier has usually already been handed to
+someone (that is what reserving is *for*), and re-using it would be indistinguishable,
+from outside, from breaking NR.
+
 ## What stops is redirection, never resolution
 
 When a target can no longer be trusted — the delegate is down, a wrong URL went out, a
@@ -31,7 +63,7 @@ takedown was requested — **it has to stop quickly, and the identifier must not
 
 `404` would be a lie: the identifier exists. `503` says "not right now", but a permanent
 identifier still looks broken. arkhe answers `200` with a **description** instead — the
-same path as [An ARK is never deleted](#an-ark-is-never-deleted), so the identifier stays
+same path as [A published ARK is never deleted](#no-delete), so the identifier stays
 alive while only the redirect stops.
 
 ```bash
@@ -96,7 +128,8 @@ the more it matters that you can trace who did what.
 
 | Invariant | Enforced by |
 | --- | --- |
-| No deletion of ARK or shoulder | `before_delete` events in `db/models.py` |
+| No deletion of a **published** ARK, or of a shoulder | `before_delete` events in `db/models.py` |
+| A withdrawn name is never assigned again | `WithdrawnName`, checked in `domain/minting.py` |
 | A hold stops redirection only | `hold_of` / `effective_hold` in `domain/resolution.py` |
 | `retired` is one-way | the transition table in `domain/admin_ops.py` |
 | Minting cannot become an update | the single INSERT path in `domain/minting.py` |

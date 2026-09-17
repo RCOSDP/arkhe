@@ -9,7 +9,72 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **An ARK can be deleted before it is published.** There used to be no delete anywhere:
+  declaring `NR` (no re-assignment) means resolution must never stop. But **what `NR`
+  binds are the names that went out into the world**, not every name the moment it is
+  minted. Reserving a number for an object that is still a draft is ordinary practice,
+  and when such a deposit is abandoned, **a number that points at nothing forever** is
+  not keeping the promise either.
+
+  So `Ark.published_at` was added. `null` means "not published yet": the ARK **does not
+  resolve** — the resolver answers as it does for a name it has never seen — and it
+  **can be deleted**.
+
+  - `POST /api/mint` with `{"reserve": true}` — mint it without publishing
+  - `POST /api/publish` — publish it globally. **From here on it cannot be deleted**
+  - `POST /api/delete` — withdraw one that was never published (a published one is `409`)
+  - `arkhe ark publish` / `arkhe ark delete`, and the same two actions on the ARK page of
+    the admin interface
+  - `ARKHE_RESOLVE_UNPUBLISHED` — a resolver inside a closed network resolves them
+
+  **The boundary only goes one way.** Publishing cannot be undone; if it could, deleting
+  before publication would mean nothing. **The default still mints and publishes in one
+  step**, so existing callers need no change, and every existing ARK migrates as
+  published.
+
+  **Whether it resolves is not decided by the ARK's state alone** — it depends on which
+  resolver is answering. A resolver started with `ARKHE_RESOLVE_UNPUBLISHED=1`, inside a
+  closed network, **does resolve reserved ARKs**: a name minted in that network is
+  worthless if the network's own resolver will not resolve it, which would defeat the
+  point of giving closed objects the same shape of PID. **The default does not**, because
+  `?info` and `??` need no authentication and the safe side belongs in the default.
+
+  **A withdrawn name is not freed.** It moves to `withdrawn_name` and is never assigned
+  again, by minting or by import: a reserved identifier has usually already been handed
+  to someone — that is what reserving is *for* — and re-using it would be
+  indistinguishable, from outside, from breaking `NR`. Deletion also has its own scope,
+  `ark:delete`; being able to mint and being able to withdraw are different decisions.
+
+### Changed
+
+- **An invariant is stated more narrowly.** "An ARK is never deleted" is now "a
+  **published** ARK is never deleted". Nothing that was protected has been given up — a
+  name that went out still cannot go — but the promise has been rewritten to say exactly
+  what it covers, and [the versioning
+  policy](https://rcosdp.github.io/arkhe/project/versioning/) was updated to match.
+
 ### Fixed
+
+- **`alembic upgrade head` did not run on SQLite.** The steps written in the Quickstart
+  (`ARKHE_DATABASE_URL=sqlite:///…`, then `alembic upgrade head`) stopped at the third
+  migration with `NotImplementedError`. **SQLite has no `ALTER` that adds or drops a
+  constraint**, so `create_foreign_key` and `drop_constraint` have to go through batch
+  mode — the copy-and-move strategy — and a partial index's `where` clause has to be
+  `sa.text()` rather than a bare string.
+
+  It had been broken for three releases. **Round-tripping only against PostgreSQL hid
+  it**: that stays the authoritative check, but **the steps the documentation gives have
+  to be known to work** on their own. `tests/test_migrations.py` now runs
+  `upgrade → downgrade base → upgrade` on SQLite and compares the migrated schema's
+  tables and columns against what the models declare.
+
+  PostgreSQL behaviour is unchanged — `batch_alter_table` emits the same plain `ALTER`
+  there. **The widening migration still does nothing on SQLite**, which does not enforce
+  varchar lengths; rebuilding tables that carry primary and foreign keys to change a
+  number SQLite ignores is not worth the risk (`alembic check` against SQLite reports
+  exactly that difference).
 
 - **The example ARKs in the documentation were not identifiers this ledger can mint.**
   The reference and concept pages showed `ark:99999/x9abc` — a three-character blade, no

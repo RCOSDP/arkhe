@@ -45,6 +45,13 @@ namespace happens elsewhere, you are told where to go. arkhe does not call the o
 minter for you: a lost response would leave an ARK minted over there that this ledger
 has never seen.
 
+**A name can be minted before it is published, and deleted while it is.** Send
+`{"reserve": true}` to `POST /api/mint` and **a public resolver does not resolve it** — it
+answers as it does for a name it has never seen (a resolver inside a closed network does,
+with `ARKHE_RESOLVE_UNPUBLISHED`). `POST /api/publish` starts resolution
+and **closes the door on deletion**: `POST /api/delete` then answers `409`. A withdrawn
+name is never assigned again. See [Invariants](../concepts/invariants.md#before-publication).
+
 **Bulk operations do not partially apply.** If one row in a bulk update is missing or
 out of reach, the whole request fails. arklet zipped an unordered query result against
 the input and could write one record's values onto another.

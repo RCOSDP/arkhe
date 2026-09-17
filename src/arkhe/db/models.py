@@ -10,14 +10,15 @@ Django 版が「構造で」守っていた不変条件は、ここでも構造�
       → 採番は INSERT のみ。ORM の merge/upsert 経路を使わない（`mint()` を見よ）
   I5  条件つき unique 制約でローテーションを型として表現する
       → 部分インデックス（`postgresql_where`）
-  NR  名前空間も ARK も削除しない
-      → `Shoulder` / `Ark` に削除を禁じるガードを置く
+  NR  名前空間も、**公開した** ARK も削除しない
+      → `Shoulder` / `Ark` に削除を禁じるガードを置く（公開前の ARK だけが例外）
   R2  監査証跡
   D3  自 NAAN の未知名は 404（`Naan.is_authoritative` で判定する）
 """
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from enum import StrEnum
 
@@ -34,7 +35,13 @@ from sqlalchemy import (
     event,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    object_session,
+    relationship,
+)
 from sqlalchemy.types import JSON
 
 from arkhe.arkspec.naming import MAX_ARK_LENGTH, MAX_NAAN_LENGTH, MAX_NAME_LENGTH
@@ -349,6 +356,33 @@ class Ark(Base, HoldMixin):
     commitment: Mapped[str] = mapped_column(Text, default="")
     metadata_: Mapped[str] = mapped_column("metadata", Text, default="")
 
+    #: **グローバルに公開した時刻。null は「まだ公開していない」。**
+    #:
+    #: NR（再割当てしない）が縛るのは**外へ出した名前**である。採番した瞬間から
+    #: 縛られるわけではない——下書きの対象に先に番号を振っておき、公開をやめた
+    #: ときに、その番号が**誰も指さないまま台帳に残り続ける**ほうが、約束を
+    #: 守っていることにはならない。
+    #:
+    #: だから公開前という状態を持つ。公開前の ARK は:
+    #:
+    #:   - **解決しない**（`domain.resolution` は未登録の名前と同じに扱う）
+    #:   - **削除できる**（`domain.admin_ops.withdraw_ark`）
+    #:
+    #: 公開した瞬間から、従来どおり何があっても消えない。**戻す道は無い**
+    #: ——「公開を取り消す」は、外に出た名前を無かったことにする操作だから。
+    #:
+    #: 既定は「採番と同時に公開」。**今までと同じ振る舞いを既定にする**ため
+    #: ——公開の一手間を既存の呼び出し側に課すと、足すのを忘れた側では
+    #: 採番できているのに解決しない ARK が静かに積もる。
+    #:
+    #: **列の `default` では決めない。** SQLAlchemy は「None を代入した」と
+    #: 「値を入れていない」を区別せず、どちらにも `default` を当てる——
+    #: `default=utcnow` を置くと**予約が黙って公開になる**。値を決めるのは
+    #: `domain.minting`（Ark を作る唯一の層）で、ここは器だけを持つ。
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None, index=True
+    )
+
     # ERC / Dublin Core（分野標準の受け皿）
     title: Mapped[str] = mapped_column(Text, default="")
     type: Mapped[str] = mapped_column(Text, default="")
@@ -372,6 +406,11 @@ class Ark(Base, HoldMixin):
     shoulder: Mapped[Shoulder] = relationship()
 
     __table_args__ = (Index("ix_ark_shoulder_created", "shoulder_id", "created_at"),)
+
+    @property
+    def is_public(self) -> bool:
+        """**もうグローバルに出したか。** 出していれば、この行は消えない。"""
+        return self.published_at is not None
 
 
 class Subject(StrEnum):
@@ -559,8 +598,9 @@ class ArkChange(Base):
     ark: Mapped[str] = mapped_column(ForeignKey("ark.ark"), index=True)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
-    #: `update` か `tombstone`。**意味が違うので分けて残す**
-    #: （転送先の付け替えと「対象が失われた」の宣言は別のこと）。
+    #: `update` / `tombstone` / `hold` / `release_hold` / `publish`。
+    #: **意味が違うので分けて残す**（転送先の付け替えと「対象が失われた」の宣言、
+    #: そして「グローバルに出した」は別のこと）。
     action: Mapped[str] = mapped_column(String(16))
 
     #: 変える前の行き先。**これが復元したいもの。**
@@ -628,29 +668,124 @@ class UnknownSubject(Base):
     __table_args__ = (UniqueConstraint("subject", "issuer", name="uq_unknown_subject"),)
 
 
+class WithdrawnName(Base):
+    """**公開前に取り下げた名前。二度と採らない。**
+
+    公開前の ARK は消せる（`Ark.published_at` を見よ）。だが消してよいのは
+    **台帳の行**であって、名前そのものではない——公開していなくても、予約した
+    文字列は既に人の手に渡っている（先に番号を貰って対象に刻むのが予約の目的
+    そのものである）。その名前を別の対象に振り直せば、**外の世界では NR 違反と
+    見分けがつかない。**
+
+    だから行を消すときに、ここへ名前を移す。以後その名前は:
+
+      - 採番では当たらない（当たっても衝突として採り直す）
+      - 取り込み（`import_minted`）では拒む
+
+    **`Ark` への外部キーを持たない。** 参照先はもう無いし、`AuditEvent` と同じ
+    理由でもある——記録は対象より長く残るべきもので、参照整合性で縛ると
+    「消せないから記録も消す」が楽になってしまう。
+    """
+
+    __tablename__ = "withdrawn_name"
+
+    ark: Mapped[str] = mapped_column(String(MAX_ARK_LENGTH), primary_key=True)
+    naan: Mapped[str] = mapped_column(String(MAX_NAAN_LENGTH), index=True)
+    assigned_name: Mapped[str] = mapped_column(String(MAX_NAME_LENGTH))
+
+    #: **どの名前空間の容量を使ったか。** shoulder は消えないので、後から辿れる。
+    shoulder_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+
+    #: 採ったのは誰でいつか。**取り下げた側だけを残すと、誰が予約したかが消える。**
+    minted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    minted_by: Mapped[str] = mapped_column(String(255), default="")
+
+    #: **公開していたか。** null なら公開前の取り下げ、値があれば**公開した名前の
+    #: 破棄**（`purge_ark`）で、その時刻が「いつ外に出ていたか」を示す。
+    #:
+    #: 2 つを同じ表に置くのは、**名前を再び採らないという扱いが同じ**だから。
+    #: だが意味は違う——前者は約束の外側で起きたことで、後者は**約束を破ったこと**
+    #: である。見分けがつかないと、破棄が何件あったかを後から数えられない。
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    withdrawn_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
+    withdrawn_by: Mapped[str] = mapped_column(String(255), default="", index=True)
+    #: なぜ取り下げたか。**残らない操作にはしない**——消えた行の唯一の説明になる。
+    reason: Mapped[str] = mapped_column(String(500), default="")
+    ip: Mapped[str] = mapped_column(String(45), default="")
+
+
 # --------------------------------------------------------------------- 削除の禁止
 #
-# **ARK も shoulder も消さない。**
-#   ARK を消す      → 解決が止まる＝識別子が壊れる。`NR` を宣言している以上許されない。
-#                     対象が失われたときは tombstone に付け替えるか、url を空にして
-#                     記述を返す（FAIR A2）。
-#   shoulder を消す → 乱数割当が同じ文字列を再び当てうる＝**NR 違反の芽**。組織が
-#                     消えても行は残し、status=retired にする。とくに delegated
-#                     だった shoulder は、外部 minter が我々の知らない識別子を作って
-#                     いる可能性があるので絶対に消せない。
+# **shoulder と、公開した ARK は消さない。**
+#   公開した ARK を消す → 解決が止まる＝識別子が壊れる。`NR` を宣言している以上
+#                         許されない。対象が失われたときは tombstone に付け替えるか、
+#                         url を空にして記述を返す（FAIR A2）。
+#   公開前の ARK        → **消せる。** まだ外に出していない名前は、NR が縛る
+#                         対象ではない。ただし名前は `WithdrawnName` に移り、
+#                         二度と採られない（`domain.admin_ops.withdraw_ark`）。
+#   shoulder を消す     → 乱数割当が同じ文字列を再び当てうる＝**NR 違反の芽**。組織が
+#                         消えても行は残し、status=retired にする。とくに delegated
+#                         だった shoulder は、外部 minter が我々の知らない識別子を作って
+#                         いる可能性があるので絶対に消せない。
 #
-# 規約を人に守らせるのではなく、ORM 側で不可能にする。
+#   公開した ARK の破棄 → **RA の運用者だけが、理由を残して行える**
+#                         （`domain.admin_ops.purge_ark`）。法的な削除命令や、
+#                         公開してはならないものが公開されたときのための逃げ道で、
+#                         **使えば約束を破ったことになる**。だから経路を 1 本に
+#                         絞り、跡（監査と `WithdrawnName`）が必ず残るようにする。
+#
+# 規約を人に守らせるのではなく、ORM 側で不可能にする。**公開した行は、その
+# セッションが「この ARK を破棄する」と名指ししていないかぎり落とせない**
+# ——`purge_ark` だけがその宣言をする。
+#
+# 印をセッションに持たせ、**名指した 1 本だけ**に効かせているのは、
+# 大域の旗にすると立てっぱなしが起きるからである。旗が寝ていることを誰も
+# 確かめない——そして気づくのは、消えてはいけない行が消えた後になる。
 
 
 class NotDeletable(RuntimeError):
     pass
 
 
+#: `session.info` に置く鍵。**そのセッションで破棄を宣言した ARK**。
+_PURGING = "arkhe_purging"
+
+
+@contextmanager
+def sanctioned_purge(session, ark: str):
+    """**この 1 本の破棄を、この session に限って許す。**
+
+    `purge_ark` 以外から使わない。抜けたら必ず落とす——例外で抜けた場合も含めて、
+    **宣言が残り続けないこと**が、この仕掛けの価値のほとんどである。
+    """
+    before = session.info.get(_PURGING)
+    session.info[_PURGING] = ark
+    try:
+        yield
+    finally:
+        if before is None:
+            session.info.pop(_PURGING, None)
+        else:  # pragma: no cover - 入れ子にする呼び出しは無い
+            session.info[_PURGING] = before
+
+
 @event.listens_for(Ark, "before_delete")
-def _no_ark_delete(mapper, connection, target):  # noqa: ARG001
+def _no_published_ark_delete(mapper, connection, target):  # noqa: ARG001
+    """**公開した ARK は消さない。** 公開前のものと、名指しで破棄するものだけが通る。"""
+    if target.published_at is None:
+        return
+    session = object_session(target)
+    if session is not None and session.info.get(_PURGING) == target.ark:
+        return  # RA の運用者による破棄（`admin_ops.purge_ark`）
     raise NotDeletable(
-        "ARK は削除しない（解決が止まる＝識別子が壊れる）。"
+        "公開した ARK は削除しない（解決が止まる＝識別子が壊れる）。"
         "tombstone に付け替えるか url を空にすること。"
+        "どうしても消すなら RA の運用者が purge を通す（跡が残る）。"
     )
 
 

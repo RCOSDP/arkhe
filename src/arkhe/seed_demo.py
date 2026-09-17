@@ -75,6 +75,13 @@ def main() -> None:
                     url=f"https://repo.example.ac.jp/records/{i}",
                     title=f"{inst} のデータセット {i + 1}",
                 )
+            # **公開前のものを 1 本混ぜる。** 画面で「まだ解決しない ARK」が
+            # どう見えるかは、実物が無いと確かめられない。
+            minting.mint(
+                s, shoulder=shd, created_by="seed", reserve=True,
+                url=f"https://repo.example.ac.jp/records/draft-{len(managers)}",
+                title=f"{inst} の公開前データセット",
+            )
 
         # shoulder の 4 状態を揃える（画面で状態の違いが見えるように）
         d = ops.add_shoulder(s, root, naan="99999", shoulder="/z1")

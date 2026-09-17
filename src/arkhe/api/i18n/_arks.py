@@ -33,6 +33,12 @@ JA: dict[str, str] = {
                       "画面が縛ってはいけません。",
     "mint.submit": "採番する",
     "mint.flash": "を採番しました",
+    "mint.reserve": "公開前として採る",
+    "mint.reserve_hint": "<b>まだ世に出さない採番です。</b>解決せず、要らなくなれば"
+                         "取り下げられます。対象を公開するときに、この画面の詳細から"
+                         "公開してください。",
+    "mint.reserved_note": "これは<b>公開前</b>の ARK です。まだ解決しません——"
+                          "対象を公開するときに、あわせて公開してください。",
     # 発行した ARK
     "nav.arks": "発行した ARK",
     "ak.title": "発行した ARK",
@@ -63,6 +69,7 @@ JA: dict[str, str] = {
     "ak.hist_ip": "接続元",
     "ak.hist_none": "行き先が変わったことはありません。",
     "ak.act.update": "付け替え",
+    "ak.act.publish": "公開した",
     "ak.act.tombstone": "失われたと宣言",
     "ak.act.hold": "転送を止めた",
     "ak.act.release_hold": "保留を外した",
@@ -99,6 +106,44 @@ JA: dict[str, str] = {
     "ak.shoulder": "名前空間",
     "ak.updated": "最終更新",
     "ak.resolve": "解決してみる",
+    # 公開と取り下げ
+    "ak.state": "状態",
+    "ak.state_all": "公開前も公開済みも",
+    "ak.public": "公開済み",
+    "ak.reserved": "公開前",
+    "ak.published_at": "公開",
+    "ak.publication": "グローバルへの公開",
+    "ak.pub_lede": "<b>公開するまで、この ARK は解決しません。</b>まだ外に出していない"
+                   "名前なので、要らなくなれば取り下げられます——公開した後は、"
+                   "何があっても削除できません（tombstone にします）。",
+    "ak.pub_done_lede": "<b>この ARK は公開済みです。</b>削除はできません——対象が"
+                        "失われたときは tombstone にするか、行き先を空にします。",
+    "ak.publish": "公開する",
+    "ak.publish_warn": "<b>戻せません。</b>公開した名前は引っ込められないので、"
+                       "削除の道もここで閉じます。",
+    "ak.withdraw": "取り下げて削除する",
+    "ak.withdraw_lede": "<b>まだ公開していないので消せます。</b>行は消えますが、"
+                        "その名前は二度と採られません——予約した文字列は既に"
+                        "誰かの手にあるかもしれないからです。",
+    "ak.withdraw_reason": "取り下げる理由",
+    "ak.withdraw_reason_hint": "消えた行について残る唯一の説明になります"
+                               "（公開の口には出ません）。",
+    "ak.withdrawn_flash": "を取り下げました",
+    # 破棄（RA の運用者だけ）
+    "ak.purge": "破棄する",
+    "ak.purge_title": "公開した ARK の破棄",
+    "ak.purge_lede": "<b>これは約束を破る操作です。</b>公開した ARK は解決し続ける"
+                     "はずのもので、消せば残っている参照はすべて切れます——"
+                     "削除命令や、公開してはならなかったものへの逃げ道としてだけ"
+                     "使ってください。",
+    "ak.purge_keeps": "<b>名前は解放されません。</b>二度と採番されないので、"
+                      "消した後にその名前が別のものを指すことはありません"
+                      "（残った参照は 404 になるだけです）。理由と監査は残ります。",
+    "ak.purge_reason": "破棄する理由",
+    "ak.purge_reason_hint": "<b>必須です。</b>消えた識別子について残る唯一の説明に"
+                            "なります。",
+    "ak.purge_confirm": "確認のため ARK を打ち直す",
+    "ak.purge_confirm_hint": "一覧を回す操作が、意図せず消してしまわないように。",
 }
 
 EN: dict[str, str] = {
@@ -129,6 +174,12 @@ EN: dict[str, str] = {
                       "interface must not either.",
     "mint.submit": "Mint",
     "mint.flash": "minted",
+    "mint.reserve": "Reserve it, do not publish yet",
+    "mint.reserve_hint": "<b>The name is not put out into the world.</b> It does not "
+                         "resolve, and it can still be withdrawn. Publish it from this "
+                         "ARK's page when the object goes public.",
+    "mint.reserved_note": "This ARK is <b>not published</b>. It does not resolve yet — "
+                          "publish it when the object itself goes public.",
     "nav.arks": "ARKs issued",
     "ak.title": "ARKs issued",
     "ak.lede": "This page shows <b>only what is within your reach</b> — a system "
@@ -158,6 +209,7 @@ EN: dict[str, str] = {
     "ak.hist_ip": "From address",
     "ak.hist_none": "It has never been repointed.",
     "ak.act.update": "repointed",
+    "ak.act.publish": "published",
     "ak.act.tombstone": "declared lost",
     "ak.act.hold": "redirection held",
     "ak.act.release_hold": "hold lifted",
@@ -196,4 +248,40 @@ EN: dict[str, str] = {
     "ak.shoulder": "Namespace",
     "ak.updated": "Last changed",
     "ak.resolve": "Try resolving it",
+    "ak.state": "State",
+    "ak.state_all": "Published and reserved",
+    "ak.public": "Public",
+    "ak.reserved": "Reserved",
+    "ak.published_at": "Published",
+    "ak.publication": "Publication",
+    "ak.pub_lede": "<b>Until it is published this ARK does not resolve.</b> The name has "
+                   "not gone out yet, so it can still be withdrawn — once published it "
+                   "can never be deleted, only tombstoned.",
+    "ak.pub_done_lede": "<b>This ARK is public.</b> It cannot be deleted — when the "
+                        "object is gone, tombstone it or clear its target.",
+    "ak.publish": "Publish",
+    "ak.publish_warn": "<b>There is no way back.</b> A name that has gone out cannot be "
+                       "taken back, so this closes the door on deleting it.",
+    "ak.withdraw": "Withdraw and delete",
+    "ak.withdraw_lede": "<b>It can be deleted because it was never published.</b> The row "
+                        "goes, but the name is never assigned again — a reserved "
+                        "identifier may already be in someone's hands.",
+    "ak.withdraw_reason": "Why it is withdrawn",
+    "ak.withdraw_reason_hint": "The only account left of a row that is gone "
+                               "(it is not published anywhere).",
+    "ak.withdrawn_flash": "withdrawn",
+    "ak.purge": "Purge",
+    "ak.purge_title": "Purging a published ARK",
+    "ak.purge_lede": "<b>This breaks the promise.</b> A published ARK is meant to keep "
+                     "resolving, and purging it breaks every reference still out there "
+                     "— use it only as a way out for a removal order, or for what "
+                     "should never have been published.",
+    "ak.purge_keeps": "<b>The name is not freed.</b> It is never minted again, so it "
+                      "cannot come to mean something else afterwards (a stale reference "
+                      "simply gets a 404). The reason and the audit entry remain.",
+    "ak.purge_reason": "Why it is purged",
+    "ak.purge_reason_hint": "<b>Required.</b> It will be the only account left of the "
+                            "identifier.",
+    "ak.purge_confirm": "Type the ARK again to confirm",
+    "ak.purge_confirm_hint": "So that walking a list cannot delete by accident.",
 }
