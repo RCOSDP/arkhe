@@ -1182,7 +1182,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#030--2026-09-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.0 — 2026-09-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.0 — 2026-09-17">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1725,7 +1736,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#030--2026-09-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.0 — 2026-09-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.0 — 2026-09-17">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2247,7 +2269,20 @@
 Versioning: <a href="https://semver.org/">SemVer</a> — see
 <a href="https://rcosdp.github.io/arkhe/project/versioning/">the policy</a> for what counts as
 breaking in a system whose identifiers cannot be reissued.</p>
-<h2 id="unreleased"><a href="https://github.com/RCOSDP/arkhe/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="unreleased"><a href="https://github.com/RCOSDP/arkhe/compare/v0.3.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="030--2026-09-17"><a href="https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0">0.3.0</a> — 2026-09-17<a class="headerlink" href="#030--2026-09-17" title="Permanent link">&para;</a></h2>
+<p><strong>The release in which a minted name can still be deleted, until it is published.</strong>
+There was no delete anywhere before — this is a system that declares <code>NR</code> (never
+reassign). But <strong><code>NR</code> binds the names you have handed out</strong>, not a name at the instant
+it is minted. Numbering a draft object ahead of time is ordinary practice, and when that
+registration is called off, <strong>leaving a number nothing points at in the ledger forever</strong>
+is not what keeping the promise looks like.</p>
+<p>The boundary is a single <code>Ark.published_at</code>, and it is <strong>one-way</strong>: once published, it
+cannot be deleted. <strong>The default is still "publish on mint"</strong>, so existing callers need
+no change, and every existing ARK migrates as published.</p>
+<p><strong>Also fixed: <code>alembic upgrade head</code> did not run on SQLite.</strong> The exact steps in the
+Quickstart had been stopping partway for three releases — because <strong>we had only ever
+round-tripped on PostgreSQL</strong>.</p>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>An ARK can be deleted before it is published.</strong> There used to be no delete anywhere:

@@ -1182,7 +1182,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="未リリース">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#030--2026-09-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.0 — 2026-09-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.0 — 2026-09-17">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1725,7 +1736,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="未リリース">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#030--2026-09-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.0 — 2026-09-17
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.0 — 2026-09-17">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2246,7 +2268,19 @@
 <p>書式は <a href="https://keepachangelog.com/ja/1.1.0/">Keep a Changelog</a>、版は
 <a href="https://semver.org/lang/ja/">SemVer</a>。<strong>識別子を振り直せない体系で何を破壊的変更と
 みなすか</strong>は<a href="https://rcosdp.github.io/arkhe/ja/project/versioning/">方針</a>にある。</p>
-<h2 id="未リリース"><a href="https://github.com/RCOSDP/arkhe/compare/v0.2.0...HEAD">未リリース</a><a class="headerlink" href="#未リリース" title="Permanent link">&para;</a></h2>
+<h2 id="未リリース"><a href="https://github.com/RCOSDP/arkhe/compare/v0.3.0...HEAD">未リリース</a><a class="headerlink" href="#未リリース" title="Permanent link">&para;</a></h2>
+<h2 id="030--2026-09-17"><a href="https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0">0.3.0</a> — 2026-09-17<a class="headerlink" href="#030--2026-09-17" title="Permanent link">&para;</a></h2>
+<p><strong>採った名前を、公開するまでは消せるようになった版。</strong> これまで削除の口はどこにも
+無かった——<code>NR</code>（再割当てしない）を宣言する体系だからである。だが <strong><code>NR</code> が縛るのは、
+外へ出した名前</strong>であって、採番した瞬間の名前ではない。下書きの対象に先に番号を振るのは
+普通の運用で、その登録が取りやめになったとき、<strong>誰も指さない番号が永久に台帳に残る</strong>
+ほうが、約束を守っていることにはならない。</p>
+<p>境目は <code>Ark.published_at</code> 1 つで、<strong>一方通行</strong>である。公開すれば、もう消せない。
+<strong>既定は今までどおり「採番と同時に公開」</strong>なので、既存の呼び出し側はそのままでよく、
+既存の ARK はすべて公開済みとして移行する。</p>
+<p><strong>あわせて、<code>alembic upgrade head</code> が SQLite で流れなかったのを直した。</strong> Quickstart に
+書いてあるとおりの手順が 3 版のあいだ途中で止まっていた——<strong>PostgreSQL でしか往復させて
+いなかった</strong>ためである。</p>
 <h3 id="追加">追加<a class="headerlink" href="#追加" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>公開前の ARK を削除できるようになった。</strong> これまで削除の口はどこにも無かった
