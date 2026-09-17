@@ -9,6 +9,23 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-17
+
+**The release in which a minted name can still be deleted, until it is published.**
+There was no delete anywhere before — this is a system that declares `NR` (never
+reassign). But **`NR` binds the names you have handed out**, not a name at the instant
+it is minted. Numbering a draft object ahead of time is ordinary practice, and when that
+registration is called off, **leaving a number nothing points at in the ledger forever**
+is not what keeping the promise looks like.
+
+The boundary is a single `Ark.published_at`, and it is **one-way**: once published, it
+cannot be deleted. **The default is still "publish on mint"**, so existing callers need
+no change, and every existing ARK migrates as published.
+
+**Also fixed: `alembic upgrade head` did not run on SQLite.** The exact steps in the
+Quickstart had been stopping partway for three releases — because **we had only ever
+round-tripped on PostgreSQL**.
+
 ### Added
 
 - **An ARK can be deleted before it is published.** There used to be no delete anywhere:
@@ -949,7 +966,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0
 [0.2.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0
 [0.1.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.1.0
 [0.0.9]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.9

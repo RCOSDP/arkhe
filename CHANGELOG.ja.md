@@ -8,6 +8,22 @@
 
 ## [未リリース]
 
+## [0.3.0] — 2026-09-17
+
+**採った名前を、公開するまでは消せるようになった版。** これまで削除の口はどこにも
+無かった——`NR`（再割当てしない）を宣言する体系だからである。だが **`NR` が縛るのは、
+外へ出した名前**であって、採番した瞬間の名前ではない。下書きの対象に先に番号を振るのは
+普通の運用で、その登録が取りやめになったとき、**誰も指さない番号が永久に台帳に残る**
+ほうが、約束を守っていることにはならない。
+
+境目は `Ark.published_at` 1 つで、**一方通行**である。公開すれば、もう消せない。
+**既定は今までどおり「採番と同時に公開」**なので、既存の呼び出し側はそのままでよく、
+既存の ARK はすべて公開済みとして移行する。
+
+**あわせて、`alembic upgrade head` が SQLite で流れなかったのを直した。** Quickstart に
+書いてあるとおりの手順が 3 版のあいだ途中で止まっていた——**PostgreSQL でしか往復させて
+いなかった**ためである。
+
 ### 追加
 
 - **公開前の ARK を削除できるようになった。** これまで削除の口はどこにも無かった
@@ -874,7 +890,8 @@
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.2.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0
 [0.2.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0
 [0.1.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.1.0
 [0.0.9]: https://github.com/RCOSDP/arkhe/releases/tag/v0.0.9
