@@ -1440,11 +1440,12 @@ shoulder を必ず使う</strong>——使わないと NAAN ごとにモデル�
     }
 
     ARK {
-        string ark PK "naan/name。**削除しない**"
+        string ark PK "naan/name。**公開したら削除しない**"
         string naan FK
         int    shoulder_id FK
         string assigned_name
         string url "空なら記述を返す（D6）"
+        date   published_at "null は公開前。**解決せず、削除できる**"
         string commitment "この対象への約束"
         string metadata
         string who "ERC"
@@ -1489,7 +1490,7 @@ shoulder を必ず使う</strong>——使わないと NAAN ごとにモデル�
         int    id PK
         string ark FK
         date   at
-        string action "update / tombstone"
+        string action "update / tombstone / hold / publish"
         string before_url "**復元したいのはこれ**"
         string after_url
         string by
@@ -1504,6 +1505,18 @@ shoulder を必ず使う</strong>——使わないと NAAN ごとにモデル�
         string action "mint / update / succeed / depart ..."
         string target
         json   detail
+    }
+    WITHDRAWN_NAME {
+        string ark PK "公開前に取り下げた名前。**二度と採らない**"
+        string naan
+        string assigned_name
+        int    shoulder_id "どの名前空間の容量を使ったか"
+        date   minted_at
+        string minted_by
+        date   withdrawn_at
+        string withdrawn_by
+        string reason "消えた行の唯一の説明"
+        string ip
     }
     UNKNOWN_SUBJECT {
         int    id PK
@@ -1526,6 +1539,8 @@ NAAN 単位以上の操作しか残さないが、<strong>採番も付け替え�
 では肝心の変更が落ちる。<code>NR</code> を宣言する体系で「この識別子は変わらない」と言う
 なら、変えたのは何でいつ誰が変えたのかを示せなければならない——さもないと、
 <strong>約束を検証する手段が利用者の側に無い。</strong></p>
+<p><code>WITHDRAWN_NAME</code> も外部キーを持たない。<strong>指す先の行がもう無い</strong>からであり、
+記録は対象より長く残るべきだからでもある。</p>
 <p><code>AUDIT_EVENT</code> は他の表と外部キーで結ばない。<strong>記録は対象が消えても残るべき</strong>もので、
 参照整合性で縛ると「消せないから記録も消す」という逆の力が働く。</p>
 <h2 id="図に描けないこと">図に描けないこと<a class="headerlink" href="#図に描けないこと" title="Permanent link">&para;</a></h2>
@@ -1539,8 +1554,12 @@ NAAN 単位以上の操作しか残さないが、<strong>採番も付け替え�
 </thead>
 <tbody>
 <tr>
-<td><strong>ARK は削除できない</strong></td>
+<td><strong>公開した ARK は削除できない</strong></td>
 <td>行を消すと解決が止まる＝識別子が壊れる。<code>before_delete</code> で拒否する。対象が失われたら tombstone にするか <code>url</code> を空にして記述を返す</td>
+</tr>
+<tr>
+<td><strong>公開前の ARK は削除できる</strong></td>
+<td><code>published_at</code> が null のものだけ。まだ外に出していない名前は <code>NR</code> が縛る対象ではない——ただし名前は <code>WITHDRAWN_NAME</code> に移り、二度と採られない</td>
 </tr>
 <tr>
 <td><strong>shoulder も削除できない</strong></td>

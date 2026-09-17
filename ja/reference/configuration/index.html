@@ -1585,8 +1585,19 @@ k8s なら NetworkPolicy、単体なら 127.0.0.1 だけで待ち受ける。</p
 <td>—</td>
 <td>生のリクエスト URI を運ぶヘッダ名。裸の <code>?</code> を判別するために使う。クエリ文字列が空の <code>?</code> は <strong>ASGI でも区別できない</strong></td>
 </tr>
+<tr>
+<td><code>ARKHE_RESOLVE_UNPUBLISHED</code></td>
+<td><code>false</code></td>
+<td><strong>公開前の ARK も解決する。閉域に置くリゾルバ向け。</strong> 閉じた網の中で採番した ARK は、その網のリゾルバが解決できなければ配る意味が無い</td>
+</tr>
 </tbody>
 </table>
+<div class="admonition danger">
+<p class="admonition-title">公開の面では開けない</p>
+<p><code>?info</code> と <code>??</code> は<strong>認証を要さない口</strong>である。ここを開けたリゾルバが公開の網から
+引けると、<strong>まだ公開していない対象の存在・題名・行き先がそのまま出る</strong>。
+開けてよいのは、届く範囲そのものが閉じているリゾルバだけ。</p>
+</div>
 <h2 id="採番">採番<a class="headerlink" href="#採番" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

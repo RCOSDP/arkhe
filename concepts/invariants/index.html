@@ -579,13 +579,30 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#an-ark-is-never-deleted" class="md-nav__link">
+  <a href="#no-delete" class="md-nav__link">
     <span class="md-ellipsis">
       
-        An ARK is never deleted
+        A published ARK is never deleted
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="A published ARK is never deleted">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before it goes out, it can still be taken back
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1306,13 +1323,30 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#an-ark-is-never-deleted" class="md-nav__link">
+  <a href="#no-delete" class="md-nav__link">
     <span class="md-ellipsis">
       
-        An ARK is never deleted
+        A published ARK is never deleted
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="A published ARK is never deleted">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before it goes out, it can still be taken back
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1424,7 +1458,7 @@ once given out, never comes to mean something else.</strong></p>
 <p>These are enforced in the code, not in a policy document. A rule that depends on
 everyone remembering it will be broken eventually — usually at 2 a.m., by someone
 fixing something else.</p>
-<h2 id="an-ark-is-never-deleted">An ARK is never deleted<a class="headerlink" href="#an-ark-is-never-deleted" title="Permanent link">&para;</a></h2>
+<h2 id="no-delete">A published ARK is never deleted<a class="headerlink" href="#no-delete" title="Permanent link">&para;</a></h2>
 <p>Deleting the row stops resolution, and an identifier that no longer resolves is a
 broken identifier. <code>Ark</code> refuses deletion at the ORM level.</p>
 <p>When an object is genuinely gone, you <strong>tombstone</strong> it: the identifier and its
@@ -1435,15 +1469,39 @@ description stay, only reachability goes.</p>
 <p>The resolver then returns the description instead of a redirect — which is
 <a href="https://www.go-fair.org/fair-principles/">FAIR A2</a>: <em>metadata should be accessible
 even when the data are no longer available</em>.</p>
+<h3 id="before-publication">Before it goes out, it can still be taken back<a class="headerlink" href="#before-publication" title="Permanent link">&para;</a></h3>
+<p><strong>What NR binds are the names that went out into the world.</strong> A name is not bound the
+moment it is minted: numbers are routinely reserved for objects that are still drafts,
+and when such a deposit is abandoned, leaving a number that points at nothing forever is
+not keeping the promise either.</p>
+<p>So an ARK can be minted <strong>reserved</strong>. Until it is published <strong>a public resolver does not
+resolve it</strong> — it answers as it does for a name it has never seen — and it can be deleted.</p>
+<p><strong>A resolver inside a closed network is another matter</strong> (<code>ARKHE_RESOLVE_UNPUBLISHED=1</code>):
+a name minted inside that network is worthless if the network's own resolver will not
+resolve it. <strong>Whether an ARK resolves is decided by the ARK's state and by which resolver
+is answering</strong> — see <a href="../../guides/federation/#closed-resolver">Running it distributed</a>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">    </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># does not resolve yet</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># from here on it resolves</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…", "reason": "abandoned"}'</span>
+</code></pre></div>
+<p>There is <strong>one boundary and it only goes one way</strong>. Publishing cannot be undone: if it
+could, deleting before publication would mean nothing. A published ARK answers <code>409</code> to
+<code>/api/delete</code>.</p>
+<p><strong>The name is not freed.</strong> It moves to a ledger of withdrawn names and is never assigned
+again, by minting or by import — so withdrawing one that was resolving inside a closed
+network cannot make that name mean something else; a stale reference simply gets <code>404</code>,
+which is what <code>NR</code> actually protects — a reserved identifier has usually already been handed to
+someone (that is what reserving is <em>for</em>), and re-using it would be indistinguishable,
+from outside, from breaking NR.</p>
 <h2 id="what-stops-is-redirection-never-resolution">What stops is redirection, never resolution<a class="headerlink" href="#what-stops-is-redirection-never-resolution" title="Permanent link">&para;</a></h2>
 <p>When a target can no longer be trusted — the delegate is down, a wrong URL went out, a
 takedown was requested — <strong>it has to stop quickly, and the identifier must not die.</strong></p>
 <p><code>404</code> would be a lie: the identifier exists. <code>503</code> says "not right now", but a permanent
 identifier still looks broken. arkhe answers <code>200</code> with a <strong>description</strong> instead — the
-same path as <a href="#an-ark-is-never-deleted">An ARK is never deleted</a>, so the identifier stays
+same path as <a href="#no-delete">A published ARK is never deleted</a>, so the identifier stays
 alive while only the redirect stops.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">7</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the delegate's resolver is down"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"verifying the target"</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">7</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the delegate's resolver is down"</span>
 </code></pre></div>
 <p>Do not confuse this with a tombstone. <strong>That is a permanent declaration that the object
 is gone</strong>; this is <strong>a dated measure saying the object is there but its address cannot be
@@ -1491,8 +1549,12 @@ the more it matters that you can trace who did what.</p>
 </thead>
 <tbody>
 <tr>
-<td>No deletion of ARK or shoulder</td>
+<td>No deletion of a <strong>published</strong> ARK, or of a shoulder</td>
 <td><code>before_delete</code> events in <code>db/models.py</code></td>
+</tr>
+<tr>
+<td>A withdrawn name is never assigned again</td>
+<td><code>WithdrawnName</code>, checked in <code>domain/minting.py</code></td>
 </tr>
 <tr>
 <td>A hold stops redirection only</td>

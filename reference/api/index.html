@@ -1446,6 +1446,12 @@ your reach.</p>
 namespace happens elsewhere, you are told where to go. arkhe does not call the other
 minter for you: a lost response would leave an ARK minted over there that this ledger
 has never seen.</p>
+<p><strong>A name can be minted before it is published, and deleted while it is.</strong> Send
+<code>{"reserve": true}</code> to <code>POST /api/mint</code> and <strong>a public resolver does not resolve it</strong> — it
+answers as it does for a name it has never seen (a resolver inside a closed network does,
+with <code>ARKHE_RESOLVE_UNPUBLISHED</code>). <code>POST /api/publish</code> starts resolution
+and <strong>closes the door on deletion</strong>: <code>POST /api/delete</code> then answers <code>409</code>. A withdrawn
+name is never assigned again. See <a href="../../concepts/invariants/#before-publication">Invariants</a>.</p>
 <p><strong>Bulk operations do not partially apply.</strong> If one row in a bulk update is missing or
 out of reach, the whole request fails. arklet zipped an unordered query result against
 the input and could write one record's values onto another.</p>

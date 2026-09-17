@@ -1292,6 +1292,21 @@ alongside. <strong>The admin interface</strong> answers from its own catalogue, 
 <td>The name {name} does not fall inside a shoulder of NAAN {naan}.</td>
 </tr>
 <tr>
+<td><code>ARKHE-1014</code></td>
+<td>400</td>
+<td>{ark} was withdrawn before publication; that name is never assigned again.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1015</code></td>
+<td>400</td>
+<td>Purging a published ARK requires a reason; it is kept with the name.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1016</code></td>
+<td>400</td>
+<td>Send <code>confirm</code> with the ARK itself ({ark}) to purge it.</td>
+</tr>
+<tr>
 <td><code>ARKHE-1201</code></td>
 <td>401</td>
 <td>No credentials.</td>
@@ -1357,6 +1372,11 @@ alongside. <strong>The admin interface</strong> answers from its own catalogue, 
 <td>Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. See {about}</td>
 </tr>
 <tr>
+<td><code>ARKHE-1310</code></td>
+<td>403</td>
+<td>Purging a published ARK is for the registration authority's operator (authority=system); this principal is {authority}.</td>
+</tr>
+<tr>
 <td><code>ARKHE-1401</code></td>
 <td>404</td>
 <td>No such ARK in this ledger.</td>
@@ -1375,6 +1395,16 @@ alongside. <strong>The admin interface</strong> answers from its own catalogue, 
 <td><code>ARKHE-1404</code></td>
 <td>404</td>
 <td>Metadata for an unknown NAAN is not held by this resolver.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1501</code></td>
+<td>409</td>
+<td>{ark} is public; a published ARK is never deleted. Tombstone it instead.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1502</code></td>
+<td>409</td>
+<td>{ark} has {count} qualified name(s) under it; withdraw those first.</td>
 </tr>
 <tr>
 <td><code>ARKHE-1601</code></td>

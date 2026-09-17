@@ -579,13 +579,30 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ark-は削除しない" class="md-nav__link">
+  <a href="#no-delete" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ARK は削除しない
+        公開した ARK は削除しない
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="公開した ARK は削除しない">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        外に出す前なら、まだ引き返せる
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1306,13 +1323,30 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ark-は削除しない" class="md-nav__link">
+  <a href="#no-delete" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ARK は削除しない
+        公開した ARK は削除しない
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="公開した ARK は削除しない">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#before-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        外に出す前なら、まだ引き返せる
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1423,7 +1457,7 @@
 <strong>一度配った名前が、別のものを指すようになることはない。</strong></p>
 <p>これらは方針文書ではなく<strong>コードで守っている</strong>。人が覚えていることに頼る規則は、
 いつか破られる。たいていは深夜に、別の何かを直している最中に。</p>
-<h2 id="ark-は削除しない">ARK は削除しない<a class="headerlink" href="#ark-は削除しない" title="Permanent link">&para;</a></h2>
+<h2 id="no-delete">公開した ARK は削除しない<a class="headerlink" href="#no-delete" title="Permanent link">&para;</a></h2>
 <p>行を消すと解決が止まる。解決しなくなった識別子は、壊れた識別子である。<code>Ark</code> は
 ORM の層で削除を拒む。</p>
 <p>対象が本当に失われたときは <strong>tombstone</strong> にする。識別子と記述は残り、到達性だけが落ちる。</p>
@@ -1432,14 +1466,33 @@ ORM の層で削除を拒む。</p>
 <p>以後リゾルバは、転送ではなく記述を返す。これは
 <a href="https://www.go-fair.org/fair-principles/">FAIR A2</a>——<strong>データが利用できなくなっても
 メタデータは参照できるべき</strong>——そのものである。</p>
+<h3 id="before-publication">外に出す前なら、まだ引き返せる<a class="headerlink" href="#before-publication" title="Permanent link">&para;</a></h3>
+<p><strong><code>NR</code> が縛るのは、外へ出した名前である。</strong> 採番した瞬間から縛られるわけではない
+——下書きの対象に先に番号を振るのは普通の運用で、その登録が取りやめになったとき、
+<strong>誰も指さない番号が永久に残る</strong>ほうが約束を守っていることになるわけではない。</p>
+<p>そこで ARK は<strong>公開前</strong>として採れる。公開するまでは<strong>公開のリゾルバでは解決せず</strong>
+——知らない名前と同じに答える——削除できる。</p>
+<p><strong>閉域のリゾルバは別である</strong>（<code>ARKHE_RESOLVE_UNPUBLISHED=1</code>）。閉じた網の中で採番した
+ARK を、その網のリゾルバが解決できないなら配る意味が無い。<strong>解決するかどうかは、ARK の
+状態だけでなく、どのリゾルバが答えているかで決まる</strong>——<a href="../../guides/federation/#closed-resolver">分散して運用する</a>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">    </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># まだ解決しない</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># ここから解決を始める</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…", "reason": "登録の取りやめ"}'</span>
+</code></pre></div>
+<p><strong>境目は 1 つで、一方通行である。</strong> 公開は取り消せない——取り消せるなら、公開前の
+削除に意味が無い。公開した ARK への <code>/api/delete</code> は <code>409</code> で断る。</p>
+<p><strong>名前は解放しない。</strong> 取り下げた名前は別の台帳に移り、採番でも取り込みでも二度と
+当たらない。だから閉域で引けていた ARK を取り下げても、<strong>その名前が別のものを指すことは
+無い</strong>——残った参照は <code>404</code> になるだけである（<code>NR</code> が守るのはそこである）。予約した文字列は既に誰かの手に渡っていることが多く（<strong>それが予約の目的
+そのものである</strong>）、別の対象に振り直せば、外からは <code>NR</code> 違反と見分けがつかない。</p>
 <h2 id="止めるのは転送であって解決ではない">止めるのは転送であって、解決ではない<a class="headerlink" href="#止めるのは転送であって解決ではない" title="Permanent link">&para;</a></h2>
 <p>行き先が信用できなくなったとき——委譲先が落ちた、間違った URL を配ってしまった、
 取り下げを求められた——<strong>急いで止めたいが、識別子を殺してはいけない。</strong></p>
 <p><code>404</code> は嘘である（その識別子は存在する）。<code>503</code> は「今は答えられない」と言えるが、
 永続識別子が壊れて見えることに変わりはない。arkhe は <code>200</code> と<strong>記述</strong>を返す
-——<a href="#ark-は削除しない">ARK は削除しない</a>と同じ経路で、識別子は生きたまま転送だけが止まる。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"行き先を確認中"</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">7</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"委譲先のリゾルバが落ちている"</span>
+——<a href="#no-delete">公開した ARK は削除しない</a>と同じ経路で、識別子は生きたまま転送だけが止まる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>ark<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--days<span class="w"> </span><span class="m">3</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"行き先を確認中"</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>arkhe<span class="w"> </span>hold<span class="w"> </span>add<span class="w"> </span>shoulder<span class="w"> </span><span class="m">7</span><span class="w"> </span>--days<span class="w"> </span><span class="m">1</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">"委譲先のリゾルバが落ちている"</span>
 </code></pre></div>
 <p>tombstone と混ぜない。<strong>あちらは「対象が失われた」という恒久の宣言</strong>で、こちらは
 <strong>「対象は在るが、今は行き先を出せない」という期限つきの措置</strong>である。だから hold は
@@ -1482,8 +1535,12 @@ ORM の層で削除を拒む。</p>
 </thead>
 <tbody>
 <tr>
-<td>ARK と shoulder の削除禁止</td>
+<td><strong>公開した</strong> ARK と shoulder の削除禁止</td>
 <td><code>db/models.py</code> の <code>before_delete</code></td>
+</tr>
+<tr>
+<td>取り下げた名前を二度と採らない</td>
+<td><code>WithdrawnName</code>（<code>domain/minting.py</code> が見る）</td>
 </tr>
 <tr>
 <td>保留は転送だけを止める</td>

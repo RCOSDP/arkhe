@@ -1585,8 +1585,19 @@ header. Use a NetworkPolicy on Kubernetes, or listen only on 127.0.0.1.</p>
 <td>—</td>
 <td>Header carrying the raw request URI, so a bare <code>?</code> can be detected. A <code>?</code> with no query string is indistinguishable otherwise — even in ASGI</td>
 </tr>
+<tr>
+<td><code>ARKHE_RESOLVE_UNPUBLISHED</code></td>
+<td><code>false</code></td>
+<td><strong>Also resolve ARKs that are not published yet. For a resolver inside a closed network</strong>, where a name minted in that network is worthless if the network's own resolver will not resolve it</td>
+</tr>
 </tbody>
 </table>
+<div class="admonition danger">
+<p class="admonition-title">Never on a public face</p>
+<p><code>?info</code> and <code>??</code> need no authentication. If a resolver with this on can be reached
+from the open network, <strong>the existence, title and target of objects that are not
+public yet go straight out</strong>. Turn it on only where the reach itself is closed.</p>
+</div>
 <h2 id="minting">Minting<a class="headerlink" href="#minting" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

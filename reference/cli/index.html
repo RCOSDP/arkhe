@@ -1015,6 +1015,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#reserving-a-name-then-publishing-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reserving a name, then publishing it
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1367,6 +1378,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#reserving-a-name-then-publishing-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reserving a name, then publishing it
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1514,7 +1536,19 @@ audit log the same way.</p>
 </tr>
 <tr>
 <td><code>arkhe ark list</code></td>
-<td>List minted ARKs. <strong>Stops at 50 by default</strong> — the ledger only grows. <code>--naan</code> and <code>--org</code> narrow it; <code>-q</code> looks at the ARK, its target and its title.</td>
+<td>List minted ARKs. <strong>Stops at 50 by default</strong> — the ledger only grows. <code>--naan</code> and <code>--org</code> narrow it; <code>-q</code> looks at the ARK, its target and its title. <code>--state public|reserved</code> keeps only the published or only the reserved ones.</td>
+</tr>
+<tr>
+<td><code>arkhe ark publish</code></td>
+<td><strong>Publish it globally.</strong> From then on it resolves and can no longer be deleted, only tombstoned. Running it twice is not an error.</td>
+</tr>
+<tr>
+<td><code>arkhe ark delete</code></td>
+<td><strong>Withdraw an ARK that was never published.</strong> It does nothing to a published one. Only the row goes — <strong>the name is never assigned again.</strong></td>
+</tr>
+<tr>
+<td><code>arkhe ark purge</code></td>
+<td><strong>Purge a published ARK. The registration authority's operator only.</strong> A reason is required and it asks before doing it (<code>--yes</code> skips that). <strong>It breaks the promise</strong> — a way out for a removal order, or for what should never have been published</td>
 </tr>
 </tbody>
 </table>
@@ -1562,6 +1596,18 @@ namespace has been mintable, it cannot be called unused again.</p>
 An expiry is required and lifts itself by the clock alone — <strong>nothing has to remember to
 undo it</strong>. Declaring an object lost is a different operation (<code>tombstone</code>), with
 different meaning and no way back.</p>
+<h3 id="reserving-a-name-then-publishing-it">Reserving a name, then publishing it<a class="headerlink" href="#reserving-a-name-then-publishing-it" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">      </span><span class="c1"># does not resolve yet</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># from here on it resolves</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the deposit was abandoned"</span>
+</code></pre></div>
+<p><strong>Ordinary deletion only works before publication.</strong> A published ARK goes only if the
+registration authority's operator purges it, with a reason.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>purge<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"removal order, 2026-09, case …"</span>
+</code></pre></div>
+<p>Either way <strong>the name is never assigned again</strong>, so it cannot come to mean something else
+afterwards. See <a href="../../concepts/invariants/#no-delete">What is never broken</a>.</p>
 <h2 id="the-language-of-the-commands">The language of the commands<a class="headerlink" href="#the-language-of-the-commands" title="Permanent link">&para;</a></h2>
 <p><code>arkhe</code>'s help and output exist in Japanese and English. <strong>The language is decided
 from the environment at startup</strong> — Typer assembles its help at import time, so a
@@ -1588,7 +1634,7 @@ runtime switch like <code>--lang</code> cannot work.</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
 </code></pre></div>
 
 

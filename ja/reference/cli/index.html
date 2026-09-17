@@ -1015,6 +1015,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#名前を先に押さえ後から公開する" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        名前を先に押さえ、後から公開する
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1367,6 +1378,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#名前を先に押さえ後から公開する" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        名前を先に押さえ、後から公開する
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1513,7 +1535,19 @@
 </tr>
 <tr>
 <td><code>arkhe ark list</code></td>
-<td>発行した ARK を並べる。<strong>既定で 50 件で打ち切る</strong>（台帳は増える一方なので）。<code>--naan</code> <code>--org</code> で絞り、<code>-q</code> は ARK・行き先・題名を見る。</td>
+<td>発行した ARK を並べる。<strong>既定で 50 件で打ち切る</strong>（台帳は増える一方なので）。<code>--naan</code> <code>--org</code> で絞り、<code>-q</code> は ARK・行き先・題名を見る。 <code>--state public|reserved</code> で公開したものだけ・公開前のものだけを引ける。</td>
+</tr>
+<tr>
+<td><code>arkhe ark publish</code></td>
+<td><strong>グローバルに公開する。</strong> 以後は解決し、削除できなくなる（tombstone にするしかない）。二度実行しても落ちない。</td>
+</tr>
+<tr>
+<td><code>arkhe ark delete</code></td>
+<td><strong>公開前の ARK を取り下げて消す。</strong> 公開したものには効かない。消えるのは行だけで、<strong>その名前は二度と採られない。</strong></td>
+</tr>
+<tr>
+<td><code>arkhe ark purge</code></td>
+<td><strong>公開した ARK を破棄する。RA の運用者だけ。</strong> 理由が必須で、確認を訊く（<code>--yes</code> で省ける）。<strong>約束を破る操作</strong>——削除命令や、公開してはならなかったものへの逃げ道</td>
 </tr>
 </tbody>
 </table>
@@ -1558,6 +1592,18 @@ registry への登録という、arkhe の外で起きる手順も含めて</str
 これではなく tombstone のほう（意味も可逆性も違う）。</p>
 <p><strong><code>retired</code> からは戻せない。</strong> 予約は作成時にしか指定できない——一度採番できる状態に
 した名前空間を、後から未使用扱いにはできないから。</p>
+<h3 id="名前を先に押さえ後から公開する">名前を先に押さえ、後から公開する<a class="headerlink" href="#名前を先に押さえ後から公開する" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">      </span><span class="c1"># まだ解決しない</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># ここから解決を始める</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"登録が取りやめになった"</span>
+</code></pre></div>
+<p><strong>普通に消せるのは公開前だけ。</strong> 公開した ARK は、RA の運用者が理由を残して破棄する
+以外には消えない。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>purge<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"2026-09 削除命令（事件番号 …）"</span>
+</code></pre></div>
+<p>どちらの場合も<strong>取り下げた名前は二度と採られない</strong>ので、消した後にその名前が別のものを
+指すことはない。<a href="../../concepts/invariants/#no-delete">壊さないもの</a>を参照。</p>
 <h2 id="コマンドの言語">コマンドの言語<a class="headerlink" href="#コマンドの言語" title="Permanent link">&para;</a></h2>
 <p><code>arkhe</code> の help と出力は日本語と英語を持つ。<strong>言語は起動時に環境から決まる</strong>——
 Typer が help を組み立てるのが import の時点なので、<code>--lang</code> のような実行時の
@@ -1584,7 +1630,7 @@ Typer が help を組み立てるのが import の時点なので、<code>--lang
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">ARKHE_LANG</span><span class="o">=</span>en<span class="w"> </span>arkhe<span class="w"> </span>--help
 </code></pre></div>
 
 

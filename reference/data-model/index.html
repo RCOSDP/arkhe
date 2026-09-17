@@ -1440,11 +1440,12 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
     }
 
     ARK {
-        string ark PK "naan/name. never deleted"
+        string ark PK "naan/name. never deleted once published"
         string naan FK
         int    shoulder_id FK
         string assigned_name
         string url "empty: return a description (D6)"
+        date   published_at "null: not published. **does not resolve, can be deleted**"
         string commitment "commitment to this object"
         string metadata
         string who "ERC"
@@ -1489,7 +1490,7 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
         int    id PK
         string ark FK
         date   at
-        string action "update / tombstone"
+        string action "update / tombstone / hold / publish"
         string before_url "**what you want back**"
         string after_url
         string by
@@ -1504,6 +1505,18 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
         string action "mint / update / succeed / depart …"
         string target
         json   detail
+    }
+    WITHDRAWN_NAME {
+        string ark PK "withdrawn before publication. **never assigned again**"
+        string naan
+        string assigned_name
+        int    shoulder_id "whose namespace it consumed"
+        date   minted_at
+        string minted_by
+        date   withdrawn_at
+        string withdrawn_by
+        string reason "the only account of a row that is gone"
+        string ip
     }
     UNKNOWN_SUBJECT {
         int    id PK
@@ -1528,6 +1541,8 @@ repointing are done by organisations</strong>, so the audit log alone loses exac
 changes that matter. Declaring <code>NR</code> and saying the identifier does not change means
 being able to show what changed, when and by whom — otherwise the promise cannot be
 checked from outside.</p>
+<p><code>WITHDRAWN_NAME</code> has no foreign keys either: <strong>the row it names is gone</strong>, and a
+record should outlive what it describes.</p>
 <p><code>AUDIT_EVENT</code> has no foreign keys into the rest. <strong>A record should outlive what it
 describes</strong>, and referential integrity would push the other way: it makes deleting the
 record the easy way out.</p>
@@ -1542,8 +1557,12 @@ record the easy way out.</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>An ARK is never deleted</strong></td>
+<td><strong>A published ARK is never deleted</strong></td>
 <td>Deleting the row stops resolution — the identifier breaks. <code>before_delete</code> refuses. When a target is lost you tombstone it, or empty <code>url</code> so a description is returned</td>
+</tr>
+<tr>
+<td><strong>A reserved one can be</strong></td>
+<td>Only while <code>published_at</code> is null. A name that never went out is not what NR binds — but the name still moves to <code>WITHDRAWN_NAME</code> and is never assigned again</td>
 </tr>
 <tr>
 <td><strong>A shoulder is never deleted either</strong></td>

@@ -1306,6 +1306,24 @@
 <td>The name {name} does not fall inside a shoulder of NAAN {naan}.</td>
 </tr>
 <tr>
+<td><code>ARKHE-1014</code></td>
+<td>400</td>
+<td>公開前に取り下げられた名前。<strong>二度と採らない</strong>——予約した文字列は既に人の手に渡っているので、別の対象に付け直せば外からは NR 違反と見分けがつかない</td>
+<td>{ark} was withdrawn before publication; that name is never assigned again.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1015</code></td>
+<td>400</td>
+<td>公開した ARK の破棄には理由が要る。<strong>残らない破棄は、無かったことと同じ</strong>——消えた識別子について後から言えることが、これしか残らない</td>
+<td>Purging a published ARK requires a reason; it is kept with the name.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1016</code></td>
+<td>400</td>
+<td>破棄する ARK を <code>confirm</code> に打ち直す。<strong>一覧を回すスクリプトが、意図せず全件消すことのないように</strong></td>
+<td>Send <code>confirm</code> with the ARK itself ({ark}) to purge it.</td>
+</tr>
+<tr>
 <td><code>ARKHE-1201</code></td>
 <td>401</td>
 <td>資格情報が無い。<strong>公開情報の読取には要らない</strong>ので、これは書き込みの口</td>
@@ -1384,6 +1402,12 @@
 <td>Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. See {about}</td>
 </tr>
 <tr>
+<td><code>ARKHE-1310</code></td>
+<td>403</td>
+<td>公開した ARK の破棄は RA の運用者（<code>authority=system</code>）だけが行える。<strong>NAAN 管理者にも組織にも渡さない</strong>——名前空間を預かることと、配った名前を消せることは別の権限である</td>
+<td>Purging a published ARK is for the registration authority's operator (authority=system); this principal is {authority}.</td>
+</tr>
+<tr>
 <td><code>ARKHE-1401</code></td>
 <td>404</td>
 <td>台帳にその ARK が無い（一括操作では 1 件でも欠ければ全体が失敗する）</td>
@@ -1406,6 +1430,18 @@
 <td>404</td>
 <td>知らない NAAN について述べられることは無い。inflection 無しなら上位リゾルバへ取り次ぐ</td>
 <td>Metadata for an unknown NAAN is not held by this resolver.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1501</code></td>
+<td>409</td>
+<td><strong>公開した ARK は削除できない。</strong> 消せるのは公開前のものだけで、公開した後は tombstone に付け替えるか <code>url</code> を空にする（<code>NR</code> を宣言している以上、解決が止まることは許されない）</td>
+<td>{ark} is public; a published ARK is never deleted. Tombstone it instead.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1502</code></td>
+<td>409</td>
+<td>修飾子付きの名前がぶら下がっている。<strong>先に下から取り下げる</strong>——親だけ消すと、行き先を継ぐ先の無い部分参照が残る</td>
+<td>{ark} has {count} qualified name(s) under it; withdraw those first.</td>
 </tr>
 <tr>
 <td><code>ARKHE-1601</code></td>
