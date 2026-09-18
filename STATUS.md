@@ -16,7 +16,7 @@
 | | |
 | --- | --- |
 | 版 | **0.3.0**（2026-09-17 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
-| テスト | **550 件すべて green**（`uv run pytest -q`、約 20 秒） |
+| テスト | **すべて green**（`uv run pytest -q`、20 秒ほど） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語で 20 ページ |
 | マイグレーション | head は単一（`a7c3e51d9f20`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回し、`tests/test_migrations.py` が SQLite で頭まで流す |
