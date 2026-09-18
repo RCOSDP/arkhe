@@ -32,6 +32,7 @@
 | 解決 | 完全一致 → 祖先 passthrough → 検査桁 → shoulder 委譲 → 404／取次。`?` `??` `?info` `?json` | `domain/resolution.py` |
 | 採番 | 衝突は握りつぶさず数えて採り直す。冪等鍵（`request_id`）、一括採番、quota | `domain/minting.py` |
 | 公開と取り下げ | **公開前として採り、公開するまでは削除できる。** 公開前を解決するかはリゾルバの置き場所で決まる（閉域は解決する）。取り下げた名前は二度と採らない | `domain/admin_ops.py` |
+| 取り込み | **外で採番された ARK を台帳に載せる**（`/api/import`）。名前は first-digit 規約でshoulder を 1 つだけ選び、**総当たりで「入る shoulder」を探さない**。scope は `ark:import` | `api/mint.py` |
 | 委譲 | shoulder の 4 状態、`delegated` は `307` で行き先を返す（**プロキシしない**） | `domain/admin_ops.py` |
 | 転送の保留 | ARK / shoulder / NAAN を**期限つきで**止める。解決は止めない（`200` と記述） | `domain/resolution.py` |
 | 承継・離脱 | `arkhe succeed` / `arkhe depart --resolver`。**`Ark` の行には触れない** | `domain/admin_ops.py` |
@@ -40,7 +41,7 @@
 | 認可 | 3 段の到達範囲。**判断は 1 か所**、リクエストで広がらない | `domain/authz.py` |
 | 管理画面 | 台帳・主体・ARK 一覧・監査・未登録主体。日英切替、画面ごとの i18n | `api/admin/`, `api/i18n/` |
 | 記録 | `AuditEvent`（NAAN 以上の操作）と `ArkChange`（行き先の変更は全件） | `db/models.py` |
-| 運用コマンド | 24 コマンド。**画面と同じ `domain` を通る** | `cli.py` |
+| 運用コマンド | **画面と同じ `domain` を通る** | `cli.py` |
 | 観測性 | `/healthz` `/readyz`、構造化ログ、`/.well-known/ark` | `observability.py`, `api/resolve.py` |
 | 体験環境 | Keycloak ＋ PostgreSQL ＋ minter/resolver の compose | `compose/oidc/` |
 
@@ -54,7 +55,7 @@ test_auth.py         3 機構の認証          test_models.py      不変条件
 test_succession.py   承継と離脱            test_cli.py         運用コマンド
 test_cli_i18n.py     訳の抜け             test_docs.py        参照ページの追随
 test_hold.py         転送の保留            test_publication.py 公開と、公開前の取り下げ
-test_migrations.py   移行が頭まで流れること
+test_migrations.py   移行が頭まで流れること（`test_publication.py` は purge も見る）
 ```
 
 ## 分かっている穴
@@ -63,10 +64,6 @@ test_migrations.py   移行が頭まで流れること
 
 ### 分散構成（[分散して運用する](docs/guides/federation.md) で扱った）
 
-- **外部で採番された ARK を取り込む口が無い。** `/api/mint` は名前を生成し、
-  `/api/register` は既存 base の修飾子専用。**下位の arkhe が採った名前を上位の台帳に
-  載せる方法が無い**ので、閉域構成では「上位で先に採って払い出す」か「上位は名前を
-  知らない」の二択になる。
 - **台帳をまたぐ一覧・監査・quota が無い。** `/.well-known/ark` が出すのは名前空間の
   割当まで。
 - **委譲先の健全性を見ていない。** 上位は下位が生きているかを知らない。**止める手は
@@ -85,8 +82,9 @@ test_migrations.py   移行が頭まで流れること
 
 ### まだ確かめていないこと
 
-- **本番運用の実績が無い。** 性能の数字（解決のレイテンシ、台帳が数百万行のときの
-  一覧）を測っていない。
+- **本番運用の実績が無い。** 性能は測った（100 万件の台帳に負荷をかけた実測が
+  [デプロイ](docs/guides/deployment.md)にあり、道具は `scripts/bench.py`）が、
+  **測ったのと運用したのは別**である。
 - **復元を試していない。** バックアップの手順は文書にあるが、実際に落として戻す
   リハーサルはしていない。ここは[デプロイ](docs/guides/deployment.md)の
   チェックリストが求めている項目そのもの。
@@ -95,12 +93,12 @@ test_migrations.py   移行が頭まで流れること
 
 **決まっていない。** 選ぶときの材料として並べる。
 
-1. **外部採番の取り込み口**。分散構成の穴の本体。入れるなら、名前が委譲した shoulder の
-   内側にあること・二重採番でないこと・検査桁が合っていることを取り込み時に検査する
-   ——**採番が更新に化けない**という不変条件を、取り込み経路でも守る必要がある。
-2. **復元リハーサルと性能測定**。0.1 を名乗る前にやるべきこと。
-3. **委譲先の外形監視**。運用の道具であって arkhe の機能とは限らない
+1. **復元リハーサル**。バックアップの手順は文書にあるが、落として戻したことが無い。
+   **1.0 を名乗る前にやるべきことの筆頭。**
+2. **委譲先の外形監視**。運用の道具であって arkhe の機能とは限らない
    ——ただし**止める側は入った**（保留）ので、あとは気づく手立てだけ。
+3. **公開前のまま放置されたものの回収**。`--state reserved` で引けるが、期限も通知も
+   無い（下の「入っているもの: 公開前の削除」の末尾）。
 
 ## 入っているもの: 転送の保留（hold）
 
