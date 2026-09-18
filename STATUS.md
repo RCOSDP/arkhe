@@ -179,12 +179,19 @@ test_migrations.py   移行が頭まで流れること
 
 ## 環境まわりのメモ
 
-- ローカルの `dist/`（0.0.5〜0.0.8 のビルド成果物）、`db.sqlite3`、`site/`、`.venv/` は
+- ローカルの `dist/`（0.0.5〜0.3.0 のビルド成果物）、`db.sqlite3`、`site/`、`.venv/` は
   **すべて `.gitignore` 済み**で追跡されていない。消して困るものは無い。
 - `compose/oidc` は **見本であって手本ではない**——秘密値が平文、Keycloak は dev モード。
 - **CI は無い。** 検査も公開も `scripts/` の 3 本で、走らせるのは手元である
   ——`check.sh`（検査ぜんぶ）、`deploy-docs.sh`（gh-pages へ）、`release.sh`
   （版を出す。`--publish` のときだけ実際に出る）。**系統を 2 つ持たない**ため。
+  **3 本とも引数の扱いは同じ**——`-h` で冒頭の注釈を出し（行数ではなく「最初の
+  `#` でない行まで」で切るので、書き足してもずれない）、知らない引数は `exit 2`
+  で止める。`deploy-docs.sh` だけ素通ししていて、**`--dryrun` と打ち間違えると
+  黙って gh-pages へ出ていた**。
+- **リリースノートは `CHANGELOG.md` のその版の節から起こす**（`release.sh`）。
+  `gh --generate-notes` が並べるのは PR なので、main へ直接コミットするこの
+  体系では比較リンク 1 行だけになる——v0.0.9 と v0.2.0 が実際そうなっている。
 - ドキュメントサイトは **gh-pages ブランチを配信**している（Settings → Pages →
   Deploy from a branch）。書き手は `deploy-docs.sh` だけで、**gh-pages は手で触らない**。
 - `.github/` に残っているのは issue と PR のテンプレート、Dependabot（uv lock を毎週）。
