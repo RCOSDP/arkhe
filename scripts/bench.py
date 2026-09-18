@@ -46,10 +46,14 @@ def run(url: str, n: int, concurrency: int, *, method="GET", body=None, headers=
     # （実測で 20 ms 対 0.03 ms）。それを分布に混ぜると中央値まで濁る。
     _worker(url, 1, method, body, headers)
 
-    per = max(1, n // concurrency)
+    # **端数を配る。** `n // concurrency` で切り捨てると、`-n 3000 -c 16` は
+    # 2992 しか送らない——**応答の内訳を `-n` と見比べた人には、8 件落ちたように
+    # 見える**（実際に読み違えた）。数えている数と、送ると言った数を揃える。
+    per = [n // concurrency + (1 if i < n % concurrency else 0) for i in range(concurrency)]
+    per = [max(1, c) for c in per]
     started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        batches = pool.map(lambda c: _worker(url, c, method, body, headers), [per] * concurrency)
+        batches = pool.map(lambda c: _worker(url, c, method, body, headers), per)
         samples = [s for batch in batches for s in batch]
     wall = time.perf_counter() - started
 

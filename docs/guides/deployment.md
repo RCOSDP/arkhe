@@ -306,6 +306,51 @@ memory, and **this ledger needs few of them at once.**
 - If the admin interface should not be reachable from outside, `ARKHE_ADMIN_LOGIN=bearer`
   removes the login screen altogether.
 
+### Re-measured on the recommended settings (2026-09-18)
+
+**Built exactly as recommended above, and run.** A ledger of one million ARKs,
+PostgreSQL 17 (`max_connections=200`, `shared_buffers=512MB`), four resolver workers,
+`ARKHE_DB_POOL_SIZE=3` and `ARKHE_DB_MAX_OVERFLOW=2`, all on one 20-core host.
+
+| Resolution (302) | Concurrency | rps | p50 | p95 | p99 |
+| --- | --- | --- | --- | --- | --- |
+| | 1 | 278 | 3.5 | 4.9 | 5.6 ms |
+| | 4 | 777 | 4.1 | 6.4 | 7.5 ms |
+| | **8** | **938** | **6.5** | 10.5 | 18.9 ms |
+| | 16 | 938 | 10.6 | 20.5 | 37.7 ms |
+
+**It flattens at a concurrency of eight** for four workers. Beyond that the rps does not
+move and **only the latency grows** — more parallelism does not make it faster.
+
+| Other paths (concurrency 8) | rps | p50 |
+| --- | --- | --- |
+| `?info` | 789 | 6.5 ms |
+| `?json` | 784 | 6.8 ms |
+| `??` | 784 | 8.0 ms |
+| Forwarding an unknown NAAN | 689 | 8.7 ms |
+
+**Checking that the server is what was measured**: `/healthz` (no database, no
+authentication) reached **2,192 rps** under the same conditions. Resolution at 938 is well
+under half of that, so **the server is what the numbers describe.**
+
+**Only 16 connections were ever open** (`pool_size 3 + overflow 2` × 4 workers = 20
+available; 179 still free of `max_connections=200`). **The recommended pool is not too
+tight.**
+
+| Minting (2 minter workers) | Concurrency | rps | p50 |
+| --- | --- | --- | --- |
+| One at a time | 1 | 17 | **59.7 ms** |
+| | 4 | 53 | 70.3 ms |
+| | 8 | 77 | 94.4 ms |
+| **1000 in one request** | — | **918 a second** | 1,089 ms |
+
+**That 59.7 ms is almost entirely Argon2** (about 53 ms per verification); the database
+does not spend half a millisecond. **Bulk is 55 times faster** — not because the database
+is quick, but because **one authentication is divided across a thousand rows.**
+
+**These numbers say nothing beyond "on this machine".** Everything shared one host, so a
+split deployment adds a round trip. Take your own with the tool below.
+
 ### Measuring your own
 
 ```bash
@@ -539,7 +584,7 @@ arkhe fingerprint
 # 3. **It actually resolves.** Start a resolver and ask it.
 #    (The default process is the minter and **has no resolution endpoint** — do not read
 #     that 404 as a failed restore.)
-ARKHE_RESOLVER=1 uvicorn arkhe.app:app   # then: curl -sI localhost:8000/ark:/…
+ARKHE_RESOLVER=1 uvicorn arkhe.app:create_app --factory   # then: curl -sI localhost:8000/ark:/…
 
 # 4. **It can still be written to.** If the sequences did not come back, the next mint
 #    collides on the primary key.

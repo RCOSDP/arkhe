@@ -9,6 +9,32 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The start-up command in the restore procedure did not work.** It said
+  `uvicorn arkhe.app:app`, but **the app is a factory** (`arkhe.app:create_app --factory`)
+  and will not start that way — **found by actually running the procedure written moments
+  earlier**. Everywhere else (Quickstart, the federation guide, the Dockerfile, compose)
+  was right.
+
+- **`scripts/bench.py` sent fewer requests than `-n`.** Integer division by the concurrency
+  meant `-n 3000 -c 16` sent 2992. **Compared against `-n`, the status breakdown looks like
+  eight failures** — which is exactly how it was misread. The remainder is now distributed,
+  so what it counts matches what it said it would send.
+
+### Added
+
+- **Figures re-measured on the recommended settings**, in
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/). A ledger of one million
+  ARKs, four resolver workers, `POOL_SIZE 3` and `MAX_OVERFLOW 2`: **resolution reaches 938
+  rps at concurrency 8, p50 6.5 ms**.
+
+  Three things came out of it. **Throughput flattens at concurrency 8** and beyond that only
+  latency grows. **Only 16 connections are ever open** (20 available, 179 still free of
+  `max_connections=200`) — **the recommended pool is not too tight**. And minting's 59.7 ms
+  is **almost entirely Argon2**, which is why **bulk is 55 times faster**: one
+  authentication divided across a thousand rows, not a faster database.
+
 ## [0.10.0] — 2026-09-18
 
 **The release that noticed the recommended shape does not run on defaults.**
