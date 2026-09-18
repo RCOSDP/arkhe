@@ -1065,3 +1065,41 @@ def test_scopeはoauth2にしか付かない():
                 for name, scopes in requirement.items():
                     if name != "oauth2":
                         assert scopes == [], f"{method.upper()} {path}: {name} に {scopes}"
+
+
+# ------------------------------------- 冗長構成: 同じ依頼が同時に 2 つ届く
+
+
+def test_控えが先に書かれていたら勝ったほうのARKを返す(db, world, principal_of):
+    """**冗長化すると起きる形の、回復の側を決定的に試す。**
+
+    負荷分散の再送や、応答を待てなくなった呼び出し側の投げ直しが、**別の
+    minter に同時に届く**。再送の判定と控えの書き込みのあいだには隙があるので、
+    どちらも「まだ無い」と見てから、どちらも書きにいく。
+
+    守り自体は DB に在る（`one_ark_per_request_id`）ので**台帳は壊れない**。
+    問題は負けたほうの応答で、素通しすると `500` になる——呼び出し側から見て
+    「採番できたか分からない」がいちばん困り、**別の `request_id` で投げ直せば
+    二重採番になる。**
+
+    ここでは「先に書かれていた」状態を作って、`_commit_or_replay` が
+    **勝ったほうの ARK を返す**ことを見る。スレッドを使わないのは、競合の
+    **結果**を試したいのであって、競合そのものを再現したいのではないため
+    （実際の同時到着は PostgreSQL で確かめた）。
+    """
+    from arkhe.api.mint import _commit_or_replay
+    from arkhe.db.models import MintReceipt
+    from arkhe.domain.minting import mint
+
+    p = principal_of(scopes={"ark:mint"}, manager=world["a"], client_id="racer")
+    winner, _ = mint(db, shoulder=world["sh_a"], created_by="winner")
+    db.add(MintReceipt(client_id="racer", request_id="same", ark=winner.ark))
+    db.commit()
+
+    # 負けたほう——同じ request_id で採り、同じ控えを書こうとする。
+    loser, _ = mint(db, shoulder=world["sh_a"], created_by="loser")
+    db.add(MintReceipt(client_id="racer", request_id="same", ark=loser.ark))
+
+    got = _commit_or_replay(db, p, "same", loser)
+    assert got.ark == winner.ark, "負けたほうに、勝ったほうの ARK を返していない"
+    assert db.query(MintReceipt).filter(MintReceipt.request_id == "same").count() == 1

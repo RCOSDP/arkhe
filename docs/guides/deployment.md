@@ -179,6 +179,59 @@ redundancy, not from rps.
 If minting is the bottleneck, **move callers to bulk** (twenty times faster). **What makes
 one-at-a-time slow is not the database — it is one Argon2 verification per request.**
 
+### Redundancy — how much to automate
+
+**The answer is opposite for resolvers and for the minter.**
+
+**Run as many resolvers as you like.** They hold no state, write nothing, and know
+nothing of one another. Any of them gives the same answer, so **there is nothing to get
+wrong**. Plain round-robin is enough; no sticky sessions.
+
+**The minter and the primary database are different.** **Automatic failover here risks
+split-brain, and split-brain breaks identifiers** — two primaries minting at once can
+hand the same name to different objects. That is a violation of the one thing this
+service promises, and under `NR` there is no way back.
+
+Minting, on the other hand, **may stop** (see [The two roles](#the-two-roles)). Resolution
+continues while it is down and callers can wait. **So the scales are not level:**
+
+| | Minting stops for minutes | Split-brain |
+| --- | --- | --- |
+| Effect | new deposits wait | **a name you handed out can point at something else** |
+| Reversible | yes | **no** |
+
+**Promote by hand, after fencing.** Make certain the old primary is down before bringing
+up the new one — nothing in this ledger should fire `pg_ctl promote` on its own.
+
+### Health checks that do not depend on the database
+
+**Point your load balancer at `/readyz` and a database outage becomes "no healthy
+backends".** Every resolver drops out at once, and **reads that would still have worked
+stop too.**
+
+- **Load-balancer check: `/healthz`** — is the process alive? It does not touch the database.
+- **`/readyz` is for admission** — hold a freshly started process out until it can reach
+  the database.
+
+That is why they are two endpoints and not one.
+
+### Can you run several minters? — exercised
+
+**Yes.** Eight workers minting fifty ARKs each into the same shoulder — **400 concurrent
+requests** — produced no duplicates and no failures. Collisions are counted and retried
+rather than swallowed, so **running several does not collide names**.
+
+**A resend is not double-minted, even across instances.** The same `request_id` sent from
+eight paths **simultaneously** mints once and gives everyone the same ARK (one `201`,
+seven `200`s).
+
+> **This exercise found one thing to fix.** A *simultaneous* resend used to return `500`
+> (102 of 200 requests). The ledger was never corrupted — the uniqueness constraint on the
+> receipt held — but to the caller it reads as "I do not know whether it minted", and
+> **resending under a fresh `request_id` would then double-mint**. The loser now returns
+> the ARK the winner recorded. Bulk minting had the same gap and now **rebuilds the batch
+> once**, so every row comes back as a replay.
+
 ### Keep things apart
 
 - **The WAL archive and the daily dumps belong on a different machine** from the database.

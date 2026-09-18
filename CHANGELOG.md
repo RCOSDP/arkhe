@@ -9,6 +9,25 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The same `request_id` arriving at the same time returned `500`.** Between checking
+  for a replay and writing the receipt there is a gap, and **a load balancer's retry — or
+  a caller that gave up waiting and resent — lands on another minter at the same moment**:
+  both see nothing, both write. The guard itself lives in the database
+  (`one_ark_per_request_id`), so **the ledger was never wrong**, but the loser got a `500`
+  (102 of 200 requests, measured).
+
+  To the caller that reads as "**I do not know whether it minted**", which is the worst
+  possible answer: **resending under a fresh `request_id` then double-mints**. The loser
+  now returns the ARK the winner recorded — **the promise that a resend gets the same
+  answer has to hold whether the resends are sequential or simultaneous.**
+
+  Bulk minting (`/api/mint/bulk`) had the same gap and now **rebuilds the batch once**: the
+  winner's receipts are visible by then, so every row comes back as a replay and nothing is
+  minted twice. A bulk request creates nothing unless every row succeeds, so **there is no
+  reason for it to fail on a race.**
+
 ## [0.5.0] — 2026-09-18
 
 **The release in which the ledger can be counted.** How many there are, where they are

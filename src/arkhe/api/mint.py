@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Response, Security
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from arkhe import errors
 from arkhe.api.schemas import (
@@ -439,6 +440,33 @@ def _keep_receipt(session, principal, request_id: str, ark: Ark) -> None:
         )
 
 
+def _commit_or_replay(session, principal, request_id: str, ark: Ark) -> Ark:
+    """commit する。**同じ `request_id` を先に書かれていたら、そちらを返す。**
+
+    再送の判定（`_replay`）と控えの書き込みのあいだには隙がある。**同じ
+    `request_id` が同時に 2 つ届くと、どちらも「まだ無い」と見てから、
+    どちらも書きにいく**——負荷分散の再送や、応答待ちの client が痺れを切らして
+    投げ直したときに、実際に起きる。
+
+    守り自体は DB に在る（`one_ark_per_request_id`）ので**台帳は壊れない**が、
+    素通しすると**負けたほうに `500` が返る**。呼び出し側から見ると「採番できたか
+    分からない」がいちばん困る応答で、**別の `request_id` で投げ直せば二重採番に
+    なる**。
+
+    だから負けたほうは、**勝ったほうが書いた ARK をそのまま返す**。再送に同じ
+    答えを返すという約束は、順次でも同時でも同じでなければならない。
+    """
+    try:
+        session.commit()
+        return ark
+    except IntegrityError:
+        session.rollback()
+        if (won := _replay(session, principal, request_id)) is not None:
+            return won
+        # 競合ではなく別の不整合。**握りつぶさない。**
+        raise
+
+
 def _apply(ark: Ark, data: dict, principal) -> Ark:
     for field, value in data.items():
         if field == "ark":
@@ -492,8 +520,12 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
     )
     _keep_receipt(session, principal, body.request_id, ark)
     authz.audit(session, principal, "mint", ark.ark, reserved=body.reserve)
-    session.commit()
-    return ArkOut.of(ark)
+    settled = _commit_or_replay(session, principal, body.request_id, ark)
+    if settled is not ark:
+        # 競り負けた。**採った番号は commit されていない**（同じトランザクション
+        # だったので巻き戻っている）ので、増えた番号は無い。
+        response.status_code = 200
+    return ArkOut.of(settled)
 
 
 @router.post(
@@ -526,6 +558,22 @@ def bulk_mint(
     if len(rows) > cfg.bulk_limit:
         raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
 
+    # **同じ塊が同時に 2 つ届いたら、一度だけ組み直す。** 再送の判定と控えの
+    # 書き込みのあいだに隙があり、負けたほうは commit で落ちる——素通しすると
+    # **1 件も採番されないまま `500`** になる。組み直せば、勝ったほうの控えが
+    # 見えるので**全件が再送ぶんとして揃う**（採番は増えない）。
+    # 2 度目は無い。**そこでも負けるなら、それは競合ではなく別の不整合である。**
+    for attempt in (1, 2):
+        try:
+            return _bulk_mint(session, principal, rows, response)
+        except IntegrityError:
+            if attempt == 2:
+                raise
+            session.rollback()
+    raise AssertionError("到達しない")  # pragma: no cover
+
+
+def _bulk_mint(session, principal, rows, response):
     # F4: **既に採番済みの行は飛ばす。** 切れた塊をそのまま再送できるようにする。
     wanted = {r.request_id for r in rows if r.request_id}
     replayed: dict[str, Ark] = {}
