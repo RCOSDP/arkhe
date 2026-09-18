@@ -130,6 +130,31 @@ Publishing sits with `ark:mint` because **it is the second half of minting**: a 
 that reserved a name has to be able to put it out, or every draft would need a second
 key.
 
+### The guest: everyone who has no client at all
+
+**Resolution needs no authentication, and that is the point** — an identifier nobody can
+resolve without a key is not a persistent identifier. The unauthenticated caller reaches:
+
+| Open to anyone | What it gives |
+| --- | --- |
+| `GET /ark:/…` and `GET /ark:…` | resolution, and the inflections `?` `??` `?info` `?json` |
+| `GET /.well-known/ark` | which namespaces this service is responsible for |
+| `GET /healthz`, `GET /readyz` | liveness and readiness |
+| `POST /oauth/token` | the door into becoming one of the actors above (credentials still required) |
+
+Everything else needs a client.
+
+**This actor is why the reserved/published distinction exists at all.** `?info` and `??`
+answer without a key, so if a public resolver served ARKs that have not been published, the
+existence, title and target of an unpublished object would go straight out to anyone who
+guessed the name. That is why **the default does not serve them**, and why serving them
+is a property of *where a resolver stands* (`ARKHE_RESOLVE_UNPUBLISHED`, for a resolver
+inside a closed network) rather than a property of the ARK.
+
+To the guest, a reserved ARK and one that was never minted are **the same 404**. A
+withdrawn one is too — and it stays a 404 forever, because the name is never assigned to
+anything else.
+
 ### A namespace: NAAN administrator and above
 
 | Action | System | NAAN | Organisation |
