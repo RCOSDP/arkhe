@@ -1440,7 +1440,7 @@ forks per NAAN, and the first-digit convention holds for some NAANs and not othe
     }
 
     ARK {
-        string ark PK "naan/name. never deleted once published"
+        string ark PK "naan/name. once published, only removed with a reason and a trace"
         string naan FK
         int    shoulder_id FK
         string assigned_name
@@ -1557,8 +1557,8 @@ record the easy way out.</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>A published ARK is never deleted</strong></td>
-<td>Deleting the row stops resolution — the identifier breaks. <code>before_delete</code> refuses. When a target is lost you tombstone it, or empty <code>url</code> so a description is returned</td>
+<td><strong>A published ARK is not deleted lightly</strong></td>
+<td>Deleting the row stops resolution — the identifier breaks. <code>before_delete</code> refuses unless the session named that one ARK, and it keys on <strong>whether the name was ever published</strong>, not on whether it is published now. When a target is merely lost you tombstone it, or empty <code>url</code> so a description is returned</td>
 </tr>
 <tr>
 <td><strong>A reserved one can be</strong></td>

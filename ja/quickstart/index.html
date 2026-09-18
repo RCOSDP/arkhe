@@ -1509,9 +1509,10 @@ LAN に出すのは明示的な操作にしてある。</p>
 保留、墓碑まで、実際の応答で。</p>
 <h2 id="いま何が起きたか">いま何が起きたか<a class="headerlink" href="#いま何が起きたか" title="Permanent link">&para;</a></h2>
 <p><strong>取り消せない識別子</strong>を 1 本作った。ARK は再割当てしないと宣言する体系なので、
-公開した ARK に削除は無い。対象が失われたときは削除ではなく
-<a href="../concepts/invariants/#no-delete">tombstone</a> にする。</p>
-<p>引き返せるのは<strong>外に出す前</strong>だけである。<code>{"reserve": true}</code> を付けて採れば、その
+対象が失われただけなら削除ではなく
+<a href="../concepts/invariants/#no-delete">tombstone</a> にする。公開した名前を消す道はあるが、
+<strong>狭く、跡が残り、その名前が別のものに渡ることは無い。</strong></p>
+<p>軽く引き返せるのは<strong>外に出す前</strong>だけである。<code>{"reserve": true}</code> を付けて採れば、その
 ARK は公開のリゾルバではまだ解決せず、削除もできる——<code>POST /api/publish</code> がその境目になる
 （<a href="../concepts/invariants/#before-publication">外に出す前なら、まだ引き返せる</a>）。</p>
 <p>末尾の <code>??</code> は、その識別子について<strong>何を約束しているか</strong>をリゾルバに尋ねたもの。

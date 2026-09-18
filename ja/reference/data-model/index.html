@@ -1440,7 +1440,7 @@ shoulder を必ず使う</strong>——使わないと NAAN ごとにモデル�
     }
 
     ARK {
-        string ark PK "naan/name。**公開したら削除しない**"
+        string ark PK "naan/name。**一度公開したら、理由と跡を残してしか消えない**"
         string naan FK
         int    shoulder_id FK
         string assigned_name
@@ -1554,8 +1554,8 @@ NAAN 単位以上の操作しか残さないが、<strong>採番も付け替え�
 </thead>
 <tbody>
 <tr>
-<td><strong>公開した ARK は削除できない</strong></td>
-<td>行を消すと解決が止まる＝識別子が壊れる。<code>before_delete</code> で拒否する。対象が失われたら tombstone にするか <code>url</code> を空にして記述を返す</td>
+<td><strong>公開した ARK は、軽くは消せない</strong></td>
+<td>行を消すと解決が止まる＝識別子が壊れる。<code>before_delete</code> は、そのセッションがその ARK を名指ししていないかぎり拒む——見るのは「<strong>一度でも公開したか</strong>」であって「今 公開中か」ではない（後者だと取り下げてから消せてしまう）。対象が失われただけなら tombstone にするか <code>url</code> を空にして記述を返す</td>
 </tr>
 <tr>
 <td><strong>公開前の ARK は削除できる</strong></td>

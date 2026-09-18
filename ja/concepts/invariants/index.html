@@ -1459,7 +1459,15 @@
 いつか破られる。たいていは深夜に、別の何かを直している最中に。</p>
 <h2 id="no-delete">公開した ARK は削除しない<a class="headerlink" href="#no-delete" title="Permanent link">&para;</a></h2>
 <p>行を消すと解決が止まる。解決しなくなった識別子は、壊れた識別子である。<code>Ark</code> は
-ORM の層で削除を拒む。</p>
+ORM の層で削除を拒む——しかも見るのは「<strong>一度でも公開したか</strong>」であって、
+「今 公開中か」ではない。後者で見ると、<strong>先に公開を取り下げるだけで守りを抜けられる</strong>。</p>
+<p><strong>出口は 2 つあり、どちらも跡が残る。</strong> 公開の取り下げ（<code>/api/unpublish</code>）は
+<strong>戻せる</strong>操作で、行は残る。削除と破棄は<strong>戻せない</strong>——理由と ARK の打ち直しを要求し、
+<strong>その名前は二度と採られない台帳へ移る</strong>。どちらも呼ぶ側の届く範囲の内側だけである。</p>
+<p><strong>どちらを通っても <code>NR</code> は守られる。</strong> 外に出て消された名前は永久に <code>404</code> を返す
+——<strong>別のものを指すようになることは無い</strong>。破れうるのは「解決し続ける」ほうで、
+だから出口は狭く、記録が残り、<strong>削除命令や公開してはならなかったもののためにだけ</strong>
+使う。整理のために使うものではない。</p>
 <p>対象が本当に失われたときは <strong>tombstone</strong> にする。識別子と記述は残り、到達性だけが落ちる。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span>/api/tombstone<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…", "commitment": "取り下げ"}'</span>
 </code></pre></div>

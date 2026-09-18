@@ -1400,7 +1400,10 @@ anything under <code>compose/</code> (those are demonstrations).</p>
 <p><a href="../../concepts/invariants/">These refusals</a> are what arkhe is for. Weakening one is a
 <strong>major</strong> change even if no signature moves:</p>
 <ul>
-<li>a <strong>published</strong> ARK or a namespace becomes deletable</li>
+<li>a name that has been published becomes removable <strong>without a reason, without the ARK
+  retyped, or from outside the caller's reach</strong> (removing one <em>is</em> possible — narrowly,
+  and recorded; <strong>0.4.0 opened that door on purpose and said so</strong>)</li>
+<li>a namespace becomes deletable</li>
 <li>a withdrawn name becomes mintable again</li>
 <li><code>retired</code> becomes reversible</li>
 <li>minting can silently become an update</li>

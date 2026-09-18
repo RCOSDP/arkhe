@@ -1511,8 +1511,10 @@ minting endpoint — that separation is the point, so a single process cannot do
 resolution, suffix passthrough, a hold, a tombstone — with real responses.</p>
 <h2 id="what-just-happened">What just happened<a class="headerlink" href="#what-just-happened" title="Permanent link">&para;</a></h2>
 <p>You minted an identifier that <strong>cannot be taken back</strong>. ARK declares that names are
-never re-assigned, so a published ARK is never deleted: an object that is lost gets a
-<a href="../concepts/invariants/#no-delete">tombstone</a>, not a deletion.</p>
+never re-assigned, so an object that is merely lost gets a
+<a href="../concepts/invariants/#no-delete">tombstone</a>, not a deletion. Removing a published name
+is possible, but it is narrow, recorded, and <strong>the name is never handed to anything
+else</strong>.</p>
 <p>The one way back is <strong>before</strong> the name goes out. Mint with <code>{"reserve": true}</code> and a
 public resolver does not resolve it yet and it can still be deleted; <code>POST /api/publish</code> is the point of no
 return. See <a href="../concepts/invariants/#before-publication">before it goes out</a>.</p>

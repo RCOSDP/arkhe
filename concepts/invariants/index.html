@@ -1460,7 +1460,17 @@ everyone remembering it will be broken eventually — usually at 2 a.m., by some
 fixing something else.</p>
 <h2 id="no-delete">A published ARK is never deleted<a class="headerlink" href="#no-delete" title="Permanent link">&para;</a></h2>
 <p>Deleting the row stops resolution, and an identifier that no longer resolves is a
-broken identifier. <code>Ark</code> refuses deletion at the ORM level.</p>
+broken identifier. <code>Ark</code> refuses deletion at the ORM level — and it keys that refusal on
+<strong>whether the name has ever been published</strong>, not on whether it is published right now.
+Otherwise withdrawing it from publication first would walk straight past the guard.</p>
+<p><strong>There are two ways out, and both leave a trace.</strong> Withdrawing from publication
+(<code>/api/unpublish</code>) is reversible and leaves the row; deleting or purging is not, requires
+a reason and the ARK retyped, and <strong>moves the name to a ledger of names never to be
+assigned again</strong>. Both act only inside the caller's reach.</p>
+<p><strong><code>NR</code> survives either way.</strong> A name that went out and was removed answers <code>404</code> forever;
+<strong>it never comes to mean something else.</strong> What can break is "keeps resolving" — which is
+why the way out is narrow, recorded, and to be used for a removal order or for what should
+never have been published, not for tidying up.</p>
 <p>When an object is genuinely gone, you <strong>tombstone</strong> it: the identifier and its
 description stay, only reachability goes.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>arkhe<span class="w"> </span>…<span class="w"> </span><span class="c1"># or</span>

@@ -2176,7 +2176,7 @@ of objects that are not public yet straight out. <strong>One decision, split by 
 </code></pre></div>
 <p>Going public is <code>POST /api/publish</code>. <strong>The name does not move</strong> — what changes is only
 whether it has gone out, exactly as <a href="#pid">repointing</a> leaves the identifier itself
-untouched. After that it cannot be deleted (<code>409</code>; tombstone it instead).</p>
+untouched. After that, deleting it means unpublishing it first (or purging in one step).</p>
 <p><strong>Withdrawing an ARK that was resolving inside the closed network does stop it
 resolving there.</strong> What cannot happen is that the name comes to mean something else: a
 withdrawn name is never assigned again, so a stale reference gets <code>404</code> and nothing
