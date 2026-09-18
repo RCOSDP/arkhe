@@ -2278,8 +2278,10 @@ it is minted. Numbering a draft object ahead of time is ordinary practice, and w
 registration is called off, <strong>leaving a number nothing points at in the ledger forever</strong>
 is not what keeping the promise looks like.</p>
 <p>The boundary is a single <code>Ark.published_at</code>, and it is <strong>one-way</strong>: once published, it
-cannot be deleted. <strong>The default is still "publish on mint"</strong>, so existing callers need
-no change, and every existing ARK migrates as published.</p>
+cannot be deleted — except through <code>POST /api/purge</code>, which the registration authority's
+operator may use and which always leaves a trace. <strong>The default is still "publish on
+mint"</strong>, so existing callers need no change, and every existing ARK migrates as
+published.</p>
 <p><strong>Also fixed: <code>alembic upgrade head</code> did not run on SQLite.</strong> The exact steps in the
 Quickstart had been stopping partway for three releases — because <strong>we had only ever
 round-tripped on PostgreSQL</strong>.</p>
@@ -2318,6 +2320,34 @@ round-tripped on PostgreSQL</strong>.</p>
   to someone — that is what reserving is <em>for</em> — and re-using it would be
   indistinguishable, from outside, from breaking <code>NR</code>. Deletion also has its own scope,
   <code>ark:delete</code>; being able to mint and being able to withdraw are different decisions.</p>
+<ul>
+<li><strong>One narrow way out for a published ARK</strong> (<code>POST /api/purge</code>, <code>ark:purge</code>).
+  Everything here exists so that a published identifier keeps resolving, and <strong>a
+  published ARK not being deletable</strong> is the centre of that. The door is nonetheless
+  open because <strong>reality sometimes brings a demand that outweighs an identifier</strong> — a
+  removal order, personal data that should never have been published, a mass ingest
+  that went in wrong. <strong>Without a way out, someone ends up deleting rows straight from
+  the database, and a deletion that leaves no trace is the worst kind.</strong></li>
+</ul>
+<p>So it is not made impossible; it is made narrow and recorded:</p>
+<ul>
+<li><strong>the registration authority's operator only</strong> (<code>ark:purge</code> <strong>and</strong>
+    <code>authority=system</code>) — never a NAAN administrator, never an organisation;</li>
+<li><strong>a reason is required</strong> — a purge that leaves nothing behind is the same as one
+    that never happened;</li>
+<li><strong><code>confirm</code> must repeat the ARK</strong>, so a script walking a list cannot empty the
+    ledger by accident;</li>
+<li><strong>the name is not freed</strong> — it moves to <code>withdrawn_name</code> and is never assigned
+    again;</li>
+<li><strong>the whole thing is audited.</strong></li>
+</ul>
+<p>The last two are what survive. <strong>The target and the description go, but the name can
+  never come to mean something else</strong>: a stale reference gets <code>404</code>, never a different
+  object. <code>NR</code> holds; what breaks is "keeps resolving".</p>
+<p>The ORM enforces it too. <strong>A published row cannot be deleted unless the session has
+  named that one ARK as the one being purged</strong> (<code>models.sanctioned_purge</code>). A global
+  flag would get left raised, and <strong>you would find out only after a row that must not
+  disappear had disappeared.</strong></p>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>An invariant is stated more narrowly.</strong> "An ARK is never deleted" is now "a

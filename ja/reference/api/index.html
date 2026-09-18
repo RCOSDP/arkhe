@@ -1447,6 +1447,11 @@
 名前と同じに答える。閉域のリゾルバは <code>ARKHE_RESOLVE_UNPUBLISHED</code> で解決する）。<code>POST /api/publish</code> で公開すると解決を始め、<strong>以後は削除できない</strong>
 ——<code>POST /api/delete</code> は <code>409</code> で断る。取り下げた名前は二度と採られない。
 <a href="../../concepts/invariants/#before-publication">壊さないもの</a>を参照。</p>
+<p><strong>公開したものを消す道は、1 本だけある。</strong> <code>POST /api/purge</code> は <strong>RA の運用者だけ</strong>
+（<code>ark:purge</code> かつ <code>authority=system</code>）が使える。裁判所の削除命令や、公開しては
+ならなかった個人情報のためのもので、<strong>逃げ道が無ければ誰かが DB を直接叩く</strong>からで
+ある。理由が要り、<code>confirm</code> に ARK を打ち直させ、監査に残る。<strong>名前は解放しない</strong>
+ので、残っている参照は <code>404</code> になるだけで、別のものを指すことはない。</p>
 <p><strong>一括操作は部分適用しない。</strong> 一括更新の 1 件でも欠けるか範囲外なら、全体が失敗する。
 arklet は順序不定の問い合わせ結果を入力と <code>zip</code> しており、<strong>別のレコードの値を書き込み
 うる</strong>バグがあった。</p>
