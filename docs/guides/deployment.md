@@ -137,8 +137,92 @@ The ledger is the only irreplaceable thing here. An ARK that is lost cannot be m
 again — under NR, re-issuing the same name is precisely what is forbidden — so a lost
 row is a permanently broken identifier.
 
-Back up the database, verify a restore, and prefer a read replica for the resolver so
-that a heavy read load never threatens the primary.
+Prefer a read replica for the resolver, so that a heavy read load never threatens the
+primary.
+
+### Daily and monthly
+
+Take the dump in `pg_dump`'s custom format (`-Fc`): it is compressed, and `pg_restore`
+can pick tables out of it.
+
+```bash
+# Daily. **Put it on another machine** — what sits on the same one dies in the same accident.
+pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f "arkhe-$(date +%Y%m%d).dump"
+```
+
+Start from **14 daily and 12 monthly**. A monthly copy is just the daily one taken on the
+first of the month, so there is no second job to run. **A ledger only grows** — ARKs do
+not go away — so plan for linear growth: around 40 GB at a hundred million, as an upper
+marker (see [Data model](../reference/data-model.md#capacity)).
+
+```cron
+# 03:15 every day. Do not silence failures — discard the output and you never learn it stopped.
+15 3 * * *  pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f /backup/arkhe-$(date +\%Y\%m\%d).dump
+20 3 1 * *  cp /backup/arkhe-$(date +\%Y\%m01).dump /backup/monthly/
+30 3 * * *  find /backup -name 'arkhe-*.dump' -mtime +14 -delete
+```
+
+### A nightly dump is not enough here
+
+**Once a day means losing up to 24 hours of identifiers.** In most systems that is an
+ingest you re-run. **Not in this one**: minting the lost ARKs again is, from outside,
+indistinguishable from breaking `NR`. **The names you handed out are already in the world,
+whatever your database thinks.**
+
+So for this ledger, continuous archiving is not a luxury:
+
+```bash
+# postgresql.conf
+wal_level = replica
+archive_mode = on
+archive_command = 'test ! -f /archive/%f && cp %p /archive/%f'
+```
+
+A base backup (`pg_basebackup`) plus continuous WAL gets you **back to any point in time**.
+Keep the daily dump underneath it as the floor — PITR cannot recover across a broken chain,
+while a dump stands on its own.
+
+### Restoring
+
+**You only know it comes back when you bring it back.** These steps are **exercised**, on
+PostgreSQL 17 with `pg_dump -Fc` and `pg_restore`.
+
+```bash
+createdb arkhe
+pg_restore -d arkhe --no-owner --no-privileges arkhe-YYYYMMDD.dump
+```
+
+`--no-owner --no-privileges` is there because **the role names on the far side are usually
+not the ones you dumped from**; without it the restore stops trying to reassign ownership.
+
+### Proving the restore worked
+
+**Matching row counts prove nothing.** The counts can agree while every target has moved,
+and then every identifier is broken. Check **four** things:
+
+```bash
+# 1. The schema version agrees (upgrade if you restored an older dump)
+psql -d arkhe -tAc "SELECT version_num FROM alembic_version"
+uv run alembic check
+
+# 2. **A fingerprint over ARK, target and publication state.** If this matches, the
+#    identifiers survived.
+psql -d arkhe -tAc "SELECT md5(string_agg(ark||'|'||url||'|'||
+  coalesce(published_at::text,'-'), ',' ORDER BY ark)) FROM ark"
+
+# 3. **It actually resolves.** Start a resolver and ask it.
+#    (The default process is the minter and **has no resolution endpoint** — do not read
+#     that 404 as a failed restore.)
+ARKHE_RESOLVER=1 uvicorn arkhe.app:app   # then: curl -sI localhost:8000/ark:/…
+
+# 4. **It can still be written to.** If the sequences did not come back, the next mint
+#    collides on the primary key.
+arkhe stat && psql -d arkhe -tAc "SELECT last_value FROM shoulder_id_seq"
+```
+
+**Two and four are the real ones.** One and three announce themselves when they fail; **a
+drifted fingerprint and a reset sequence pass quietly** — you find out after an identifier
+has pointed at something else.
 
 ## Behind a proxy
 

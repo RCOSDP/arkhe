@@ -128,8 +128,88 @@ python scripts/bench.py http://127.0.0.1:8000/api/mint -n 200 -c 4 --post --auth
 **同じ名前を配り直すことこそが禁じられている**——ので、1 行の消失が識別子の恒久的な
 破損になる。
 
-DB をバックアップし、**復元を試すこと**。resolver は読み取りレプリカに向け、読み負荷が
-主系を脅かさないようにする。
+resolver は読み取りレプリカに向け、読み負荷が主系を脅かさないようにする。
+
+### 毎日と毎月
+
+**`pg_dump` のカスタム形式**（`-Fc`）で採る。圧縮され、`pg_restore` で表を選んで
+戻せる。
+
+```bash
+# 日次。**別の機械に置く**——同じ機械の中にあるものは、同じ事故で消える。
+pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f "arkhe-$(date +%Y%m%d).dump"
+```
+
+保持は**日次 14 日・月次 12 か月**を出発点にする。月次は毎月 1 日の日次をそのまま
+残せばよく、別に採る必要は無い。**台帳は増える一方**（ARK は消えない）なので、
+置き場は線形に伸びると見ておく——1 億件で約 40 GB が上限の目安である
+（[データモデル](../reference/data-model.md#容量について)）。
+
+```cron
+# 毎日 03:15。失敗を黙らせない——出力を捨てると、止まったことに気づけない。
+15 3 * * *  pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f /backup/arkhe-$(date +\%Y\%m\%d).dump
+20 3 1 * *  cp /backup/arkhe-$(date +\%Y\%m01).dump /backup/monthly/
+30 3 * * *  find /backup -name 'arkhe-*.dump' -mtime +14 -delete
+```
+
+### 日次の夜間バックアップでは足りない
+
+**1 日 1 回では、最大 24 時間ぶんの識別子が消える。** ほかの多くの系ではそれは
+「取り込み直せばよい」で済むが、**この体系では済まない**——消えた ARK を採り直すと、
+`NR` を破ったのと外からは見分けがつかない。**配った名前は、こちらの都合とは無関係に
+既に外に在る。**
+
+だから、この台帳では**継続的アーカイブ（PITR）を贅沢と見なさない**:
+
+```bash
+# postgresql.conf
+wal_level = replica
+archive_mode = on
+archive_command = 'test ! -f /archive/%f && cp %p /archive/%f'
+```
+
+基礎バックアップ（`pg_basebackup`）＋ WAL の連続保存で、**任意の時点まで戻せる**。
+日次のダンプは、その上での**最後の砦**として残す（PITR は連鎖が切れると戻れない
+——ダンプは 1 個で完結する）。
+
+### 復元の手順
+
+**戻せることは、戻して初めて分かる。** 手順は次のとおりで、**実測で通してある**
+（PostgreSQL 17、`pg_dump -Fc` → `pg_restore`）。
+
+```bash
+createdb arkhe                                   # 空の入れ物を作る
+pg_restore -d arkhe --no-owner --no-privileges arkhe-YYYYMMDD.dump
+```
+
+`--no-owner --no-privileges` を付けるのは、**戻す先の役割名が元と違うのが普通**
+だから。付けないと所有者の付け替えで止まる。
+
+### 復元できたことを、どう確かめるか
+
+**件数が合うことは、確かめたことにならない。** 件数が同じでも行き先が入れ替わって
+いれば、識別子は全部壊れている。見るのは **4 つ**:
+
+```bash
+# 1. 版が揃っている（古い版に戻したら upgrade する）
+psql -d arkhe -tAc "SELECT version_num FROM alembic_version"
+uv run alembic check
+
+# 2. **ARK と行き先と公開状態の指紋。** ここが一致すれば、identifier は無傷である
+psql -d arkhe -tAc "SELECT md5(string_agg(ark||'|'||url||'|'||
+  coalesce(published_at::text,'-'), ',' ORDER BY ark)) FROM ark"
+
+# 3. **実際に解決する。** resolver 役で起動して引く
+#    （既定の起動は minter で、**解決の口を持たない**——ここで 404 を見て
+#     「復元に失敗した」と誤解しないこと）
+ARKHE_RESOLVER=1 uvicorn arkhe.app:app  # 別の端末で curl -sI localhost:8000/ark:/…
+
+# 4. **書けること。** 連番が戻っていないと、次の採番で主キーが衝突する
+arkhe stat && psql -d arkhe -tAc "SELECT last_value FROM shoulder_id_seq"
+```
+
+**2 と 4 が本体である。** 1 と 3 は落ちれば分かるが、**指紋のずれと連番のずれは、
+黙って通る**——気づくのは、識別子が別のものを指した後になる。
 
 ## プロキシの後ろに置くとき
 
