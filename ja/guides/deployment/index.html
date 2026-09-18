@@ -961,6 +961,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#中身の設定既定のままだと推奨の形が動かない" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        中身の設定——既定のままだと、推奨の形が動かない
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#アプリと前段" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        アプリと前段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#置き場を分ける" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1743,6 +1776,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#中身の設定既定のままだと推奨の形が動かない" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        中身の設定——既定のままだと、推奨の形が動かない
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postgresql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PostgreSQL
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#アプリと前段" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        アプリと前段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#置き場を分ける" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2297,6 +2363,162 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
 投げ直せば二重採番になる</strong>。負けたほうは、勝ったほうが書いた ARK を返すように
 した。一括採番も同じ隙があり、そちらは<strong>組み直して全件を再送ぶんとして返す</strong>。</p>
 </blockquote>
+<h3 id="中身の設定既定のままだと推奨の形が動かない">中身の設定——既定のままだと、推奨の形が動かない<a class="headerlink" href="#中身の設定既定のままだと推奨の形が動かない" title="Permanent link">&para;</a></h3>
+<p><strong>いちばん効くのは接続の数である。</strong> SQLAlchemy の既定は 1 プロセスあたり
+<code>pool_size 5 + max_overflow 10 = 15</code> 接続で、<strong>これは worker 数と掛け算になる</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>resolver 2 台 × 4 worker × 15 = 120 接続
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>PostgreSQL の既定 max_connections = 100（予約 3 を除いて 97）
+</code></pre></div>
+<p><strong>推奨の形を既定のまま組むと、そこで詰まる</strong>（minter のぶんはまだ数えていない）。
+どちらかを動かす:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>目安</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ARKHE_DB_POOL_SIZE</code></td>
+<td><strong>2〜3</strong></td>
+<td><strong>解決は短い問い合わせ 1 回</strong>（主キーの索引、0.03 ms）。溜め込む必要が無い</td>
+</tr>
+<tr>
+<td><code>ARKHE_DB_MAX_OVERFLOW</code></td>
+<td><strong>2〜5</strong></td>
+<td>山に備える。合計が <code>max_connections</code> を割るように</td>
+</tr>
+<tr>
+<td>PostgreSQL <code>max_connections</code></td>
+<td><strong>200〜300</strong></td>
+<td>増やすなら、1 接続あたりの常駐メモリも増えることを見込む</td>
+</tr>
+</tbody>
+</table>
+<p><strong>接続を数える式を先に置く:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>(resolver の台数 × worker 数 + minter の台数 × worker 数) × (pool_size + max_overflow)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  + 運用の手元（psql・移行・バックアップ）に数本
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  ≦ max_connections − superuser_reserved_connections
+</code></pre></div>
+<p><strong>前段が接続を黙って切る構成</strong>（NAT・LB・ファイアウォール）では
+<code>ARKHE_DB_POOL_RECYCLE</code> をその保持時間より短くする。<code>pool_pre_ping</code> が拾ってはいるが、
+<strong>拾うたびに 1 往復を捨てている。</strong></p>
+<h3 id="postgresql">PostgreSQL<a class="headerlink" href="#postgresql" title="Permanent link">&para;</a></h3>
+<p><strong>測った形（<a href="#規模の見積もり">規模の見積もり</a>）から必要なものだけ:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>目安</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_connections</code></td>
+<td>上の式から決める</td>
+<td>既定 100 は推奨の形に足りない</td>
+</tr>
+<tr>
+<td><code>shared_buffers</code></td>
+<td><strong>メモリの 25%</strong></td>
+<td>既定 128 MB。<strong>100 万件の主キー索引が 39 MB</strong> なので、索引が載る大きさにする</td>
+</tr>
+<tr>
+<td><code>effective_cache_size</code></td>
+<td>メモリの 50〜75%</td>
+<td>実際に確保はしない。<strong>索引を使う計画を選ばせるための申告</strong></td>
+</tr>
+<tr>
+<td><code>work_mem</code></td>
+<td>既定 4 MB のまま</td>
+<td>解決は索引 1 回、統計も走査だけ。<strong>並べ替えも結合もほとんど無い</strong></td>
+</tr>
+<tr>
+<td><code>wal_level</code> / <code>archive_mode</code></td>
+<td><a href="#バックアップ">バックアップ</a>のとおり</td>
+<td><strong>日次だけでは 24 時間ぶんの識別子が消える</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>max_connections</code> を上げるより、プールを絞るほうが先である。</strong> 接続は 1 本ごとに
+常駐メモリを食うが、<strong>この台帳が同時に必要とする接続は少ない。</strong></p>
+<h3 id="アプリと前段">アプリと前段<a class="headerlink" href="#アプリと前段" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>目安</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>worker 数（resolver）</td>
+<td><strong>2〜4</strong></td>
+<td>4 で約 1,000 rps ＝ 1 日 8,600 万回。<strong>それ以上は要らないことのほうが多い</strong></td>
+</tr>
+<tr>
+<td>worker 数（minter）</td>
+<td>1〜2</td>
+<td>採番は 45 rps で、<strong>うち 53 ms は Argon2</strong>。worker を増やしても縮まない</td>
+</tr>
+<tr>
+<td>要求の大きさ（前段）</td>
+<td><strong>1 MB 以上</strong></td>
+<td><code>ARKHE_BULK_LIMIT</code> が 1000 行。<strong>nginx の既定 <code>client_max_body_size 1m</code> が境目</strong>になる</td>
+</tr>
+<tr>
+<td>上流のタイムアウト</td>
+<td><strong>60 秒以上</strong></td>
+<td>一括採番 1000 件で約 1 秒だが、<strong>統計は行数に比例</strong>する</td>
+</tr>
+<tr>
+<td><code>ARKHE_RAW_URI_HEADER</code></td>
+<td>前段が渡せるなら必ず</td>
+<td><strong>無いと裸の <code>?</code>（簡潔な記述）が区別できない</strong>——プロトコルの制約であって実装の都合ではない</td>
+</tr>
+<tr>
+<td><code>ARKHE_ALLOWED_HOSTS</code></td>
+<td>前段で見ていないなら絞る</td>
+<td>既定 <code>*</code> では何も挟まない</td>
+</tr>
+</tbody>
+</table>
+<p><strong>arkhe 自身の値は、既定のままでよいものが多い:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>既定</th>
+<th>動かすとき</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ARKHE_TOKEN_TTL</code></td>
+<td>3600</td>
+<td>短くすると採番の側が取り直す回数が増える</td>
+</tr>
+<tr>
+<td><code>ARKHE_SESSION_TTL</code></td>
+<td>28800</td>
+<td>管理画面の滞在に合わせる</td>
+</tr>
+<tr>
+<td><code>ARKHE_BULK_LIMIT</code></td>
+<td>1000</td>
+<td>上げるなら<strong>前段の要求上限も一緒に</strong>上げる</td>
+</tr>
+<tr>
+<td><code>ARKHE_HOLD_MAX_DAYS</code></td>
+<td>90</td>
+<td><strong>上限であって既定ではない</strong>。長くするほど「一時的」が薄れる</td>
+</tr>
+</tbody>
+</table>
 <h3 id="置き場を分ける">置き場を分ける<a class="headerlink" href="#置き場を分ける" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>WAL のアーカイブと日次ダンプは、DB と別の機械に置く。</strong> 同じ機械にあるものは
@@ -2306,15 +2528,15 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
   無くなる</li>
 </ul>
 <h3 id="自分の環境で測る">自分の環境で測る<a class="headerlink" href="#自分の環境で測る" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 1 つの口へ 3000 要求、同時 8</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 積み上げの上限: DB も認証も通らない口。</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># ほかの数字がこれに近づいていたら、**測っているのはクライアント**である</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/healthz<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># 採番（Argon2 の代金は要求ごとに掛かる）</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span>--post<span class="w"> </span>--auth<span class="w"> </span><span class="s2">"</span><span class="nv">$KEY</span><span class="s2">"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># 1 つの口へ 3000 要求、同時 8</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># 積み上げの上限: DB も認証も通らない口。</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># ほかの数字がこれに近づいていたら、**測っているのはクライアント**である</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/healthz<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># 採番（Argon2 の代金は要求ごとに掛かる）</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span>--post<span class="w"> </span>--auth<span class="w"> </span><span class="s2">"</span><span class="nv">$KEY</span><span class="s2">"</span>
 </code></pre></div>
 <p>バイト数の見積もりと、自分の台帳で測る方法は
 <a href="../../reference/data-model/#容量について">データモデル</a>にある。</p>
@@ -2415,9 +2637,9 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
 <p><strong>見るべき一覧は arkhe が出している。</strong> <code>/.well-known/ark</code> に <code>Accept:
 application/json</code> で聞くと、委譲した shoulder・解決を委ねた先・権威を持たない NAAN の
 転送先が並ぶ:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span>https://ark.example.org/.well-known/ark<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.delegated_shoulders[] | select(.redirect) | .redirect,</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="s1">           .naans[] | select(.redirect) | .redirect'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span>https://ark.example.org/.well-known/ark<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.delegated_shoulders[] | select(.redirect) | .redirect,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="s1">           .naans[] | select(.redirect) | .redirect'</span>
 </code></pre></div>
 <p><strong>これを監視の入力にする</strong>——一覧を定期的に引き直し、出てきた URL を外から叩く。
 <strong>arkhe 自身には叩かせない。</strong> 今この台帳は<strong>外向きの通信を一切しない</strong>（未知の
@@ -2439,17 +2661,17 @@ shoulder ごと止め、<strong>解決は続けたまま転送だけ止める</s
 <h3 id="毎日と毎月">毎日と毎月<a class="headerlink" href="#毎日と毎月" title="Permanent link">&para;</a></h3>
 <p><strong><code>pg_dump</code> のカスタム形式</strong>（<code>-Fc</code>）で採る。圧縮され、<code>pg_restore</code> で表を選んで
 戻せる。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># 日次。**別の機械に置く**——同じ機械の中にあるものは、同じ事故で消える。</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>pg_dump<span class="w"> </span>-Fc<span class="w"> </span>-d<span class="w"> </span><span class="s2">"</span><span class="nv">$ARKHE_DATABASE_URL</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"arkhe-</span><span class="k">$(</span>date<span class="w"> </span>+%Y%m%d<span class="k">)</span><span class="s2">.dump"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 日次。**別の機械に置く**——同じ機械の中にあるものは、同じ事故で消える。</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pg_dump<span class="w"> </span>-Fc<span class="w"> </span>-d<span class="w"> </span><span class="s2">"</span><span class="nv">$ARKHE_DATABASE_URL</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"arkhe-</span><span class="k">$(</span>date<span class="w"> </span>+%Y%m%d<span class="k">)</span><span class="s2">.dump"</span>
 </code></pre></div>
 <p>保持は<strong>日次 14 日・月次 12 か月</strong>を出発点にする。月次は毎月 1 日の日次をそのまま
 残せばよく、別に採る必要は無い。<strong>台帳は増える一方</strong>（ARK は消えない）なので、
 置き場は線形に伸びると見ておく——1 億件で約 40 GB が上限の目安である
 （<a href="../../reference/data-model/#容量について">データモデル</a>）。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># 毎日 03:15。失敗を黙らせない——出力を捨てると、止まったことに気づけない。
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>15 3 * * *  pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f /backup/arkhe-$(date +\%Y\%m\%d).dump
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>20 3 1 * *  cp /backup/arkhe-$(date +\%Y\%m01).dump /backup/monthly/
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>30 3 * * *  find /backup -name 'arkhe-*.dump' -mtime +14 -delete
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># 毎日 03:15。失敗を黙らせない——出力を捨てると、止まったことに気づけない。
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>15 3 * * *  pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f /backup/arkhe-$(date +\%Y\%m\%d).dump
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>20 3 1 * *  cp /backup/arkhe-$(date +\%Y\%m01).dump /backup/monthly/
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>30 3 * * *  find /backup -name 'arkhe-*.dump' -mtime +14 -delete
 </code></pre></div>
 <h3 id="日次の夜間バックアップでは足りない">日次の夜間バックアップでは足りない<a class="headerlink" href="#日次の夜間バックアップでは足りない" title="Permanent link">&para;</a></h3>
 <p><strong>1 日 1 回では、最大 24 時間ぶんの識別子が消える。</strong> ほかの多くの系ではそれは
@@ -2457,25 +2679,25 @@ shoulder ごと止め、<strong>解決は続けたまま転送だけ止める</s
 <code>NR</code> を破ったのと外からは見分けがつかない。<strong>配った名前は、こちらの都合とは無関係に
 既に外に在る。</strong></p>
 <p>だから、この台帳では<strong>継続的アーカイブ（PITR）を贅沢と見なさない</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># postgresql.conf</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nv">wal_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>replica
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nv">archive_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>on
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nv">archive_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'test ! -f /archive/%f &amp;&amp; cp %p /archive/%f'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># postgresql.conf</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">wal_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>replica
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nv">archive_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>on
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nv">archive_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'test ! -f /archive/%f &amp;&amp; cp %p /archive/%f'</span>
 </code></pre></div>
 <p>基礎バックアップ（<code>pg_basebackup</code>）＋ WAL の連続保存で、<strong>任意の時点まで戻せる</strong>。
 日次のダンプは、その上での<strong>最後の砦</strong>として残す（PITR は連鎖が切れると戻れない
 ——ダンプは 1 個で完結する）。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pg_basebackup<span class="w"> </span>-D<span class="w"> </span>/backup/base<span class="w"> </span>-Fp<span class="w"> </span>-Xstream<span class="w"> </span>-c<span class="w"> </span>fast<span class="w">     </span><span class="c1"># 基礎バックアップ</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pg_basebackup<span class="w"> </span>-D<span class="w"> </span>/backup/base<span class="w"> </span>-Fp<span class="w"> </span>-Xstream<span class="w"> </span>-c<span class="w"> </span>fast<span class="w">     </span><span class="c1"># 基礎バックアップ</span>
 </code></pre></div>
 <p>戻すときは、基礎バックアップを置き直して<strong>再生の指示を書き、<code>recovery.signal</code> を
 置いて起動する</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>cp<span class="w"> </span>-a<span class="w"> </span>/backup/base<span class="w"> </span>/var/lib/postgresql/data
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/lib/postgresql/data/postgresql.conf<span class="w"> </span><span class="s">&lt;&lt;'CONF'</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="s">restore_command = 'cp /archive/%f %p'</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s">recovery_target_action = 'promote'</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="s">CONF</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>touch<span class="w"> </span>/var/lib/postgresql/data/recovery.signal
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>pg_ctl<span class="w"> </span>-D<span class="w"> </span>/var/lib/postgresql/data<span class="w"> </span>start
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>cp<span class="w"> </span>-a<span class="w"> </span>/backup/base<span class="w"> </span>/var/lib/postgresql/data
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/lib/postgresql/data/postgresql.conf<span class="w"> </span><span class="s">&lt;&lt;'CONF'</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="s">restore_command = 'cp /archive/%f %p'</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s">recovery_target_action = 'promote'</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="s">CONF</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>touch<span class="w"> </span>/var/lib/postgresql/data/recovery.signal
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>pg_ctl<span class="w"> </span>-D<span class="w"> </span>/var/lib/postgresql/data<span class="w"> </span>start
 </code></pre></div>
 <p><strong>時点を指定しないのが既定である。</strong> 何も書かなければ WAL の終わりまで再生する
 ——つまり<strong>失う識別子が最も少ない</strong>。時点を選ぶ <code>recovery_target_time</code> は、
@@ -2529,35 +2751,35 @@ shoulder ごと止め、<strong>解決は続けたまま転送だけ止める</s
 <h3 id="復元の手順">復元の手順<a class="headerlink" href="#復元の手順" title="Permanent link">&para;</a></h3>
 <p><strong>戻せることは、戻して初めて分かる。</strong> 手順は次のとおりで、<strong>実測で通してある</strong>
 （PostgreSQL 17、<code>pg_dump -Fc</code> → <code>pg_restore</code>）。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>createdb<span class="w"> </span>arkhe<span class="w">                                   </span><span class="c1"># 空の入れ物を作る</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span>arkhe-YYYYMMDD.dump
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>createdb<span class="w"> </span>arkhe<span class="w">                                   </span><span class="c1"># 空の入れ物を作る</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span>arkhe-YYYYMMDD.dump
 </code></pre></div>
 <p><code>--no-owner --no-privileges</code> を付けるのは、<strong>戻す先の役割名が元と違うのが普通</strong>
 だから。付けないと所有者の付け替えで止まる。</p>
 <h3 id="復元できたことをどう確かめるか">復元できたことを、どう確かめるか<a class="headerlink" href="#復元できたことをどう確かめるか" title="Permanent link">&para;</a></h3>
 <p><strong>件数が合うことは、確かめたことにならない。</strong> 件数が同じでも行き先が入れ替わって
 いれば、識別子は全部壊れている。見るのは <strong>4 つ</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># 1. 版が揃っている（古い版に戻したら upgrade する）</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT version_num FROM alembic_version"</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>uv<span class="w"> </span>run<span class="w"> </span>alembic<span class="w"> </span>check
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># 2. **指紋。** ここが一致すれば、identifier は無傷である</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1">#    （SQL を貼り付けない——**貼り間違えても静かに「一致」と読める**）</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>arkhe<span class="w"> </span>fingerprint
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># 3. **実際に解決する。** resolver 役で起動して引く</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1">#    （既定の起動は minter で、**解決の口を持たない**——ここで 404 を見て</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="c1">#     「復元に失敗した」と誤解しないこと）</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:app<span class="w">  </span><span class="c1"># 別の端末で curl -sI localhost:8000/ark:/…</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="c1"># 4. **書けること。** 連番が戻っていないと、次の採番で主キーが衝突する</span>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>arkhe<span class="w"> </span>stat<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT last_value FROM shoulder_id_seq"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># 1. 版が揃っている（古い版に戻したら upgrade する）</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT version_num FROM alembic_version"</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>uv<span class="w"> </span>run<span class="w"> </span>alembic<span class="w"> </span>check
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1"># 2. **指紋。** ここが一致すれば、identifier は無傷である</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1">#    （SQL を貼り付けない——**貼り間違えても静かに「一致」と読める**）</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>arkhe<span class="w"> </span>fingerprint
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="c1"># 3. **実際に解決する。** resolver 役で起動して引く</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="c1">#    （既定の起動は minter で、**解決の口を持たない**——ここで 404 を見て</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1">#     「復元に失敗した」と誤解しないこと）</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:app<span class="w">  </span><span class="c1"># 別の端末で curl -sI localhost:8000/ark:/…</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="c1"># 4. **書けること。** 連番が戻っていないと、次の採番で主キーが衝突する</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>arkhe<span class="w"> </span>stat<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT last_value FROM shoulder_id_seq"</span>
 </code></pre></div>
 <p><strong>2 と 4 が本体である。</strong> 1 と 3 は落ちれば分かるが、<strong>指紋のずれと連番のずれは、
 黙って通る</strong>——気づくのは、識別子が別のものを指した後になる。</p>
 <p><code>arkhe fingerprint</code> は 2 行を出す:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>arks       c5e54e5af778420832800a7dc9104eee  53 rows
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>arks       c5e54e5af778420832800a7dc9104eee  53 rows
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
 </code></pre></div>
 <p><strong>分けてあるのは、潰すと「どこが違うか」が消えるからである。</strong> とくに
 <code>withdrawn</code>（二度と採らない名前）が落ちても<strong>採番は動き続ける</strong>ので、合わせて
@@ -2566,21 +2788,21 @@ shoulder ごと止め、<strong>解決は続けたまま転送だけ止める</s
 ——<strong>鳴りっぱなしの警報は、誰も見なくなる。</strong></p>
 <h3 id="戻せることを毎月証明する">戻せることを、毎月証明する<a class="headerlink" href="#戻せることを毎月証明する" title="Permanent link">&para;</a></h3>
 <p><strong>手順書に「復元を試すこと」と書いても、誰も試さない。</strong> 検証を仕事にする:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># 昨夜のダンプを使い捨ての DB に戻して、指紋を突き合わせる</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>createdb<span class="w"> </span>arkhe_verify
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe_verify<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span><span class="s2">"</span><span class="nv">$LATEST_DUMP</span><span class="s2">"</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span>postgresql://…/arkhe_verify<span class="w"> </span>arkhe<span class="w"> </span>fingerprint<span class="w"> </span>&gt;<span class="w"> </span>restored.txt
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>diff<span class="w"> </span>expected.txt<span class="w"> </span>restored.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>OK<span class="w">    </span><span class="c1"># 落ちたら鳴る</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>dropdb<span class="w"> </span>arkhe_verify
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># 昨夜のダンプを使い捨ての DB に戻して、指紋を突き合わせる</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>createdb<span class="w"> </span>arkhe_verify
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe_verify<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span><span class="s2">"</span><span class="nv">$LATEST_DUMP</span><span class="s2">"</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span>postgresql://…/arkhe_verify<span class="w"> </span>arkhe<span class="w"> </span>fingerprint<span class="w"> </span>&gt;<span class="w"> </span>restored.txt
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>diff<span class="w"> </span>expected.txt<span class="w"> </span>restored.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>OK<span class="w">    </span><span class="c1"># 落ちたら鳴る</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>dropdb<span class="w"> </span>arkhe_verify
 </code></pre></div>
 <p><code>expected.txt</code> は<strong>ダンプを取った時点の本番で出しておく</strong>（日次のジョブで
 ダンプの隣に置く）。<strong>取った時点と戻した後を比べるのでなければ、意味が無い。</strong></p>
 <h3 id="バックアップが止まっていることにどう気づくか">バックアップが止まっていることに、どう気づくか<a class="headerlink" href="#バックアップが止まっていることにどう気づくか" title="Permanent link">&para;</a></h3>
 <p><strong>取得の失敗より、止まっていることに気づかないほうが怖い。</strong> 成否ではなく
 <strong>古さ</strong>を見る:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">-- PostgreSQL が自分で持っている。外から作らなくてよい</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">last_archived_time</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_time</span><span class="p">,</span><span class="w"> </span><span class="n">failed_count</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_wal</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_archiver</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1">-- PostgreSQL が自分で持っている。外から作らなくてよい</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">last_archived_time</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_time</span><span class="p">,</span><span class="w"> </span><span class="n">failed_count</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_wal</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_archiver</span><span class="p">;</span>
 </code></pre></div>
 <ul>
 <li><code>last_archived_time</code> が <strong>N 分より古い</strong> → 警報</li>
@@ -2599,8 +2821,8 @@ shoulder ごと止め、<strong>解決は続けたまま転送だけ止める</s
 下限しか書いていないので、これが無いと<strong>同じコミットから別のものができる</strong>
 ——同じ Dockerfile で焼き直すたびにイメージの中身が変わり、「いつから壊れたか」が
 追えなくなる。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># lock どおりに入れる</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># 更新する（意図したときだけ）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># lock どおりに入れる</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># 更新する（意図したときだけ）</span>
 </code></pre></div>
 <p><code>--frozen</code> は<strong>lock と <code>pyproject.toml</code> がずれていたらそこで落とす</strong>。ずれたまま
 緑になるほうが困るので、検査（<code>scripts/check.sh</code>）もイメージのビルドもこれを使う。</p>

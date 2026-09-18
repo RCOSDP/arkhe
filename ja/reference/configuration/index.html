@@ -1452,6 +1452,21 @@
 <td>—</td>
 <td>resolver 用の読み取り専用接続。未設定なら上と同じ</td>
 </tr>
+<tr>
+<td><code>ARKHE_DB_POOL_SIZE</code></td>
+<td><code>5</code></td>
+<td>1 プロセスが常に持つ接続。<strong>worker 数と掛け算になる</strong></td>
+</tr>
+<tr>
+<td><code>ARKHE_DB_MAX_OVERFLOW</code></td>
+<td><code>10</code></td>
+<td>混み合ったときの上乗せ。<code>POOL_SIZE</code> に足される（既定で 1 プロセス最大 15）</td>
+</tr>
+<tr>
+<td><code>ARKHE_DB_POOL_RECYCLE</code></td>
+<td><code>0</code></td>
+<td>接続を作り直すまでの秒数。<code>0</code> で作り直さない。<strong>接続を黙って切る前段の下では、その保持時間より短く</strong></td>
+</tr>
 </tbody>
 </table>
 <div class="admonition warning">
