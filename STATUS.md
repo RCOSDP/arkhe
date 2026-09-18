@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-09-17 時点の arkhe の現在地。** 作業を止めて再開するときに、まずここを読む。
+**2026-09-18 時点の arkhe の現在地。** 作業を止めて再開するときに、まずここを読む。
 
 設計の意図は[不変条件](docs/concepts/invariants.md)、手順と踏んだ罠は
 [AGENTS.md](AGENTS.md)、変更の履歴は [CHANGELOG.ja.md](CHANGELOG.ja.md) にある。
@@ -15,7 +15,7 @@
 
 | | |
 | --- | --- |
-| 版 | **0.3.0**（2026-09-17 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
+| 版 | **0.4.0**（2026-09-18 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
 | テスト | **すべて green**（`uv run pytest -q`） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語 |

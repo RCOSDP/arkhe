@@ -8,6 +8,25 @@
 
 ## [未リリース]
 
+## [0.4.0] — 2026-09-18
+
+**公開を取り下げ、出し直せるようになった版。** 0.3.0 では `published_at` は一方通行で、
+「公開を取り消す道は作らない」と決めていた。覆したのは、**取り下げの判断が対象を
+持っている組織のところにある**からである——公開してはならなかったものに気づくのは
+RA ではなく預けた側で、そこから RA に上げて戻ってくるまで**出たままになる**。
+**止められるのが遠すぎると、止まらない。**
+
+**できるのは、それぞれの届く範囲の内側だけ**——組織は自分の shoulder、NAAN 管理者は
+自 NAAN、RA は全部。ここは緩めていない。緩めれば、ただの乗っ取りになる。
+
+**代わりに、儀式の重さを主体の位ではなく名前の履歴で決めるようにした。** 一度も
+公開していない予約の削除は今までどおり軽く、**一度でも外に出した名前は理由と
+打ち直しを要求する**。**危ないのは「誰が消すか」ではなく「何が消えるか」**である。
+
+**`NR` は破れていない。** 取り下げた名前は誰のものでもなく、別の対象に振り直す道は
+どこにも無い。残った参照は `404` になるだけである——壊れるのは「解決し続ける」ほうで、
+「別のものを指さない」ほうではない。
+
 ### 追加
 
 - **公開を取り下げられるようになった。** 0.3.0 では `published_at` は一方通行で、
@@ -967,7 +986,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.3.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0
 [0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0
 [0.2.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0
 [0.1.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.1.0

@@ -9,6 +9,29 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-09-18
+
+**The release in which publication can be withdrawn, and taken up again.** In 0.3.0
+`published_at` went one way only and "there is no way to unpublish" was written down as a
+decision. It is reversed because **the judgement about whether something should be out
+belongs with whoever holds the object**: the people who notice that something should never
+have been published are the depositors, not the registration authority, and making them go
+up and back means **it stays out in the meantime**. **A stop that is too far away does not
+stop anything.**
+
+**Everyone acts inside their own reach** — an organisation within its own shoulder, a NAAN
+administrator within its NAAN, the registration authority everywhere. That is not
+loosened; loosening it would just be hijacking.
+
+**What changed instead is where the weight sits**: the ceremony now follows the name's
+history, not the actor's rank. Deleting a reservation nobody ever saw stays light, while
+**anything that has ever been out in the world needs a reason and the ARK retyped**. The
+dangerous question is not *who deletes* but *what disappears*.
+
+**`NR` is not broken.** A withdrawn name belongs to nobody and nothing reassigns it. A
+stale reference gets `404` — what breaks is "keeps resolving", not "never means something
+else".
+
 ### Added
 
 - **Publication can now be withdrawn.** In 0.3.0 `published_at` went one way only, and
@@ -1050,7 +1073,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0
 [0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0
 [0.2.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0
 [0.1.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.1.0
