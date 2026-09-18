@@ -365,3 +365,49 @@ def test_古いものとして許した画面が今も在る():
     """
     gone = PAGES_PREDATING_THE_CHECK - _admin_pages()
     assert not gone, f"実装に無い画面が許可されたまま: {sorted(gone)}"
+
+
+#: 変更履歴の検査より前から在るコマンドのうち、**変更履歴に綴りが出ていないもの**。
+#:
+#: **これは「書かなくてよい」の一覧ではない。** 検査を入れた時点の実態であって、
+#: 埋めるに越したことはない。**新しく足したコマンドをここに入れてはいけない。**
+COMMANDS_PREDATING_THE_CHECK = {
+    "ark purge",
+    "check",
+    "client add",
+    "client breakglass",
+    "client enable",
+    "client key",
+    "client passwd",
+    "client revoke",
+    "depart",
+    "hold add",
+    "hold list",
+    "hold release",
+    "shoulder status",
+    "succeed",
+}
+
+
+def test_運用コマンドは変更履歴に出ている():
+    """**参照ページは縛っていたが、変更履歴は見ていなかった。**
+
+    `cli.md` に載っているかは前から見ている——だが載っているだけでは、
+    **いつ増えたのか**が読む人に伝わらない。`arkhe stat` はたまたま書けていた
+    が、仕組みで止まっていたわけではない。
+    """
+    logs = {name: (ROOT / name).read_text(encoding="utf-8")
+            for name in ("CHANGELOG.md", "CHANGELOG.ja.md")}
+    missing = [f"arkhe {c} が {log} に無い"
+               for c in _commands(cli.app)
+               if c not in COMMANDS_PREDATING_THE_CHECK
+               for log, text in logs.items() if f"arkhe {c}" not in text]
+    assert not missing, "変更履歴に出ていないコマンド:\n  " + "\n  ".join(missing)
+
+
+def test_古いものとして許したコマンドが今も在る():
+    """**許可リストが腐るのを止める。** 名前を変えて直し忘れると、新しい綴りが
+    誰にも見られないまま通ってしまう。
+    """
+    gone = COMMANDS_PREDATING_THE_CHECK - set(_commands(cli.app))
+    assert not gone, f"実装に無いコマンドが許可されたまま: {sorted(gone)}"
