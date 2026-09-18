@@ -305,3 +305,63 @@ def test_テストの内訳は実在するファイルとそろっている():
     files = {p.name for p in (ROOT / "tests").glob("test_*.py")}
     assert not (files - listed), f"STATUS.md の内訳に無い: {sorted(files - listed)}"
     assert not (listed - files), f"内訳にあるが実在しない: {sorted(listed - files)}"
+
+
+#: 変更履歴の検査より前から在る画面。**綴りでは当たらないものもある**
+#: ——`/admin/callback` は OIDC の戻り先で、読む人が行く場所ではない。
+#: **新しく足した画面をここに入れてはいけない。**
+PAGES_PREDATING_THE_CHECK = {
+    "/admin/",
+    "/admin/arks",
+    "/admin/audit",
+    "/admin/callback",
+    "/admin/client/new",
+    "/admin/clients",
+    "/admin/holds",
+    "/admin/login",
+    "/admin/manager/new",
+    "/admin/mint",
+    "/admin/naan/new",
+    "/admin/shoulder/new",
+}
+
+
+def _admin_pages() -> set[str]:
+    """管理画面の**ページ**。`GET` で、経路に変数を持たないものだけ。
+
+    変数を持つもの（`/admin/arks/{ark}`）と `POST` の操作は、読む人が綴りで
+    書く対象ではない——**書けないものを書けと言う検査にしない。**
+    """
+    from fastapi.routing import APIRoute
+
+    from arkhe.api import admin
+
+    return {
+        r.path
+        for r in admin.router.routes
+        if isinstance(r, APIRoute) and "GET" in r.methods and "{" not in r.path
+    }
+
+
+def test_管理画面のページは変更履歴に出ている():
+    """**画面は OpenAPI に出ないので、口と scope の検査では拾えない。**
+
+    0.5.0 で統計のページを足したとき、変更履歴の日英どちらにも書いていなかった
+    ——CLI と API は書いてあったのに、**あとから足した画面だけが落ちた**。
+    0.3.0 で `purge` を落としたのと同じ形である。出す前に人が気づいたが、
+    **仕組みで止まったわけではない。**
+    """
+    logs = {name: (ROOT / name).read_text(encoding="utf-8")
+            for name in ("CHANGELOG.md", "CHANGELOG.ja.md")}
+    missing = [f"{p} が {log} に無い"
+               for p in sorted(_admin_pages() - PAGES_PREDATING_THE_CHECK)
+               for log, text in logs.items() if p not in text]
+    assert not missing, "変更履歴に出ていない画面:\n  " + "\n  ".join(missing)
+
+
+def test_古いものとして許した画面が今も在る():
+    """**許可リストが腐るのを止める。** 経路を変えて直し忘れると、新しい綴りが
+    誰にも見られないまま通ってしまう。
+    """
+    gone = PAGES_PREDATING_THE_CHECK - _admin_pages()
+    assert not gone, f"実装に無い画面が許可されたまま: {sorted(gone)}"

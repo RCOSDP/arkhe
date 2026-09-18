@@ -28,7 +28,7 @@ promise was broken, and it does not belong buried inside a sum.
 ### Added
 
 - **A way to see the ledger's numbers** (`arkhe stat`, `GET /api/stats` with `ark:read`,
-  and a **Statistics** page in the admin interface):
+  and a Statistics page at `/admin/stats`):
   ARKs (public and reserved), withdrawn names, shoulders by status, organisations,
   clients, holds in force, minting over the last 24h / 7 days / 30 days, the first and
   last mint, and **a breakdown per shoulder**. The CLI takes `--json` for machines.
