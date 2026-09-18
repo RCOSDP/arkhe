@@ -275,3 +275,33 @@ def test_古いものとして許した口が今も在る():
     """
     gone = PREDATES_THE_CHECK - _exposed()
     assert not gone, f"実装に無いものが許可されたまま: {sorted(gone)}"
+
+
+def _status_test_table() -> str:
+    """STATUS.md の「テストの内訳」の囲み記事。
+
+    **STATUS.md 全体ではなく、その囲みだけを見る。** 表の別の行にファイル名が
+    出ているだけで通ってしまっては、一覧を見ていることにならない。
+    """
+    text = (ROOT / "STATUS.md").read_text(encoding="utf-8")
+    _, _, after = text.partition("テストの内訳")
+    assert after, "STATUS.md に「テストの内訳」が無い"
+    parts = after.split("```")
+    assert len(parts) >= 3, "「テストの内訳」の下に囲み記事が無い"
+    return parts[1]
+
+
+def test_テストの内訳は実在するファイルとそろっている():
+    """**唯一の一覧になったものが遅れるのを止める。**
+
+    この一覧は AGENTS.md にもあり、**そちらが 5 本ぶん遅れていた**。重複を
+    やめて STATUS.md だけにしたので、ここが遅れると**もう誰も気づけない**。
+
+    両方向を見る。**足したファイルが載っていない**のは一覧の穴だが、
+    **載っているファイルが無い**のも同じくらい悪い——名前を変えたときに
+    古い名前が残り、読んだ人が探しても見つからない。
+    """
+    listed = set(re.findall(r"test_\w+\.py", _status_test_table()))
+    files = {p.name for p in (ROOT / "tests").glob("test_*.py")}
+    assert not (files - listed), f"STATUS.md の内訳に無い: {sorted(files - listed)}"
+    assert not (listed - files), f"内訳にあるが実在しない: {sorted(listed - files)}"
