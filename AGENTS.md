@@ -7,7 +7,7 @@
 [Contributing](docs/project/contributing.md) にある。ここに書くのは**手順と、
 実際に踏んだ罠**。
 
-**今どこまで来ていて何が無いかは [STATUS.md](STATUS.md)。** 版・テスト数・分かっている穴は
+**今どこまで来ていて何が無いかは [STATUS.md](STATUS.md)。** 版・現在地・分かっている穴は
 そちらだけに書く（両方に書くと必ず片方が古くなる）。
 
 ---
@@ -24,7 +24,7 @@ ARK 識別子の払い出しと解決。**一度配った名前が、別のも�
 
 ```bash
 uv sync --frozen --all-extras     # lock どおりに入れる
-uv run pytest -q                  # 全部通ること（件数は STATUS.md）
+uv run pytest -q                  # 全部通ること
 uv run ruff check src tests
 ```
 
@@ -69,7 +69,8 @@ tests/         ファイル名が対象を表す
 alembic/       マイグレーション。**PostgreSQL で検証する**
 docs/          MkDocs。`page.md` が英語、`page.ja.md` が日本語
 compose/oidc/  Keycloak つきの体験環境。**見本であって手本ではない**
-scripts/       check.sh / deploy-docs.sh / release.sh（**CI の代わり**）、export_openapi.py
+scripts/       check.sh / deploy-docs.sh / release.sh（**CI の代わり**）、export_openapi.py、
+               bench.py（**check.sh からは呼ばない**——機械とその日に左右される値は緑と赤で語れない）
 .github/       issue と PR のテンプレート、Dependabot。**ワークフローは持たない**
 AGENTS.md      これ。手順と罠
 STATUS.md      現在地と、分かっている穴
@@ -175,14 +176,9 @@ shoulder を 2 か所で採らない、権威を持つ台帳は NAAN あたり 1
 テストは文になっている（`test_他組織のARKは更新できない`）。落ちたときに、
 例外を投げた関数ではなく**壊れた決まり**が名指しされるように。
 
-```
-tests/test_resolution.py   解決とインフレクション
-tests/test_authz.py        到達範囲。**負の場合を厚く**
-tests/test_admin.py        管理画面
-tests/test_cli.py          運用コマンド
-tests/test_docs.py         参照ページが実装から遅れていないこと
-tests/test_cli_i18n.py     訳の抜けと差し込み先のずれ
-```
+**どのファイルが何を見ているかは [STATUS.md](STATUS.md) の「テストの内訳」。**
+ここに並べ直すと必ず片方が古くなる——実際、この一覧は 5 本ぶん遅れていた。
+ファイル名が対象を表すので、迷ったら対象の名前で探す。
 
 ## 7. 文書
 
