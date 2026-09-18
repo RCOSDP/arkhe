@@ -300,3 +300,44 @@ def test_転送してよい行き先(url, ok, why):
     from arkhe.domain.resolution import is_followable
 
     assert is_followable(url) is ok, why
+
+
+# ------------------------------------------ 委譲先を外から見るための一覧
+
+
+def test_解決の委譲先もwell_knownに出る(db, world, as_principal, root):
+    """**外形監視が真っ先に見るべきものが、載っていなければ見られない。**
+
+    `minter` が死んでも止まるのは採番だけだが、**`redirect` が死ねばその
+    shoulder の ARK が 1 本残らず引けなくなる**。壊れたときの重さは逆なのに、
+    以前は `minter` と `about` だけが出ていた。
+    """
+    sh = world["sh_a"]
+    sh.redirect = "https://resolver.partner.example.org/ark:/${blade}"
+    db.commit()
+
+    body = as_principal(root).get(
+        "/.well-known/ark", headers={"Accept": "application/json"}
+    ).json()
+    listed = {s["shoulder"]: s for s in body["delegated_shoulders"]}
+    key = f"{sh.naan}{sh.shoulder}"
+    assert key in listed, "解決を委ねた shoulder が一覧に出ていない"
+    assert listed[key]["redirect"] == sh.redirect
+    assert listed[key]["status"] == sh.status
+
+
+def test_自分で採りながら解決だけ委ねた_shoulder_も出る(db, world, as_principal, root):
+    """**`redirect` は `status` と独立に設定できる。**
+
+    `delegated` だけを見ていると、**自分で採りながら解決だけ外へ出している
+    shoulder が一覧から落ちる**——そこが落ちても、誰も気づけない。
+    """
+    sh = world["sh_a"]
+    assert sh.status == "active", "この検査は active な shoulder で意味がある"
+    sh.redirect = "https://elsewhere.example.org/${blade}"
+    db.commit()
+
+    body = as_principal(root).get(
+        "/.well-known/ark", headers={"Accept": "application/json"}
+    ).json()
+    assert f"{sh.naan}{sh.shoulder}" in {s["shoulder"] for s in body["delegated_shoulders"]}

@@ -9,6 +9,30 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **`/.well-known/ark` now carries where resolution was delegated (`redirect`) and each
+  shoulder's `status`.**
+
+  It used to list only `minter` (delegated minting) and `about`. **The failure that hurts
+  most was the one missing**: when a `minter` dies, minting for that namespace stops; when
+  a `redirect` dies, **every ARK beneath it stops resolving**. The first thing to watch
+  from outside cannot be watched if it is not published.
+
+  **The list no longer filters on `status=delegated` alone.** A `redirect` can be set
+  independently of `status`, so **a shoulder that mints locally but delegates resolution
+  was dropping out of the list** — and nobody would notice when it failed.
+
+- **How to watch a delegate from outside**, in
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/).
+
+  **arkhe is not made to do the probing.** This ledger makes **no outbound calls at all**
+  (even an unknown NAAN just gets a `302`; nothing is fetched) — a property that makes
+  failures easy to attribute, and **too expensive to trade away for monitoring**. It
+  publishes the list instead.
+
+  **Noticing lives outside; stopping** — a hold — **lives inside.**
+
 ## [0.7.0] — 2026-09-18
 
 **The release that says what to watch in order to claim the promise is being kept.** The

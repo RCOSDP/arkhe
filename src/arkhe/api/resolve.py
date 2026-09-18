@@ -58,8 +58,13 @@ gets that**; answering such a client with JSON would make the host look, to anyo
 reading the specification, as though it had no ARK resolver at all.
 
 `Accept: application/json` returns arkhe's own inventory instead: **where to go when a
-NAAN's minting happens elsewhere** (`Naan.minter` / `Shoulder.minter`), and any
-namespace whose redirection is on hold.
+NAAN's minting happens elsewhere** (`Naan.minter` / `Shoulder.minter`), **where resolution
+has been delegated** (`redirect`), and any namespace whose redirection is on hold.
+
+That list is also **what to watch from outside**. If a `minter` goes away, minting for
+that namespace stops — bad, but survivable. **If a `redirect` goes away, every ARK under
+it stops resolving**, and nothing here will tell you: arkhe answers with a redirect and
+never fetches the target. Probe them from your monitoring, not from the ledger.
 
 Both representations carry `Vary: Accept`.
 """
@@ -340,7 +345,13 @@ def well_known_ark(request: Request, session: Db, cfg: Config):
 
     `Accept: application/json` のときだけ、arkhe 独自の在庫を返す:
     **採番を外に委ねている NAAN があるとき、クライアントがどこへ行けばよいか**
-    （`Naan.minter` / `Shoulder.minter`）と、止まっている名前空間。
+    （`Naan.minter` / `Shoulder.minter`）、**解決を委ねた先**（`redirect`）、
+    止まっている名前空間。
+
+    **この一覧は、外形監視で見るべきものの一覧でもある。** `minter` が消えれば
+    その名前空間の採番が止まる——困るが、生き延びられる。**`redirect` が消えれば、
+    その下の ARK が 1 本残らず引けなくなる**。しかも arkhe はそれを知らない
+    ——転送を返すだけで、**行き先を取りに行っていない**からである。
 
     同じ URL が 2 つの表現を持つので、どちらにも `Vary: Accept` を付ける。
     """
@@ -374,14 +385,29 @@ def well_known_ark(request: Request, session: Db, cfg: Config):
             ],
             # **`minter` は「叩ける口」だけ。** 人向けの案内は `about` に分ける
             # ——同じ鍵に混ぜると、読む側が API とページを見分けられない。
+            #
+            # **`redirect`（解決の委譲先）も出す。** 壊れたときの重さが逆だから
+            # ——`minter` が死んでも止まるのは採番だけだが、**`redirect` が死ねば
+            # その shoulder の ARK が 1 本残らず引けなくなる**。外形監視で真っ先に
+            # 見るべきものが、載っていなければ見られない。
+            #
+            # **`status` も出す。** 委譲した shoulder の `redirect` と、まだ自分で
+            # 採っている shoulder の `redirect` では、止まったときの意味が違う。
             "delegated_shoulders": [
                 {
                     "shoulder": f"{s.naan}{s.shoulder}",
+                    "status": s.status,
                     "minter": s.minter or None,
                     "about": s.about or None,
+                    "redirect": s.redirect or None,
                 }
                 for s in session.scalars(
-                    select(Shoulder).where(Shoulder.status == "delegated")
+                    # **委譲したものと、解決を委ねたものの両方。** `redirect` は
+                    # `status` と独立に設定できるので、`delegated` だけを見ると
+                    # **自分で採りながら解決だけ外へ出している shoulder が落ちる。**
+                    select(Shoulder)
+                    .where((Shoulder.status == "delegated") | (Shoulder.redirect != ""))
+                    .order_by(Shoulder.naan, Shoulder.shoulder)
                 ).all()
             ],
             # **転送を止めている名前空間を公開する。** 分散構成では、上位が止めた

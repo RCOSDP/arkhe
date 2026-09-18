@@ -303,6 +303,40 @@ out a broken PID. Lag is not a performance matter; **it is a matter of the promi
 - **`?info` travels the same path**, so answering with the description only does not save
   you.
 
+### Watching a delegate from outside
+
+**Delegating a namespace hands the life of the identifiers under it to someone else** —
+and **arkhe does not know how they are doing**: it answers with a redirect and **never
+fetches the target** (as verified in [what keeps working](#what-keeps-working-when-something-fails);
+that is a strength, not an oversight).
+
+The two failures are not equally bad:
+
+| What died | What happens |
+| --- | --- |
+| `minter` (delegated minting) | minting stops for that namespace. Bad, survivable |
+| `redirect` (delegated resolution) | **every ARK beneath it stops resolving**. The promise breaks |
+
+**arkhe publishes the list to watch.** Ask `/.well-known/ark` with
+`Accept: application/json` and you get the delegated shoulders, where resolution was
+delegated, and the redirect of any NAAN it is not authoritative for:
+
+```bash
+curl -s -H 'Accept: application/json' https://ark.example.org/.well-known/ark \
+  | jq -r '.delegated_shoulders[] | select(.redirect) | .redirect,
+           .naans[] | select(.redirect) | .redirect'
+```
+
+**Feed that into your monitoring** — re-read the list on a schedule and probe the URLs
+from outside. **Do not make arkhe do the probing.** As it stands this ledger makes **no
+outbound calls at all** (even an unknown NAAN just gets a `302`; nothing is fetched). That
+property makes failures easy to attribute, and **it is too expensive to trade away for
+monitoring.**
+
+There is a way to act once you know: a [hold](../concepts/invariants.md)
+(`arkhe hold add`) stops the whole shoulder, **stopping redirection while resolution keeps
+answering**. Noticing lives outside; stopping lives inside.
+
 ### What not to collect
 
 **Do not build alerts out of which ARKs were resolved.** Who looked up what is usage data,
