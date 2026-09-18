@@ -9,6 +9,20 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-09-18
+
+**The release that lets you notice a delegate has gone down.** Delegating a namespace hands
+the life of the identifiers beneath it to someone else — **and arkhe does not know how they
+are doing**: it answers with a redirect and never fetches the target.
+
+**The list to watch was missing the worst failure.** `/.well-known/ark` published delegated
+*minting* but not delegated *resolution*. When a `minter` dies, minting stops; when a
+`redirect` dies, **every ARK beneath it stops resolving**.
+
+**arkhe is still not made to probe.** Making no outbound calls is what keeps failures easy
+to attribute, and that is too expensive to trade away for monitoring — **noticing lives
+outside, stopping lives inside.**
+
 ### Added
 
 - **`/.well-known/ark` now carries where resolution was delegated (`redirect`) and each
@@ -1279,7 +1293,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0
 [0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0
 [0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0
 [0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1

@@ -8,6 +8,20 @@
 
 ## [未リリース]
 
+## [0.8.0] — 2026-09-18
+
+**委譲した先が落ちたことに、気づけるようにした版。** 名前空間を委譲すると、その下の
+識別子の生死は他人の手に移る——**しかも arkhe はそれを知らない**（転送を返すだけで、
+行き先を取りに行っていない）。
+
+**見るべき一覧に、いちばん重いものが載っていなかった。** `/.well-known/ark` は採番の
+委譲先だけを出していて、**解決の委譲先が抜けていた**。`minter` が死んでも止まるのは
+採番だけだが、**`redirect` が死ねばその下の ARK が 1 本残らず引けなくなる**。
+
+**arkhe には叩かせない。** この台帳が外向きの通信を一切しないことは、障害の切り分けを
+簡単にしている性質で、監視のために手放すには高すぎる——**気づく手立ては外に、止める
+手立て（保留）は中に。**
+
 ### 追加
 
 - **`/.well-known/ark` に、解決の委譲先（`redirect`）と shoulder の状態を足した。**
@@ -1174,7 +1188,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.7.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0
 [0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0
 [0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0
 [0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1
