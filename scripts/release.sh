@@ -29,7 +29,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --publish)         PUBLISH=1;;
     --no-db|--no-docs) CHECK_ARGS+=("$1");;   # check.sh へ渡す
-    -h|--help)         sed -n '2,21p' "$0"; exit 0;;
+    -h|--help)         awk 'NR > 1 && !/^#/ { exit } NR > 1' "$0"; exit 0;;
     v*)                TAG="$1";;
     *) echo "不明な引数: $1" >&2; exit 2;;
   esac; shift

@@ -31,7 +31,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --no-db)   WITH_DB=0;;
     --no-docs) WITH_DOCS=0;;
-    -h|--help) sed -n '2,24p' "$0"; exit 0;;
+    -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1' "$0"; exit 0;;
     *) echo "不明な引数: $1" >&2; exit 2;;
   esac; shift
 done
