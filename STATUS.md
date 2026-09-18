@@ -18,7 +18,7 @@
 | 版 | **0.3.0**（2026-09-17 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
 | テスト | **すべて green**（`uv run pytest -q`） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
-| 文書 | `mkdocs build --strict` 警告 0。日英 2 言語で 20 ページ |
+| 文書 | `mkdocs build --strict` 警告 0。日英 2 言語 |
 | マイグレーション | head は単一（`a7c3e51d9f20`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回し、`tests/test_migrations.py` が SQLite で頭まで流す |
 | Python | 3.12 以上。本体の依存は **optional**（`arkspec` と `domain.resolution` は何も入れずに import できる） |
 
