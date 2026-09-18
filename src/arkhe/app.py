@@ -257,11 +257,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         両方を `/healthz` で兼ねていたので、**DB が落ちても Ready のまま
         トラフィックを受け続けた**。生存と可用は別の問い。
+
+        **見るのは、この役割が実際に読む側である。** resolver は
+        `ARKHE_READ_DATABASE_URL`（レプリカ）から読むので、主系を叩いて
+        確かめても意味が無い——**レプリカが落ちて解決が 500 を返しているのに、
+        主系が生きていれば Ready と答えていた**（実際にレプリカを落として確かめた）。
         """
         # **依存として受け取らない。** 依存の解決中に落ちると、この関数に
         # 入る前に 500 になり、503 を返せない。ここで自分で開く。
         try:
-            with session_factory(settings=s)() as probe:
+            with session_factory(read_only=s.resolver, settings=s)() as probe:
                 probe.execute(text("select 1"))
         except Exception as exc:  # noqa: BLE001 - 理由によらず「捌けない」
             observability.log("not ready", reason=type(exc).__name__)

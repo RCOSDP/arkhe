@@ -70,6 +70,32 @@ breaking in a system whose identifiers cannot be reissued.
   for `synchronous_commit`: **53 of the 60 ms a mint takes is Argon2** — **if giving up
   durability buys nothing, there is no reason to give it up.**
 
+### Fixed
+
+- **`/readyz` probed a database the role does not read.** A resolver reads from
+  `ARKHE_READ_DATABASE_URL` (the replica), yet the probe went to the **primary** — so
+  **with the replica down and resolution returning `500`, it kept answering Ready** as
+  long as the primary was alive, and a load balancer kept sending traffic.
+
+  Found by actually stopping the replica. **It now probes the side the role reads** (the
+  read connection for a resolver, the write one for a minter).
+
+### Added
+
+- **What a replica actually does**, measured and written up in
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/).
+
+  **The rps does not go up** (1,433 → 1,307 — on one host a replica adds no CPU). **What
+  grows is the primary's headroom**: the read load leaves it entirely (136% → 0% CPU). A
+  replica buys not speed but **minting not being dragged down when reads get rough**.
+  **Resolution also survives the primary being stopped** (`302`, `?info` still `200`).
+
+  **Replication lag from minting to being resolvable was 3–5 ms median** (`replay_lag`
+  1.3 ms even under write load), and **all 50 attempts resolved on the very first
+  request** — the `404` warned about in the monitoring section **never once happened under
+  these conditions**. The warning stays, with the conditions that would produce it spelled
+  out (another machine, a replica busy with reads, a large ingest).
+
 ## [0.10.0] — 2026-09-18
 
 **The release that noticed the recommended shape does not run on defaults.**

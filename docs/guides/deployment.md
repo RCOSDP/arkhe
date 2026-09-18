@@ -468,6 +468,47 @@ idle connections, set `ARKHE_DB_POOL_RECYCLE` before turning this off.
 Everything else can stay at its default — **time spent on adjustments that do nothing is
 time not spent putting workers at four and, past that, widening the database.**
 
+#### 7. What widening the database actually does
+
+**Built a replica and measured it** (streaming replication, the resolver pointed at it
+through `ARKHE_READ_DATABASE_URL`).
+
+| | rps | Primary CPU under load | Replica CPU under load |
+| --- | --- | --- | --- |
+| Reads on the primary | 1,433 | **136%** | 0% |
+| Reads on the replica | 1,307 | **0%** | 135% |
+
+**The rps does not go up.** On one host that is unsurprising — **a replica adds no CPU**.
+Throughput grows only once the replica is on its own machine.
+
+**What grows is the primary's headroom.** The read load leaves it **entirely** (136% → 0%).
+So a replica does not buy speed; it buys **minting and administration not being dragged
+down when reads get rough**. That is the asymmetry — resolution must not stop, minting may
+— **protecting the half that is allowed to stop.**
+
+**Resolution survives the primary going down** (tested by stopping it: `302`, `?info`
+still `200`, `/readyz` still `200`). A hot standby is readable, so **only minting stops.**
+
+#### How far behind is the replica?
+
+**Measured from minting to being resolvable on the replica:**
+
+| | Median | Max | Resolved on the very first request |
+| --- | --- | --- | --- |
+| Idle (30 runs) | **4.8 ms** | 74 ms | **30 / 30** |
+| Under write load (20 runs) | **3.4 ms** | 6.3 ms | **20 / 20** |
+
+`replay_lag` in `pg_stat_replication` stayed at **1.3 milliseconds** even under load.
+
+**So in a healthy, co-located setup this hazard does not appear.** The
+[monitoring section](#here-replication-lag-is-a-correctness-problem) warns that an ARK
+resolved right after minting can answer `404` — **in these measurements it never once did.**
+
+**The reason to monitor it remains.** Lag grows **when the replica is on another machine
+and a round trip is added, when the replica is busy with reads, when a large ingest
+outruns replay** — none of which is reproduced here. **This is not proof that it cannot
+happen; only that it did not happen under these conditions.**
+
 #### About the variance
 
 **Repeating the same configuration gave anywhere from 1,413 to 2,078 rps (±20%).**
