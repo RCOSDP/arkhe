@@ -351,6 +351,85 @@ is quick, but because **one authentication is divided across a thousand rows.**
 **These numbers say nothing beyond "on this machine".** Everything shared one host, so a
 split deployment adds a round trip. Take your own with the tool below.
 
+### How it scales out, and what jams first (2026-09-18)
+
+**Swept the knobs to see which ones move the number.** One million ARKs, PostgreSQL 17
+(`max_connections=300`, `shared_buffers=512MB`), everything on one 20-core host.
+
+#### 1. First make sure you are measuring the server
+
+**`bench.py` tops out near 2,200 rps per process** (Python's GIL), and raising the
+concurrency does not change that:
+
+| `/healthz`, one process | c=8 | c=16 | c=32 |
+| --- | --- | --- | --- |
+| rps | 2,236 | 2,121 | 2,094 |
+
+**Adding processes does** — two reach 4,218, four reach 9,017 rps. **So any figure above
+about 1,500 rps taken with a single process is describing the client, not the server.**
+
+```bash
+# Four in parallel, then add them up (more concurrency alone will not lift the ceiling)
+for i in 1 2 3 4; do python scripts/bench.py "$URL" -n 3000 -c 8 & done; wait
+```
+
+#### 2. Workers double up to four, then stop paying
+
+| Workers | rps | Gain over the previous row |
+| --- | --- | --- |
+| 1 | 352 | — |
+| 2 | 718 | **2.0×** |
+| 4 | **1,413** | **2.0×** |
+| 8 | 1,682 | 1.2× |
+| 16 | 1,845 | 1.1× |
+
+**One to two to four doubles cleanly**; past that another worker buys about ten per cent.
+**Add workers up to four; beyond that, something else is the limit.**
+
+#### 3. The pool sets the connection count, not the speed
+
+Swept at four workers, concurrency 32:
+
+| Pool | Theoretical max | Connections actually open | rps |
+| --- | --- | --- | --- |
+| `1+0` | 4 | **5** | ~1,700–2,000 |
+| `3+2` | 20 | **17** | ~1,400–1,900 |
+| `10+20` | 120 | **40** | ~1,500–2,100 |
+
+**A thirtyfold range moves nothing** (the spread is inside the run-to-run variance below).
+What it moves is **how many connections you hold** — resolution is one short query that
+returns immediately, so **there is nothing to hoard**. Set the pool to **the smallest that
+does not stall.**
+
+#### 4. What jams next is PostgreSQL's CPU
+
+Measured mid-load with eight workers:
+
+| | CPU |
+| --- | --- |
+| uvicorn (8 workers, ~60% each) | **~470%** |
+| PostgreSQL | **~330%** |
+| the measuring client | ~200% |
+
+**The app and the database burn CPU at roughly 1.4 : 1.** Scaling the app alone therefore
+**demands the same proportion from the database** — once more workers stop helping, the
+next thing to look at is PostgreSQL (add a replica; point the resolver at it).
+
+#### The order to scale
+
+1. **Prove the client is not the ceiling** — skip this and every later number is a lie.
+2. **Workers up to four** — that far, it doubles honestly.
+3. **Leave the pool at 2–3** — raising it buys no speed and **costs connections**.
+4. **Then PostgreSQL** — add a replica and send the resolver to it.
+5. **Hosts last** — resolvers hold no state, so spreading them out is always available.
+
+#### About the variance
+
+**Repeating the same configuration gave anywhere from 1,413 to 2,078 rps (±20%).**
+Everything shares one host, so other load bleeds in. **A difference smaller than that band
+is not a difference** — the doubling from one to four workers sits outside it; the 1.1×
+from eight to sixteen sits inside it.
+
 ### Measuring your own
 
 ```bash
