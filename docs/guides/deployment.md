@@ -258,6 +258,58 @@ Capacity in bytes, and how to measure it against your own ledger, is in
 [the data model](../reference/data-model.md#on-capacity).
 
 
+## Monitoring
+
+**What to watch follows from what was promised.** This ledger promises one thing — **a
+name you handed out never points at something else, and never stops being resolvable** —
+so the monitoring is derived backwards from that.
+
+What arkhe emits is **a one-line JSON access log** (`method`, `path`, `status`, `ms`, with
+a request id), `/healthz` and `/readyz`, and **`mint_collision` when minting collides**.
+**There is no metrics endpoint** — you already have somewhere logs go, and one pipeline is
+better than two.
+
+### Signs the promise is starting to break
+
+| Watch | Signal | Why |
+| --- | --- | --- |
+| **Resolution still answering** | 5xx rate on `path` starting `/ark:` | The promise itself. **This is the one thing that cannot wait.** |
+| **A jump in 404s** | 404 rate on the same paths | Normally steady, made of stale links out in the world. **A jump means suspect the ledger or what it is pointed at** (empty replica, wrong database). |
+| **Replication lag** | `pg_last_xact_replay_timestamp()` on the replica | **See below.** |
+| **Minting collisions** | frequency of `mint_collision` | **The only sign that the namespace is quietly filling up.** A rising rate says add digits. |
+| **Backup age** | `pg_stat_archiver`, mtime of the newest dump | [Backups](#backups). **Not noticing is the worst case.** |
+| **Reserved ARKs piling up** | `reserved` in `arkhe stat --json` | Numbers nothing points at, with no deadline and no notice. |
+| **Holds in force** | `holds`, same command | Even with deadlines, **what is not visible becomes permanent**. |
+
+For `/healthz` versus `/readyz`, see
+[health checks](#health-checks-that-do-not-depend-on-the-database).
+
+### Here, replication lag is a correctness problem
+
+The recommended split — **mint on the primary, resolve from a replica** — has a hazard of
+its own:
+
+1. A caller mints; the row lands on the primary.
+2. **They put that ARK in a paper, a record, an email.**
+3. Someone resolves it → **the replica has not got it yet → `404`.**
+
+In most systems that is "wait a moment and it appears". **Not here**: whoever saw the
+`404` concludes the identifier does not exist, and the person who handed it out has handed
+out a broken PID. Lag is not a performance matter; **it is a matter of the promise.**
+
+- Monitor replica lag and **alert in seconds, not minutes**.
+- If lag is routine, **send the just-after-minting check to the primary**, or point the
+  resolver back at it.
+- **`?info` travels the same path**, so answering with the description only does not save
+  you.
+
+### What not to collect
+
+**Do not build alerts out of which ARKs were resolved.** Who looked up what is usage data,
+and **not something to accumulate for the sake of monitoring**. The access log keeps
+`path`, which you need — but **turning that into usage statistics is a different decision,
+not monitoring**: different retention, different people allowed to look.
+
 ## Backups
 
 The ledger is the only irreplaceable thing here. An ARK that is lost cannot be minted

@@ -9,6 +9,31 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **Minting collisions are now recorded** (`mint_collision`).
+
+  `mint()` has always counted collisions and returned the count, and its docstring said
+  the point was **to catch a namespace quietly filling up**. But **all three call sites
+  threw it away** with `ark, _ =` — counted, and nobody receiving it.
+
+  One collision does no harm (it retries and succeeds), but **a rising rate is the signal
+  to add digits**, and nobody notices that unless someone is looking. **Nothing is logged
+  when there are no collisions** — a line per mint and people stop reading the log.
+
+- **A monitoring design** in
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/). What to watch follows
+  from what was promised, so the table is derived backwards from **the signs that the
+  promise is starting to break**.
+
+  **Replication lag is written up as a correctness problem, not a performance one.** With
+  minting on the primary and resolution from a replica, **an ARK resolved right after it
+  was handed out can answer `404`** — in most systems that is "wait a moment", but **here
+  the person concludes the identifier does not exist**.
+
+  **No metrics endpoint.** You already have somewhere logs go, and one pipeline is better
+  than two.
+
 ## [0.6.0] — 2026-09-18
 
 **The release in which you can prove it comes back.** After restoring from a backup, the

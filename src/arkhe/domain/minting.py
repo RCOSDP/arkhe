@@ -8,6 +8,8 @@ SQLAlchemy では **`session.add()` は常に INSERT** なので同じ性質が�
 
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -108,8 +110,38 @@ def mint(
         except IntegrityError:
             collisions += 1
             continue
+        if collisions:
+            _report_collisions(shoulder, collisions)
         return ark, collisions
+    _report_collisions(shoulder, collisions, gave_up=True)
     raise RuntimeError(f"gave up minting after {collisions} collision(s)")
+
+
+#: ドメインの層から記録する。**`observability` は import しない**——あちらは
+#: FastAPI を引き込むので、HTTP を知らないはずの層が知ることになる。書式
+#: （`extra={"fields": …}`）だけ合わせておけば、同じ流れに乗る。
+_log = logging.getLogger("arkhe")
+
+
+def _report_collisions(shoulder: Shoulder, collisions: int, *, gave_up: bool = False) -> None:
+    """**衝突したことを残す。** 数えているのに捨てていたら、数えた意味が無い。
+
+    衝突は**名前空間の枯渇が静かに進む**唯一の兆しである。1 回起きても実害は
+    無い（採り直して通る）が、**率が上がっていくのは桁を増やす合図**で、
+    それは誰かが見ていないかぎり誰も気づかない。
+
+    **0 のときは出さない。** 採番のたびに 1 行増やしても、読む人は速やかに
+    読まなくなる——**出す価値があるのは、起きたときだけ**である。
+    """
+    _log.warning(
+        "mint_collision",
+        extra={"fields": {
+            "naan": shoulder.naan,
+            "shoulder": shoulder.shoulder,
+            "collisions": collisions,
+            "gave_up": gave_up,
+        }},
+    )
 
 
 class NotDelegated(Exception):

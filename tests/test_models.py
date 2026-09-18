@@ -233,3 +233,43 @@ def test_lockが宣言とずれていない():
         names += [re.split(r"[<>=\[]", x)[0].strip() for x in group]
     missing = [n for n in set(names) if f'name = "{n.lower()}"' not in lock.lower()]
     assert not missing, f"uv.lock に無い: {missing}（`uv lock` を実行すること）"
+
+
+def test_衝突は記録に残る(db, world, caplog):
+    """**数えているのに捨てていたら、数えた意味が無い。**
+
+    衝突は**名前空間の枯渇が静かに進む**唯一の兆しである。1 回起きても実害は
+    無い（採り直して通る）が、率が上がっていくのは桁を増やす合図で、
+    **誰かが見ていないかぎり誰も気づかない**——だから記録に出す。
+    """
+    import logging
+    from unittest.mock import patch
+
+    from arkhe.domain import minting
+
+    # 同じ名前を 2 回返させて、必ず 1 回衝突させる。
+    names = iter(["bcdfghjkm", "bcdfghjkm", "npqrstvwx"])
+    with caplog.at_level(logging.WARNING, logger="arkhe"), \
+            patch.object(minting, "generate_noid", lambda n: next(names)):
+        first, c1 = minting.mint(db, shoulder=world["sh_a"], created_by="t")
+        second, c2 = minting.mint(db, shoulder=world["sh_a"], created_by="t")
+    db.commit()
+
+    assert c1 == 0 and c2 == 1, "2 本目で 1 回衝突するはず"
+    assert first.ark != second.ark
+    hit = [r for r in caplog.records if r.getMessage() == "mint_collision"]
+    assert hit, "衝突したのに記録に出ていない"
+    assert hit[0].fields["collisions"] == 1
+    assert hit[0].fields["shoulder"] == world["sh_a"].shoulder
+
+
+def test_衝突しなければ記録に出さない(db, world, caplog):
+    """**採番のたびに 1 行増やしても、読む人は速やかに読まなくなる。**"""
+    import logging
+
+    from arkhe.domain import minting
+
+    with caplog.at_level(logging.WARNING, logger="arkhe"):
+        minting.mint(db, shoulder=world["sh_a"], created_by="t")
+    db.commit()
+    assert not [r for r in caplog.records if r.getMessage() == "mint_collision"]
