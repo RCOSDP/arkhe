@@ -1054,6 +1054,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#戻せることを毎月証明する" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        戻せることを、毎月証明する
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#バックアップが止まっていることにどう気づくか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        バックアップが止まっていることに、どう気づくか
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1753,6 +1775,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#戻せることを毎月証明する" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        戻せることを、毎月証明する
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#バックアップが止まっていることにどう気づくか" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        バックアップが止まっていることに、どう気づくか
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2262,9 +2306,9 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT version_num FROM alembic_version"</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>uv<span class="w"> </span>run<span class="w"> </span>alembic<span class="w"> </span>check
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># 2. **ARK と行き先と公開状態の指紋。** ここが一致すれば、identifier は無傷である</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT md5(string_agg(ark||'|'||url||'|'||</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="s2">  coalesce(published_at::text,'-'), ',' ORDER BY ark)) FROM ark"</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># 2. **指紋。** ここが一致すれば、identifier は無傷である</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1">#    （SQL を貼り付けない——**貼り間違えても静かに「一致」と読める**）</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>arkhe<span class="w"> </span>fingerprint
 <a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
 <a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># 3. **実際に解決する。** resolver 役で起動して引く</span>
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1">#    （既定の起動は minter で、**解決の口を持たない**——ここで 404 を見て</span>
@@ -2276,6 +2320,41 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
 </code></pre></div>
 <p><strong>2 と 4 が本体である。</strong> 1 と 3 は落ちれば分かるが、<strong>指紋のずれと連番のずれは、
 黙って通る</strong>——気づくのは、識別子が別のものを指した後になる。</p>
+<p><code>arkhe fingerprint</code> は 2 行を出す:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>arks       c5e54e5af778420832800a7dc9104eee  53 rows
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
+</code></pre></div>
+<p><strong>分けてあるのは、潰すと「どこが違うか」が消えるからである。</strong> とくに
+<code>withdrawn</code>（二度と採らない名前）が落ちても<strong>採番は動き続ける</strong>ので、合わせて
+出さなければ黙って通る——<code>NR</code> を守る仕掛けの片側が欠けたまま、何事も無く動く。</p>
+<p><strong>保留は入れていない。</strong> 期限で勝手に変わるので、差が出ても「壊れた」と読めない
+——<strong>鳴りっぱなしの警報は、誰も見なくなる。</strong></p>
+<h3 id="戻せることを毎月証明する">戻せることを、毎月証明する<a class="headerlink" href="#戻せることを毎月証明する" title="Permanent link">&para;</a></h3>
+<p><strong>手順書に「復元を試すこと」と書いても、誰も試さない。</strong> 検証を仕事にする:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># 昨夜のダンプを使い捨ての DB に戻して、指紋を突き合わせる</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>createdb<span class="w"> </span>arkhe_verify
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe_verify<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span><span class="s2">"</span><span class="nv">$LATEST_DUMP</span><span class="s2">"</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span>postgresql://…/arkhe_verify<span class="w"> </span>arkhe<span class="w"> </span>fingerprint<span class="w"> </span>&gt;<span class="w"> </span>restored.txt
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>diff<span class="w"> </span>expected.txt<span class="w"> </span>restored.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>OK<span class="w">    </span><span class="c1"># 落ちたら鳴る</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>dropdb<span class="w"> </span>arkhe_verify
+</code></pre></div>
+<p><code>expected.txt</code> は<strong>ダンプを取った時点の本番で出しておく</strong>（日次のジョブで
+ダンプの隣に置く）。<strong>取った時点と戻した後を比べるのでなければ、意味が無い。</strong></p>
+<h3 id="バックアップが止まっていることにどう気づくか">バックアップが止まっていることに、どう気づくか<a class="headerlink" href="#バックアップが止まっていることにどう気づくか" title="Permanent link">&para;</a></h3>
+<p><strong>取得の失敗より、止まっていることに気づかないほうが怖い。</strong> 成否ではなく
+<strong>古さ</strong>を見る:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">-- PostgreSQL が自分で持っている。外から作らなくてよい</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">last_archived_time</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_time</span><span class="p">,</span><span class="w"> </span><span class="n">failed_count</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_wal</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_archiver</span><span class="p">;</span>
+</code></pre></div>
+<ul>
+<li><code>last_archived_time</code> が <strong>N 分より古い</strong> → 警報</li>
+<li><code>last_failed_time &gt; last_archived_time</code> → <strong>即警報</strong></li>
+<li>最新ダンプのファイル更新時刻が <strong>26 時間より古い</strong> → 警報</li>
+</ul>
+<p><strong>2 つ目は可用性の問題でもある。</strong> <code>archive_command</code> が失敗し続けると WAL は
+再利用されず、<code>pg_wal</code> が膨らんで<strong>ディスクを食い潰し、主系が止まる</strong>
+——バックアップが壊れているだけでは済まない。</p>
 <h2 id="プロキシの後ろに置くとき">プロキシの後ろに置くとき<a class="headerlink" href="#プロキシの後ろに置くとき" title="Permanent link">&para;</a></h2>
 <p>前段が生のリクエスト URI を渡せるなら <code>ARKHE_RAW_URI_HEADER</code> を設定する。無いと
 裸の <code>?</code>（簡潔な記述の inflection）が、クエリ文字列なしと区別できない。これは
@@ -2285,8 +2364,8 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
 下限しか書いていないので、これが無いと<strong>同じコミットから別のものができる</strong>
 ——同じ Dockerfile で焼き直すたびにイメージの中身が変わり、「いつから壊れたか」が
 追えなくなる。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># lock どおりに入れる</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># 更新する（意図したときだけ）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># lock どおりに入れる</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># 更新する（意図したときだけ）</span>
 </code></pre></div>
 <p><code>--frozen</code> は<strong>lock と <code>pyproject.toml</code> がずれていたらそこで落とす</strong>。ずれたまま
 緑になるほうが困るので、検査（<code>scripts/check.sh</code>）もイメージのビルドもこれを使う。</p>

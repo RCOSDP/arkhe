@@ -1458,6 +1458,10 @@
 <td><strong>台帳を数える</strong>——ARK（公開／公開前）、取り下げた名前、shoulder、組織、主体、今かかっている保留、直近 24h ／ 7 日 ／ 30 日の採番。届く範囲の内側だけ。機械で読むなら <code>--json</code>。<strong>数えるのは行数に比例して重い</strong>（30 万件で約 110 ms）ので、繰り返し叩く用途には向かない。</td>
 </tr>
 <tr>
+<td><code>arkhe fingerprint</code></td>
+<td><strong>台帳の指紋を出す</strong>——復元できたことを、件数ではなく中身で確かめる。2 行（<code>arks</code> と <code>withdrawn</code>）に分けてあるのは、潰すと「どこが違うか」が消えるため。機械で読むなら <code>--json</code>。<strong>行数に比例して重い。</strong></td>
+</tr>
+<tr>
 <td><code>arkhe check</code></td>
 <td>設定を検証する。<strong>起動前に落としたいものをここで落とす。</strong></td>
 </tr>

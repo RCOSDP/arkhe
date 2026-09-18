@@ -1054,6 +1054,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#prove-every-month-that-it-comes-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prove every month that it comes back
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noticing-that-backups-have-stopped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noticing that backups have stopped
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1753,6 +1775,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#prove-every-month-that-it-comes-back" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prove every month that it comes back
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#noticing-that-backups-have-stopped" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noticing that backups have stopped
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2276,23 +2320,58 @@ and then every identifier is broken. Check <strong>four</strong> things:</p>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT version_num FROM alembic_version"</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>uv<span class="w"> </span>run<span class="w"> </span>alembic<span class="w"> </span>check
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># 2. **A fingerprint over ARK, target and publication state.** If this matches, the</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1">#    identifiers survived.</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT md5(string_agg(ark||'|'||url||'|'||</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="s2">  coalesce(published_at::text,'-'), ',' ORDER BY ark)) FROM ark"</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1"># 3. **It actually resolves.** Start a resolver and ask it.</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="c1">#    (The default process is the minter and **has no resolution endpoint** — do not read</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="c1">#     that 404 as a failed restore.)</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:app<span class="w">   </span><span class="c1"># then: curl -sI localhost:8000/ark:/…</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1"># 4. **It can still be written to.** If the sequences did not come back, the next mint</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="c1">#    collides on the primary key.</span>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>arkhe<span class="w"> </span>stat<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT last_value FROM shoulder_id_seq"</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># 2. **The fingerprint.** If it matches, the identifiers survived.</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1">#    (Do not paste SQL — **a mis-paste still reads as "they match".**)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>arkhe<span class="w"> </span>fingerprint
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># 3. **It actually resolves.** Start a resolver and ask it.</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1">#    (The default process is the minter and **has no resolution endpoint** — do not read</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="c1">#     that 404 as a failed restore.)</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:app<span class="w">   </span><span class="c1"># then: curl -sI localhost:8000/ark:/…</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="c1"># 4. **It can still be written to.** If the sequences did not come back, the next mint</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1">#    collides on the primary key.</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>arkhe<span class="w"> </span>stat<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT last_value FROM shoulder_id_seq"</span>
 </code></pre></div>
 <p><strong>Two and four are the real ones.</strong> One and three announce themselves when they fail; <strong>a
 drifted fingerprint and a reset sequence pass quietly</strong> — you find out after an identifier
 has pointed at something else.</p>
+<p><code>arkhe fingerprint</code> prints two lines:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>arks       c5e54e5af778420832800a7dc9104eee  53 rows
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
+</code></pre></div>
+<p><strong>They are separate because blending them hides where the difference is.</strong> In particular,
+losing <code>withdrawn</code> (the names never to be assigned again) <strong>does not stop minting</strong>: with
+one number you would never see it, and half of what makes <code>NR</code> hold would be missing while
+everything appeared to work.</p>
+<p><strong>Holds are deliberately excluded.</strong> They change on their own as deadlines pass, so a
+difference would not mean "broken" — <strong>an alarm that is always ringing stops being read.</strong></p>
+<h3 id="prove-every-month-that-it-comes-back">Prove every month that it comes back<a class="headerlink" href="#prove-every-month-that-it-comes-back" title="Permanent link">&para;</a></h3>
+<p><strong>A runbook that says "verify a restore" is never acted on.</strong> Make the verification a job:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Restore last night's dump into a throwaway database and compare fingerprints</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>createdb<span class="w"> </span>arkhe_verify
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe_verify<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span><span class="s2">"</span><span class="nv">$LATEST_DUMP</span><span class="s2">"</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span>postgresql://…/arkhe_verify<span class="w"> </span>arkhe<span class="w"> </span>fingerprint<span class="w"> </span>&gt;<span class="w"> </span>restored.txt
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>diff<span class="w"> </span>expected.txt<span class="w"> </span>restored.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>OK<span class="w">    </span><span class="c1"># it rings when it fails</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>dropdb<span class="w"> </span>arkhe_verify
+</code></pre></div>
+<p>Write <code>expected.txt</code> <strong>on production at the moment the dump is taken</strong> (the daily job can
+leave it beside the dump). <strong>Comparing anything other than "at dump time" against "after
+restore" proves nothing.</strong></p>
+<h3 id="noticing-that-backups-have-stopped">Noticing that backups have stopped<a class="headerlink" href="#noticing-that-backups-have-stopped" title="Permanent link">&para;</a></h3>
+<p><strong>Not noticing is worse than failing.</strong> Watch <strong>age</strong>, not success:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">-- PostgreSQL keeps this itself; nothing to build</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">last_archived_time</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_time</span><span class="p">,</span><span class="w"> </span><span class="n">failed_count</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_wal</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_archiver</span><span class="p">;</span>
+</code></pre></div>
+<ul>
+<li><code>last_archived_time</code> older than <strong>N minutes</strong> → alert</li>
+<li><code>last_failed_time &gt; last_archived_time</code> → <strong>alert immediately</strong></li>
+<li>newest dump file older than <strong>26 hours</strong> → alert</li>
+</ul>
+<p><strong>The second one is an availability problem too.</strong> While <code>archive_command</code> keeps failing,
+WAL cannot be recycled: <code>pg_wal</code> grows, <strong>fills the disk, and the primary stops</strong>. A broken
+archive does not merely mean broken backups.</p>
 <h2 id="behind-a-proxy">Behind a proxy<a class="headerlink" href="#behind-a-proxy" title="Permanent link">&para;</a></h2>
 <p>Set <code>ARKHE_RAW_URI_HEADER</code> if the front end can pass the raw request URI. Without it a
 bare <code>?</code> — the brief-metadata inflection — cannot be distinguished from no query
@@ -2302,8 +2381,8 @@ string at all. That is a protocol-level limitation, not an implementation one.</
 <code>pyproject.toml</code> carry only lower bounds, so without the lock <strong>the same commit builds
 into something different</strong> each time — the image changes under a rebuild, and "when did
 this break" becomes unanswerable.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># install exactly what the lock says</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># update it, deliberately</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># install exactly what the lock says</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># update it, deliberately</span>
 </code></pre></div>
 <p><code>--frozen</code> <strong>fails if the lock and <code>pyproject.toml</code> disagree</strong>, which is what you want:
 passing while they disagree is worse. The checks (<code>scripts/check.sh</code>) and the image
