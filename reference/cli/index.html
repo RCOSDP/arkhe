@@ -1455,6 +1455,10 @@ audit log the same way.</p>
 <td>An organisation leaves. <strong>Minting stops; resolution continues.</strong></td>
 </tr>
 <tr>
+<td><code>arkhe stat</code></td>
+<td><strong>Count the ledger</strong> — ARKs (public and reserved), withdrawn names, shoulders, organisations, clients, holds in force, and minting over the last 24h / 7d / 30d. Only within your reach. <code>--json</code> for machines. <strong>Counting is exact, so it costs time proportional to the number of rows</strong> (about 110 ms over 300,000) — not made for polling.</td>
+</tr>
+<tr>
 <td><code>arkhe check</code></td>
 <td>Validate the configuration. <strong>Fail here rather than at startup.</strong></td>
 </tr>
