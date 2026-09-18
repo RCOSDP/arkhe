@@ -9,6 +9,19 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-09-18
+
+**The release that says what to watch in order to claim the promise is being kept.** The
+promise is a single one — a name you handed out never points at something else and never
+stops resolving — so the monitoring is derived backwards from it.
+
+**One discarded signal was picked up.** Minting has always counted its collisions, and
+every caller threw the count away. It is **the only sign that the namespace is quietly
+filling up**, so it is now recorded when it happens.
+
+**Replication lag is written up as a correctness problem, not a performance one.** If an
+ARK answers `404` right after it was handed out, "wait a moment" is not an answer.
+
 ### Added
 
 - **Minting collisions are now recorded** (`mint_collision`).
@@ -1242,7 +1255,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0
 [0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0
 [0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1
 [0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0

@@ -8,6 +8,19 @@
 
 ## [未リリース]
 
+## [0.7.0] — 2026-09-18
+
+**何を見ていれば約束が守られていると言えるか、を書いた版。** この台帳の約束は 1 つ
+——配った名前が、別のものを指さない／引けなくならない——なので、監視もそこから逆に
+引いてある。
+
+**捨てていた信号を 1 つ拾った。** 採番の衝突は前から数えていたのに、呼び出し側が
+全員捨てていた。**名前空間の枯渇が静かに進む唯一の兆し**なので、起きたときだけ
+記録に出す。
+
+**レプリケーション遅延を、性能ではなく正しさの問題として書いた。** 採番した ARK を
+配った直後に引かれて `404` が返るなら、それは「少し待てば出る」では済まない。
+
 ### 追加
 
 - **採番が衝突したことを記録に残すようになった**（`mint_collision`）。
@@ -1139,7 +1152,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.6.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0
 [0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0
 [0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1
 [0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0
