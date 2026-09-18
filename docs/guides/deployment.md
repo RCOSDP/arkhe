@@ -182,6 +182,54 @@ A base backup (`pg_basebackup`) plus continuous WAL gets you **back to any point
 Keep the daily dump underneath it as the floor — PITR cannot recover across a broken chain,
 while a dump stands on its own.
 
+```bash
+pg_basebackup -D /backup/base -Fp -Xstream -c fast
+```
+
+To come back, put the base backup in place, **write the recovery settings, drop
+`recovery.signal` and start**:
+
+```bash
+cp -a /backup/base /var/lib/postgresql/data
+cat >> /var/lib/postgresql/data/postgresql.conf <<'CONF'
+restore_command = 'cp /archive/%f %p'
+recovery_target_action = 'promote'
+CONF
+touch /var/lib/postgresql/data/recovery.signal
+pg_ctl -D /var/lib/postgresql/data start
+```
+
+**Naming no target is the default, and the right one.** With nothing set, recovery replays
+to the end of the WAL — **the fewest identifiers lost**. `recovery_target_time` is for
+undoing one specific bad operation, nothing else.
+
+### Rewinding loses identifiers out of the ledger
+
+**This is the hazard peculiar to this system.** Put `recovery_target_time` in the past and
+every ARK minted after it leaves the ledger. **They did not leave the world.**
+
+What the rehearsal below showed is that **the ledger does not know what it lost**:
+
+| | After rewinding |
+| --- | --- |
+| the `ark` row | gone |
+| `mint_receipt` | **rolls back with it** |
+| `ark_change` | **rolls back with it** |
+| `audit_event` | **rolls back with it** |
+| `withdrawn_name` (never assigned again) | **not written** |
+
+So a name you handed out answers `404` forever, and it also **reverts to looking as though
+it was never used** — it is in neither of the two places that make `NR` hold. You cannot
+even tombstone it: there is nothing left to tombstone.
+
+Therefore:
+
+- **Default to the end of the WAL.** Pick a target only when there is an operation to undo.
+- **If you did rewind, reconcile what was handed out from outside the ledger** — the
+  caller's own records, or the front-end access log. Nothing inside survived.
+- Put those names back with **import, not minting** (`POST /api/import`). Returning a name
+  to the same object is not an NR violation; **minting it afresh is.**
+
 ### Restoring
 
 **You only know it comes back when you bring it back.** These steps are **exercised**, on

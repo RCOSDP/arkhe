@@ -172,6 +172,55 @@ archive_command = 'test ! -f /archive/%f && cp %p /archive/%f'
 日次のダンプは、その上での**最後の砦**として残す（PITR は連鎖が切れると戻れない
 ——ダンプは 1 個で完結する）。
 
+```bash
+pg_basebackup -D /backup/base -Fp -Xstream -c fast     # 基礎バックアップ
+```
+
+戻すときは、基礎バックアップを置き直して**再生の指示を書き、`recovery.signal` を
+置いて起動する**:
+
+```bash
+cp -a /backup/base /var/lib/postgresql/data
+cat >> /var/lib/postgresql/data/postgresql.conf <<'CONF'
+restore_command = 'cp /archive/%f %p'
+recovery_target_action = 'promote'
+CONF
+touch /var/lib/postgresql/data/recovery.signal
+pg_ctl -D /var/lib/postgresql/data start
+```
+
+**時点を指定しないのが既定である。** 何も書かなければ WAL の終わりまで再生する
+——つまり**失う識別子が最も少ない**。時点を選ぶ `recovery_target_time` は、
+**特定の誤った操作を取り消すときにだけ**使う。
+
+### 時点を戻すと、識別子が台帳から消える
+
+**ここが、この体系に固有の危険である。** `recovery_target_time` を過去に置くと、
+その時点より後に採番した ARK は台帳から消える。**だが、それらは既に外に出ている。**
+
+実際に通した結果（下記のリハーサル）で分かったのは、**台帳が「何を失ったか」を
+知らない**ことである:
+
+| | 戻した後 |
+| --- | --- |
+| `ark` の行 | 無い |
+| `mint_receipt`（採番の控え） | **一緒に消える** |
+| `ark_change`（行き先の履歴） | **一緒に消える** |
+| `audit_event` | **一緒に消える** |
+| `withdrawn_name`（二度と採らない台帳） | **入らない** |
+
+つまり、**配った名前が永久に `404` になり、しかもその名前は「使われたことがない」
+扱いに戻る**。`NR` を守る仕掛け（`ark` に在るか、`withdrawn_name` に在るか）の
+どちらにも載っていないからである。tombstone も出せない——出す対象が台帳に無い。
+
+だから:
+
+- **既定は「WAL の終わりまで」。** 時点を選ぶのは、取り消したい操作があるときだけ
+- **時点を戻したなら、その間に何を配ったかは台帳の外から突き合わせる。**
+  呼び出し側の記録（リポジトリの登録履歴）か、前段のアクセスログにしか残っていない
+- 突き合わせた名前は、**採り直すのではなく取り込む**（`POST /api/import`）
+  ——同じ名前を同じ対象に戻すのは `NR` 違反ではない。**採り直しは違反である**
+
 ### 復元の手順
 
 **戻せることは、戻して初めて分かる。** 手順は次のとおりで、**実測で通してある**
