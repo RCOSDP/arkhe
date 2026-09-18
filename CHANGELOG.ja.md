@@ -177,7 +177,7 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   つかない。scope も `ark:delete` を新設して分けてある——採番できることと、
   取り下げられることは別の判断である。
 
-- **公開した ARK を破棄する口を、1 本だけ開けた**（`POST /api/purge`、`ark:purge`）。
+- **公開した ARK を破棄する口を、1 本だけ開けた**（`POST /api/purge` ／ `arkhe ark purge`、`ark:purge`）。
   この基盤は「一度配った名前が別のものを指さない」ためにできていて、**公開した ARK が
   消えないこと**はその中心にある。それでも口を開けたのは、**現実の運用に、識別子より
   重い要求が来ることがある**からである——裁判所の削除命令、公開してはならなかった

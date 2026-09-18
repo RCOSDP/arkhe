@@ -372,7 +372,6 @@ def test_古いものとして許した画面が今も在る():
 #: **これは「書かなくてよい」の一覧ではない。** 検査を入れた時点の実態であって、
 #: 埋めるに越したことはない。**新しく足したコマンドをここに入れてはいけない。**
 COMMANDS_PREDATING_THE_CHECK = {
-    "ark purge",
     "check",
     "client add",
     "client breakglass",

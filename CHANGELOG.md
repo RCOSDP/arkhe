@@ -196,7 +196,8 @@ round-tripped on PostgreSQL**.
   indistinguishable, from outside, from breaking `NR`. Deletion also has its own scope,
   `ark:delete`; being able to mint and being able to withdraw are different decisions.
 
-- **One narrow way out for a published ARK** (`POST /api/purge`, `ark:purge`).
+- **One narrow way out for a published ARK** (`POST /api/purge`, `arkhe ark purge`,
+  `ark:purge`).
   Everything here exists so that a published identifier keeps resolving, and **a
   published ARK not being deletable** is the centre of that. The door is nonetheless
   open because **reality sometimes brings a demand that outweighs an identifier** — a
