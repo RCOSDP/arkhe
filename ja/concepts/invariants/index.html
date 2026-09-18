@@ -1475,12 +1475,22 @@ ORM の層で削除を拒む。</p>
 <p><strong>閉域のリゾルバは別である</strong>（<code>ARKHE_RESOLVE_UNPUBLISHED=1</code>）。閉じた網の中で採番した
 ARK を、その網のリゾルバが解決できないなら配る意味が無い。<strong>解決するかどうかは、ARK の
 状態だけでなく、どのリゾルバが答えているかで決まる</strong>——<a href="../../guides/federation/#closed-resolver">分散して運用する</a>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">    </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># まだ解決しない</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># ここから解決を始める</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…", "reason": "登録の取りやめ"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">      </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># まだ解決しない</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">   </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># ここから解決を始める</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/unpublish<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">   </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># 出し直す</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">    </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span>
 </code></pre></div>
-<p><strong>境目は 1 つで、一方通行である。</strong> 公開は取り消せない——取り消せるなら、公開前の
-削除に意味が無い。公開した ARK への <code>/api/delete</code> は <code>409</code> で断る。</p>
+<p><strong>公開は戻せる。削除は戻せない。</strong> 公開を取り下げても行は残るので、出し直せる
+——出してよいかの判断は<strong>対象を持っている側</strong>にあり、そこから RA に上げて戻って
+くるまで待たせれば、その間は出たままになる。<strong>公開中</strong>の ARK への <code>/api/delete</code> は
+今までどおり <code>409</code> で断る——先に取り下げるか、<code>/api/purge</code> で一手に行う。</p>
+<p><strong>戻らないのは「一度出した」ことのほうである。</strong> 初めて公開した時刻は記録に残り、
+決して消えない。これが決めるのは<strong>儀式の重さ</strong>で、誰も見なかった予約の取り下げは
+軽く、<strong>世に出た名前を引っ込めるには理由と打ち直しが要る</strong>。<strong>重さは名前の履歴に
+従い、行う人の位には従わない</strong>——危ないのは「誰が消すか」ではなく
+<strong>「何が消えるか」</strong>だからである。届く範囲はほかと同じに縛る——組織は自分の
+shoulder、NAAN 管理者は自 NAAN の内側で行う。</p>
 <p><strong>名前は解放しない。</strong> 取り下げた名前は別の台帳に移り、採番でも取り込みでも二度と
 当たらない。だから閉域で引けていた ARK を取り下げても、<strong>その名前が別のものを指すことは
 無い</strong>——残った参照は <code>404</code> になるだけである（<code>NR</code> が守るのはそこである）。予約した文字列は既に誰かの手に渡っていることが多く（<strong>それが予約の目的

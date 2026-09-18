@@ -1539,15 +1539,19 @@
 </tr>
 <tr>
 <td><code>arkhe ark publish</code></td>
-<td><strong>グローバルに公開する。</strong> 以後は解決し、削除できなくなる（tombstone にするしかない）。二度実行しても落ちない。</td>
+<td><strong>グローバルに公開する。</strong> 取り下げたものを出し直すのも同じ口。二度実行しても落ちない。</td>
+</tr>
+<tr>
+<td><code>arkhe ark unpublish</code></td>
+<td><strong>公開を取り下げる。</strong> 行は残るので <code>publish</code> で出し直せる——<strong>戻せるのはこちらだけ。</strong> 理由が必須で、確認を訊く（<code>--yes</code> で省ける）。</td>
 </tr>
 <tr>
 <td><code>arkhe ark delete</code></td>
-<td><strong>公開前の ARK を取り下げて消す。</strong> 公開したものには効かない。消えるのは行だけで、<strong>その名前は二度と採られない。</strong></td>
+<td><strong>公開していない ARK を消す。</strong> 公開中のものは先に取り下げる。<strong>一度でも公開した名前なら理由が必須で、確認を訊く。</strong> 消えるのは行だけで、<strong>その名前は二度と採られない。</strong></td>
 </tr>
 <tr>
 <td><code>arkhe ark purge</code></td>
-<td><strong>公開した ARK を破棄する。RA の運用者だけ。</strong> 理由が必須で、確認を訊く（<code>--yes</code> で省ける）。<strong>約束を破る操作</strong>——削除命令や、公開してはならなかったものへの逃げ道</td>
+<td><strong>公開した ARK を一手で破棄する</strong>（取り下げと削除をまとめる）。届く範囲の内側だけ。理由が必須で、確認を訊く（<code>--yes</code> で省ける）。<strong>約束を破る操作</strong>——削除命令や、公開してはならなかったものへの逃げ道</td>
 </tr>
 </tbody>
 </table>
@@ -1596,7 +1600,9 @@ registry への登録という、arkhe の外で起きる手順も含めて</str
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">      </span><span class="c1"># まだ解決しない</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># ここから解決を始める</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"登録が取りやめになった"</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>unpublish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"誤って公開した"</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># 出し直す</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"登録が取りやめになった"</span>
 </code></pre></div>
 <p><strong>普通に消せるのは公開前だけ。</strong> 公開した ARK は、RA の運用者が理由を残して破棄する
 以外には消えない。</p>

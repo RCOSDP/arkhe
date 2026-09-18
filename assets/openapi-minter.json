@@ -8,7 +8,7 @@
       "name": "MIT",
       "identifier": "MIT"
     },
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "paths": {
     "/oauth/token": {
@@ -490,7 +490,7 @@
           "ark"
         ],
         "summary": "Publish",
-        "description": "**Publish a reserved ARK.** Requires `ark:mint`.\n\nUntil it is published an ARK does not resolve and can still be deleted; from here on\nit resolves and **it can never be deleted**, only tombstoned. There is no way back:\nun-publishing would mean taking back a name that has already gone out.\n\nPublishing twice is not an error — the second call returns the same record, so a lost\nresponse can simply be resent.",
+        "description": "**Publish an ARK.** Requires `ark:mint`.\n\nUntil it is published an ARK does not resolve and can be deleted outright; from here on\nit resolves, and deleting it means first withdrawing it from publication.\n\nThis also **publishes again** an ARK that was withdrawn. The record keeps the moment it\nfirst went out (`first_published_at`), which never changes: what has been out in the\nworld cannot be made never to have been out.\n\nPublishing twice is not an error — the second call returns the same record, so a lost\nresponse can simply be resent.",
         "operationId": "publish_api_publish_post",
         "requestBody": {
           "content": {
@@ -528,6 +528,58 @@
           {
             "oauth2": [
               "ark:mint"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/unpublish": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Unpublish",
+        "description": "**Withdraw an ARK from publication.** Requires `ark:unpublish`, and the ARK must be\nwithin your reach — an organisation's own shoulder, a NAAN administrator's own NAAN,\neverything for the registration authority.\n\nThe record stays and **can be published again**; in the meantime the identifier does not\nresolve. It is the reversible half: deleting the record is a separate call, and that one\ndoes not come back.\n\n**`NR` is not broken by this.** A withdrawn name belongs to nobody and there is no path\nanywhere that reassigns it, so a stale reference gets `404` — never a different object.\nWhat breaks is \"keeps resolving\", not \"never means something else\".\n\nBecause the name **has been published**, two things are required: a `reason` (someone may\nbe citing it already, and there is no way to know that from here) and `confirm` repeating\nthe ARK (so that a script walking a list cannot withdraw everything by accident).",
+        "operationId": "unpublish_api_unpublish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnpublishIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:unpublish"
             ]
           },
           {
@@ -594,7 +646,7 @@
           "ark"
         ],
         "summary": "Purge",
-        "description": "**Purge a published ARK.** Requires `ark:purge` **and** `authority=system`.\n\nEverything else in this service exists so that a published identifier keeps resolving.\nThis endpoint is the one way out, and it is here because **reality sometimes brings a\ndemand that outweighs an identifier** — a removal order, personal data that should never\nhave been published, a mass ingest that went in wrong. Without a way out, someone ends up\ndeleting rows straight from the database, and **a deletion that leaves no trace is the\nworst kind.**\n\nSo the way is narrow and it is recorded:\n\n* **the registration authority's operator only** — never a NAAN administrator, never an\n  organisation;\n* **a reason is required**, and it is kept with the name;\n* **`confirm` must repeat the ARK**, so that a script walking a list cannot empty the\n  ledger by accident;\n* **the name is not freed** — it is never assigned again.\n\nThat last point is what survives: the target and the description go, but **the name can\nnever come to mean something else**. A stale reference gets `404`; it never gets a\ndifferent object.",
+        "description": "**Purge a published ARK** — unpublish and delete in one step. Requires `ark:purge`, and\nthe ARK must be within your reach.\n\nEverything else in this service exists so that a published identifier keeps resolving.\nThis endpoint is the one way out, and it is here because **reality sometimes brings a\ndemand that outweighs an identifier** — a removal order, personal data that should never\nhave been published, a mass ingest that went in wrong. Without a way out, someone ends up\ndeleting rows straight from the database, and **a deletion that leaves no trace is the\nworst kind.**\n\nSo the way is narrow and it is recorded:\n\n* **within your own reach only** — an organisation cannot touch another's shoulder;\n* **a reason is required**, and it is kept with the name;\n* **`confirm` must repeat the ARK**, so that a script walking a list cannot empty the\n  ledger by accident;\n* **the name is not freed** — it is never assigned again.\n\nThat last point is what survives: the target and the description go, but **the name can\nnever come to mean something else**. A stale reference gets `404`; it never gets a\ndifferent object.",
         "operationId": "purge_api_purge_post",
         "requestBody": {
           "content": {
@@ -1149,7 +1201,13 @@
             "type": "string",
             "maxLength": 500,
             "title": "Reason",
-            "description": "Why it was withdrawn. Kept with the name; not published.",
+            "description": "Why it was withdrawn. Kept with the name; not published. **Required if the ARK has ever been published.**",
+            "default": ""
+          },
+          "confirm": {
+            "type": "string",
+            "title": "Confirm",
+            "description": "The ARK again. **Required if the ARK has ever been published**, so that a script walking a list cannot empty the ledger by accident.",
             "default": ""
           }
         },
@@ -1158,7 +1216,7 @@
           "ark"
         ],
         "title": "DeleteIn",
-        "description": "Withdraw an ARK that has not been published. **A published ARK is never deleted** (409). The name itself is remembered and never assigned again."
+        "description": "Delete an ARK that is not currently published. One that is published must be unpublished first (409), or purged in one step. **If it has ever been published, a reason and `confirm` are required.** The name itself is remembered and never assigned again."
       },
       "DeleteOut": {
         "properties": {
@@ -1484,7 +1542,7 @@
           "ark"
         ],
         "title": "PublishIn",
-        "description": "Publish a reserved ARK. From then on it resolves and **it can no longer be deleted** — only tombstoned. Publishing twice is not an error; the second call returns the same record."
+        "description": "Publish an ARK: a reserved one, or one whose publication was withdrawn. From then on it resolves again. Publishing twice is not an error; the second call returns the same record. Deleting it now requires unpublishing it first."
       },
       "PurgeIn": {
         "properties": {
@@ -1512,7 +1570,7 @@
           "confirm"
         ],
         "title": "PurgeIn",
-        "description": "Purge a **published** ARK. For the registration authority's operator alone (`authority=system`), for a legal removal order or data that should never have been published. A reason is required and `confirm` must repeat the ARK."
+        "description": "Purge a **published** ARK in one step (unpublish and delete). Within the caller's own reach, for a legal removal order or data that should never have been published. A reason is required and `confirm` must repeat the ARK."
       },
       "RegisterIn": {
         "properties": {
@@ -1613,6 +1671,34 @@
         ],
         "title": "TombstoneIn",
         "description": "Declare that the object is gone. **The ARK is not deleted** — the identifier and its metadata stay, only reachability goes."
+      },
+      "UnpublishIn": {
+        "properties": {
+          "ark": {
+            "type": "string",
+            "title": "Ark"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "description": "Why it is being withdrawn. **Required**: someone may be citing it already, and there is no way to know from here."
+          },
+          "confirm": {
+            "type": "string",
+            "title": "Confirm",
+            "description": "The ARK again, to be sure of the target. Anything else is refused."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ark",
+          "reason",
+          "confirm"
+        ],
+        "title": "UnpublishIn",
+        "description": "Withdraw an ARK from publication. The record stays and can be published again; the identifier stops resolving in the meantime. **The name is never reassigned**, so a stale reference gets `404`, never a different object. Because the name has been published, a reason and `confirm` are required."
       },
       "UpdateIn": {
         "properties": {
@@ -1737,8 +1823,9 @@
               "ark:tombstone": "Declare it lost",
               "ark:hold": "Suspend forwarding",
               "ark:import": "Import a name minted elsewhere",
-              "ark:delete": "Withdraw one not yet published",
-              "ark:purge": "Purge a published one"
+              "ark:delete": "Delete one not currently published",
+              "ark:unpublish": "Withdraw from publication",
+              "ark:purge": "Purge a published one in one step"
             },
             "tokenUrl": "/oauth/token"
           }

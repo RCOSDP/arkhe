@@ -1480,13 +1480,24 @@ resolve it</strong> — it answers as it does for a name it has never seen — a
 a name minted inside that network is worthless if the network's own resolver will not
 resolve it. <strong>Whether an ARK resolves is decided by the ARK's state and by which resolver
 is answering</strong> — see <a href="../../guides/federation/#closed-resolver">Running it distributed</a>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">    </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># does not resolve yet</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># from here on it resolves</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…", "reason": "abandoned"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">      </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># does not resolve yet</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">   </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># from here on it resolves</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/unpublish<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">   </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># and back again</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">    </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span>
 </code></pre></div>
-<p>There is <strong>one boundary and it only goes one way</strong>. Publishing cannot be undone: if it
-could, deleting before publication would mean nothing. A published ARK answers <code>409</code> to
-<code>/api/delete</code>.</p>
+<p><strong>Publication comes back; deletion does not.</strong> Withdrawing an ARK from publication leaves
+the row, so it can be published again — the judgement about whether something should be
+out belongs with whoever holds the object, and making them go up to the registration
+authority and back means it stays out in the meantime. A <em>published</em> ARK still answers
+<code>409</code> to <code>/api/delete</code>: unpublish it first, or purge it in one step.</p>
+<p><strong>What does not come back is having been out.</strong> The record keeps the moment it first went
+out, and that never clears. It decides the <strong>weight of the ceremony</strong>: withdrawing a
+reservation nobody ever saw is light, while taking back a name that has been in the world
+requires a reason and the ARK retyped. <strong>The weight follows the name's history, not the
+rank of whoever is acting</strong> — the dangerous question is not <em>who deletes</em> but <em>what
+disappears</em>. Reach still binds, as everywhere else: an organisation acts inside its own
+shoulder, a NAAN administrator inside its NAAN.</p>
 <p><strong>The name is not freed.</strong> It moves to a ledger of withdrawn names and is never assigned
 again, by minting or by import — so withdrawing one that was resolving inside a closed
 network cannot make that name mean something else; a stale reference simply gets <code>404</code>,

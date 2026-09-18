@@ -1540,15 +1540,19 @@ audit log the same way.</p>
 </tr>
 <tr>
 <td><code>arkhe ark publish</code></td>
-<td><strong>Publish it globally.</strong> From then on it resolves and can no longer be deleted, only tombstoned. Running it twice is not an error.</td>
+<td><strong>Publish it globally</strong>, including one that was withdrawn from publication. Running it twice is not an error.</td>
+</tr>
+<tr>
+<td><code>arkhe ark unpublish</code></td>
+<td><strong>Withdraw it from publication.</strong> The row stays, so <code>publish</code> puts it back — <strong>this is the half that comes back.</strong> A reason is required and it asks first (<code>--yes</code> skips that).</td>
 </tr>
 <tr>
 <td><code>arkhe ark delete</code></td>
-<td><strong>Withdraw an ARK that was never published.</strong> It does nothing to a published one. Only the row goes — <strong>the name is never assigned again.</strong></td>
+<td><strong>Delete an ARK that is not currently published.</strong> A published one must be unpublished first. <strong>If it has ever been published, a reason is required and it asks first.</strong> Only the row goes — <strong>the name is never assigned again.</strong></td>
 </tr>
 <tr>
 <td><code>arkhe ark purge</code></td>
-<td><strong>Purge a published ARK. The registration authority's operator only.</strong> A reason is required and it asks before doing it (<code>--yes</code> skips that). <strong>It breaks the promise</strong> — a way out for a removal order, or for what should never have been published</td>
+<td><strong>Purge a published ARK</strong> — unpublish and delete in one step, within your own reach. A reason is required and it asks first (<code>--yes</code> skips that). <strong>It breaks the promise</strong> — a way out for a removal order, or for what should never have been published</td>
 </tr>
 </tbody>
 </table>
@@ -1600,7 +1604,9 @@ different meaning and no way back.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">      </span><span class="c1"># does not resolve yet</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># from here on it resolves</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the deposit was abandoned"</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>unpublish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"published by mistake"</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># and back again</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the deposit was abandoned"</span>
 </code></pre></div>
 <p><strong>Ordinary deletion only works before publication.</strong> A published ARK goes only if the
 registration authority's operator purges it, with a reason.</p>

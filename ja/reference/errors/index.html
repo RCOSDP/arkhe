@@ -1324,6 +1324,18 @@
 <td>Send <code>confirm</code> with the ARK itself ({ark}) to purge it.</td>
 </tr>
 <tr>
+<td><code>ARKHE-1017</code></td>
+<td>400</td>
+<td><strong>一度でも外に出した名前</strong>を引っ込める・消すには理由が要る。その間に誰かが引用しているかもしれず、<strong>こちらからは知りようがない</strong>——後から言えることがこれしか残らない</td>
+<td>This ARK has been published; unpublishing or deleting it requires a reason.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1018</code></td>
+<td>400</td>
+<td><strong>一度でも外に出した名前</strong>なので、対象を <code>confirm</code> に打ち直す——一覧を回すスクリプトが、意図せず全件を引っ込めることのないように</td>
+<td>Send <code>confirm</code> with the ARK itself ({ark}): it has been published.</td>
+</tr>
+<tr>
 <td><code>ARKHE-1201</code></td>
 <td>401</td>
 <td>資格情報が無い。<strong>公開情報の読取には要らない</strong>ので、これは書き込みの口</td>
@@ -1402,12 +1414,6 @@
 <td>Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. See {about}</td>
 </tr>
 <tr>
-<td><code>ARKHE-1310</code></td>
-<td>403</td>
-<td>公開した ARK の破棄は RA の運用者（<code>authority=system</code>）だけが行える。<strong>NAAN 管理者にも組織にも渡さない</strong>——名前空間を預かることと、配った名前を消せることは別の権限である</td>
-<td>Purging a published ARK is for the registration authority's operator (authority=system); this principal is {authority}.</td>
-</tr>
-<tr>
 <td><code>ARKHE-1401</code></td>
 <td>404</td>
 <td>台帳にその ARK が無い（一括操作では 1 件でも欠ければ全体が失敗する）</td>
@@ -1434,14 +1440,20 @@
 <tr>
 <td><code>ARKHE-1501</code></td>
 <td>409</td>
-<td><strong>公開した ARK は削除できない。</strong> 消せるのは公開前のものだけで、公開した後は tombstone に付け替えるか <code>url</code> を空にする（<code>NR</code> を宣言している以上、解決が止まることは許されない）</td>
-<td>{ark} is public; a published ARK is never deleted. Tombstone it instead.</td>
+<td><strong>公開中の ARK は、そのままでは削除できない。</strong> 先に公開を取り下げる（<code>/api/unpublish</code>）か、<code>/api/purge</code> で一手に行う。<strong>どちらも理由と打ち直しを要求する</strong>。消さずに済ませるなら tombstone に付け替えるか <code>url</code> を空にする（<code>NR</code> を宣言している以上、解決が止まることは許されない）</td>
+<td>{ark} is published; unpublish it first (or purge it in one step).</td>
 </tr>
 <tr>
 <td><code>ARKHE-1502</code></td>
 <td>409</td>
 <td>修飾子付きの名前がぶら下がっている。<strong>先に下から取り下げる</strong>——親だけ消すと、行き先を継ぐ先の無い部分参照が残る</td>
 <td>{ark} has {count} qualified name(s) under it; withdraw those first.</td>
+</tr>
+<tr>
+<td><code>ARKHE-1503</code></td>
+<td>409</td>
+<td>その ARK は公開していないので、公開を取り下げることはできない（消すなら取り下げではなく削除）</td>
+<td>{ark} is not published; there is nothing to withdraw from publication.</td>
 </tr>
 <tr>
 <td><code>ARKHE-1601</code></td>
