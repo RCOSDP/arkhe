@@ -1428,7 +1428,7 @@
 <tr>
 <td><code>ARKHE_ALLOWED_HOSTS</code></td>
 <td><code>*</code></td>
-<td>カンマ区切り</td>
+<td>カンマ区切り。<strong>絞ると <code>Host</code> が一致しない要求を <code>400</code> で弾く</strong>（既定の <code>*</code> では何も挟まない——前段で終端している構成では前段が見ているのが普通で、二重に弾くと切り分けが難しくなる）</td>
 </tr>
 </tbody>
 </table>

@@ -1428,7 +1428,7 @@ ships to production unnoticed.</p>
 <tr>
 <td><code>ARKHE_ALLOWED_HOSTS</code></td>
 <td><code>*</code></td>
-<td>Comma-separated</td>
+<td>Comma-separated. <strong>Narrowing it rejects requests whose <code>Host</code> does not match with <code>400</code></strong> (the default <code>*</code> installs nothing — where a proxy terminates, it usually checks this already, and rejecting twice makes failures harder to attribute)</td>
 </tr>
 </tbody>
 </table>
