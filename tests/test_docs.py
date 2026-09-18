@@ -367,25 +367,11 @@ def test_古いものとして許した画面が今も在る():
     assert not gone, f"実装に無い画面が許可されたまま: {sorted(gone)}"
 
 
-#: 変更履歴の検査より前から在るコマンドのうち、**変更履歴に綴りが出ていないもの**。
+#: 変更履歴に綴りが出ていないコマンド。**いまは空である**——検査を入れた時点では
+#: 13 件あったが、それぞれが入った版の節に遡って埋めた。
 #:
-#: **これは「書かなくてよい」の一覧ではない。** 検査を入れた時点の実態であって、
-#: 埋めるに越したことはない。**新しく足したコマンドをここに入れてはいけない。**
-COMMANDS_PREDATING_THE_CHECK = {
-    "check",
-    "client add",
-    "client breakglass",
-    "client enable",
-    "client key",
-    "client passwd",
-    "client revoke",
-    "depart",
-    "hold add",
-    "hold list",
-    "hold release",
-    "shoulder status",
-    "succeed",
-}
+#: **空のまま保つ。** ここに足したくなったら、足すのではなく変更履歴を書く。
+COMMANDS_PREDATING_THE_CHECK: set[str] = set()
 
 
 def test_運用コマンドは変更履歴に出ている():

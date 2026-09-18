@@ -701,6 +701,17 @@ and replaces CI with local scripts for checking and publishing.
 
 ### Added
 
+- **Redirection can be held, with a deadline** (`arkhe hold add`, `arkhe hold list`,
+  `arkhe hold release`, `PUT /api/hold` and `/api/hold/release`, `ark:hold`, and a
+  **Held redirects** page in the admin interface).
+
+  **Only redirection stops; resolution does not.** A `404` would be a lie — the
+  identifier exists — and a `503` makes the identifier look broken. The answer is `200`
+  and the description. There are three grains (`ark`, `shoulder`, `naan`) and **the
+  narrower one wins**. **A deadline is required** (capped by `ARKHE_HOLD_MAX_DAYS`): being
+  temporary is not left to anyone's memory. That something is held is published, in
+  `?json` and in `/.well-known/ark`.
+
 - **A guide to running several arkhe instances**
   ([Running several arkhe](https://rcosdp.github.io/arkhe/guides/federation/)): dividing
   by NAAN, dividing by shoulder under one NAAN, and putting an arkhe inside a closed
@@ -922,7 +933,7 @@ interface saying one thing while the implementation did another.
   (a redirect would lose it). **People are offered no key**: one would outlive the
   person's departure from the organisation. An organisation's own administrator can
   manage its users.
-- `arkhe client disable` / `enable`, and the same control in the interface.
+- `arkhe client disable` and `arkhe client enable`, and the same control in the interface.
 
 ### Changed
 
@@ -1120,6 +1131,11 @@ the version starts with `0`.**
   untouched.
 - Idempotent minting: a repeated `request_id` returns the ARK already minted.
 - A documentation site, bilingual, generated in part from the implementation.
+- **Operational commands** (`arkhe`), going through the same `domain` as the screens:
+  `arkhe check` (validate the configuration), `arkhe succeed` and `arkhe depart`
+  (succession and departure), `arkhe shoulder status`, `arkhe client add`,
+  `arkhe client key`, `arkhe client passwd`, `arkhe client revoke`, and
+  `arkhe client breakglass` for a **time-limited** emergency principal.
 
 ### Notes
 

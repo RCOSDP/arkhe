@@ -642,6 +642,16 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
 
 ### 追加
 
+- **転送を期限つきで止められるようになった**（`arkhe hold add` ／
+  `arkhe hold list` ／ `arkhe hold release`、`PUT /api/hold` と
+  `/api/hold/release`、`ark:hold`、管理画面の「保留中の転送」）。
+
+  **止めるのは転送だけで、解決は止めない**——`404` は嘘（その識別子は存在する）、
+  `503` は識別子が壊れて見える。応答は `200` と記述である。粒度は 3 つ
+  （`ark` ／ `shoulder` ／ `naan`）で、**狭いほうが優先する**。**期限は必須**
+  （上限は `ARKHE_HOLD_MAX_DAYS`）——一時的であることを人の記憶に頼らない。
+  止めた事実は `?json` と `/.well-known/ark` に出る。
+
 - **複数の arkhe で分担する構成の手引き**（[分散して運用する](https://rcosdp.github.io/arkhe/ja/guides/federation/)）。
   NAAN 単位で分ける・shoulder 単位で分ける・閉域に置いた arkhe を上位が名前空間だけ
   把握する、の 3 通りと、繋がない選択を並べた。**分けてよいのは名前空間であって、
@@ -851,7 +861,7 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   しか載せない（リダイレクトすると取り出せなくなる）。**人には鍵の発行の口を
   出さない**——人に鍵を配ると、その人が組織を離れても鍵が生き残るため。組織単位の
   管理者も自組織の利用者を扱える。
-- `arkhe client disable` / `enable` と、管理画面の同じ操作。
+- `arkhe client disable` と `arkhe client enable`、および管理画面の同じ操作。
 
 ### 変更
 
@@ -1027,6 +1037,11 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
 - 承継と離脱。どちらも**既存の識別子は解決し続ける。**
 - 冪等な採番。同じ `request_id` の再送には、前回と同じ ARK を返す。
 - ドキュメントサイト（日英、一部は実装から生成）。
+- **運用コマンド**（`arkhe`）。画面と同じ `domain` を通る——`arkhe check`
+  （設定の検証）、`arkhe succeed` ／ `arkhe depart`（承継と離脱）、
+  `arkhe shoulder status`（名前空間の状態）、`arkhe client add` ／
+  `arkhe client key` ／ `arkhe client passwd` ／ `arkhe client revoke`
+  （主体と資格情報）、`arkhe client breakglass`（**期限つき**の緊急用の主体）。
 
 ### 備考
 
