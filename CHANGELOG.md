@@ -19,8 +19,10 @@ registration is called off, **leaving a number nothing points at in the ledger f
 is not what keeping the promise looks like.
 
 The boundary is a single `Ark.published_at`, and it is **one-way**: once published, it
-cannot be deleted. **The default is still "publish on mint"**, so existing callers need
-no change, and every existing ARK migrates as published.
+cannot be deleted — except through `POST /api/purge`, which the registration authority's
+operator may use and which always leaves a trace. **The default is still "publish on
+mint"**, so existing callers need no change, and every existing ARK migrates as
+published.
 
 **Also fixed: `alembic upgrade head` did not run on SQLite.** The exact steps in the
 Quickstart had been stopping partway for three releases — because **we had only ever
@@ -63,6 +65,35 @@ round-tripped on PostgreSQL**.
   to someone — that is what reserving is *for* — and re-using it would be
   indistinguishable, from outside, from breaking `NR`. Deletion also has its own scope,
   `ark:delete`; being able to mint and being able to withdraw are different decisions.
+
+- **One narrow way out for a published ARK** (`POST /api/purge`, `ark:purge`).
+  Everything here exists so that a published identifier keeps resolving, and **a
+  published ARK not being deletable** is the centre of that. The door is nonetheless
+  open because **reality sometimes brings a demand that outweighs an identifier** — a
+  removal order, personal data that should never have been published, a mass ingest
+  that went in wrong. **Without a way out, someone ends up deleting rows straight from
+  the database, and a deletion that leaves no trace is the worst kind.**
+
+  So it is not made impossible; it is made narrow and recorded:
+
+  - **the registration authority's operator only** (`ark:purge` **and**
+    `authority=system`) — never a NAAN administrator, never an organisation;
+  - **a reason is required** — a purge that leaves nothing behind is the same as one
+    that never happened;
+  - **`confirm` must repeat the ARK**, so a script walking a list cannot empty the
+    ledger by accident;
+  - **the name is not freed** — it moves to `withdrawn_name` and is never assigned
+    again;
+  - **the whole thing is audited.**
+
+  The last two are what survive. **The target and the description go, but the name can
+  never come to mean something else**: a stale reference gets `404`, never a different
+  object. `NR` holds; what breaks is "keeps resolving".
+
+  The ORM enforces it too. **A published row cannot be deleted unless the session has
+  named that one ARK as the one being purged** (`models.sanctioned_purge`). A global
+  flag would get left raised, and **you would find out only after a row that must not
+  disappear had disappeared.**
 
 ### Changed
 

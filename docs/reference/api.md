@@ -52,6 +52,13 @@ with `ARKHE_RESOLVE_UNPUBLISHED`). `POST /api/publish` starts resolution
 and **closes the door on deletion**: `POST /api/delete` then answers `409`. A withdrawn
 name is never assigned again. See [Invariants](../concepts/invariants.md#before-publication).
 
+**There is exactly one way out for a published ARK.** `POST /api/purge` is for the
+registration authority's operator alone (`ark:purge` **and** `authority=system`) — for a
+removal order, or data that should never have been published — because **without a way
+out someone deletes rows straight from the database**. It requires a reason, `confirm`
+must repeat the ARK, and the whole thing is audited. **The name is not freed**, so a
+stale reference gets `404` and never a different object.
+
 **Bulk operations do not partially apply.** If one row in a bulk update is missing or
 out of reach, the whole request fails. arklet zipped an unordered query result against
 the input and could write one record's values onto another.
