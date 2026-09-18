@@ -113,6 +113,80 @@ answering the public.
 - Size the database so that **the primary-key index stays in memory** — 39 MB per million
   ARKs. Everything else is sequential enough not to matter
 
+### The recommended shape, whole
+
+```mermaid
+flowchart TB
+    subgraph pub["Public side — must not stop"]
+        LB[Load balancer] --> R1["resolver #1"]
+        LB --> R2["resolver #2"]
+    end
+    subgraph adm["Operator side — may stop"]
+        M["minter + admin"]
+        AS[Authorisation server]
+    end
+    R1 --> RO[("Read replica")]
+    R2 --> RO
+    M --> PG[("Primary")]
+    M -.->|token check| AS
+    PG -.->|streaming| RO
+    PG -->|WAL| AR[("Archive<br/><small>another machine</small>")]
+    PG -->|daily dump| BK[("Backups<br/><small>another machine</small>")]
+```
+
+**The asymmetry is the point.** The top half is open to anyone, needs no authentication
+and writes nothing. The bottom half needs authentication, writes, and may stop.
+
+### What keeps working when something fails
+
+**Exercised**, by pointing a resolver at a `SELECT`-only role and driving every path.
+
+| What failed | Resolution | Minting and admin |
+| --- | --- | --- |
+| minter | **continues** | stops |
+| authorisation server (OIDC) | **continues** — resolution needs no authentication | stops (no new tokens) |
+| primary database | **continues** (on the replica) | stops |
+| read replica | continues once pointed at the primary | continues |
+| global resolver (n2t) | **continues** — an unknown NAAN just gets a `302`; **nothing is fetched** | continues |
+| every resolver | stops | continues |
+
+**A resolver starts with no authentication configuration at all** — neither `ARKHE_AUTH`
+nor `ARKHE_OIDC_ISSUER`. The admin interface and the minting endpoints **are not mounted**:
+both answer `404`. So it cannot fall over with the authorisation server, and its attack
+surface is small.
+
+**It was also confirmed to write nothing.** An expired hold is decided against the clock
+on each resolution, so **there is no write to lift it** — with only `SELECT` granted, the
+inflections `?` `??` `?info` `?json`, the check digit, the forwarding, `/.well-known/ark`
+and both health probes all work. That property is what makes pointing it at a replica
+sound.
+
+### How many to run
+
+Working back from [the measurements](#resolution--the-load-that-actually-arrives):
+
+| | Rough figure |
+| --- | --- |
+| one resolver process (4 workers) | **~1,000 rps** = 86 million a day |
+| one resolver worker | ~300 rps |
+| minter, one at a time | ~45 rps — **53 ms of which is Argon2**, and must stay slow |
+| minter, 1000 in one request | ~930 a second |
+
+**A repository's real resolution volume is nowhere near that.** You run two resolvers not
+for throughput but so that **losing one does not stop resolution**. Decide the count from
+redundancy, not from rps.
+
+If minting is the bottleneck, **move callers to bulk** (twenty times faster). **What makes
+one-at-a-time slow is not the database — it is one Argon2 verification per request.**
+
+### Keep things apart
+
+- **The WAL archive and the daily dumps belong on a different machine** from the database.
+  What sits on the same one dies in the same accident (see [Backups](#backups)).
+- **Resolvers hold no state.** Rebuild and replace them freely.
+- If the admin interface should not be reachable from outside, `ARKHE_ADMIN_LOGIN=bearer`
+  removes the login screen altogether.
+
 ### Measuring your own
 
 ```bash
