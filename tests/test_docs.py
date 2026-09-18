@@ -210,3 +210,68 @@ def test_わざと合わない例は本当に合わない():
     used = {name for _, _, name in _example_arks()}
     assert not (set(DELIBERATELY_WRONG) - used), \
         f"文書に無い例が許可されたまま: {sorted(set(DELIBERATELY_WRONG) - used)}"
+
+
+# --------------------------------------------------------------------------
+# 実装に在る口と scope が、変更履歴に出ているか
+# --------------------------------------------------------------------------
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+#: **この検査より前から在るもの。** 散文で説明されてはいるが、綴りでは当たらない
+#: ——`/api/hold` は「転送の保留」、`/ark:{rest}` は解決の経路そのもので、パスを
+#: そのまま書く場所が無い。**新しく足したものをここに入れてはいけない。**
+#: 書く場所が無いのではなく、まだ書いていないだけだからである。
+PREDATES_THE_CHECK = {
+    "/api/hold",
+    "/api/hold/release",
+    "/api/register",
+    "/api/update/bulk",
+    "/ark:{rest}",
+    "/ark:/{rest}",
+    "ark:update",
+}
+
+
+def _exposed() -> set[str]:
+    """**実装が外に出している口と scope。** OpenAPI から採る。
+
+    あれは実装から生成され、`check.sh` がコミット済みとのずれで落とすので、
+    **実装に在って OpenAPI に無い口は存在しえない**。
+    """
+    import json
+
+    names: set[str] = set()
+    for f in ("openapi-minter.json", "openapi-resolver.json"):
+        spec = json.loads((DOCS / "assets" / f).read_text(encoding="utf-8"))
+        names |= set(spec.get("paths", {}))
+        for scheme in spec.get("components", {}).get("securitySchemes", {}).values():
+            for flow in scheme.get("flows", {}).values():
+                names |= set(flow.get("scopes", {}))
+    return names
+
+
+def test_口とscopeは変更履歴に出ている():
+    """**足したことを書き忘れるのを止める。**
+
+    0.3.0 で `POST /api/purge` と `ark:purge` を出したのに、変更履歴の日英どちらにも
+    書いていなかった。実装もテストも守りも在り、`cli.md` にも `errors.md` にも
+    OpenAPI にも出るのに、**変更履歴だけが黙っていた**——差分が 58 ファイルあれば
+    起きる。とくに **scope は、変更履歴に無ければ運用者が知りようがない。**
+
+    日英の両方を見る。片方にしか無ければ、そちらの読者には無いのと同じである。
+    """
+    logs = {name: (ROOT / name).read_text(encoding="utf-8")
+            for name in ("CHANGELOG.md", "CHANGELOG.ja.md")}
+    missing = [f"{n} が {log} に無い"
+               for n in sorted(_exposed() - PREDATES_THE_CHECK)
+               for log, text in logs.items() if n not in text]
+    assert not missing, "変更履歴に出ていない:\n  " + "\n  ".join(missing)
+
+
+def test_古いものとして許した口が今も在る():
+    """**許可リストが腐るのを止める。** 口の名前を変えたのに `PREDATES_THE_CHECK` を
+    直し忘れると、**新しい綴りが誰にも見られないまま**通ってしまう。
+    """
+    gone = PREDATES_THE_CHECK - _exposed()
+    assert not gone, f"実装に無いものが許可されたまま: {sorted(gone)}"
