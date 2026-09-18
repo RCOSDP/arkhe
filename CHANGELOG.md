@@ -35,6 +35,21 @@ breaking in a system whose identifiers cannot be reissued.
   is **almost entirely Argon2**, which is why **bulk is 55 times faster**: one
   authentication divided across a thousand rows, not a faster database.
 
+- **How it scales out, and what jams first**, measured and written up in
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/).
+
+  **Workers double up to four** (352 → 718 → 1,413 rps) and buy about ten per cent after
+  that. **A thirtyfold sweep of the pool moves the rps not at all** — it moves only how
+  many connections are held, because resolution is one short query with nothing to hoard.
+  What jams next is **PostgreSQL's CPU** (roughly 1.4 : 1 against the app).
+
+  **A section on proving you are measuring the server comes first.** `bench.py` tops out
+  near 2,200 rps per process (the GIL), so **anything above that describes the client** —
+  four processes in parallel reach 9,017 rps.
+
+  It also records that **repeating the same configuration varies by ±20%**, and that **a
+  difference smaller than that band is not a difference.**
+
 ## [0.10.0] — 2026-09-18
 
 **The release that noticed the recommended shape does not run on defaults.**
