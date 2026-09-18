@@ -9,6 +9,20 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-09-18
+
+**The release that noticed the recommended shape does not run on defaults.**
+
+  2 resolvers × 4 workers × 15 connections = 120
+  PostgreSQL default max_connections = 100 (97 after the superuser reserve)
+
+Connections per process **multiply by the worker count**. The guide recommended that shape
+without saying it jams there — **and offered no way to tune the pool**, leaving operators
+to cut workers instead.
+
+The knobs are there now, and the recommended values are **only what the measurements call
+for**. No recommended value without a source.
+
 ### Added
 
 - **Knobs for the connection pool** (`ARKHE_DB_POOL_SIZE`, `ARKHE_DB_MAX_OVERFLOW`,
@@ -1440,7 +1454,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.10.0
 [0.9.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.2
 [0.9.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.1
 [0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0

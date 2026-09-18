@@ -8,6 +8,20 @@
 
 ## [未リリース]
 
+## [0.10.0] — 2026-09-18
+
+**推奨の形が、既定のままでは動かないことに気づいた版。**
+
+  resolver 2 台 × 4 worker × 15 接続 = 120
+  PostgreSQL の既定 max_connections = 100（予約 3 を除いて 97）
+
+1 プロセスあたりの接続は **worker 数と掛け算になる**。推奨構成を書いておきながら
+そこで詰まることを書いておらず、**しかもプールを調整する手段が無かった**——運用者は
+worker を減らすしかなかった。
+
+摘みを出し、**測った値から必要なものだけ**を推奨として書いた。出典の無い推奨値は
+書いていない。
+
 ### 追加
 
 - **接続プールの摘みを出した**（`ARKHE_DB_POOL_SIZE` ／ `ARKHE_DB_MAX_OVERFLOW` ／
@@ -1327,7 +1341,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.9.2...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.10.0
 [0.9.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.2
 [0.9.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.1
 [0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0
