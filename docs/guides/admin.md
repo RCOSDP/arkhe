@@ -97,6 +97,39 @@ they reach — never in *what* they may do.
 **The ceremony applies to withdrawing, deleting and purging anything that has ever been
 published** — see [Invariants](../concepts/invariants.md#before-publication).
 
+### A client is not a tier: it is a combination
+
+The three tiers are only one axis. **What a client actually is** is a combination of
+three, and the most common client in practice is not a tier at all:
+
+| Axis | What it decides |
+| --- | --- |
+| `authority` | how far it reaches — the three tiers |
+| `scopes` | what it may do; **independent of the tier** |
+| `shoulder_id` | pins an organisation's client to a single shoulder |
+
+**A mint-only client** — a repository that just asks for identifiers — is
+`authority=manager`, pinned with `shoulder_id`, holding `ark:mint` alone. That key opens
+exactly four doors:
+
+```
+POST /api/mint        POST /api/mint/bulk
+POST /api/register    POST /api/publish        ← publishing is part of ark:mint
+```
+
+Two things follow, and both are deliberate:
+
+* **It can put names into the world and take none of them back.** Withdrawing, deleting
+  and purging are behind `ark:unpublish`, `ark:delete` and `ark:purge`, and it holds none
+  of them. Handing out a minting key does not hand out the power to stop a name.
+* **It cannot read its own ARKs back** (`/api/query` needs `ark:read`). Resolution needs
+  no authentication, so the identifiers themselves still work — this is about the ledger,
+  not about the names.
+
+Publishing sits with `ark:mint` because **it is the second half of minting**: a caller
+that reserved a name has to be able to put it out, or every draft would need a second
+key.
+
 ### A namespace: NAAN administrator and above
 
 | Action | System | NAAN | Organisation |
