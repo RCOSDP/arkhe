@@ -988,6 +988,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#監視" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        監視
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="監視">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#約束が破れかけている兆し" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        約束が破れかけている兆し
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#レプリケーション遅延はこの体系では正しさの問題である" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        レプリケーション遅延は、この体系では正しさの問題である
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#出さないもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        出さないもの
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#バックアップ" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1709,6 +1759,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#監視" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        監視
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="監視">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#約束が破れかけている兆し" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        約束が破れかけている兆し
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#レプリケーション遅延はこの体系では正しさの問題である" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        レプリケーション遅延は、この体系では正しさの問題である
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#出さないもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        出さないもの
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#バックアップ" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2196,6 +2296,82 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
 </code></pre></div>
 <p>バイト数の見積もりと、自分の台帳で測る方法は
 <a href="../../reference/data-model/#容量について">データモデル</a>にある。</p>
+<h2 id="監視">監視<a class="headerlink" href="#監視" title="Permanent link">&para;</a></h2>
+<p><strong>何を見るかは、何を約束したかで決まる。</strong> この台帳が約束しているのは
+「<strong>配った名前が、別のものを指さない／引けなくならない</strong>」の 1 つだけなので、
+監視もそこから逆に引く。</p>
+<p>arkhe が出すのは <strong>JSON 1 行のアクセスログ</strong>（<code>method</code> <code>path</code> <code>status</code> <code>ms</code>、
+要求 ID つき）と <code>/healthz</code> <code>/readyz</code>、それに<strong>衝突したときの <code>mint_collision</code></strong>
+である。<strong>メトリクスの口は持たない</strong>——ログを取り込む仕掛けは既にあるはずで、
+そこに 2 つ目の系統を増やすより、1 つに寄せるほうがよい。</p>
+<h3 id="約束が破れかけている兆し">約束が破れかけている兆し<a class="headerlink" href="#約束が破れかけている兆し" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>見るもの</th>
+<th>信号</th>
+<th>なぜ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>解決が止まっていないか</strong></td>
+<td><code>path</code> が <code>/ark:</code> の 5xx 率</td>
+<td>約束そのもの。<strong>ここだけは待てない</strong></td>
+</tr>
+<tr>
+<td><strong>解決の 404 率が跳ねていないか</strong></td>
+<td>同上の 404 率</td>
+<td>普段は外の古いリンクぶんで安定している。<strong>跳ねたら、台帳か向き先を疑う</strong>（レプリカが空・別の DB を見ている）</td>
+</tr>
+<tr>
+<td><strong>レプリケーション遅延</strong></td>
+<td>レプリカで <code>pg_last_xact_replay_timestamp()</code></td>
+<td><strong>下記</strong></td>
+</tr>
+<tr>
+<td><strong>採番の衝突</strong></td>
+<td><code>mint_collision</code> の頻度</td>
+<td><strong>名前空間の枯渇が静かに進む唯一の兆し。</strong> 率が上がれば桁を増やす合図</td>
+</tr>
+<tr>
+<td><strong>バックアップの古さ</strong></td>
+<td><code>pg_stat_archiver</code>、最新ダンプの更新時刻</td>
+<td><a href="#バックアップ">バックアップ</a>。<strong>止まっていることに気づかないのがいちばん怖い</strong></td>
+</tr>
+<tr>
+<td><strong>公開前の滞留</strong></td>
+<td><code>arkhe stat --json</code> の <code>reserved</code></td>
+<td>誰も指さない番号が溜まる。期限も通知も無い</td>
+</tr>
+<tr>
+<td><strong>保留の数</strong></td>
+<td>同 <code>holds</code></td>
+<td>期限つきでも、<strong>見えないと恒久化する</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>/healthz</code> <code>/readyz</code> の使い分けは<a href="#死活の見方db-に依存させない">冗長化</a>にある。</p>
+<h3 id="レプリケーション遅延はこの体系では正しさの問題である">レプリケーション遅延は、この体系では正しさの問題である<a class="headerlink" href="#レプリケーション遅延はこの体系では正しさの問題である" title="Permanent link">&para;</a></h3>
+<p><strong>採番は主系、解決はレプリカ</strong>という推奨構成には、固有の穴がある:</p>
+<ol>
+<li>呼び出し側が採番する（主系に書かれる）</li>
+<li><strong>その ARK を論文や記録に載せて配る</strong></li>
+<li>誰かが引く → <strong>レプリカにまだ届いていない → <code>404</code></strong></li>
+</ol>
+<p>ふつうの系なら「少し待てば出る」で済む。<strong>ここでは済まない</strong>——<code>404</code> を見た人は
+<strong>その識別子は存在しないと判断する</strong>し、配った側は「壊れた PID を配った」ことに
+なる。遅延は性能の話ではなく、<strong>約束の話</strong>である。</p>
+<ul>
+<li>レプリカの遅延を監視し、<strong>秒の単位で警報する</strong></li>
+<li>遅延が常態なら、<strong>採番直後の確認だけ主系に向ける</strong>か、resolver を主系に戻す</li>
+<li><strong><code>?info</code> も同じ経路</strong>なので、記述だけ返る形でも救われない</li>
+</ul>
+<h3 id="出さないもの">出さないもの<a class="headerlink" href="#出さないもの" title="Permanent link">&para;</a></h3>
+<p><strong>解決した ARK そのものを、警報の材料にしない。</strong> 誰が何を引いたかは利用の記録で
+あり、<strong>監視のために積み上げてよいものではない</strong>。アクセスログには <code>path</code> が残る
+（それは要る）が、<strong>そこから利用統計を作るなら、それは監視ではなく別の判断</strong>である
+——保存期間も、見てよい人も違う。</p>
 <h2 id="バックアップ">バックアップ<a class="headerlink" href="#バックアップ" title="Permanent link">&para;</a></h2>
 <p>ここで取り返しがつかないのは台帳だけである。失った ARK は採り直せない——NR の下では
 <strong>同じ名前を配り直すことこそが禁じられている</strong>——ので、1 行の消失が識別子の恒久的な

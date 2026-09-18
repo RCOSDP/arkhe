@@ -988,6 +988,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signs-the-promise-is-starting-to-break" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signs the promise is starting to break
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#here-replication-lag-is-a-correctness-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Here, replication lag is a correctness problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-not-to-collect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What not to collect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#backups" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1709,6 +1759,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signs-the-promise-is-starting-to-break" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signs the promise is starting to break
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#here-replication-lag-is-a-correctness-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Here, replication lag is a correctness problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-not-to-collect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What not to collect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#backups" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2210,6 +2310,86 @@ once</strong>, so every row comes back as a replay.</p>
 </code></pre></div>
 <p>Capacity in bytes, and how to measure it against your own ledger, is in
 <a href="../../reference/data-model/#on-capacity">the data model</a>.</p>
+<h2 id="monitoring">Monitoring<a class="headerlink" href="#monitoring" title="Permanent link">&para;</a></h2>
+<p><strong>What to watch follows from what was promised.</strong> This ledger promises one thing — <strong>a
+name you handed out never points at something else, and never stops being resolvable</strong> —
+so the monitoring is derived backwards from that.</p>
+<p>What arkhe emits is <strong>a one-line JSON access log</strong> (<code>method</code>, <code>path</code>, <code>status</code>, <code>ms</code>, with
+a request id), <code>/healthz</code> and <code>/readyz</code>, and <strong><code>mint_collision</code> when minting collides</strong>.
+<strong>There is no metrics endpoint</strong> — you already have somewhere logs go, and one pipeline is
+better than two.</p>
+<h3 id="signs-the-promise-is-starting-to-break">Signs the promise is starting to break<a class="headerlink" href="#signs-the-promise-is-starting-to-break" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Watch</th>
+<th>Signal</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Resolution still answering</strong></td>
+<td>5xx rate on <code>path</code> starting <code>/ark:</code></td>
+<td>The promise itself. <strong>This is the one thing that cannot wait.</strong></td>
+</tr>
+<tr>
+<td><strong>A jump in 404s</strong></td>
+<td>404 rate on the same paths</td>
+<td>Normally steady, made of stale links out in the world. <strong>A jump means suspect the ledger or what it is pointed at</strong> (empty replica, wrong database).</td>
+</tr>
+<tr>
+<td><strong>Replication lag</strong></td>
+<td><code>pg_last_xact_replay_timestamp()</code> on the replica</td>
+<td><strong>See below.</strong></td>
+</tr>
+<tr>
+<td><strong>Minting collisions</strong></td>
+<td>frequency of <code>mint_collision</code></td>
+<td><strong>The only sign that the namespace is quietly filling up.</strong> A rising rate says add digits.</td>
+</tr>
+<tr>
+<td><strong>Backup age</strong></td>
+<td><code>pg_stat_archiver</code>, mtime of the newest dump</td>
+<td><a href="#backups">Backups</a>. <strong>Not noticing is the worst case.</strong></td>
+</tr>
+<tr>
+<td><strong>Reserved ARKs piling up</strong></td>
+<td><code>reserved</code> in <code>arkhe stat --json</code></td>
+<td>Numbers nothing points at, with no deadline and no notice.</td>
+</tr>
+<tr>
+<td><strong>Holds in force</strong></td>
+<td><code>holds</code>, same command</td>
+<td>Even with deadlines, <strong>what is not visible becomes permanent</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>For <code>/healthz</code> versus <code>/readyz</code>, see
+<a href="#health-checks-that-do-not-depend-on-the-database">health checks</a>.</p>
+<h3 id="here-replication-lag-is-a-correctness-problem">Here, replication lag is a correctness problem<a class="headerlink" href="#here-replication-lag-is-a-correctness-problem" title="Permanent link">&para;</a></h3>
+<p>The recommended split — <strong>mint on the primary, resolve from a replica</strong> — has a hazard of
+its own:</p>
+<ol>
+<li>A caller mints; the row lands on the primary.</li>
+<li><strong>They put that ARK in a paper, a record, an email.</strong></li>
+<li>Someone resolves it → <strong>the replica has not got it yet → <code>404</code>.</strong></li>
+</ol>
+<p>In most systems that is "wait a moment and it appears". <strong>Not here</strong>: whoever saw the
+<code>404</code> concludes the identifier does not exist, and the person who handed it out has handed
+out a broken PID. Lag is not a performance matter; <strong>it is a matter of the promise.</strong></p>
+<ul>
+<li>Monitor replica lag and <strong>alert in seconds, not minutes</strong>.</li>
+<li>If lag is routine, <strong>send the just-after-minting check to the primary</strong>, or point the
+  resolver back at it.</li>
+<li><strong><code>?info</code> travels the same path</strong>, so answering with the description only does not save
+  you.</li>
+</ul>
+<h3 id="what-not-to-collect">What not to collect<a class="headerlink" href="#what-not-to-collect" title="Permanent link">&para;</a></h3>
+<p><strong>Do not build alerts out of which ARKs were resolved.</strong> Who looked up what is usage data,
+and <strong>not something to accumulate for the sake of monitoring</strong>. The access log keeps
+<code>path</code>, which you need — but <strong>turning that into usage statistics is a different decision,
+not monitoring</strong>: different retention, different people allowed to look.</p>
 <h2 id="backups">Backups<a class="headerlink" href="#backups" title="Permanent link">&para;</a></h2>
 <p>The ledger is the only irreplaceable thing here. An ARK that is lost cannot be minted
 again — under NR, re-issuing the same name is precisely what is forbidden — so a lost
