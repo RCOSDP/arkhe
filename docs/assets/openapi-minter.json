@@ -640,6 +640,70 @@
         ]
       }
     },
+    "/api/stats": {
+      "get": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Ledger Stats",
+        "description": "**Counts for the ledger as you see it.** Requires `ark:read`.\n\nNothing outside your reach is included — an organisation sees its own shoulders, a NAAN\nadministrator its NAAN, the registration authority everything. **A total is itself a\ndisclosure**: how many identifiers an organisation holds is that organisation's business,\nso the same reach that limits the listing limits this.\n\n`withdrawn_after_publication` is kept apart from `withdrawn` on purpose. Retracting a\nreservation nobody saw and removing a name that was out in the world are different acts,\nand **the second one is the number of times the promise was broken.** It does not belong\nhidden inside a total.\n\n**Counting is exact, so it costs time proportional to the number of rows.** The listing\navoids `COUNT` because it only needs to know whether there is more; here the number *is*\nthe answer. On a ledger of a million ARKs expect a few hundred milliseconds. **This is not\nan endpoint to poll every second.**",
+        "operationId": "ledger_stats_api_stats_get",
+        "security": [
+          {
+            "oauth2": [
+              "ark:read"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "naan",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Naan"
+            }
+          },
+          {
+            "name": "org",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Org"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/purge": {
       "post": {
         "tags": [
@@ -1647,6 +1711,173 @@
         ],
         "title": "RegisterIn",
         "description": "A qualified ARK: `ark` is an existing base name and `qualifier` the part reference appended to it. Nothing is minted, so no NOID and no check digit are generated."
+      },
+      "ShoulderStatOut": {
+        "properties": {
+          "naan": {
+            "type": "string",
+            "title": "Naan"
+          },
+          "shoulder": {
+            "type": "string",
+            "title": "Shoulder"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "organisation": {
+            "type": "string",
+            "title": "Organisation",
+            "default": ""
+          },
+          "arks": {
+            "type": "integer",
+            "title": "Arks"
+          },
+          "public": {
+            "type": "integer",
+            "title": "Public"
+          },
+          "reserved": {
+            "type": "integer",
+            "title": "Reserved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "naan",
+          "shoulder",
+          "status",
+          "arks",
+          "public",
+          "reserved"
+        ],
+        "title": "ShoulderStatOut",
+        "description": "One shoulder's share of the ledger. **The shoulder is the unit the ledger is organised by**, so this is the breakdown that costs nothing extra to produce."
+      },
+      "StatsOut": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "description": "How far the caller reaches: system, naan or organisation."
+          },
+          "naans": {
+            "type": "integer",
+            "title": "Naans"
+          },
+          "arks": {
+            "type": "integer",
+            "title": "Arks"
+          },
+          "public": {
+            "type": "integer",
+            "title": "Public"
+          },
+          "reserved": {
+            "type": "integer",
+            "title": "Reserved"
+          },
+          "withdrawn": {
+            "type": "integer",
+            "title": "Withdrawn"
+          },
+          "withdrawn_after_publication": {
+            "type": "integer",
+            "title": "Withdrawn After Publication",
+            "description": "Of the withdrawn names, how many had already been published. **This is the number of times the promise was broken**, and it is kept separate for that reason."
+          },
+          "shoulders": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Shoulders"
+          },
+          "organisations": {
+            "type": "integer",
+            "title": "Organisations"
+          },
+          "organisations_active": {
+            "type": "integer",
+            "title": "Organisations Active"
+          },
+          "clients": {
+            "type": "integer",
+            "title": "Clients"
+          },
+          "clients_active": {
+            "type": "integer",
+            "title": "Clients Active"
+          },
+          "holds": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Holds"
+          },
+          "minted": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Minted",
+            "description": "ARKs minted within the last 24h, 7 days and 30 days."
+          },
+          "first_mint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Mint"
+          },
+          "last_mint": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Mint"
+          },
+          "by_shoulder": {
+            "items": {
+              "$ref": "#/components/schemas/ShoulderStatOut"
+            },
+            "type": "array",
+            "title": "By Shoulder",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "scope",
+          "naans",
+          "arks",
+          "public",
+          "reserved",
+          "withdrawn",
+          "withdrawn_after_publication",
+          "shoulders",
+          "organisations",
+          "organisations_active",
+          "clients",
+          "clients_active",
+          "holds",
+          "minted"
+        ],
+        "title": "StatsOut",
+        "description": "Counts for the ledger **as this caller sees it**. Nothing outside the caller's reach is included — a total is itself a disclosure, since how many identifiers an organisation holds is that organisation's business. Counting is exact and therefore costs time proportional to the number of rows: **this is not an endpoint to poll every second.**"
       },
       "TombstoneIn": {
         "properties": {

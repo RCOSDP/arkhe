@@ -360,6 +360,61 @@ class BulkQueryIn(BaseModel):
     data: list[str]
 
 
+class ShoulderStatOut(BaseModel):
+    """shoulder 1 つぶんの内訳。"""
+
+    model_config = _spec(
+        "One shoulder's share of the ledger. **The shoulder is the unit the ledger is "
+        "organised by**, so this is the breakdown that costs nothing extra to produce."
+    )
+
+    naan: str
+    shoulder: str
+    status: str
+    organisation: str = ""
+    arks: int
+    public: int
+    reserved: int
+
+
+class StatsOut(BaseModel):
+    """**この主体から見た台帳。** 届かないものは 1 件も入っていない。"""
+
+    model_config = _spec(
+        "Counts for the ledger **as this caller sees it**. Nothing outside the caller's "
+        "reach is included — a total is itself a disclosure, since how many identifiers "
+        "an organisation holds is that organisation's business. Counting is exact and "
+        "therefore costs time proportional to the number of rows: **this is not an "
+        "endpoint to poll every second.**"
+    )
+
+    scope: str = Field(description="How far the caller reaches: system, naan or organisation.")
+    naans: int
+    arks: int
+    public: int
+    reserved: int
+    withdrawn: int
+    withdrawn_after_publication: int = Field(
+        description=(
+            "Of the withdrawn names, how many had already been published. **This is the "
+            "number of times the promise was broken**, and it is kept separate for that "
+            "reason."
+        )
+    )
+    shoulders: dict[str, int]
+    organisations: int
+    organisations_active: int
+    clients: int
+    clients_active: int
+    holds: dict[str, int]
+    minted: dict[str, int] = Field(
+        description="ARKs minted within the last 24h, 7 days and 30 days."
+    )
+    first_mint: datetime | None = None
+    last_mint: datetime | None = None
+    by_shoulder: list[ShoulderStatOut] = []
+
+
 class ArkOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -9,6 +9,35 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **A way to see the ledger's numbers** (`arkhe stat`, `GET /api/stats`, `ark:read`):
+  ARKs (public and reserved), withdrawn names, shoulders by status, organisations,
+  clients, holds in force, minting over the last 24h / 7 days / 30 days, the first and
+  last mint, and **a breakdown per shoulder**. The CLI takes `--json` for machines.
+
+  **Counting happens in one place** (`domain/stats.py`). If the screen, the CLI and the
+  API each wrote their own aggregate, **the same "count" would differ depending on where
+  you looked** — the worst kind of drift. It is the same reason the filters live in
+  `queries.py`.
+
+  **Totals are limited by reach too.** An organisation sees its own shoulders, a NAAN
+  administrator its NAAN, the registration authority everything — **a total is itself a
+  disclosure**, since how many identifiers an organisation holds is that organisation's
+  business. `--naan` and `--org` only layer on the same filters the listing uses; they
+  **never widen the range**.
+
+  **Withdrawn names are counted with those removed after publication kept separate.**
+  Retracting a reservation nobody saw and removing a name that was out in the world are
+  different acts, and **the second is the number of times the promise was broken.** That
+  does not belong buried inside a total.
+
+  **The cost is stated honestly.** This uses `COUNT(*)`, so it costs time proportional to
+  the number of rows — unlike the listing, which avoids `COUNT` by fetching one extra row,
+  because there only the existence of more matters while here the number *is* the answer.
+  Expect a few hundred milliseconds on a ledger of a million ARKs: **not an endpoint to
+  poll.**
+
 ## [0.4.0] — 2026-09-18
 
 **The release in which publication can be withdrawn, and taken up again.** In 0.3.0

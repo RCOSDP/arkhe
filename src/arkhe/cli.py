@@ -26,6 +26,7 @@ from arkhe.db.models import (
 )
 from arkhe.db.session import session_factory
 from arkhe.domain import admin_ops as ops
+from arkhe.domain import stats as stats_mod
 from arkhe.domain.queries import ark_key_from_input, narrow_arks, visible_arks
 from arkhe.settings import get_settings
 
@@ -562,6 +563,81 @@ def depart_cmd(
         if r["update_secret"]:
             typer.echo(r["update_secret"])
             typer.echo(t("depart.update_note"), err=True)
+
+
+def _width(text: str) -> int:
+    """**端末での表示幅。** 日本語は 1 文字で 2 桁を食う。
+
+    `f"{label:<22}"` は**文字数**で詰めるので、見出しが日本語だと列が崩れる
+    ——数字を縦に読ませるための表で、それでは意味が無い。
+    """
+    import unicodedata
+
+    return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+
+
+def _pad(text: str, width: int) -> str:
+    return text + " " * max(0, width - _width(text))
+
+
+@app.command("stat", help=t("stat.help"))
+def stat(
+    naan: str = typer.Option("", help=t("opt.only_naan")),
+    org: int = typer.Option(None, help=t("ark.list.org")),
+    as_json: bool = typer.Option(False, "--json", help=t("stat.json")),
+    by_shoulder: bool = typer.Option(True, help=t("stat.by_shoulder")),
+):
+    """**台帳を数える。** 画面・API と同じ `domain.stats` を通る。
+
+    **数えるのは行数に比例して重い。** 一覧が `COUNT` を避けているのと違って、
+    ここは数そのものが目的なので避けようがない——100 万件で数百 ms を見込む。
+    **繰り返し叩く用途には向かない。**
+    """
+    import json as _json
+
+    with _session() as s:
+        st = stats_mod.ledger_stats(s, _root(), naan=naan, org=str(org or ""))
+
+    if as_json:
+        from dataclasses import asdict
+
+        def _enc(o):
+            return o.isoformat() if hasattr(o, "isoformat") else o
+
+        typer.echo(_json.dumps(asdict(st), default=_enc, ensure_ascii=False, indent=2))
+        return
+
+    def row(label: str, value, note: str = "") -> None:
+        typer.echo(f"{_pad(label, 26)}{value:>12}  {note}".rstrip())
+
+    typer.echo(t("stat.head", scope=t(f"stat.scope.{st.scope}")))
+    row(t("stat.naans"), st.naans)
+    row(t("stat.arks"), f"{st.arks:,}",
+        t("stat.arks_note", public=f"{st.public:,}", reserved=f"{st.reserved:,}"))
+    row(t("stat.withdrawn"), f"{st.withdrawn:,}",
+        t("stat.withdrawn_note", n=f"{st.withdrawn_after_publication:,}"))
+    row(t("stat.shoulders"), sum(st.shoulders.values()),
+        " / ".join(f"{k} {v}" for k, v in st.shoulders.items()))
+    row(t("stat.orgs"), st.organisations, t("stat.active_note", n=st.organisations_active))
+    row(t("stat.clients"), st.clients, t("stat.active_note", n=st.clients_active))
+    row(t("stat.holds"), sum(st.holds.values()),
+        " / ".join(f"{k} {v}" for k, v in st.holds.items()))
+    row(t("stat.minted"), "",
+        " / ".join(f"{k} {v:,}" for k, v in st.minted.items()))
+    if st.first_mint:
+        row(t("stat.first"), st.first_mint.strftime("%Y-%m-%d"))
+        row(t("stat.last"), st.last_mint.strftime("%Y-%m-%d"))
+
+    if by_shoulder and st.by_shoulder:
+        typer.echo("")
+        typer.echo(t("stat.per_shoulder"))
+        for sh in st.by_shoulder:
+            name = f"{sh.naan}{sh.shoulder}"
+            note = t("stat.arks_note", public=f"{sh.public:,}", reserved=f"{sh.reserved:,}")
+            typer.echo(
+                f"  {name:<18}{sh.arks:>10,}  {_pad(note, 26)}"
+                f"{sh.status:<10}{sh.organisation}"
+            )
 
 
 @app.command("check", help=t("check.help"))

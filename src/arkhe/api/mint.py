@@ -29,6 +29,7 @@ from arkhe.api.schemas import (
     PublishIn,
     PurgeIn,
     RegisterIn,
+    StatsOut,
     TombstoneIn,
     UnpublishIn,
     UpdateIn,
@@ -38,7 +39,7 @@ from arkhe.arkspec.naming import ArkParseError, compact_ark, parse_ark
 from arkhe.arkspec.shoulder import split_shoulder
 from arkhe.auth.deps import Config, CurrentPrincipal, Db
 from arkhe.db.models import Ark, MintReceipt, Shoulder
-from arkhe.domain import admin_ops, authz, minting
+from arkhe.domain import admin_ops, authz, minting, stats
 from arkhe.domain.queries import ark_key_from_input
 
 router = APIRouter(prefix="/api", tags=["ark"])
@@ -210,6 +211,25 @@ qualified names under it: withdraw those first.
 **The name is not freed.** It is kept in the ledger of withdrawn names and never
 assigned again, because a reserved identifier has usually already been handed to
 someone — re-using it would be indistinguishable, from the outside, from breaking NR.
+"""
+
+E_STATS = """\
+**Counts for the ledger as you see it.** Requires `ark:read`.
+
+Nothing outside your reach is included — an organisation sees its own shoulders, a NAAN
+administrator its NAAN, the registration authority everything. **A total is itself a
+disclosure**: how many identifiers an organisation holds is that organisation's business,
+so the same reach that limits the listing limits this.
+
+`withdrawn_after_publication` is kept apart from `withdrawn` on purpose. Retracting a
+reservation nobody saw and removing a name that was out in the world are different acts,
+and **the second one is the number of times the promise was broken.** It does not belong
+hidden inside a total.
+
+**Counting is exact, so it costs time proportional to the number of rows.** The listing
+avoids `COUNT` because it only needs to know whether there is more; here the number *is*
+the answer. On a ledger of a million ARKs expect a few hundred milliseconds. **This is not
+an endpoint to poll every second.**
 """
 
 E_PURGE = """\
@@ -802,6 +822,31 @@ def delete_ark(body: DeleteIn, principal: CurrentPrincipal, session: Db):
     )
     session.commit()
     return out
+
+
+@router.get(
+    "/stats",
+    dependencies=needs("ark:read"),
+    response_model=StatsOut,
+    description=E_STATS,
+)
+def ledger_stats(
+    principal: CurrentPrincipal,
+    session: Db,
+    naan: str = "",
+    org: str = "",
+):
+    """**台帳を数える。** 画面・CLI と同じ `domain.stats` を通る。
+
+    **`GET` にしてある。** 入力を持たない読みで、経路の途中で素直に載る
+    ——この API がほかで `POST` を使うのは本文で鍵を渡すからで、ここには渡す
+    ものが無い。
+
+    `naan` と `org` は一覧と同じ絞り込みを重ねるだけで、**範囲を広げる手段には
+    ならない**。届かないものを指定すれば 0 が返る。
+    """
+    authz.require_scope(principal, "ark:read")
+    return stats.ledger_stats(session, principal, naan=naan, org=org)
 
 
 @router.post(
