@@ -3095,6 +3095,17 @@ documents running several arkhe instances together (closed PIDs and open PIDs in
 and replaces CI with local scripts for checking and publishing.</p>
 <h3 id="added_5">Added<a class="headerlink" href="#added_5" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>Redirection can be held, with a deadline</strong> (<code>arkhe hold add</code>, <code>arkhe hold list</code>,
+  <code>arkhe hold release</code>, <code>PUT /api/hold</code> and <code>/api/hold/release</code>, <code>ark:hold</code>, and a
+  <strong>Held redirects</strong> page in the admin interface).</li>
+</ul>
+<p><strong>Only redirection stops; resolution does not.</strong> A <code>404</code> would be a lie — the
+  identifier exists — and a <code>503</code> makes the identifier look broken. The answer is <code>200</code>
+  and the description. There are three grains (<code>ark</code>, <code>shoulder</code>, <code>naan</code>) and <strong>the
+  narrower one wins</strong>. <strong>A deadline is required</strong> (capped by <code>ARKHE_HOLD_MAX_DAYS</code>): being
+  temporary is not left to anyone's memory. That something is held is published, in
+  <code>?json</code> and in <code>/.well-known/ark</code>.</p>
+<ul>
 <li>
 <p><strong>A guide to running several arkhe instances</strong>
   (<a href="https://rcosdp.github.io/arkhe/guides/federation/">Running several arkhe</a>): dividing
@@ -3320,7 +3331,7 @@ interface saying one thing while the implementation did another.</p>
   (a redirect would lose it). <strong>People are offered no key</strong>: one would outlive the
   person's departure from the organisation. An organisation's own administrator can
   manage its users.</li>
-<li><code>arkhe client disable</code> / <code>enable</code>, and the same control in the interface.</li>
+<li><code>arkhe client disable</code> and <code>arkhe client enable</code>, and the same control in the interface.</li>
 </ul>
 <h3 id="changed_6">Changed<a class="headerlink" href="#changed_6" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3512,6 +3523,11 @@ the version starts with <code>0</code>.</strong></p>
   untouched.</li>
 <li>Idempotent minting: a repeated <code>request_id</code> returns the ARK already minted.</li>
 <li>A documentation site, bilingual, generated in part from the implementation.</li>
+<li><strong>Operational commands</strong> (<code>arkhe</code>), going through the same <code>domain</code> as the screens:
+  <code>arkhe check</code> (validate the configuration), <code>arkhe succeed</code> and <code>arkhe depart</code>
+  (succession and departure), <code>arkhe shoulder status</code>, <code>arkhe client add</code>,
+  <code>arkhe client key</code>, <code>arkhe client passwd</code>, <code>arkhe client revoke</code>, and
+  <code>arkhe client breakglass</code> for a <strong>time-limited</strong> emergency principal.</li>
 </ul>
 <h3 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h3>
 <ul>

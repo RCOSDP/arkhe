@@ -3035,6 +3035,16 @@ RA ではなく預けた側で、そこから RA に上げて戻ってくるま�
 手元のスクリプトに一本化した。</p>
 <h3 id="追加_5">追加<a class="headerlink" href="#追加_5" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>転送を期限つきで止められるようになった</strong>（<code>arkhe hold add</code> ／
+  <code>arkhe hold list</code> ／ <code>arkhe hold release</code>、<code>PUT /api/hold</code> と
+  <code>/api/hold/release</code>、<code>ark:hold</code>、管理画面の「保留中の転送」）。</li>
+</ul>
+<p><strong>止めるのは転送だけで、解決は止めない</strong>——<code>404</code> は嘘（その識別子は存在する）、
+  <code>503</code> は識別子が壊れて見える。応答は <code>200</code> と記述である。粒度は 3 つ
+  （<code>ark</code> ／ <code>shoulder</code> ／ <code>naan</code>）で、<strong>狭いほうが優先する</strong>。<strong>期限は必須</strong>
+  （上限は <code>ARKHE_HOLD_MAX_DAYS</code>）——一時的であることを人の記憶に頼らない。
+  止めた事実は <code>?json</code> と <code>/.well-known/ark</code> に出る。</p>
+<ul>
 <li>
 <p><strong>複数の arkhe で分担する構成の手引き</strong>（<a href="https://rcosdp.github.io/arkhe/ja/guides/federation/">分散して運用する</a>）。
   NAAN 単位で分ける・shoulder 単位で分ける・閉域に置いた arkhe を上位が名前空間だけ
@@ -3248,7 +3258,7 @@ RA ではなく預けた側で、そこから RA に上げて戻ってくるま�
   しか載せない（リダイレクトすると取り出せなくなる）。<strong>人には鍵の発行の口を
   出さない</strong>——人に鍵を配ると、その人が組織を離れても鍵が生き残るため。組織単位の
   管理者も自組織の利用者を扱える。</li>
-<li><code>arkhe client disable</code> / <code>enable</code> と、管理画面の同じ操作。</li>
+<li><code>arkhe client disable</code> と <code>arkhe client enable</code>、および管理画面の同じ操作。</li>
 </ul>
 <h3 id="変更_6">変更<a class="headerlink" href="#変更_6" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3418,6 +3428,11 @@ RA ではなく預けた側で、そこから RA に上げて戻ってくるま�
 <li>承継と離脱。どちらも<strong>既存の識別子は解決し続ける。</strong></li>
 <li>冪等な採番。同じ <code>request_id</code> の再送には、前回と同じ ARK を返す。</li>
 <li>ドキュメントサイト（日英、一部は実装から生成）。</li>
+<li><strong>運用コマンド</strong>（<code>arkhe</code>）。画面と同じ <code>domain</code> を通る——<code>arkhe check</code>
+  （設定の検証）、<code>arkhe succeed</code> ／ <code>arkhe depart</code>（承継と離脱）、
+  <code>arkhe shoulder status</code>（名前空間の状態）、<code>arkhe client add</code> ／
+  <code>arkhe client key</code> ／ <code>arkhe client passwd</code> ／ <code>arkhe client revoke</code>
+  （主体と資格情報）、<code>arkhe client breakglass</code>（<strong>期限つき</strong>の緊急用の主体）。</li>
 </ul>
 <h3 id="備考">備考<a class="headerlink" href="#備考" title="Permanent link">&para;</a></h3>
 <ul>
