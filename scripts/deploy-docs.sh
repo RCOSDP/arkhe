@@ -19,7 +19,16 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 DRY=""
-[ "${1:-}" = "--dry-run" ] && DRY=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY=1;;
+    -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1' "$0"; exit 0;;
+    # **綴り違いを黙って通さない。** 素通ししていた頃は `--dryrun` と打つと
+    # 何も言わずに **gh-pages へ force push** していた——止めたつもりが出ている、
+    # がいちばん困る。check.sh / release.sh と同じ扱いにする。
+    *) echo "不明な引数: $1" >&2; exit 2;;
+  esac; shift
+done
 
 sec() { printf '\n\033[1m=== %s ===\033[0m\n' "$*"; }
 die() { echo "  ✗ $*" >&2; exit 1; }
