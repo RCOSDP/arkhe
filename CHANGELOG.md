@@ -9,6 +9,20 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.9.2] — 2026-09-18
+
+**Two things that looked guarded and were not.** Both came out of a security-focused sweep,
+and **neither was exploitable** — but both were the kind of thing an operator would count
+as handled.
+
+`ARKHE_ALLOWED_HOSTS` **was used by nothing**. The setting existed and was documented, but
+no check on the `Host` header was ever installed — **a security setting that does nothing
+is worse than no setting**, because without it you would have done something else.
+
+The target-URL check lived **only in the API schema**, and the admin form went straight
+past it. Redirects and links are guarded by an allow-list so no harm followed, but **a
+guard at the point of use and a guard at the point of entry are different things.**
+
 ### Fixed
 
 - **`ARKHE_ALLOWED_HOSTS` was never used by anything.** The setting was declared and
@@ -1399,7 +1413,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.2
 [0.9.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.1
 [0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0
 [0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0

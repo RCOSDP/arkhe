@@ -8,6 +8,20 @@
 
 ## [未リリース]
 
+## [0.9.2] — 2026-09-18
+
+**守っているつもりで守っていなかった 2 つを直した版。** 脆弱性を中心に全体を洗った
+結果で、**どちらも悪用はできない**——が、どちらも「対処済み」と数えられる形をして
+いた。
+
+`ARKHE_ALLOWED_HOSTS` は**どこからも使われていなかった**。設定として在り、参照
+ページにも載っているのに、`Host` を検める仕掛けが無い——**効かない安全の設定は、
+無いより悪い**。無ければ、少なくとも別の手を打つ。
+
+行き先の検証は **API のスキーマにだけ**あり、画面のフォームは素通りしていた。
+転送とリンクは許可リストで守っているので実害は無いが、**使う瞬間の守りと、入る
+瞬間の守りは別のものである。**
+
 ### 修正
 
 - **`ARKHE_ALLOWED_HOSTS` が、どこからも使われていなかった。** 設定として宣言され、
@@ -1286,7 +1300,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.9.1...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.2
 [0.9.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.1
 [0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0
 [0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0
