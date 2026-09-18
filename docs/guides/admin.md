@@ -65,13 +65,75 @@ creates the hole where a button is hidden but the URL still works.
 | NAAN administrator | one NAAN, all its organisations | yes |
 | organisation administrator | one organisation | **403** |
 
+## Who can do what
+
+**Three things bind an action**, and they are independent — being allowed by one does not
+excuse the others:
+
+1. **Reach** — the three tiers above. It comes from the client's registration, never from
+   the request body or the token; a token can only *narrow* what a client may do.
+2. **Scope** — the key for that kind of action (`ark:mint`, `ark:unpublish`, …).
+3. **Ceremony** — a reason, and the ARK retyped, for anything that has ever been
+   published. **This follows the name's history, not the actor's rank.**
+
+### An ARK: all three tiers, each inside its own reach
+
+Every row here goes through the same reach check, so the tiers differ only in *how far*
+they reach — never in *what* they may do.
+
+| Action | Scope | System | NAAN | Organisation |
+| --- | --- | --- | --- | --- |
+| Mint, in bulk, register a qualifier | `ark:mint` | every NAAN | its NAAN | its own shoulder |
+| Import a name minted elsewhere | `ark:import` | ” | ” | ” |
+| Update, update in bulk | `ark:update` | ” | ” | ” |
+| Read (`/api/query`) | `ark:read` | ” | ” | ” |
+| **Publish**, and publish again | `ark:mint` | ” | ” | ” |
+| **Withdraw from publication** | `ark:unpublish` | ” | ” | ” |
+| **Delete** (not currently published) | `ark:delete` | ” | ” | ” |
+| **Purge** (both steps at once) | `ark:purge` | ” | ” | ” |
+| Tombstone | `ark:tombstone` | ” | ” | ” |
+| Hold redirection for one ARK | `ark:hold` | ” | ” | ” |
+
+**The ceremony applies to withdrawing, deleting and purging anything that has ever been
+published** — see [Invariants](../concepts/invariants.md#before-publication).
+
+### A namespace: NAAN administrator and above
+
+| Action | System | NAAN | Organisation |
+| --- | --- | --- | --- |
+| Add a shoulder, change its status, delegate resolution | yes | yes | **no** |
+| Hold redirection for a shoulder or a whole NAAN | yes | yes | **no** |
+| Namespace policy, quota, commitment statement | yes | yes | **no** |
+| Onboard an organisation | yes | yes | **no** |
+| **Register a NAAN** | yes | **no** | **no** |
+
+Holding a shoulder or a NAAN stops a whole namespace, so it is kept above the
+organisations: **one organisation's judgement must not sweep in another's identifiers.**
+
+### Clients and organisations: an organisation may act inside itself
+
+| Action | System | NAAN | Organisation |
+| --- | --- | --- | --- |
+| Register a client | yes | its NAAN | **its own organisation** |
+| … one with `authority=system` | yes | no | no |
+| … one with `authority=naan` | yes | yes | no |
+| Issue and revoke credentials, set a password, disable/enable | yes | its NAAN | **its own organisation** |
+| Set a successor, carry out succession | yes | its NAAN | **its own organisation** |
+| Depart (`arkhe depart`) | yes | yes | **no** |
+
+**The CLI always acts as the system administrator.** Anyone with a shell on the server
+can reach the database anyway, so narrowing it by permission would not be a defence —
+**instead every operation is audited.**
+
 ## Getting in
 
 Set `ARKHE_ADMIN_LOGIN`; see [Authentication](authentication.md). In `bearer` mode
 there is no login screen at all — that is the choice "no browser access".
 
-Irreversible actions are marked as such in the interface, because they are: an ARK
-cannot be un-minted, and a retired namespace cannot be revived.
+Irreversible actions are marked as such in the interface, because they are. **Publication
+is not one of them** — it can be withdrawn and taken up again — but **deleting a record
+is**, and so is retiring a namespace. A name that has been used is never assigned to
+anything else, whichever way it went.
 
 ## Changing settings
 
