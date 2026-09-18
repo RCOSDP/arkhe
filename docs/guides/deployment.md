@@ -232,6 +232,72 @@ seven `200`s).
 > the ARK the winner recorded. Bulk minting had the same gap and now **rebuilds the batch
 > once**, so every row comes back as a replay.
 
+### Settings — the defaults do not fit the recommended shape
+
+**Connection count matters most.** SQLAlchemy's default is `pool_size 5 + max_overflow
+10 = 15` per process, and **that multiplies by the worker count**:
+
+```
+2 resolvers × 4 workers × 15 = 120 connections
+PostgreSQL default max_connections = 100 (97 once the superuser reserve is taken)
+```
+
+**Build the recommended shape on defaults and it jams there** — and that is before
+counting the minter. Move one side or the other:
+
+| | Suggested | Why |
+| --- | --- | --- |
+| `ARKHE_DB_POOL_SIZE` | **2–3** | **Resolution is one short query** (a primary-key index lookup, 0.03 ms). Nothing to hoard |
+| `ARKHE_DB_MAX_OVERFLOW` | **2–5** | Room for a spike, while the total stays under `max_connections` |
+| PostgreSQL `max_connections` | **200–300** | If you raise it, budget the per-connection memory |
+
+**Do the arithmetic first:**
+
+```
+(resolvers × workers + minters × workers) × (pool_size + max_overflow)
+  + a few for operators (psql, migrations, backups)
+  ≤ max_connections − superuser_reserved_connections
+```
+
+Where something upstream **drops idle connections** (NAT, load balancer, firewall), set
+`ARKHE_DB_POOL_RECYCLE` below that idle timeout. `pool_pre_ping` does catch it, **but it
+spends a round trip every time it does**.
+
+### PostgreSQL
+
+**Only what the [measurements](#sizing) call for:**
+
+| | Suggested | Why |
+| --- | --- | --- |
+| `max_connections` | from the arithmetic above | The default 100 does not cover the recommended shape |
+| `shared_buffers` | **25% of RAM** | Default 128 MB. **A million ARKs index in 39 MB**, so size it to hold the indexes |
+| `effective_cache_size` | 50–75% of RAM | Nothing is allocated; **it is a declaration, so the planner picks the index** |
+| `work_mem` | leave at 4 MB | Resolution is one index lookup and the statistics only scan. **Almost nothing sorts or joins** |
+| `wal_level` / `archive_mode` | as in [Backups](#backups) | **A nightly dump alone loses a day of identifiers** |
+
+**Tighten the pool before raising `max_connections`.** Each connection costs resident
+memory, and **this ledger needs few of them at once.**
+
+### The app and what sits in front
+
+| | Suggested | Why |
+| --- | --- | --- |
+| Workers (resolver) | **2–4** | Four gives ~1,000 rps = 86 million a day. **More is usually unnecessary** |
+| Workers (minter) | 1–2 | Minting runs at 45 rps, **53 ms of which is Argon2**. More workers do not shorten that |
+| Request size limit | **1 MB or more** | `ARKHE_BULK_LIMIT` is 1000 rows; **nginx's default `client_max_body_size 1m` is the edge** |
+| Upstream timeout | **60 s or more** | A 1000-row bulk mint takes about a second, but **statistics scale with row count** |
+| `ARKHE_RAW_URI_HEADER` | set it if the front end can | **Without it a bare `?` cannot be told apart** — a constraint of the protocol, not of this implementation |
+| `ARKHE_ALLOWED_HOSTS` | narrow it unless the proxy checks | The default `*` installs nothing |
+
+**Most of arkhe's own values can stay as they are:**
+
+| | Default | When to move it |
+| --- | --- | --- |
+| `ARKHE_TOKEN_TTL` | 3600 | Shorter means callers fetch tokens more often |
+| `ARKHE_SESSION_TTL` | 28800 | Match how long people stay in the admin interface |
+| `ARKHE_BULK_LIMIT` | 1000 | Raise the upstream request limit with it |
+| `ARKHE_HOLD_MAX_DAYS` | 90 | **A ceiling, not a default.** The longer it is, the less "temporary" means |
+
 ### Keep things apart
 
 - **The WAL archive and the daily dumps belong on a different machine** from the database.

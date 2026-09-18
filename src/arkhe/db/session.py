@@ -18,14 +18,27 @@ from arkhe.settings import Settings, get_settings
 
 
 @lru_cache
-def _engines(url: str, read_url: str) -> tuple[Engine, Engine]:
+def _engines(
+    url: str, read_url: str, size: int, overflow: int, recycle: int
+) -> tuple[Engine, Engine]:
     """書き込み用と読み取り用のエンジンを作る。**URL で覚える。**
 
     プールを持つので、要求ごとに作り直してはいけない。設定の器ではなく URL を鍵に
     するのは、同じ接続先を指す `Settings` が複数あってもプールを 1 つに保つため。
+    **プールの値も鍵に入れる**——大きさが違えば、それは別の器である。
     """
-    write = create_engine(url, pool_pre_ping=True, future=True)
-    read = write if read_url == url else create_engine(read_url, pool_pre_ping=True, future=True)
+    # **プールの大きさは worker 数と掛け算になる。** 既定のままだと
+    # 1 プロセスで最大 15 接続、resolver 2 台 × 4 worker で 120——PostgreSQL の
+    # 既定 `max_connections = 100` を超える。**摘みを出しておく。**
+    pool = {
+        "pool_size": size,
+        "max_overflow": overflow,
+        "pool_recycle": recycle or -1,
+        "pool_pre_ping": True,
+        "future": True,
+    }
+    write = create_engine(url, **pool)
+    read = write if read_url == url else create_engine(read_url, **pool)
     return write, read
 
 
@@ -33,7 +46,9 @@ def engines(settings: Settings | None = None) -> tuple[Engine, Engine]:
     """設定から (書き込み, 読み取り) を引く。`read_url` が同じなら**同一の器**を返す
     ——`ARKHE_READ_DATABASE_URL` を置いていない構成で、接続先が二重にならない。"""
     s = settings or get_settings()
-    return _engines(s.database_url, s.read_url)
+    return _engines(
+        s.database_url, s.read_url, s.db_pool_size, s.db_max_overflow, s.db_pool_recycle
+    )
 
 
 def session_factory(*, read_only: bool = False, settings: Settings | None = None):

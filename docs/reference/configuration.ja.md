@@ -22,6 +22,9 @@
 | --- | --- | --- |
 | `ARKHE_DATABASE_URL` | `postgresql+psycopg://arkhe@localhost/arkhe` | |
 | `ARKHE_READ_DATABASE_URL` | — | resolver 用の読み取り専用接続。未設定なら上と同じ |
+| `ARKHE_DB_POOL_SIZE` | `5` | 1 プロセスが常に持つ接続。**worker 数と掛け算になる** |
+| `ARKHE_DB_MAX_OVERFLOW` | `10` | 混み合ったときの上乗せ。`POOL_SIZE` に足される（既定で 1 プロセス最大 15） |
+| `ARKHE_DB_POOL_RECYCLE` | `0` | 接続を作り直すまでの秒数。`0` で作り直さない。**接続を黙って切る前段の下では、その保持時間より短く** |
 
 !!! warning "マイグレーションは PostgreSQL で検証すること"
     SQLite は PostgreSQL が許さないものを通してしまう。とくに `manager` と

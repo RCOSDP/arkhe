@@ -1131,3 +1131,25 @@ def test_ALLOWED_HOSTSが実際に効く():
     # 二重に弾くと切り分けが難しくなる。
     wide = app(["*"])
     assert TestClient(wide, base_url="http://anything.example").get("/healthz").status_code == 200
+
+
+def test_接続プールの大きさが設定で変わる():
+    """**プールの大きさは worker 数と掛け算になる。**
+
+    既定のままだと 1 プロセスで最大 15 接続、**resolver 2 台 × 4 worker で 120**
+    ——PostgreSQL の既定 `max_connections = 100`（予約を除くと 97）を超える。
+    推奨の形のまま既定で動かすと、そこで詰まる。**摘みが無ければ、運用者は
+    worker を減らすしかない。**
+    """
+    from arkhe.db.session import engines
+    from arkhe.settings import Settings
+
+    def cap(size, overflow):
+        w, _ = engines(Settings(
+            database_url="postgresql+psycopg://arkhe@localhost/arkhe",
+            db_pool_size=size, db_max_overflow=overflow,
+        ))
+        return w.pool.size() + w.pool._max_overflow
+
+    assert cap(5, 10) == 15, "既定の上限が変わっている"
+    assert cap(2, 2) == 4, "設定が効いていない"

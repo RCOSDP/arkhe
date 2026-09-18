@@ -8,6 +8,33 @@
 
 ## [未リリース]
 
+### 追加
+
+- **接続プールの摘みを出した**（`ARKHE_DB_POOL_SIZE` ／ `ARKHE_DB_MAX_OVERFLOW` ／
+  `ARKHE_DB_POOL_RECYCLE`）。**既定のままだと、この手引きが勧める形が動かない**:
+
+  ```
+  resolver 2 台 × 4 worker × 15 接続 = 120
+  PostgreSQL の既定 max_connections = 100（予約 3 を除いて 97）
+  ```
+
+  1 プロセスあたり `pool_size 5 + max_overflow 10 = 15` は SQLAlchemy の既定で、
+  **これが worker 数と掛け算になる**。**解決は短い問い合わせ 1 回**（主キーの索引、
+  0.03 ms）なので、溜め込む必要は無い——**worker あたり 2〜3 で足りることが多い。**
+
+  既定値は変えていない（今までと同じ振る舞い）。接続を黙って切る前段の下では
+  `ARKHE_DB_POOL_RECYCLE` を保持時間より短くする。`pool_pre_ping` が拾ってはいるが、
+  **拾うたびに 1 往復を捨てている。**
+
+- **推奨のミドルウェアの値を
+  [デプロイ](https://rcosdp.github.io/arkhe/ja/guides/deployment/)に書いた。**
+  接続数を数える式、PostgreSQL（`shared_buffers` は**索引が載る大きさ**に、
+  `work_mem` は既定のまま——解決は索引 1 回で、並べ替えも結合もほとんど無い）、
+  worker 数、**前段の要求上限 1 MB**（`BULK_LIMIT` が 1000 行なので、nginx の既定
+  `client_max_body_size 1m` が境目になる）。
+
+  **測った値から必要なものだけを挙げた。** 出典の無い推奨値は書いていない。
+
 ## [0.9.2] — 2026-09-18
 
 **守っているつもりで守っていなかった 2 つを直した版。** 脆弱性を中心に全体を洗った

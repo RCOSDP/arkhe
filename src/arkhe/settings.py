@@ -37,6 +37,22 @@ class Settings(BaseSettings):
 
     # ---------------------------------------------------------------- DB
     database_url: str = "postgresql+psycopg://arkhe@localhost/arkhe"
+    #: 1 プロセスが常に持つ接続の数。**worker 数と掛け算になる。**
+    #:
+    #: 既定のままだと 1 プロセスで最大 `5 + 10 = 15` 接続を開きうる。
+    #: **resolver 2 台 × 4 worker なら 120** で、PostgreSQL の既定
+    #: `max_connections = 100`（予約を除くと 97）を**超える**——推奨の形のまま
+    #: 既定で動かすと、そこで詰まる。解決は短い問い合わせ 1 回なので、
+    #: **worker あたり 2〜3 で足りることが多い。**
+    db_pool_size: int = 5
+    #: 混み合ったときに一時的に増やせる上限。`db_pool_size` に**足される**。
+    db_max_overflow: int = 10
+    #: 接続を作り直すまでの秒数。`0` で作り直さない（既定）。
+    #: **接続を黙って切る前段**（NAT・LB・ファイアウォール）の下では、
+    #: その保持時間より短くする。`pool_pre_ping` が拾うが、**拾うたびに
+    #: 1 往復を捨てている。**
+    db_pool_recycle: int = 0
+
     #: resolver 用の読み取り専用接続。未設定なら `database_url` を使う。
     read_database_url: str = ""
 

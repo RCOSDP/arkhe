@@ -9,6 +9,33 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **Knobs for the connection pool** (`ARKHE_DB_POOL_SIZE`, `ARKHE_DB_MAX_OVERFLOW`,
+  `ARKHE_DB_POOL_RECYCLE`). **On defaults, the shape this guide recommends does not run**:
+
+  ```
+  2 resolvers × 4 workers × 15 connections = 120
+  PostgreSQL default max_connections = 100 (97 after the superuser reserve)
+  ```
+
+  SQLAlchemy's default of `pool_size 5 + max_overflow 10 = 15` per process **multiplies by
+  the worker count**. **Resolution is one short query** (a primary-key index lookup,
+  0.03 ms), so there is nothing to hoard — **two or three per worker is usually enough.**
+
+  The defaults are unchanged, so behaviour is as before. Where something upstream drops
+  idle connections, set `ARKHE_DB_POOL_RECYCLE` below that timeout: `pool_pre_ping` catches
+  it, **but spends a round trip every time it does.**
+
+- **Recommended middleware settings** in
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/): the arithmetic for
+  connection counts, PostgreSQL (`shared_buffers` sized **to hold the indexes**, `work_mem`
+  left alone — resolution is one index lookup and almost nothing sorts or joins), worker
+  counts, and **a 1 MB request limit upstream** (`BULK_LIMIT` is 1000 rows, and nginx's
+  default `client_max_body_size 1m` is the edge).
+
+  **Only what the measurements call for.** No recommended value without a source.
+
 ## [0.9.2] — 2026-09-18
 
 **Two things that looked guarded and were not.** Both came out of a security-focused sweep,
