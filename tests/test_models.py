@@ -273,3 +273,38 @@ def test_衝突しなければ記録に出さない(db, world, caplog):
         minting.mint(db, shoulder=world["sh_a"], created_by="t")
     db.commit()
     assert not [r for r in caplog.records if r.getMessage() == "mint_collision"]
+
+
+def test_危険なスキームは層の底で拒まれる(db, world):
+    """**入口ごとに書いた検証は、入口が増えたときに守れない。**
+
+    実際、画面のフォームは素の文字列を受けて `minting.mint()` を直接呼ぶので、
+    API のスキーマ（`ArkFields`）の検証を**素通りしていた**。「画面と API に差を
+    作らない」という決まりが、検証の置き場所のせいで破れていた。
+
+    **悪用はできなかった**——転送とリンクは許可リスト（`is_followable`）で守って
+    いるので、`javascript:` が入っていても転送されずリンクにもならない。だが
+    それは**使う瞬間の守り**で、**入る瞬間の守り**は別に要る。
+    """
+    import pytest
+
+    from arkhe.domain.minting import mint
+
+    for bad in ("javascript:alert(1)", "data:text/html,<script>1</script>", "VBScript:x"):
+        with pytest.raises(ValueError):
+            mint(db, shoulder=world["sh_a"], created_by="t", url=bad)
+        db.rollback()
+
+
+def test_HTTP以外の正当な行き先は拒まない(db, world):
+    """**ARK は物理オブジェクトにも他の識別子にも付けられる。**
+
+    `urn:` `doi:` `mailto:` を拒めば、この体系の中心的な用途が使えなくなる。
+    空も正当——**行き先の無い対象**こそ `?info` が担っている。
+    """
+    from arkhe.domain.minting import mint
+
+    for ok in ("urn:isbn:9784000000000", "doi:10.1234/x", "mailto:a@example.org", ""):
+        a, _ = mint(db, shoulder=world["sh_a"], created_by="t", url=ok)
+        assert a.url == ok
+    db.commit()

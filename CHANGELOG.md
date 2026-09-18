@@ -9,6 +9,29 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`ARKHE_ALLOWED_HOSTS` was never used by anything.** The setting was declared and
+  documented, but **nothing checked the `Host` header** — an operator who narrowed it was
+  counting it as handled while it was not. **A security setting that does nothing is worse
+  than no setting.**
+
+  It now rejects mismatched hosts when narrowed (the default `*` installs nothing — where
+  a proxy terminates, it usually checks this already, and **rejecting twice makes failures
+  harder to attribute**).
+
+- **The admin form bypassed the target-URL check.** The validator that refuses
+  `javascript:` and `data:` lives in the API schema, and **the screen took a raw string
+  and minted with it** — "no difference between the screen and the API" was broken by
+  where the validation sat.
+
+  **It was not exploitable.** Redirects and links are guarded by an **allow-list** (`http`
+  and `https` only), so such a value is neither followed nor linkified. **But that is a
+  guard at the point of use; the point of entry needs its own** — the day the allow-list
+  is loosened, whatever is already in the ledger starts to matter. The refusal now lives
+  in the ORM (the same shape as the guard on deletion), and the screen gives a readable
+  refusal too.
+
 ## [0.9.1] — 2026-09-18
 
 **A release that brings the documentation back level with the implementation.** Three

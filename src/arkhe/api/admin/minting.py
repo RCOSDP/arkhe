@@ -18,12 +18,14 @@ from arkhe.api.admin._common import (
     Db,
     _ctx,
     _mintable,
+    _refuse,
     _remember_lang,
     router,
     templates,
 )
 from arkhe.arkspec.naming import compact_ark
 from arkhe.domain import authz, minting
+from arkhe.domain.resolution import is_registrable
 
 # ------------------------------------------------------------------ 採番
 
@@ -65,6 +67,11 @@ def mint_submit(
 ):
     """画面からの採番。**API と同じ経路**（authz → minting）を通る。"""
     authz.require_scope(principal, "ark:mint")
+    # **画面でも先に弾く。** 底では ORM が拒むが（`Ark._refuse_dangerous_url`）、
+    # それは `500` になるだけで**運用者に何も伝えない**。弾くのは守りのため
+    # ではなく、**断りを読める形にするため**である。
+    if not is_registrable(url):
+        raise _refuse(request, "e.url_scheme")
     sh = authz.shoulder_for(session, principal, shoulder or None)
     authz.assert_shoulder_mintable(sh)
     authz.assert_within_quota(session, principal)

@@ -14,7 +14,7 @@ file. `arkhe check` validates a configuration and stops on anything missing.
 | --- | --- | --- |
 | `ARKHE_RESOLVER` | `false` | Run as a resolver. **A minter has no resolution endpoint and a resolver has no minting endpoint** — so the two scale separately and the resolver can point at a read-only replica |
 | `ARKHE_DEBUG` | `false` | |
-| `ARKHE_ALLOWED_HOSTS` | `*` | Comma-separated |
+| `ARKHE_ALLOWED_HOSTS` | `*` | Comma-separated. **Narrowing it rejects requests whose `Host` does not match with `400`** (the default `*` installs nothing — where a proxy terminates, it usually checks this already, and rejecting twice makes failures harder to attribute) |
 
 ## Database
 

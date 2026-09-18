@@ -15,6 +15,8 @@ JA: dict[str, str] = {
     "nav.clients": "利用者と鍵",
     "nav.mint": "ARK を採番",
     "nav.audit": "監査ログ",
+    "e.url_scheme": "行き先に、ブラウザが実行しうるスキーム"
+                    "（javascript: data: など）は入れられません。",
     "nav.stats": "統計",
     "nav.holds": "保留中の転送",
     "lang.label": "言語",
@@ -63,6 +65,8 @@ EN: dict[str, str] = {
     "nav.clients": "Users & keys",
     "nav.mint": "Mint an ARK",
     "nav.audit": "Audit log",
+    "e.url_scheme": "A target cannot use a scheme the browser would execute "
+                    "(javascript:, data: and the like).",
     "nav.stats": "Statistics",
     "nav.holds": "Held redirects",
     "lang.label": "Language",

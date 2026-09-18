@@ -1103,3 +1103,31 @@ def test_控えが先に書かれていたら勝ったほうのARKを返す(db, 
     got = _commit_or_replay(db, p, "same", loser)
     assert got.ark == winner.ark, "負けたほうに、勝ったほうの ARK を返していない"
     assert db.query(MintReceipt).filter(MintReceipt.request_id == "same").count() == 1
+
+
+# ------------------------------------------------- Host を検める（設定が効くこと）
+
+
+def test_ALLOWED_HOSTSが実際に効く():
+    """**宣言され、参照ページにも載っているのに効かない設定は、無いより悪い。**
+
+    絞ったつもりの運用者が、絞れていないまま「対処済み」と数えてしまう
+    ——実際、この設定は前から在ったが**どこからも使われていなかった**。
+    """
+    from fastapi.testclient import TestClient
+
+    from arkhe.app import create_app
+    from arkhe.settings import Settings
+
+    def app(hosts):
+        return create_app(
+            Settings(resolver=True, database_url="sqlite:///:memory:", allowed_hosts=hosts)
+        )
+
+    narrow = app(["ark.example.org"])
+    assert TestClient(narrow, base_url="http://ark.example.org").get("/healthz").status_code == 200
+    assert TestClient(narrow, base_url="http://evil.example.net").get("/healthz").status_code == 400
+    # **既定では挟まない。** 前段で終端している構成では前段が見ているのが普通で、
+    # 二重に弾くと切り分けが難しくなる。
+    wide = app(["*"])
+    assert TestClient(wide, base_url="http://anything.example").get("/healthz").status_code == 200

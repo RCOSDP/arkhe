@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import re
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import text
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from arkhe import __version__, observability
 from arkhe.auth.errors import AuthError, Forbidden
@@ -180,6 +183,20 @@ def _install_ark_label_case(app: FastAPI) -> None:
         return await call_next(request)
 
 
+def _install_allowed_hosts(app: FastAPI, hosts: list[str]) -> None:
+    """`Host` を検める。**設定は前から在ったが、どこからも使っていなかった。**
+
+    宣言され、参照ページにも載っているのに効かない設定は、**無いより悪い**
+    ——絞ったつもりの運用者が、絞れていないまま「対処済み」と数えてしまう。
+
+    `["*"]`（既定）のときは何も挟まない。前段で終端している構成では、前段が
+    見ているのが普通で、**ここで二重に弾くと切り分けが難しくなる**からである。
+    """
+    if not hosts or hosts == ["*"]:
+        return
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
+
+
 def _install_security_headers(app: FastAPI) -> None:
     @app.middleware("http")
     async def _headers(request: Request, call_next):
@@ -221,6 +238,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _install_handlers(app)
     _install_ark_label_case(app)
     _install_security_headers(app)
+    _install_allowed_hosts(app, s.allowed_hosts)
     observability.configure(s.log_level)
     observability.install(app)
 

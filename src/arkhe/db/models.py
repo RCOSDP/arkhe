@@ -41,6 +41,7 @@ from sqlalchemy.orm import (
     mapped_column,
     object_session,
     relationship,
+    validates,
 )
 from sqlalchemy.types import JSON
 
@@ -423,6 +424,33 @@ class Ark(Base, HoldMixin):
     shoulder: Mapped[Shoulder] = relationship()
 
     __table_args__ = (Index("ix_ark_shoulder_created", "shoulder_id", "created_at"),)
+
+    @validates("url")
+    def _refuse_dangerous_url(self, _key: str, value: str) -> str:
+        """**ブラウザに解釈させると危ない行き先を、層の底で拒む。**
+
+        検証は API のスキーマ（`ArkFields`）にもあるが、**あれは JSON の口しか
+        通らない**——画面のフォームは素の文字列を受けて `minting.mint()` を直接
+        呼ぶので、素通りしていた。**画面と API に差を作らない**という決まりが、
+        入口ごとに書いた検証では守れていなかった。
+
+        **実際に悪用はできない。** 転送とリンクの側は**許可リスト**
+        （`is_followable`、`http` と `https` だけ）で守っているので、`javascript:`
+        が入っていても転送されずリンクにもならない。だがそれは**使う瞬間の守り**
+        であって、**入る瞬間の守り**は別に要る——許可リストをいつか緩めたとき、
+        台帳に既に入っているものが効いてくる。
+
+        `urn:` `doi:` `ark:` `mailto:` は拒まない。**ARK は物理オブジェクトにも
+        他の識別子にも付けられる**ので、行き先は HTTP URL とは限らない。
+        """
+        from arkhe.domain.resolution import DANGEROUS_SCHEMES, is_registrable
+
+        if not is_registrable(value):
+            raise ValueError(
+                "url にブラウザが実行しうるスキームは入れられない: "
+                + "/".join(sorted(DANGEROUS_SCHEMES))
+            )
+        return value
 
     @property
     def is_public(self) -> bool:

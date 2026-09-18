@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | `ARKHE_RESOLVER` | `false` | resolver として動かす。**minter に解決の口は無く、resolver に採番の口も無い**——別々にスケールでき、resolver は読み取り専用のレプリカに向けられる |
 | `ARKHE_DEBUG` | `false` | |
-| `ARKHE_ALLOWED_HOSTS` | `*` | カンマ区切り |
+| `ARKHE_ALLOWED_HOSTS` | `*` | カンマ区切り。**絞ると `Host` が一致しない要求を `400` で弾く**（既定の `*` では何も挟まない——前段で終端している構成では前段が見ているのが普通で、二重に弾くと切り分けが難しくなる） |
 
 ## データベース
 
