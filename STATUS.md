@@ -179,7 +179,7 @@ test_migrations.py   移行が頭まで流れること
 
 ## 環境まわりのメモ
 
-- ローカルの `dist/`（0.0.5〜0.3.0 のビルド成果物）、`db.sqlite3`、`site/`、`.venv/` は
+- ローカルの `dist/`（過去のビルド成果物）、`db.sqlite3`、`site/`、`.venv/` は
   **すべて `.gitignore` 済み**で追跡されていない。消して困るものは無い。
 - `compose/oidc` は **見本であって手本ではない**——秘密値が平文、Keycloak は dev モード。
 - **CI は無い。** 検査も公開も `scripts/` の 3 本で、走らせるのは手元である
