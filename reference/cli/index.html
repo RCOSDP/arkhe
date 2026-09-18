@@ -1544,7 +1544,7 @@ audit log the same way.</p>
 </tr>
 <tr>
 <td><code>arkhe ark list</code></td>
-<td>List minted ARKs. <strong>Stops at 50 by default</strong> — the ledger only grows. <code>--naan</code> and <code>--org</code> narrow it; <code>-q</code> looks at the ARK, its target and its title. <code>--state public|reserved</code> keeps only the published or only the reserved ones.</td>
+<td>List minted ARKs. <strong>Stops at 50 by default</strong> — the ledger only grows. <code>--naan</code> and <code>--org</code> narrow it; <code>-q</code> looks at the ARK, its target and its title. <code>--state public|reserved</code> keeps only the published or only the reserved ones, and <code>--older-than N</code> only those minted more than N days ago — <strong>together they find reservations nobody ever published</strong>.</td>
 </tr>
 <tr>
 <td><code>arkhe ark publish</code></td>
@@ -1611,10 +1611,11 @@ different meaning and no way back.</p>
 <h3 id="reserving-a-name-then-publishing-it">Reserving a name, then publishing it<a class="headerlink" href="#reserving-a-name-then-publishing-it" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">      </span><span class="c1"># does not resolve yet</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># from here on it resolves</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>unpublish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"published by mistake"</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># and back again</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the deposit was abandoned"</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved<span class="w"> </span>--older-than<span class="w"> </span><span class="m">365</span><span class="w">   </span><span class="c1"># abandoned</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># from here on it resolves</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>unpublish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"published by mistake"</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># and back again</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"the deposit was abandoned"</span>
 </code></pre></div>
 <p><strong>Ordinary deletion only works before publication.</strong> A published ARK goes only if the
 registration authority's operator purges it, with a reason.</p>

@@ -2363,8 +2363,8 @@ resolver が全部外れれば、<strong>残っていたはずの読み取りま
 </tr>
 <tr>
 <td><strong>公開前の滞留</strong></td>
-<td><code>arkhe stat --json</code> の <code>reserved</code></td>
-<td>誰も指さない番号が溜まる。期限も通知も無い</td>
+<td><code>arkhe stat</code> の <code>reserved_oldest</code></td>
+<td><strong>数ではなく古さで見る</strong>——10 件でも昨日なら普通、1 件でも 3 年前なら放置。<code>ark list --state reserved --older-than N</code> で拾う</td>
 </tr>
 <tr>
 <td><strong>保留の数</strong></td>

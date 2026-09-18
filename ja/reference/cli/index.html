@@ -1543,7 +1543,7 @@
 </tr>
 <tr>
 <td><code>arkhe ark list</code></td>
-<td>発行した ARK を並べる。<strong>既定で 50 件で打ち切る</strong>（台帳は増える一方なので）。<code>--naan</code> <code>--org</code> で絞り、<code>-q</code> は ARK・行き先・題名を見る。 <code>--state public|reserved</code> で公開したものだけ・公開前のものだけを引ける。</td>
+<td>発行した ARK を並べる。<strong>既定で 50 件で打ち切る</strong>（台帳は増える一方なので）。<code>--naan</code> <code>--org</code> で絞り、<code>-q</code> は ARK・行き先・題名を見る。 <code>--state public|reserved</code> で公開したものだけ・公開前のものだけを引け、<code>--older-than N</code> で採番から N 日より古いものだけにできる——<strong>重ねると、誰も公開しないまま残った予約が拾える。</strong></td>
 </tr>
 <tr>
 <td><code>arkhe ark publish</code></td>
@@ -1607,10 +1607,11 @@ registry への登録という、arkhe の外で起きる手順も含めて</str
 <h3 id="名前を先に押さえ後から公開する">名前を先に押さえ、後から公開する<a class="headerlink" href="#名前を先に押さえ後から公開する" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">      </span><span class="c1"># まだ解決しない</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># ここから解決を始める</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>unpublish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"誤って公開した"</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># 出し直す</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"登録が取りやめになった"</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved<span class="w"> </span>--older-than<span class="w"> </span><span class="m">365</span><span class="w">   </span><span class="c1"># 放置を拾う</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># ここから解決を始める</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>unpublish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"誤って公開した"</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># 出し直す</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"登録が取りやめになった"</span>
 </code></pre></div>
 <p><strong>普通に消せるのは公開前だけ。</strong> 公開した ARK は、RA の運用者が理由を残して破棄する
 以外には消えない。</p>
