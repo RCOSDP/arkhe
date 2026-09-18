@@ -8,6 +8,17 @@
 
 ## [未リリース]
 
+## [0.9.1] — 2026-09-18
+
+**文書が実装より遅れていたのを直した版。** 全体を機械的に洗って見つかった 3 件で、
+**どれも「今日入れた変更が文書に届いていない」**類である。
+
+いちばん重いのは、**不変条件のページが 2 版遅れていた**こと——この体系が何を
+約束しているかを述べるページが、**中心の不変条件について古かった**。
+
+**手順に入れるだけでは足りない**ことが今日 2 度あったので、STATUS.md の版と移行
+head については検査を付けた。
+
 ### 修正
 
 - **不変条件のページが 2 版遅れていた。**「公開した ARK は削除しない」という節が、
@@ -1255,7 +1266,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.9.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.1
 [0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0
 [0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0
 [0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0

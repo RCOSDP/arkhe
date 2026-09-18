@@ -9,6 +9,18 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-09-18
+
+**A release that brings the documentation back level with the implementation.** Three
+findings from a mechanical sweep of the whole repository, **all of them changes made
+today that had not reached the prose.**
+
+The heaviest: **the invariants page was two releases behind** — the page that states what
+this system promises was **out of date about its central promise**.
+
+Twice today it turned out that putting something in the runbook was not enough, so the
+version and the migration head named in STATUS.md are now checked by a test.
+
 ### Fixed
 
 - **The invariants page was two releases behind.** Its section "a published ARK is never
@@ -1364,7 +1376,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.1
 [0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0
 [0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0
 [0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0
