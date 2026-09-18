@@ -9,6 +9,31 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The invariants page was two releases behind.** Its section "a published ARK is never
+  deleted" **knew about neither `purge` (0.3.0) nor withdrawing from publication
+  (0.4.0)** — meaning **the page that states what this system promises** was out of date
+  about its central promise.
+
+  It now says there are two ways out (withdrawing comes back; deleting and purging do
+  not), that the ORM guard keys on **whether the name was ever published** rather than on
+  whether it is published now, and that **`NR` holds either way**: a name that went out
+  and was removed answers `404` forever and never comes to mean something else. The same
+  wording survived in the Quickstart, the federation guide, the data model and the CLI
+  reference, and was corrected there too.
+
+- **[The versioning policy](https://rcosdp.github.io/arkhe/project/versioning/) did not
+  know what had happened to it.** It listed "a published ARK becomes deletable" as an
+  example of a major change — **and 0.4.0 did exactly that**. The line is redrawn: what
+  counts as weakening is not removal itself but removal **without a reason, without the
+  ARK retyped, or from outside the caller's reach**.
+
+- **STATUS.md named a migration head one behind.** `alembic check` compares the schema
+  with the models but **never reads the documentation**. A test now checks that the
+  version and the head named there match reality — the second time today that putting
+  something in the runbook turned out not to be enough.
+
 ## [0.9.0] — 2026-09-18
 
 **The release in which reservations nobody came back to can be found.** Reserved ARKs
