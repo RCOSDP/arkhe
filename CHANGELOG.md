@@ -50,6 +50,26 @@ breaking in a system whose identifiers cannot be reissued.
   It also records that **repeating the same configuration varies by ±20%**, and that **a
   difference smaller than that band is not a difference.**
 
+- **`ARKHE_DB_PRE_PING` — the liveness check on a pooled connection can now be turned
+  off** (it stays on by default).
+
+  **Turning it off roughly halves the database round trips per resolution**: measured
+  **1.60 → 0.82** (counting `xact_commit + xact_rollback` against a million-ARK ledger).
+  A resolution reads **one index**, so **the extra verification round trip is heavy in
+  relative terms**.
+
+  **The rps never showed it** — it drowned in the noise. **Counting made it decisive.**
+
+- **A sweep of the database and application knobs, and what did nothing**, in
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/). `uvloop` /
+  `httptools`, `shared_buffers` at 128MB / 512MB / 2GB, a thirtyfold pool sweep,
+  `synchronous_commit=off` for minting — **none of them moved the number**.
+
+  **The default 128MB of `shared_buffers` already gives 99.95% cache hits.** A resolution
+  touches one index and one row, so **the general "25% of RAM" buys nothing here**. Same
+  for `synchronous_commit`: **53 of the 60 ms a mint takes is Argon2** — **if giving up
+  durability buys nothing, there is no reason to give it up.**
+
 ## [0.10.0] — 2026-09-18
 
 **The release that noticed the recommended shape does not run on defaults.**

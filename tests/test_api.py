@@ -1153,3 +1153,23 @@ def test_接続プールの大きさが設定で変わる():
 
     assert cap(5, 10) == 15, "既定の上限が変わっている"
     assert cap(2, 2) == 4, "設定が効いていない"
+
+
+def test_pre_pingは設定で切れる():
+    """**切ると解決 1 件あたりの DB 往復がほぼ半分になる**（実測 1.60 → 0.82）。
+
+    解決はもともと索引 1 回しか引かないので、**生存確認の 1 往復が相対的に
+    重い**。既定は入れたまま——切ってよいのは、DB が近く、切られた接続が
+    そのまま例外として出ても構わない構成である。
+    """
+    from arkhe.db.session import engines
+    from arkhe.settings import Settings
+
+    def ping(v):
+        w, _ = engines(Settings(
+            database_url="postgresql+psycopg://arkhe@localhost/arkhe", db_pre_ping=v
+        ))
+        return w.pool._pre_ping
+
+    assert ping(True) is True, "既定で確かめなくなっている"
+    assert ping(False) is False, "設定が効いていない"

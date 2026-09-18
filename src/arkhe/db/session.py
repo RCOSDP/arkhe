@@ -19,7 +19,7 @@ from arkhe.settings import Settings, get_settings
 
 @lru_cache
 def _engines(
-    url: str, read_url: str, size: int, overflow: int, recycle: int
+    url: str, read_url: str, size: int, overflow: int, recycle: int, pre_ping: bool
 ) -> tuple[Engine, Engine]:
     """書き込み用と読み取り用のエンジンを作る。**URL で覚える。**
 
@@ -34,7 +34,7 @@ def _engines(
         "pool_size": size,
         "max_overflow": overflow,
         "pool_recycle": recycle or -1,
-        "pool_pre_ping": True,
+        "pool_pre_ping": pre_ping,
         "future": True,
     }
     write = create_engine(url, **pool)
@@ -47,7 +47,8 @@ def engines(settings: Settings | None = None) -> tuple[Engine, Engine]:
     ——`ARKHE_READ_DATABASE_URL` を置いていない構成で、接続先が二重にならない。"""
     s = settings or get_settings()
     return _engines(
-        s.database_url, s.read_url, s.db_pool_size, s.db_max_overflow, s.db_pool_recycle
+        s.database_url, s.read_url, s.db_pool_size, s.db_max_overflow, s.db_pool_recycle,
+        s.db_pre_ping,
     )
 
 

@@ -270,7 +270,7 @@ spends a round trip every time it does**.
 | | Suggested | Why |
 | --- | --- | --- |
 | `max_connections` | from the arithmetic above | The default 100 does not cover the recommended shape |
-| `shared_buffers` | **25% of RAM** | Default 128 MB. **A million ARKs index in 39 MB**, so size it to hold the indexes |
+| `shared_buffers` | **Enough to hold the indexes** | The default 128 MB already gives **99.95% cache hits**, and raising it changed nothing (see "what did nothing" below) — the general "25% of RAM" buys nothing on this workload |
 | `effective_cache_size` | 50–75% of RAM | Nothing is allocated; **it is a declaration, so the planner picks the index** |
 | `work_mem` | leave at 4 MB | Resolution is one index lookup and the statistics only scan. **Almost nothing sorts or joins** |
 | `wal_level` / `archive_mode` | as in [Backups](#backups) | **A nightly dump alone loses a day of identifiers** |
@@ -422,6 +422,51 @@ next thing to look at is PostgreSQL (add a replica; point the resolver at it).
 3. **Leave the pool at 2–3** — raising it buys no speed and **costs connections**.
 4. **Then PostgreSQL** — add a replica and send the resolver to it.
 5. **Hosts last** — resolvers hold no state, so spreading them out is always available.
+
+#### 5. What was tried and did nothing
+
+**Knowing what does not help is the more useful half.** Everything below was swept on the
+same host:
+
+| Tried | Result |
+| --- | --- |
+| Switching to `uvloop` / `httptools` | **No difference** (1,280 → 1,400 → 1,275 rps; inside the noise) |
+| `shared_buffers` at 128MB / 512MB / 2GB | **No difference.** All three hit **99.95% cache hits** |
+| Sweeping the connection pool thirtyfold | **No difference** (section 3 above) |
+| `synchronous_commit=off` for minting | **No difference** (51.3 → 51.7 rps) |
+
+**Why `shared_buffers` does not matter here** — a resolution touches **one index and one
+row**, so the working set is tiny and the rest lives in the OS page cache. Giving
+PostgreSQL more of it **changes nothing about where the data comes from**. "25% of RAM" is
+sound general advice, but **there is nothing to buy with it on this workload**. What is
+needed is only that **the index fits** (39 MB at a million ARKs), which even the default
+128 MB does.
+
+**Why `synchronous_commit` does not matter** — one mint takes **about 60 ms at p50, of
+which 53 ms is Argon2**. **The disk sync is nowhere near the measurable part.** If giving
+up durability buys nothing, there is no reason to give it up.
+
+#### 6. The one thing that did help — `pre_ping`
+
+**Checking a connection is alive before lending it (`SELECT 1`) was roughly doubling the
+database round trips per resolution.**
+
+| | Transactions per 500 requests (`xact_commit + xact_rollback`) |
+| --- | --- |
+| `ARKHE_DB_PRE_PING=true` (default) | **802** (1.60 each) |
+| `ARKHE_DB_PRE_PING=false` | **411** (0.82 each) |
+
+**The rps never showed it** — it drowned in the noise. **Counting made it decisive**: a
+resolution reads one index, so **the extra verification round trip is heavy in relative
+terms.**
+
+**The default stays on.** Turn it off where **the database is close and a dropped
+connection may surface to the caller as an error**. If something upstream silently drops
+idle connections, set `ARKHE_DB_POOL_RECYCLE` before turning this off.
+
+**The point of this section**: there are many knobs, and **exactly one of them measured**.
+Everything else can stay at its default — **time spent on adjustments that do nothing is
+time not spent putting workers at four and, past that, widening the database.**
 
 #### About the variance
 

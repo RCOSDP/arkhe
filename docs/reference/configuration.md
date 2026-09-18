@@ -25,6 +25,7 @@ file. `arkhe check` validates a configuration and stops on anything missing.
 | `ARKHE_DB_POOL_SIZE` | `5` | Connections a process keeps. **It multiplies by the worker count** |
 | `ARKHE_DB_MAX_OVERFLOW` | `10` | Extra connections under load, added to `POOL_SIZE` (15 per process by default) |
 | `ARKHE_DB_POOL_RECYCLE` | `0` | Seconds before a connection is remade; `0` never remakes it. **Behind anything that drops idle connections, set it below that idle timeout** |
+| `ARKHE_DB_PRE_PING` | `true` | Check a connection is alive before lending it. **Turning it off roughly halves the database round trips per resolution** (measured 1.60 → 0.82). Only turn it off where the database is close and a dropped connection may surface as an error |
 
 !!! warning "Verify migrations on PostgreSQL"
     SQLite tolerates things PostgreSQL does not — notably the circular reference
