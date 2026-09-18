@@ -8,6 +8,19 @@
 
 ## [未リリース]
 
+## [0.6.0] — 2026-09-18
+
+**戻せることを、確かめられるようになった版。** バックアップから復元したあと、
+**件数ではなく中身で**無傷を確認できる——件数が同じでも行き先が入れ替わっていれば、
+識別子は全部壊れている。
+
+これまで確認の手順は文書にベタ書きの SQL だった。**貼り間違えても静かに「一致」と
+読める**種類の検査なので、コマンドにした。
+
+あわせて、**復元と PITR を実際に通し**、手順・日次と月次のバックアップ・止まって
+いることに気づく方法を[デプロイ](https://rcosdp.github.io/arkhe/ja/guides/deployment/)に
+書いた。推奨構成と冗長化の判断も、**裏を取ってから**書いてある。
+
 ### 追加
 
 - **`arkhe fingerprint`——復元できたことを、件数ではなく中身で確かめる。**
@@ -1102,7 +1115,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.5.1...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0
 [0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1
 [0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0
 [0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0

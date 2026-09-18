@@ -9,6 +9,21 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-09-18
+
+**The release in which you can prove it comes back.** After restoring from a backup, the
+ledger can be checked **by its contents, not its row count** — the counts can agree while
+every target has moved, and then every identifier is broken.
+
+The check used to be SQL pasted into a runbook. **A mis-paste still reads as "they
+match"**, so it is a command now.
+
+Alongside it, **a restore and a point-in-time recovery were actually carried out**, and the
+procedure, the daily and monthly backups, and how to notice that backups have stopped are
+written down in [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/). The
+recommended architecture and the redundancy decisions are there too — **each one exercised
+before it was written.**
+
 ### Added
 
 - **`arkhe fingerprint` — prove a restore by its contents, not its row count.** Run it on
@@ -1202,7 +1217,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0
 [0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1
 [0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0
 [0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0
