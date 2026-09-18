@@ -16,6 +16,7 @@
 #   3. check.sh       検査ぜんぶ
 #   4. dist/          sdist と wheel
 #   5. --publish      タグ → push → GitHub のリリース（0.x はプレリリース）
+#                     ノートは CHANGELOG.md のその版の節から起こす
 #
 # 必要なもの: uv、docker（マイグレーションの検査）、gh（--publish のときだけ）
 set -uo pipefail
@@ -28,7 +29,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --publish)         PUBLISH=1;;
     --no-db|--no-docs) CHECK_ARGS+=("$1");;   # check.sh へ渡す
-    -h|--help)         sed -n '2,24p' "$0"; exit 0;;
+    -h|--help)         sed -n '2,21p' "$0"; exit 0;;
     v*)                TAG="$1";;
     *) echo "不明な引数: $1" >&2; exit 2;;
   esac; shift
@@ -90,10 +91,34 @@ git rev-parse "$TAG" >/dev/null 2>&1 && die "$TAG は既にある"
 git tag -a "$TAG" -m "release: $TAG"
 git push origin "$branch" || die "$branch を送れない"
 git push origin "$TAG"    || die "$TAG を送れない"
+# **リリースノートは CHANGELOG.md から起こす。** `--generate-notes` は PR を並べる
+# ので、main へ直接コミットするこの体系では**比較リンク 1 行だけの空の本文**になる
+# （v0.0.9 と v0.2.0 が実際そうなった）。中身は CHANGELOG に在るのに、**リリースから
+# 辿った人がいちばん先に見る場所だけが空**、という形にしない。
+notes="$(mktemp)"
+trap 'rm -f "$notes"' EXIT
+# 見出し行（`## [0.3.0] — 2026-09-17`）は GitHub の題が兼ねるので落とす。
+# 版に含まれる `.` を正規表現に解釈させないため、照合は index() で前方一致にする。
+awk -v ver="$VER" '
+  index($0, "## [" ver "]") == 1 { f = 1; next }
+  f && index($0, "## [")     == 1 { exit }
+  f                               { print }
+' CHANGELOG.md > "$notes"
+[ -s "$notes" ] || die "CHANGELOG.md から $VER の節を切り出せない"
+# 本文は英語（外に出すものは英語）。日本語は在処を指すだけにする。
+prev="$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)"
+{
+  echo
+  echo "---"
+  echo
+  echo "[日本語の変更履歴](https://github.com/RCOSDP/arkhe/blob/$TAG/CHANGELOG.ja.md)"
+  [ -n "$prev" ] && echo "· **Full Changelog**: https://github.com/RCOSDP/arkhe/compare/$prev...$TAG"
+} >> "$notes"
+
 # 0.x のあいだはプレリリースとして出す（版の意味を誤解させない）。
 pre=""; case "$VER" in 0.*) pre="--prerelease";; esac
 gh release create "$TAG" dist/"arkhe-$VER"* \
-  --title "$TAG" --generate-notes $pre || die "リリースを作れない"
+  --title "$TAG" --notes-file "$notes" $pre || die "リリースを作れない"
 
 cat <<MSG
 
