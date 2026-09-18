@@ -278,7 +278,7 @@ better than two.
 | **Replication lag** | `pg_last_xact_replay_timestamp()` on the replica | **See below.** |
 | **Minting collisions** | frequency of `mint_collision` | **The only sign that the namespace is quietly filling up.** A rising rate says add digits. |
 | **Backup age** | `pg_stat_archiver`, mtime of the newest dump | [Backups](#backups). **Not noticing is the worst case.** |
-| **Reserved ARKs piling up** | `reserved` in `arkhe stat --json` | Numbers nothing points at, with no deadline and no notice. |
+| **Reserved ARKs piling up** | `reserved_oldest` in `arkhe stat` | **Watch the age, not the count** — ten from yesterday is normal, one from three years ago is abandoned. Pull them with `ark list --state reserved --older-than N`. |
 | **Holds in force** | `holds`, same command | Even with deadlines, **what is not visible becomes permanent**. |
 
 For `/healthz` versus `/readyz`, see

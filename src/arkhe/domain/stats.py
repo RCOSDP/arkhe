@@ -85,7 +85,27 @@ class LedgerStats:
     minted: dict[str, int] = field(default_factory=dict)
     first_mint: datetime | None = None
     last_mint: datetime | None = None
+    #: **いちばん古い「公開前のまま」。** 件数では警報を出せない——10 件でも
+    #: 昨日採ったものなら普通で、1 件でも 3 年前なら放置である。**溜まっている
+    #: ことは、数ではなく古さに出る。**
+    reserved_oldest: datetime | None = None
     by_shoulder: list[ShoulderStat] = field(default_factory=list)
+
+
+def _utc(dt: datetime | None) -> datetime | None:
+    """**返す日時は必ず UTC 付きにする。**
+
+    SQLite には時刻帯の型が無いので、`DateTime(timezone=True)` と宣言していても
+    **naive な `datetime` が返る**。PostgreSQL では aware で返るので、**engine に
+    よって型が変わる**——受け取った側が引き算すると、片方でだけ `TypeError` で
+    落ちる（実際 `arkhe stat` がそうなった）。
+
+    **付けるのは推測ではない。** 台帳は `utcnow()` しか書かないので、naive で
+    返ってきた値は UTC である。
+    """
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt
 
 
 def _reach(p: Principal) -> str:
@@ -119,6 +139,7 @@ def ledger_stats(
             func.min(Ark.created_at).label("first"),
             func.max(Ark.created_at).label("last"),
             func.count(Ark.ark).filter(Ark.hold_until > now).label("held"),
+            func.min(Ark.created_at).filter(Ark.published_at.is_(None)).label("oldest_reserved"),
             *[
                 func.count(Ark.ark).filter(Ark.created_at >= since[label]).label(label)
                 for label, _ in WINDOWS
@@ -135,8 +156,9 @@ def ledger_stats(
         withdrawn=0,
         withdrawn_after_publication=0,
         minted={label: getattr(agg, label) for label, _ in WINDOWS},
-        first_mint=agg.first,
-        last_mint=agg.last,
+        first_mint=_utc(agg.first),
+        last_mint=_utc(agg.last),
+        reserved_oldest=_utc(agg.oldest_reserved),
     )
     _withdrawn(session, p, stats)
     _shoulders(session, p, stats)

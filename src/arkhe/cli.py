@@ -349,6 +349,7 @@ def ark_list(
     org: int = typer.Option(None, help=t("ark.list.org")),
     q: str = typer.Option("", "--search", "-q", help=t("ark.list.search")),
     state: str = typer.Option("", help=t("ark.list.state")),
+    older_than: int = typer.Option(0, help=t("ark.list.older_than")),
     limit: int = typer.Option(50, help=t("ark.list.limit")),
     offset: int = typer.Option(0, help=t("ark.list.offset")),
 ):
@@ -363,7 +364,8 @@ def ark_list(
     ときは `-q` が見ている（画面と同じ 3 項目）。
     """
     with _session() as s:
-        stmt = narrow_arks(visible_arks(_root()), naan=naan, org=org or "", q=q, state=state)
+        stmt = narrow_arks(visible_arks(_root()), naan=naan, org=org or "", q=q, state=state,
+                           older_than_days=older_than)
         # 1 件多く取って、続きがあるかを**数えずに**知る。件数の COUNT は
         # 台帳が大きくなるほど重く、ここで欲しいのは有無だけ。
         rows = list(
@@ -627,6 +629,12 @@ def stat(
     if st.first_mint:
         row(t("stat.first"), st.first_mint.strftime("%Y-%m-%d"))
         row(t("stat.last"), st.last_mint.strftime("%Y-%m-%d"))
+    if st.reserved_oldest:
+        # **件数の隣ではなく、日付として出す。** 溜まっていることは数ではなく
+        # 古さに出る——10 件でも昨日なら普通、1 件でも 3 年前なら放置である。
+        age = (datetime.now(UTC) - st.reserved_oldest).days
+        row(t("stat.reserved_oldest"), st.reserved_oldest.strftime("%Y-%m-%d"),
+            t("stat.days_ago", n=age))
 
     if by_shoulder and st.by_shoulder:
         typer.echo("")

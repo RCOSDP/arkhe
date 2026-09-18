@@ -31,7 +31,7 @@ audit log the same way.
 | `arkhe hold add` | Hold redirection for an `ark` / `shoulder` / `naan`. **Resolution is not stopped** — the description keeps answering. An expiry and a reason are required. |
 | `arkhe hold release` | Lift a hold before its expiry. |
 | `arkhe hold list` | List the holds in force. **What is not visible becomes permanent.** |
-| `arkhe ark list` | List minted ARKs. **Stops at 50 by default** — the ledger only grows. `--naan` and `--org` narrow it; `-q` looks at the ARK, its target and its title. `--state public|reserved` keeps only the published or only the reserved ones. |
+| `arkhe ark list` | List minted ARKs. **Stops at 50 by default** — the ledger only grows. `--naan` and `--org` narrow it; `-q` looks at the ARK, its target and its title. `--state public|reserved` keeps only the published or only the reserved ones, and `--older-than N` only those minted more than N days ago — **together they find reservations nobody ever published**. |
 | `arkhe ark publish` | **Publish it globally**, including one that was withdrawn from publication. Running it twice is not an error. |
 | `arkhe ark unpublish` | **Withdraw it from publication.** The row stays, so `publish` puts it back — **this is the half that comes back.** A reason is required and it asks first (`--yes` skips that). |
 | `arkhe ark delete` | **Delete an ARK that is not currently published.** A published one must be unpublished first. **If it has ever been published, a reason is required and it asks first.** Only the row goes — **the name is never assigned again.** |
@@ -110,6 +110,7 @@ different meaning and no way back.
 ```bash
 curl -X POST /api/mint -d '{"reserve": true}'      # does not resolve yet
 arkhe ark list --state reserved
+arkhe ark list --state reserved --older-than 365   # abandoned
 arkhe ark publish ark:99999/x9tn1qkq2g7            # from here on it resolves
 arkhe ark unpublish ark:99999/x9tn1qkq2g7 --reason "published by mistake"
 arkhe ark publish ark:99999/x9tn1qkq2g7            # and back again

@@ -30,7 +30,7 @@
 | `arkhe hold add` | 転送を一時的に止める（`ark` / `shoulder` / `naan`）。**解決は止めない**——記述は答え続ける。期限と理由は必須。 |
 | `arkhe hold release` | 期限を待たずに保留を外す。 |
 | `arkhe hold list` | 今かかっている保留を並べる。**見えないと恒久化する。** |
-| `arkhe ark list` | 発行した ARK を並べる。**既定で 50 件で打ち切る**（台帳は増える一方なので）。`--naan` `--org` で絞り、`-q` は ARK・行き先・題名を見る。 `--state public|reserved` で公開したものだけ・公開前のものだけを引ける。 |
+| `arkhe ark list` | 発行した ARK を並べる。**既定で 50 件で打ち切る**（台帳は増える一方なので）。`--naan` `--org` で絞り、`-q` は ARK・行き先・題名を見る。 `--state public|reserved` で公開したものだけ・公開前のものだけを引け、`--older-than N` で採番から N 日より古いものだけにできる——**重ねると、誰も公開しないまま残った予約が拾える。** |
 | `arkhe ark publish` | **グローバルに公開する。** 取り下げたものを出し直すのも同じ口。二度実行しても落ちない。 |
 | `arkhe ark unpublish` | **公開を取り下げる。** 行は残るので `publish` で出し直せる——**戻せるのはこちらだけ。** 理由が必須で、確認を訊く（`--yes` で省ける）。 |
 | `arkhe ark delete` | **公開していない ARK を消す。** 公開中のものは先に取り下げる。**一度でも公開した名前なら理由が必須で、確認を訊く。** 消えるのは行だけで、**その名前は二度と採られない。** |
@@ -106,6 +106,7 @@ arkhe hold release shoulder 3
 ```bash
 curl -X POST /api/mint -d '{"reserve": true}'      # まだ解決しない
 arkhe ark list --state reserved
+arkhe ark list --state reserved --older-than 365   # 放置を拾う
 arkhe ark publish ark:99999/x9tn1qkq2g7            # ここから解決を始める
 arkhe ark unpublish ark:99999/x9tn1qkq2g7 --reason "誤って公開した"
 arkhe ark publish ark:99999/x9tn1qkq2g7            # 出し直す

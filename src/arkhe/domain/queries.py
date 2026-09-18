@@ -10,6 +10,8 @@ CLI には出る**——そして気づくのは、見えてはいけないも�
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import Select, select
 
 from arkhe.arkspec.naming import (
@@ -67,7 +69,8 @@ ARK_STATES = ("public", "reserved")
 
 
 def narrow_arks(
-    stmt: Select, *, naan: str = "", org: str = "", q: str = "", state: str = ""
+    stmt: Select, *, naan: str = "", org: str = "", q: str = "", state: str = "",
+    older_than_days: int = 0,
 ) -> Select:
     """絞り込みを重ねる。**到達範囲を広げる手段ではない。**
 
@@ -79,6 +82,9 @@ def narrow_arks(
 
     `state` は公開したものだけ／公開前のものだけ（`ARK_STATES`）。知らない値は
     **黙って無視する**——絞り込みの引数で 400 を返しても、できることは増えない。
+
+    `older_than_days` は採番からの日数。**公開前のまま放置されたものを拾う**のが
+    主な用途で、`--state reserved` と重ねて使う。
     """
     if naan.strip():
         stmt = stmt.where(Ark.naan == naan.strip())
@@ -94,6 +100,12 @@ def narrow_arks(
         stmt = stmt.where(
             Ark.published_at.is_(None) if want == "reserved" else Ark.published_at.is_not(None)
         )
+    if older_than_days > 0:
+        # **古さで絞る。** 公開前のまま放置されたものを拾うための引数だが、
+        # `state` と直交させてある——「3 年前に採って今も直していない公開済みの
+        # ARK」も、探したい日が来る。
+        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
+        stmt = stmt.where(Ark.created_at < cutoff)
     term = q.strip()
     if term:
         # **ARK そのものと、行き先と、題名で引く。** 運用で手元にあるのはどれか

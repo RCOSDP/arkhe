@@ -211,3 +211,81 @@ def test_保留は指紋に入れない(db, root, world, ledger):
                  until=datetime.now(UTC) + timedelta(days=3), reason="調査中")
     db.commit()
     assert stats.ledger_fingerprint(db).arks == before.arks
+
+
+# --------------------------------- 公開前のまま放置されたものを見つける
+
+
+def test_いちばん古い公開前が出る(db, root, world):
+    """**溜まっていることは、数ではなく古さに出る。**
+
+    10 件でも昨日採ったものなら普通で、1 件でも 3 年前なら放置である
+    ——件数では警報を出せない。
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from arkhe.domain.minting import mint
+
+    assert stats.ledger_stats(db, root).reserved_oldest is None, "何も無ければ出ない"
+
+    a, _ = mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)
+    a.created_at = datetime.now(UTC) - timedelta(days=400)
+    mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)   # 新しい予約
+    mint(db, shoulder=world["sh_a"], created_by="t")                 # 公開済みは関係ない
+    db.commit()
+
+    oldest = stats.ledger_stats(db, root).reserved_oldest
+    assert oldest is not None
+    assert (datetime.now(UTC) - oldest).days >= 399, "いちばん古いものを見ていない"
+
+
+def test_公開済みは古くても放置に数えない(db, root, world):
+    """**公開したものは放置ではない。** 出してあるのだから、古くてよい。"""
+    from datetime import UTC, datetime, timedelta
+
+    from arkhe.domain.minting import mint
+
+    a, _ = mint(db, shoulder=world["sh_a"], created_by="t")   # 公開済み
+    a.created_at = datetime.now(UTC) - timedelta(days=999)
+    db.commit()
+    assert stats.ledger_stats(db, root).reserved_oldest is None
+
+
+def test_古さで絞れる(db, root, world):
+    """**拾えなければ、気づいても手が出せない。**"""
+    from datetime import UTC, datetime, timedelta
+
+    from arkhe.domain.minting import mint
+    from arkhe.domain.queries import narrow_arks, visible_arks
+
+    old, _ = mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)
+    old.created_at = datetime.now(UTC) - timedelta(days=400)
+    new, _ = mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)
+    db.commit()
+
+    stmt = narrow_arks(visible_arks(root), state="reserved", older_than_days=365)
+    found = {a.ark for a in db.scalars(stmt)}
+    assert old.ark in found
+    assert new.ark not in found, "新しい予約まで拾っている"
+    # **`state` と直交している。** 公開済みの古いものを探したい日も来る。
+    assert isinstance(db.scalars(narrow_arks(visible_arks(root), older_than_days=1)).all(), list)
+
+
+def test_日時は必ずUTC付きで返る(db, root, world):
+    """**engine によって型が変わると、受け取った側が落ちる。**
+
+    SQLite には時刻帯の型が無いので、`DateTime(timezone=True)` と宣言していても
+    naive な `datetime` が返る。PostgreSQL では aware——**片方でだけ
+    `TypeError`**、というのが実際に起きた（`arkhe stat` が落ちた）。
+    """
+    from datetime import UTC, datetime
+
+    from arkhe.domain.minting import mint
+
+    mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)
+    db.commit()
+    st = stats.ledger_stats(db, root)
+    for name in ("first_mint", "last_mint", "reserved_oldest"):
+        got = getattr(st, name)
+        assert got is not None and got.tzinfo is not None, f"{name} に時刻帯が無い"
+        datetime.now(UTC) - got          # 引き算が通ること自体が検査である

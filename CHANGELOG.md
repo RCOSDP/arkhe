@@ -9,6 +9,37 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **Abandoned reservations can now be found.**
+
+  `arkhe stat` reports **the oldest ARK still reserved** (date and age), and
+  `arkhe ark list` takes `--older-than N`, which together with `--state reserved` pulls
+  out **reservations nobody ever published**.
+
+  **A count cannot raise an alarm.** Ten reserved yesterday is normal; one reserved three
+  years ago is abandoned — **piling up shows in the age, not the number.**
+
+  **Nothing is deleted on a timer.** A reserved name is usually **already in someone's
+  hands** — stamping it on a draft is what reserving is *for* — and expiring it would
+  **quietly make a name they still meant to use unmintable forever**. **An irreversible
+  operation should not be fired by a clock**: whether to drop it belongs to the
+  organisation holding the reservation.
+
+  `--older-than` is orthogonal to `--state`: there will be a day for finding **published**
+  ARKs minted three years ago and never touched since.
+
+### Fixed
+
+- **`arkhe stat` crashed on SQLite.** SQLite has no timezone type, so a column declared
+  `DateTime(timezone=True)` **comes back naive** there while PostgreSQL returns it aware.
+  **The type depended on the engine**, and the subtraction raised `TypeError` on one of
+  them.
+
+  The domain now attaches UTC before returning — **fixing only the CLI would leave the
+  same hole in the API and the admin page**. Attaching it is not a guess: the ledger only
+  ever writes `utcnow()`.
+
 ## [0.8.0] — 2026-09-18
 
 **The release that lets you notice a delegate has gone down.** Delegating a namespace hands

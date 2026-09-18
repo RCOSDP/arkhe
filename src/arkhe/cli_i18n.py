@@ -184,6 +184,7 @@ JA: dict[str, str] = {
     "ark.list.offset": "先頭から飛ばす件数",
     "ark.list.more": "ここまでで打ち切った。続きは --offset {next} から",
     "ark.list.empty": "該当なし",
+    "ark.list.older_than": "採番から N 日より古いものだけ（**公開前の放置を拾う**）",
     "ark.list.state": "public / reserved で絞る（公開済みだけ・公開前だけ）",
     "ark.mark.reserved": "公開前",
     "ark.publish.help": "**グローバルに公開する。** 公開すると解決を始め、"
@@ -244,6 +245,8 @@ JA: dict[str, str] = {
     "stat.minted": "採番",
     "stat.first": "最初の採番",
     "stat.last": "最後の採番",
+    "stat.reserved_oldest": "いちばん古い公開前",
+    "stat.days_ago": "{n} 日前",
     "stat.per_shoulder": "shoulder ごと:",
     "fp.help": "**台帳の指紋を出す。** 復元できたことを、件数ではなく中身で確かめる"
                "——件数が同じでも行き先が入れ替わっていれば、識別子は全部壊れている。\n\n"
@@ -402,6 +405,8 @@ EN: dict[str, str] = {
     "ark.list.offset": "how many rows to skip",
     "ark.list.more": "stopped here; continue from --offset {next}",
     "ark.list.empty": "nothing matched",
+    "ark.list.older_than": "only those minted more than N days ago "
+                           "(**finds abandoned reservations**)",
     "ark.list.state": "only `public` or only `reserved` ones",
     "ark.mark.reserved": "reserved",
     "ark.publish.help": "**Publish it globally.** From then on it resolves, and it can no "
@@ -466,6 +471,8 @@ EN: dict[str, str] = {
     "stat.minted": "minted",
     "stat.first": "first mint",
     "stat.last": "last mint",
+    "stat.reserved_oldest": "oldest still reserved",
+    "stat.days_ago": "{n} days ago",
     "stat.per_shoulder": "Per shoulder:",
     "fp.help": "**Print the ledger's fingerprint.** Prove a restore by its contents, not "
                "its row count — the counts can agree while every target has moved.\n\n"
