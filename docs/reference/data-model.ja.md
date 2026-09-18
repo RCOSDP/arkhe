@@ -55,7 +55,7 @@ erDiagram
     }
 
     ARK {
-        string ark PK "naan/name。**公開したら削除しない**"
+        string ark PK "naan/name。**一度公開したら、理由と跡を残してしか消えない**"
         string naan FK
         int    shoulder_id FK
         string assigned_name
@@ -171,7 +171,7 @@ ER 図は形しか示さない。**arkhe の設計の中身は制約のほうに
 
 | | |
 | --- | --- |
-| **公開した ARK は削除できない** | 行を消すと解決が止まる＝識別子が壊れる。`before_delete` で拒否する。対象が失われたら tombstone にするか `url` を空にして記述を返す |
+| **公開した ARK は、軽くは消せない** | 行を消すと解決が止まる＝識別子が壊れる。`before_delete` は、そのセッションがその ARK を名指ししていないかぎり拒む——見るのは「**一度でも公開したか**」であって「今 公開中か」ではない（後者だと取り下げてから消せてしまう）。対象が失われただけなら tombstone にするか `url` を空にして記述を返す |
 | **公開前の ARK は削除できる** | `published_at` が null のものだけ。まだ外に出していない名前は `NR` が縛る対象ではない——ただし名前は `WITHDRAWN_NAME` に移り、二度と採られない |
 | **shoulder も削除できない** | 乱数割当が同じ文字列を再び当てうる＝NR 違反の芽。`status=retired` にする |
 | **retired からは戻せない** | 引退した名前空間の再開は、その間に外部が同じ名前を使った可能性を否定できない |

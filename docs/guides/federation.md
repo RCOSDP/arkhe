@@ -455,7 +455,7 @@ ARKHE_RESOLVER=1 ARKHE_RESOLVE_UNPUBLISHED=1 uvicorn arkhe.app:create_app --fact
 
 Going public is `POST /api/publish`. **The name does not move** — what changes is only
 whether it has gone out, exactly as [repointing](#pid) leaves the identifier itself
-untouched. After that it cannot be deleted (`409`; tombstone it instead).
+untouched. After that, deleting it means unpublishing it first (or purging in one step).
 
 **Withdrawing an ARK that was resolving inside the closed network does stop it
 resolving there.** What cannot happen is that the name comes to mean something else: a

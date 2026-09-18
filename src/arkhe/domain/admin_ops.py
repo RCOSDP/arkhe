@@ -1162,7 +1162,7 @@ def withdraw_ark(
 def purge_ark(
     session: Session, p: Principal, *, ark: str, reason: str, confirm: str = ""
 ) -> WithdrawnName:
-    """**公開した ARK を破棄する。RA の運用者だけが行える。**
+    """**公開した ARK を破棄する。** 取り下げと削除を一手で、届く範囲の内側だけ。
 
     この基盤は「一度配った名前が、別のものを指すようにならない」ためにできて
     いて、**公開した ARK が消えないこと**はその約束の中心にある。それでも口を

@@ -55,7 +55,7 @@ erDiagram
     }
 
     ARK {
-        string ark PK "naan/name. never deleted once published"
+        string ark PK "naan/name. once published, only removed with a reason and a trace"
         string naan FK
         int    shoulder_id FK
         string assigned_name
@@ -174,7 +174,7 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 
 | | |
 | --- | --- |
-| **A published ARK is never deleted** | Deleting the row stops resolution — the identifier breaks. `before_delete` refuses. When a target is lost you tombstone it, or empty `url` so a description is returned |
+| **A published ARK is not deleted lightly** | Deleting the row stops resolution — the identifier breaks. `before_delete` refuses unless the session named that one ARK, and it keys on **whether the name was ever published**, not on whether it is published now. When a target is merely lost you tombstone it, or empty `url` so a description is returned |
 | **A reserved one can be** | Only while `published_at` is null. A name that never went out is not what NR binds — but the name still moves to `WITHDRAWN_NAME` and is never assigned again |
 | **A shoulder is never deleted either** | Random assignment could hand out the same string again — the seed of an NR violation. Set `status=retired` |
 | **`retired` is one-way** | Reviving a retired namespace cannot rule out that something outside used the name meanwhile |

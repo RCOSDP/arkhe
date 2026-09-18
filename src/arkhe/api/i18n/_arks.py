@@ -146,7 +146,7 @@ JA: dict[str, str] = {
     "ak.withdraw_reason_hint": "消えた行について残る唯一の説明になります"
                                "（公開の口には出ません）。",
     "ak.withdrawn_flash": "を取り下げました",
-    # 破棄（RA の運用者だけ）
+    # 破棄（届く範囲の内側だけ）
     "ak.purge": "破棄する",
     "ak.purge_title": "公開した ARK の破棄",
     "ak.purge_lede": "<b>これは約束を破る操作です。</b>公開した ARK は解決し続ける"

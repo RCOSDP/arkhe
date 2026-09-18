@@ -10,7 +10,19 @@ fixing something else.
 ## A published ARK is never deleted {#no-delete}
 
 Deleting the row stops resolution, and an identifier that no longer resolves is a
-broken identifier. `Ark` refuses deletion at the ORM level.
+broken identifier. `Ark` refuses deletion at the ORM level — and it keys that refusal on
+**whether the name has ever been published**, not on whether it is published right now.
+Otherwise withdrawing it from publication first would walk straight past the guard.
+
+**There are two ways out, and both leave a trace.** Withdrawing from publication
+(`/api/unpublish`) is reversible and leaves the row; deleting or purging is not, requires
+a reason and the ARK retyped, and **moves the name to a ledger of names never to be
+assigned again**. Both act only inside the caller's reach.
+
+**`NR` survives either way.** A name that went out and was removed answers `404` forever;
+**it never comes to mean something else.** What can break is "keeps resolving" — which is
+why the way out is narrow, recorded, and to be used for a removal order or for what should
+never have been published, not for tidying up.
 
 When an object is genuinely gone, you **tombstone** it: the identifier and its
 description stay, only reachability goes.

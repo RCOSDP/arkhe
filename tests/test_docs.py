@@ -396,3 +396,46 @@ def test_古いものとして許したコマンドが今も在る():
     """
     gone = COMMANDS_PREDATING_THE_CHECK - set(_commands(cli.app))
     assert not gone, f"実装に無いコマンドが許可されたまま: {sorted(gone)}"
+
+
+# --------------------------------------------------------------------------
+# STATUS.md が主張する「今の値」が、実際の値と合っているか
+# --------------------------------------------------------------------------
+
+
+def test_STATUSの版はpyprojectと一致する():
+    """**リリースで動く数字を、リリースの手が触らなければ必ずずれる。**
+
+    実際 0.1.0 と 0.2.0 のあいだ触られず、「版 0.0.9」のまま 2 版ぶん据え置きに
+    なっていた。手順（AGENTS.md）に入れたが、**手順は守られないことがある**。
+    """
+    import tomllib
+
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    want = version["project"]["version"]
+    status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
+    assert f"**{want}**" in status, f"STATUS.md が {want} を版として書いていない"
+
+
+def test_STATUSの移行headは実際のheadと一致する():
+    """**`alembic check` はスキーマと模型を見るが、文書は見ない。**
+
+    実際にずれていた——0.4.0 の移行を足したあと、STATUS.md は 0.3.0 の head を
+    指したままだった。**機械で読める値なので、読んで確かめる。**
+    """
+    import re
+
+    # **注釈の書き方が揃っていない**（`str | … | None` と `Union[str, …]`、
+    # 引用符も両方ある）。型ではなく**代入されている文字列**だけを見る。
+    revisions, downs = set(), set()
+    for f in (ROOT / "alembic" / "versions").glob("*.py"):
+        text = f.read_text(encoding="utf-8")
+        if m := re.search(r'^revision\b[^=]*=\s*["\']([^"\']+)["\']', text, re.M):
+            revisions.add(m.group(1))
+        if m := re.search(r'^down_revision\b[^=]*=\s*["\']([^"\']+)["\']', text, re.M):
+            downs.add(m.group(1))
+    heads = revisions - downs
+    assert len(heads) == 1, f"head が単一でない: {sorted(heads)}"
+    head = heads.pop()
+    status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
+    assert head in status, f"STATUS.md が今の head（{head}）を書いていない"

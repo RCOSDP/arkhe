@@ -113,8 +113,9 @@ arkhe ark publish ark:99999/x9tn1qkq2g7            # 出し直す
 arkhe ark delete ark:99999/x9tn1qkq2g7 --reason "登録が取りやめになった"
 ```
 
-**普通に消せるのは公開前だけ。** 公開した ARK は、RA の運用者が理由を残して破棄する
-以外には消えない。
+**そのまま消せるのは、今 公開していないものだけ。** 公開中の ARK は、先に
+`arkhe ark unpublish` で取り下げるか、`arkhe ark purge` で一手に破棄する
+——どちらも**届く範囲の内側**で、理由と確認を要求する。
 
 ```bash
 arkhe ark purge ark:99999/x9tn1qkq2g7 --reason "2026-09 削除命令（事件番号 …）"

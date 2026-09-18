@@ -281,7 +281,7 @@ class DeleteIn(BaseModel):
 
 
 class PurgeIn(BaseModel):
-    """**公開した ARK を破棄する。** RA の運用者だけ。"""
+    """**公開した ARK を破棄する。** 取り下げと削除を一手で、届く範囲の内側だけ。"""
 
     model_config = _spec(
         "Purge a **published** ARK in one step (unpublish and delete). Within the "
