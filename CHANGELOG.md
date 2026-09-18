@@ -32,11 +32,15 @@ breaking in a system whose identifiers cannot be reissued.
   different acts, and **the second is the number of times the promise was broken.** That
   does not belong buried inside a total.
 
-  **The cost is stated honestly.** This uses `COUNT(*)`, so it costs time proportional to
-  the number of rows — unlike the listing, which avoids `COUNT` by fetching one extra row,
-  because there only the existence of more matters while here the number *is* the answer.
-  Expect a few hundred milliseconds on a ledger of a million ARKs: **not an endpoint to
-  poll.**
+  **The cost is stated honestly.** It costs time proportional to the number of rows —
+  unlike the listing, which avoids counting by fetching one extra row, because there only
+  the existence of more matters while here the number *is* the answer. **What can be
+  avoided is the number of passes**: the published split, the first and last mint, the
+  three windows and the holds are all aggregates over the same set, so conditional
+  aggregation gathers them **in a single pass** (seven reads of `ark` written naively,
+  two as written). That is not only for speed — **counts taken separately drift apart as
+  rows arrive**, and a 24-hour figure that exceeds the 7-day one destroys trust in the
+  whole page. Measured at about 110 ms over 300,000 ARKs: **not an endpoint to poll.**
 
 ## [0.4.0] — 2026-09-18
 

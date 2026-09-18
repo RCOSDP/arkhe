@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ t('stat.title') }} — arkhe{% endblock %}
+{% block crumb %}{{ t('stat.title') }}{% endblock %}
+{% block body %}
+
+<h1>{{ t('stat.title') }}</h1>
+<p class="lede">{{ t('stat.lede')|safe }}</p>
+<p class="hint">{{ t('stat.scope') }}: <b>{{ t('stat.scope.' ~ st.scope) }}</b></p>
+
+{# **既にある形だけで組む。** 統計のためにクラスを増やすと、次に誰かが増やす。 #}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('stat.ledger') }}</span></div>
+  <div class="card-b">
+    <table>
+      <tbody>
+        <tr>
+          <td data-label="{{ t('stat.arks') }}">{{ t('stat.arks') }}</td>
+          <td class="num">{{ "{:,}".format(st.arks) }}</td>
+          <td class="dim">{{ t('stat.public') }} {{ "{:,}".format(st.public) }}
+            · {{ t('stat.reserved') }} {{ "{:,}".format(st.reserved) }}</td>
+        </tr>
+        <tr>
+          <td data-label="{{ t('stat.naans') }}">{{ t('stat.naans') }}</td>
+          <td class="num">{{ st.naans }}</td><td></td>
+        </tr>
+        <tr>
+          <td data-label="{{ t('stat.shoulders') }}">{{ t('stat.shoulders') }}</td>
+          <td class="num">{{ st.shoulders.values()|sum }}</td>
+          <td class="dim">{% for k, v in st.shoulders.items() %}{{ t('st.' ~ k) }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}</td>
+        </tr>
+        <tr>
+          <td data-label="{{ t('stat.organisations') }}">{{ t('stat.organisations') }}</td>
+          <td class="num">{{ st.organisations }}</td>
+          <td class="dim">{{ t('stat.active') }} {{ st.organisations_active }}</td>
+        </tr>
+        <tr>
+          <td data-label="{{ t('stat.clients') }}">{{ t('stat.clients') }}</td>
+          <td class="num">{{ st.clients }}</td>
+          <td class="dim">{{ t('stat.active') }} {{ st.clients_active }}</td>
+        </tr>
+        <tr>
+          <td data-label="{{ t('stat.holds') }}">
+            <a href="/admin/holds">{{ t('stat.holds') }}</a></td>
+          <td class="num">{{ st.holds.values()|sum }}</td>
+          <td class="dim">{% for k, v in st.holds.items() %}{{ k }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# **破った回数を、合計に埋めない。** 分けて置くこと自体が主張である。 #}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('stat.withdrawn') }}</span>
+    <span class="sub">{{ "{:,}".format(st.withdrawn) }}</span></div>
+  <div class="card-b">
+    <p class="hint" style="margin-top:0">{{ t('stat.withdrawn_lede')|safe }}</p>
+    <table>
+      <tbody>
+        <tr>
+          <td data-label="{{ t('stat.withdrawn_reserved') }}">{{ t('stat.withdrawn_reserved') }}</td>
+          <td class="num">{{ "{:,}".format(st.withdrawn - st.withdrawn_after_publication) }}</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td data-label="{{ t('stat.withdrawn_published') }}">{{ t('stat.withdrawn_published') }}</td>
+          <td class="num">{{ "{:,}".format(st.withdrawn_after_publication) }}</td>
+          <td>{% if st.withdrawn_after_publication %}<span class="pill retired">{{ st.withdrawn_after_publication }}</span>{% endif %}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('stat.minting') }}</span></div>
+  <div class="card-b">
+    <table>
+      <tbody>
+        <tr><td data-label="{{ t('stat.minted_24h') }}">{{ t('stat.minted_24h') }}</td>
+          <td class="num">{{ "{:,}".format(st.minted['24h']) }}</td></tr>
+        <tr><td data-label="{{ t('stat.minted_7d') }}">{{ t('stat.minted_7d') }}</td>
+          <td class="num">{{ "{:,}".format(st.minted['7d']) }}</td></tr>
+        <tr><td data-label="{{ t('stat.minted_30d') }}">{{ t('stat.minted_30d') }}</td>
+          <td class="num">{{ "{:,}".format(st.minted['30d']) }}</td></tr>
+        {% if st.first_mint %}
+        <tr><td data-label="{{ t('stat.first_mint') }}">{{ t('stat.first_mint') }}</td>
+          <td class="mono dim">{{ st.first_mint.strftime('%Y-%m-%d') }}</td></tr>
+        <tr><td data-label="{{ t('stat.last_mint') }}">{{ t('stat.last_mint') }}</td>
+          <td class="mono dim">{{ st.last_mint.strftime('%Y-%m-%d') }}</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+    <p class="hint">{{ t('stat.minting_note')|safe }}</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-h"><span class="t">{{ t('stat.per_shoulder') }}</span></div>
+  <div class="card-b">
+    <p class="hint" style="margin-top:0">{{ t('stat.per_shoulder_lede')|safe }}</p>
+    {% if st.by_shoulder %}
+    <table>
+      <thead><tr>
+        <th>{{ t('stat.shoulder') }}</th><th>{{ t('stat.status') }}</th>
+        <th>{{ t('stat.organisation') }}</th>
+        <th class="num">{{ t('stat.total') }}</th>
+        <th class="num">{{ t('stat.public') }}</th>
+        <th class="num">{{ t('stat.reserved') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for sh in st.by_shoulder %}
+        <tr>
+          <td class="mono" data-label="{{ t('stat.shoulder') }}">{{ sh.naan }}{{ sh.shoulder }}</td>
+          <td data-label="{{ t('stat.status') }}">
+            <span class="pill {{ sh.status }}">{{ t('st.' ~ sh.status) }}</span></td>
+          <td data-label="{{ t('stat.organisation') }}">{{ sh.organisation }}</td>
+          <td class="num" data-label="{{ t('stat.total') }}">{{ "{:,}".format(sh.arks) }}</td>
+          <td class="num dim" data-label="{{ t('stat.public') }}">{{ "{:,}".format(sh.public) }}</td>
+          <td class="num dim" data-label="{{ t('stat.reserved') }}">{{ "{:,}".format(sh.reserved) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="hint">{{ t('stat.none') }}</p>{% endif %}
+  </div>
+</div>
+
+<p class="hint">{{ t('stat.cost')|safe }}</p>
+{% endblock %}

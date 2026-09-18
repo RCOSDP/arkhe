@@ -646,7 +646,7 @@
           "ark"
         ],
         "summary": "Ledger Stats",
-        "description": "**Counts for the ledger as you see it.** Requires `ark:read`.\n\nNothing outside your reach is included — an organisation sees its own shoulders, a NAAN\nadministrator its NAAN, the registration authority everything. **A total is itself a\ndisclosure**: how many identifiers an organisation holds is that organisation's business,\nso the same reach that limits the listing limits this.\n\n`withdrawn_after_publication` is kept apart from `withdrawn` on purpose. Retracting a\nreservation nobody saw and removing a name that was out in the world are different acts,\nand **the second one is the number of times the promise was broken.** It does not belong\nhidden inside a total.\n\n**Counting is exact, so it costs time proportional to the number of rows.** The listing\navoids `COUNT` because it only needs to know whether there is more; here the number *is*\nthe answer. On a ledger of a million ARKs expect a few hundred milliseconds. **This is not\nan endpoint to poll every second.**",
+        "description": "**Counts for the ledger as you see it.** Requires `ark:read`.\n\nNothing outside your reach is included — an organisation sees its own shoulders, a NAAN\nadministrator its NAAN, the registration authority everything. **A total is itself a\ndisclosure**: how many identifiers an organisation holds is that organisation's business,\nso the same reach that limits the listing limits this.\n\n`withdrawn_after_publication` is kept apart from `withdrawn` on purpose. Retracting a\nreservation nobody saw and removing a name that was out in the world are different acts,\nand **the second one is the number of times the promise was broken.** It does not belong\nhidden inside a total.\n\n**Counting is exact, so it costs time proportional to the number of rows.** The listing\navoids counting because it only needs to know whether there is more; here the number *is*\nthe answer. What can be avoided is the number of passes: every figure over the same set is\ngathered with conditional aggregation, so **the ark table is read twice, not seven times**\n— which also keeps the figures consistent with each other, since counts taken separately\ndrift apart as rows arrive. Measured at about 110 ms over 300,000 ARKs. **This is not an\nendpoint to poll every second.**",
         "operationId": "ledger_stats_api_stats_get",
         "security": [
           {
@@ -1877,7 +1877,7 @@
           "minted"
         ],
         "title": "StatsOut",
-        "description": "Counts for the ledger **as this caller sees it**. Nothing outside the caller's reach is included — a total is itself a disclosure, since how many identifiers an organisation holds is that organisation's business. Counting is exact and therefore costs time proportional to the number of rows: **this is not an endpoint to poll every second.**"
+        "description": "Counts for the ledger **as this caller sees it**. Nothing outside the caller's reach is included — a total is itself a disclosure, since how many identifiers an organisation holds is that organisation's business. Counting is exact and therefore costs time proportional to the number of rows, though every figure over the same set is gathered in one pass: **this is not an endpoint to poll every second.**"
       },
       "TombstoneIn": {
         "properties": {

@@ -227,9 +227,12 @@ and **the second one is the number of times the promise was broken.** It does no
 hidden inside a total.
 
 **Counting is exact, so it costs time proportional to the number of rows.** The listing
-avoids `COUNT` because it only needs to know whether there is more; here the number *is*
-the answer. On a ledger of a million ARKs expect a few hundred milliseconds. **This is not
-an endpoint to poll every second.**
+avoids counting because it only needs to know whether there is more; here the number *is*
+the answer. What can be avoided is the number of passes: every figure over the same set is
+gathered with conditional aggregation, so **the ark table is read twice, not seven times**
+— which also keeps the figures consistent with each other, since counts taken separately
+drift apart as rows arrive. Measured at about 110 ms over 300,000 ARKs. **This is not an
+endpoint to poll every second.**
 """
 
 E_PURGE = """\

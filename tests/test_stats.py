@@ -113,3 +113,40 @@ def test_採番の窓は重なって数える(db, root, ledger):
     st = stats.ledger_stats(db, root)
     assert st.minted["24h"] <= st.minted["7d"] <= st.minted["30d"]
     assert st.minted["30d"] == st.arks
+
+
+# ------------------------------------------------- 管理画面（同じ数を見る）
+
+
+def test_画面は数えた結果をそのまま見せる(as_principal, principal_of, db, world, ledger):
+    """**画面が独自に集計を書かない。** 同じ「件数」が場所によって違うのが
+    いちばん質の悪いずれなので、ドメインの数と一致することを見る。
+    """
+    from arkhe.domain import stats as domain
+
+    ui = as_principal(principal_of(authority=Authority.NAAN, scopes={"ark:read"}))
+    page = ui.get("/admin/stats")
+    assert page.status_code == 200
+    st = domain.ledger_stats(db, principal_of(authority=Authority.NAAN, scopes={"ark:read"}))
+    assert str(st.arks) in page.text
+    assert "/admin/stats" in page.text          # 左の案内に出ている
+
+
+def test_画面も到達範囲の外を見せない(as_principal, principal_of, world, ledger):
+    """**合計は在ることを漏らす。** 他組織の shoulder 名も出してはいけない。"""
+    org = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
+    page = org.get("/admin/stats")
+    assert page.status_code == 200
+    assert world["sh_b"].shoulder not in page.text
+
+
+def test_画面とAPIとCLIが同じ数を出す(as_principal, principal_of, db, world, ledger):
+    """**数える場所は 1 つ**（`domain/stats.py`）。3 つの入口が食い違わないこと。"""
+    from arkhe.domain import stats as domain
+
+    p = principal_of(authority=Authority.NAAN, scopes={"ark:read"})
+    api = as_principal(p).get("/api/stats").json()
+    dom = domain.ledger_stats(db, p)
+    assert api["arks"] == dom.arks
+    assert api["public"] == dom.public
+    assert api["withdrawn_after_publication"] == dom.withdrawn_after_publication

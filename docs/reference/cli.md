@@ -9,7 +9,7 @@ audit log the same way.
 | `arkhe onboard` | Onboard an organisation and delegate one namespace to it. **The two always happen together.** |
 | `arkhe succeed` | A merger. **Identifiers are not broken** — the namespace moves with them. |
 | `arkhe depart` | An organisation leaves. **Minting stops; resolution continues.** |
-| `arkhe stat` | **Count the ledger** — ARKs (public and reserved), withdrawn names, shoulders, organisations, clients, holds in force, and minting over the last 24h / 7d / 30d. Only within your reach. `--json` for machines. **Counting is exact, so it costs time proportional to the number of rows** — not made for polling. |
+| `arkhe stat` | **Count the ledger** — ARKs (public and reserved), withdrawn names, shoulders, organisations, clients, holds in force, and minting over the last 24h / 7d / 30d. Only within your reach. `--json` for machines. **Counting is exact, so it costs time proportional to the number of rows** (about 110 ms over 300,000) — not made for polling. |
 | `arkhe check` | Validate the configuration. **Fail here rather than at startup.** |
 | `arkhe naan add` | Register a NAAN. |
 | `arkhe naan list` | List NAANs. Shows **which it holds authority for, and where the rest are delegated**. |

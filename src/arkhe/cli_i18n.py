@@ -224,7 +224,7 @@ JA: dict[str, str] = {
     "ark.purge.aborted": "やめました",
     "ark.purge.done": "{ark} を破棄しました（この名前は二度と採られません）",
     "stat.help": "**台帳を数える。** 届く範囲の内側だけ——数えるのは行数に比例して"
-                 "重いので、繰り返し叩く用途には向かない。",
+                 "重い（30 万件で約 110 ms）。**繰り返し叩く用途には向かない。**",
     "stat.json": "JSON で出す（機械で読むとき）",
     "stat.by_shoulder": "shoulder ごとの内訳も出す",
     "stat.head": "台帳の統計（範囲: {scope}）",
@@ -442,7 +442,8 @@ EN: dict[str, str] = {
     "ark.purge.aborted": "left alone",
     "ark.purge.done": "purged {ark} (that name is never assigned again)",
     "stat.help": "**Count the ledger.** Only within your reach — counting costs time "
-                 "proportional to the number of rows, so it is not made for polling.",
+                 "proportional to the number of rows (about 110 ms over 300,000). "
+                 "**Not made for polling.**",
     "stat.json": "print JSON (for machines)",
     "stat.by_shoulder": "also break it down per shoulder",
     "stat.head": "Ledger statistics (reach: {scope})",

@@ -384,8 +384,9 @@ class StatsOut(BaseModel):
         "Counts for the ledger **as this caller sees it**. Nothing outside the caller's "
         "reach is included — a total is itself a disclosure, since how many identifiers "
         "an organisation holds is that organisation's business. Counting is exact and "
-        "therefore costs time proportional to the number of rows: **this is not an "
-        "endpoint to poll every second.**"
+        "therefore costs time proportional to the number of rows, though every figure "
+        "over the same set is gathered in one pass: **this is not an endpoint to poll "
+        "every second.**"
     )
 
     scope: str = Field(description="How far the caller reaches: system, naan or organisation.")

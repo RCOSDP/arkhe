@@ -41,7 +41,7 @@
 | 認可 | 3 段の到達範囲。**判断は 1 か所**、リクエストで広がらない | `domain/authz.py` |
 | 管理画面 | 台帳・主体・ARK 一覧・監査・未登録主体。日英切替、画面ごとの i18n | `api/admin/`, `api/i18n/` |
 | 記録 | `AuditEvent`（NAAN 以上の操作）と `ArkChange`（行き先の変更は全件） | `db/models.py` |
-| 統計 | **数えるのは 1 か所**（`domain/stats.py`）。`arkhe stat` ／ `GET /api/stats` ／ 画面が同じ数を見る。合計も到達範囲で絞る——**合計は在ることを漏らす** | `domain/stats.py` |
+| 統計 | **数えるのは 1 か所**（`domain/stats.py`）。`arkhe stat` ／ `GET /api/stats` ／ 管理画面が同じ数を見る。合計も到達範囲で絞る（**合計は在ることを漏らす**）。同じ絞り込みへの集計は **1 回の走査に畳む**——`ark` を読むのは 2 回（30 万件で約 110 ms） | `domain/stats.py` |
 | 運用コマンド | **画面と同じ `domain` を通る** | `cli.py` |
 | 観測性 | `/healthz` `/readyz`、構造化ログ、`/.well-known/ark` | `observability.py`, `api/resolve.py` |
 | 体験環境 | Keycloak ＋ PostgreSQL ＋ minter/resolver の compose | `compose/oidc/` |

@@ -13,7 +13,15 @@ URL を直接叩けば通る、という穴ができる。
 """
 
 # 取り込むことでルータに登録される。順序については上の注記を参照。
-from arkhe.api.admin import arks, audit, clients, ledger, minting, signin  # noqa: E402,F401
+from arkhe.api.admin import (  # noqa: E402,F401
+    arks,
+    audit,
+    clients,
+    ledger,
+    minting,
+    signin,
+    stats,
+)
 from arkhe.api.admin._common import (
     PAGE,
     AdminPrincipal,

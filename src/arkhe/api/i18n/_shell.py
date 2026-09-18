@@ -15,6 +15,7 @@ JA: dict[str, str] = {
     "nav.clients": "利用者と鍵",
     "nav.mint": "ARK を採番",
     "nav.audit": "監査ログ",
+    "nav.stats": "統計",
     "nav.holds": "保留中の転送",
     "lang.label": "言語",
     # 状態
@@ -62,6 +63,7 @@ EN: dict[str, str] = {
     "nav.clients": "Users & keys",
     "nav.mint": "Mint an ARK",
     "nav.audit": "Audit log",
+    "nav.stats": "Statistics",
     "nav.holds": "Held redirects",
     "lang.label": "Language",
     "st.active": "mintable",

@@ -31,7 +31,7 @@ from __future__ import annotations
 
 from fastapi import Request
 
-from arkhe.api.i18n import _arks, _audit, _clients, _info, _ledger, _shell, _signin
+from arkhe.api.i18n import _arks, _audit, _clients, _info, _ledger, _shell, _signin, _stats
 
 DEFAULT = "ja"
 LANGS = {"ja": "日本語", "en": "English"}
@@ -39,7 +39,7 @@ COOKIE = "arkhe_lang"
 
 #: 画面ごとの語彙を 1 つに束ねる。**同じキーが 2 か所にあれば起動時に落とす**
 #: ——後から入れたほうが黙って勝つと、直したはずの語が直らない。
-_PARTS = (_shell, _ledger, _clients, _arks, _signin, _audit, _info)
+_PARTS = (_shell, _ledger, _clients, _arks, _signin, _audit, _info, _stats)
 
 
 def _merge(attr: str) -> dict[str, str]:
