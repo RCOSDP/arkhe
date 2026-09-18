@@ -157,6 +157,19 @@ PURGE_NEEDS_REASON = Code(
     "公開した ARK の破棄には理由が要る。**残らない破棄は、無かったことと同じ**"
     "——消えた識別子について後から言えることが、これしか残らない",
 )
+EXPOSED_NEEDS_REASON = Code(
+    "ARKHE-1017", 400,
+    "This ARK has been published; unpublishing or deleting it requires a reason.",
+    "**一度でも外に出した名前**を引っ込める・消すには理由が要る。その間に誰かが"
+    "引用しているかもしれず、**こちらからは知りようがない**——後から言えることが"
+    "これしか残らない",
+)
+EXPOSED_NOT_CONFIRMED = Code(
+    "ARKHE-1018", 400,
+    "Send `confirm` with the ARK itself ({ark}): it has been published.",
+    "**一度でも外に出した名前**なので、対象を `confirm` に打ち直す"
+    "——一覧を回すスクリプトが、意図せず全件を引っ込めることのないように",
+)
 PURGE_NOT_CONFIRMED = Code(
     "ARKHE-1016", 400,
     "Send `confirm` with the ARK itself ({ark}) to purge it.",
@@ -249,14 +262,6 @@ SHOULDER_DELEGATED = Code(
     "——応答が失われると「向こうにはあるがこちらは知らない ARK」が生まれる",
 )
 
-PURGE_IS_SYSTEM_ONLY = Code(
-    "ARKHE-1310", 403,
-    "Purging a published ARK is for the registration authority's operator "
-    "(authority=system); this principal is {authority}.",
-    "公開した ARK の破棄は RA の運用者（`authority=system`）だけが行える。"
-    "**NAAN 管理者にも組織にも渡さない**——名前空間を預かることと、配った名前を"
-    "消せることは別の権限である",
-)
 
 # ------------------------------------------------------------- 404 見つからない
 ARK_NOT_FOUND = Code(
@@ -285,10 +290,18 @@ NO_METADATA_FOR_UNKNOWN_NAAN = Code(
 # --------------------------------------------------------- 409 状態が合わない
 ARK_ALREADY_PUBLIC = Code(
     "ARKHE-1501", 409,
-    "{ark} is public; a published ARK is never deleted. Tombstone it instead.",
-    "**公開した ARK は削除できない。** 消せるのは公開前のものだけで、公開した後は "
-    "tombstone に付け替えるか `url` を空にする（`NR` を宣言している以上、"
+    "{ark} is published; unpublish it first (or purge it in one step).",
+    "**公開中の ARK は、そのままでは削除できない。** 先に公開を取り下げる"
+    "（`/api/unpublish`）か、`/api/purge` で一手に行う。**どちらも理由と打ち直しを"
+    "要求する**。消さずに済ませるなら tombstone に付け替えるか `url` を空にする"
+    "（`NR` を宣言している以上、"
     "解決が止まることは許されない）",
+)
+ARK_NOT_PUBLIC = Code(
+    "ARKHE-1503", 409,
+    "{ark} is not published; there is nothing to withdraw from publication.",
+    "その ARK は公開していないので、公開を取り下げることはできない"
+    "（消すなら取り下げではなく削除）",
 )
 ARK_HAS_PARTS = Code(
     "ARKHE-1502", 409,

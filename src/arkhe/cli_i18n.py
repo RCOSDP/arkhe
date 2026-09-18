@@ -191,10 +191,28 @@ JA: dict[str, str] = {
                         "二度実行しても落ちない——同じ結果になるだけ。",
     "ark.publish.done": "{ark} を公開しました",
     "ark.publish.already": "{ark} は既に公開済み",
-    "ark.delete.help": "**公開前の ARK を取り下げて消す。** 公開したものには効かない。\n\n"
+    "ark.unpublish.help": "**公開を取り下げる。** 行は残るので `ark publish` で出し直せる"
+                          "——**戻せるのはこちらだけ**で、削除は戻せない。\n\n"
+                          "取り下げているあいだ、その ARK は解決しない。**名前が別のもの"
+                          "を指すことは無い**（残った参照は 404 になるだけ）。",
+    "ark.unpublish.reason": "取り下げる理由。**必須**——その間に誰かが引用しているかも"
+                            "しれず、こちらからは知りようがない",
+    "ark.unpublish.yes": "訊かずに取り下げる",
+    "ark.unpublish.confirm": "{ark} の公開を取り下げます。**外に出た名前が解決しなく"
+                             "なります。** よろしいですか",
+    "ark.unpublish.aborted": "取り下げませんでした",
+    "ark.unpublish.done": "{ark} の公開を取り下げました（`ark publish` で出し直せます）",
+    "ark.delete.help": "**公開していない ARK を消す。** 公開中のものには効かない"
+                       "——先に `ark unpublish` を通す。\n\n"
                        "消えるのは台帳の行だけで、**名前は二度と採られない**"
-                       "——予約した文字列は既に誰かの手にあるかもしれないため。",
-    "ark.delete.reason": "取り下げる理由。消えた行について残る唯一の説明になる",
+                       "——予約した文字列は既に誰かの手にあるかもしれないため。"
+                       "**一度でも公開した名前なら、理由を要求し、一度訊く。**",
+    "ark.delete.reason": "取り下げる理由。消えた行について残る唯一の説明になる"
+                         "（**一度でも公開した名前では必須**）",
+    "ark.delete.yes": "訊かずに消す",
+    "ark.delete.confirm": "{ark} は一度公開されています。**消すと戻せません。**"
+                          "よろしいですか",
+    "ark.delete.aborted": "消しませんでした",
     "ark.delete.done": "{ark} を取り下げました（この名前は二度と採られません）",
     "ark.purge.help": "**公開した ARK を破棄する。** これは約束を破る操作である"
                       "——削除命令や、公開してはならなかったものへの逃げ道として"
@@ -366,11 +384,29 @@ EN: dict[str, str] = {
                         "Running it twice is not an error; the result is the same.",
     "ark.publish.done": "published {ark}",
     "ark.publish.already": "{ark} was already public",
-    "ark.delete.help": "**Withdraw an ARK that was never published.** It does nothing to a "
-                       "published one.\n\n"
+    "ark.unpublish.help": "**Withdraw an ARK from publication.** The row stays, so "
+                          "`ark publish` puts it back — **this is the half that comes "
+                          "back**; deleting does not.\n\n"
+                          "While it is withdrawn the ARK does not resolve. **The name "
+                          "never comes to mean something else**: a stale reference gets "
+                          "404, never a different object.",
+    "ark.unpublish.reason": "why it is withdrawn. **Required** — someone may be citing it "
+                            "already, and there is no way to know that from here",
+    "ark.unpublish.yes": "withdraw without asking",
+    "ark.unpublish.confirm": "Withdraw {ark} from publication. **A name that went out "
+                             "into the world will stop resolving.** Continue",
+    "ark.unpublish.aborted": "left it published",
+    "ark.unpublish.done": "withdrew {ark} from publication (`ark publish` puts it back)",
+    "ark.delete.help": "**Delete an ARK that is not currently published.** It does nothing "
+                       "to a published one — unpublish it first.\n\n"
                        "Only the row goes: **the name is never assigned again**, because a "
                        "reserved identifier may already be in someone's hands.",
-    "ark.delete.reason": "why it is withdrawn; the only account left of a row that is gone",
+    "ark.delete.reason": "why it is withdrawn; the only account left of a row that is gone "
+                        "(**required if it has ever been published**)",
+    "ark.delete.yes": "delete without asking",
+    "ark.delete.confirm": "{ark} has been published. **Deleting it does not come back.** "
+                          "Continue",
+    "ark.delete.aborted": "left it in the ledger",
     "ark.delete.done": "withdrew {ark} (that name is never assigned again)",
     "ark.purge.help": "**Purge a published ARK.** This breaks the promise the service "
                       "makes — use it only as a way out for a removal order, or for "

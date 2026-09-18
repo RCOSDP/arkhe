@@ -88,15 +88,15 @@ def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: st
     return _page(
         request, principal, "ark_detail.html", "arks",
         ark=row, changes=changes, hold_max=get_settings().hold_max_days,
-        # **押せるものだけ見せる。** 公開前にしか出ない操作なので、状態と
-        # scope の両方を見る（判定は `admin_ops` 側と同じものが効く）。
+        # **押せるものだけ見せる。** 状態と scope の両方を見る（判定は
+        # `admin_ops` 側と同じものが効く。出し分けは親切であって防御ではない）。
         can_publish=row.published_at is None and principal.has("ark:mint"),
+        can_unpublish=row.published_at is not None and principal.has("ark:unpublish"),
         can_withdraw=row.published_at is None and principal.has("ark:delete"),
-        # **公開したものを消せるのは RA の運用者だけ。** 出し分けと認可に同じ
-        # 判定を使う（`admin_ops.purge_ark` が同じ条件で弾く）。
-        can_purge=row.published_at is not None
-        and principal.is_system
-        and principal.has("ark:purge"),
+        can_purge=row.published_at is not None and principal.has("ark:purge"),
+        # **一度でも外に出したか。** 理由と打ち直しを出すかがこれで決まる
+        # ——重さは主体の位ではなく、名前の履歴で決まる。
+        was_exposed=row.first_published_at is not None,
     )
 
 
@@ -114,6 +114,27 @@ def ark_publish(request: Request, principal: AdminPrincipal, session: Db, ark: s
     return _redirect(f"/admin/arks/{key}")
 
 
+@router.post("/arks/{ark:path}/unpublish")
+def ark_unpublish(
+    request: Request,
+    principal: AdminPrincipal,
+    session: Db,
+    ark: str,
+    reason: Annotated[str, Form()] = "",
+    confirm: Annotated[str, Form()] = "",
+):
+    """**公開を取り下げる。** 行は残るので、戻り先は詳細のまま。
+
+    理由と打ち直しの入力は画面に置いてあるが、**弾くのは `admin_ops` 側**である
+    ——画面の required 属性は親切であって、防御ではない。
+    """
+    key = ark.removeprefix("ark:/").removeprefix("ark:")
+    authz.require_scope(principal, "ark:unpublish")
+    ops.unpublish_ark(session, principal, ark=key, reason=reason, confirm=confirm)
+    session.commit()
+    return _redirect(f"/admin/arks/{key}")
+
+
 @router.post("/arks/{ark:path}/delete")
 def ark_delete(
     request: Request,
@@ -121,14 +142,15 @@ def ark_delete(
     session: Db,
     ark: str,
     reason: Annotated[str, Form()] = "",
+    confirm: Annotated[str, Form()] = "",
 ):
-    """**公開前の ARK を取り下げる。** 公開済みなら `admin_ops` が 409 で断る。
+    """**公開していない ARK を消す。** 公開中なら `admin_ops` が 409 で断る。
 
     戻り先は詳細ではなく一覧——**その詳細ページはもう無い**。
     """
     key = ark.removeprefix("ark:/").removeprefix("ark:")
     authz.require_scope(principal, "ark:delete")
-    ops.withdraw_ark(session, principal, ark=key, reason=reason)
+    ops.withdraw_ark(session, principal, ark=key, reason=reason, confirm=confirm)
     session.commit()
     return _redirect("/admin/arks")
 
@@ -142,7 +164,7 @@ def ark_purge(
     reason: Annotated[str, Form()] = "",
     confirm: Annotated[str, Form()] = "",
 ):
-    """**公開した ARK を破棄する。** RA の運用者だけ。
+    """**公開した ARK を一手で破棄する。** 届く範囲の内側だけ。
 
     画面には確認の入力（ARK の打ち直し）と理由を置いてあるが、**弾くのは
     `admin_ops` 側**である——画面の required 属性は親切であって、防御ではない。

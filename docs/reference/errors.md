@@ -45,6 +45,8 @@ alongside. **The admin interface** answers from its own catalogue, in the langua
 | `ARKHE-1014` | 400 | {ark} was withdrawn before publication; that name is never assigned again. |
 | `ARKHE-1015` | 400 | Purging a published ARK requires a reason; it is kept with the name. |
 | `ARKHE-1016` | 400 | Send `confirm` with the ARK itself ({ark}) to purge it. |
+| `ARKHE-1017` | 400 | This ARK has been published; unpublishing or deleting it requires a reason. |
+| `ARKHE-1018` | 400 | Send `confirm` with the ARK itself ({ark}): it has been published. |
 | `ARKHE-1201` | 401 | No credentials. |
 | `ARKHE-1202` | 401 | Invalid credentials. |
 | `ARKHE-1203` | 404 | This deployment does not issue tokens itself (see ARKHE_AUTH). |
@@ -58,11 +60,11 @@ alongside. **The admin interface** answers from its own catalogue, in the langua
 | `ARKHE-1307` | 403 | Shoulder {shoulder} has status={status}; only a delegated shoulder can be imported into. |
 | `ARKHE-1308` | 403 | This resolver is not authoritative for NAAN {naan}; it cannot take custody of names in it. |
 | `ARKHE-1309` | 403 | Minting for shoulder {shoulder} happens elsewhere and is not reachable from here. See {about} |
-| `ARKHE-1310` | 403 | Purging a published ARK is for the registration authority's operator (authority=system); this principal is {authority}. |
 | `ARKHE-1401` | 404 | No such ARK in this ledger. |
 | `ARKHE-1402` | 404 | This resolver is authoritative for the NAAN and has no such name. |
 | `ARKHE-1403` | 404 | Check digit mismatch: the identifier looks mistranscribed. |
 | `ARKHE-1404` | 404 | Metadata for an unknown NAAN is not held by this resolver. |
-| `ARKHE-1501` | 409 | {ark} is public; a published ARK is never deleted. Tombstone it instead. |
+| `ARKHE-1501` | 409 | {ark} is published; unpublish it first (or purge it in one step). |
 | `ARKHE-1502` | 409 | {ark} has {count} qualified name(s) under it; withdraw those first. |
+| `ARKHE-1503` | 409 | {ark} is not published; there is nothing to withdraw from publication. |
 | `ARKHE-1601` | 429 | Daily quota exhausted: {used} of {quota} used in the last 24 hours. |

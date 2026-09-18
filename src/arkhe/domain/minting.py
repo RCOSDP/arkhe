@@ -94,7 +94,11 @@ def mint(
             assigned_name=name,
             created_by=created_by,
             updated_by=created_by,
-            published_at=None if reserve else utcnow(),
+            published_at=None if reserve else (now := utcnow()),
+            # **公開するなら、同じ時刻で「一度出した」も立てる。** ここを
+            # 落とすと、採番と同時に公開した ARK が「一度も出していない」ことに
+            # なり、**理由も打ち直しも無しに消せてしまう**。
+            first_published_at=None if reserve else now,
             **fields,
         )
         try:
@@ -192,7 +196,8 @@ def import_minted(
         updated_by=created_by,
         # **取り込んだ名前は公開済み。** 外で採られて既に配られている名前を
         # 引き受ける操作なので、こちらの都合で伏せる意味が無い。
-        published_at=utcnow(),
+        published_at=(imported_at := utcnow()),
+        first_published_at=imported_at,
         **fields,
     )
     try:
@@ -242,6 +247,7 @@ def register_qualified(
         # **公開状態は base から継ぐ。** 部分参照が base より先に世に出ることは
         # ないし、公開前の base を取り下げるときに、置き去りの子を残さない。
         published_at=base.published_at,
+        first_published_at=base.first_published_at,
         **fields,
     )
     try:

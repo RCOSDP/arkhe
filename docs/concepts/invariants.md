@@ -40,14 +40,26 @@ resolve it. **Whether an ARK resolves is decided by the ARK's state and by which
 is answering** — see [Running it distributed](../guides/federation.md#closed-resolver).
 
 ```bash
-curl -X POST /api/mint    -d '{"reserve": true}'        # does not resolve yet
-curl -X POST /api/publish -d '{"ark": "ark:99999/x9…"}' # from here on it resolves
-curl -X POST /api/delete  -d '{"ark": "ark:99999/x9…", "reason": "abandoned"}'
+curl -X POST /api/mint      -d '{"reserve": true}'        # does not resolve yet
+curl -X POST /api/publish   -d '{"ark": "ark:99999/x9…"}' # from here on it resolves
+curl -X POST /api/unpublish -d '{"ark": "…", "reason": "…", "confirm": "…"}'
+curl -X POST /api/publish   -d '{"ark": "ark:99999/x9…"}' # and back again
+curl -X POST /api/delete    -d '{"ark": "…", "reason": "…", "confirm": "…"}'
 ```
 
-There is **one boundary and it only goes one way**. Publishing cannot be undone: if it
-could, deleting before publication would mean nothing. A published ARK answers `409` to
-`/api/delete`.
+**Publication comes back; deletion does not.** Withdrawing an ARK from publication leaves
+the row, so it can be published again — the judgement about whether something should be
+out belongs with whoever holds the object, and making them go up to the registration
+authority and back means it stays out in the meantime. A *published* ARK still answers
+`409` to `/api/delete`: unpublish it first, or purge it in one step.
+
+**What does not come back is having been out.** The record keeps the moment it first went
+out, and that never clears. It decides the **weight of the ceremony**: withdrawing a
+reservation nobody ever saw is light, while taking back a name that has been in the world
+requires a reason and the ARK retyped. **The weight follows the name's history, not the
+rank of whoever is acting** — the dangerous question is not *who deletes* but *what
+disappears*. Reach still binds, as everywhere else: an organisation acts inside its own
+shoulder, a NAAN administrator inside its NAAN.
 
 **The name is not freed.** It moves to a ledger of withdrawn names and is never assigned
 again, by minting or by import — so withdrawing one that was resolving inside a closed

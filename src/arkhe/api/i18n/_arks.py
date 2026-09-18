@@ -114,17 +114,34 @@ JA: dict[str, str] = {
     "ak.published_at": "公開",
     "ak.publication": "グローバルへの公開",
     "ak.pub_lede": "<b>公開するまで、この ARK は解決しません。</b>まだ外に出していない"
-                   "名前なので、要らなくなれば取り下げられます——公開した後は、"
-                   "何があっても削除できません（tombstone にします）。",
-    "ak.pub_done_lede": "<b>この ARK は公開済みです。</b>削除はできません——対象が"
-                        "失われたときは tombstone にするか、行き先を空にします。",
+                   "名前なので、要らなくなれば消せます。",
+    "ak.pub_done_lede": "<b>この ARK は公開済みです。</b>対象が失われただけなら、消さずに"
+                        "tombstone にするか行き先を空にします——<b>そちらなら識別子は"
+                        "解決し続けます</b>。",
     "ak.publish": "公開する",
-    "ak.publish_warn": "<b>戻せません。</b>公開した名前は引っ込められないので、"
-                       "削除の道もここで閉じます。",
+    "ak.publish_warn": "公開すると解決を始めます。あとで引っ込めることはできますが、"
+                       "<b>引っ込めても「一度出した」事実は消えません</b>——"
+                       "その後の削除には理由と打ち直しが要ります。",
+    "ak.republish_note": "<b>この ARK は一度公開されていました。</b>出し直せますが、"
+                         "解決しなかった期間は埋められません——その間に引いた人には"
+                         "404 が返っています。",
+    "ak.unpublish": "公開を取り下げる",
+    "ak.unpub_lede": "<b>引っ込めても行は残るので、出し直せます。</b>取り下げている"
+                     "あいだ、この ARK は解決しません。<b>名前が別のものを指すことは"
+                     "ありません</b>——残っている参照は 404 になるだけです。",
+    "ak.unpub_reason": "取り下げる理由",
+    "ak.unpub_reason_hint": "<b>必須です。</b>その間に誰かが引用しているかもしれず、"
+                            "こちらからは知りようがありません。",
+    "ak.unpub_confirm": "確認のため ARK を打ち直す",
+    "ak.unpub_confirm_hint": "一覧を回す操作が、意図せず全件に効くことのないように。",
     "ak.withdraw": "取り下げて削除する",
     "ak.withdraw_lede": "<b>まだ公開していないので消せます。</b>行は消えますが、"
                         "その名前は二度と採られません——予約した文字列は既に"
                         "誰かの手にあるかもしれないからです。",
+    "ak.withdraw_exposed_lede": "<b>この ARK は一度公開されています。</b>今は取り下げて"
+                                "いるので消せますが、<b>消すと戻せません</b>——出し直す"
+                                "なら先に「公開する」を押してください。名前は二度と"
+                                "採られません。",
     "ak.withdraw_reason": "取り下げる理由",
     "ak.withdraw_reason_hint": "消えた行について残る唯一の説明になります"
                                "（公開の口には出ません）。",
@@ -135,7 +152,8 @@ JA: dict[str, str] = {
     "ak.purge_lede": "<b>これは約束を破る操作です。</b>公開した ARK は解決し続ける"
                      "はずのもので、消せば残っている参照はすべて切れます——"
                      "削除命令や、公開してはならなかったものへの逃げ道としてだけ"
-                     "使ってください。",
+                     "使ってください。<b>迷うなら、上の「公開を取り下げる」を"
+                     "使ってください</b>——あちらは戻せます。",
     "ak.purge_keeps": "<b>名前は解放されません。</b>二度と採番されないので、"
                       "消した後にその名前が別のものを指すことはありません"
                       "（残った参照は 404 になるだけです）。理由と監査は残ります。",
@@ -255,17 +273,34 @@ EN: dict[str, str] = {
     "ak.published_at": "Published",
     "ak.publication": "Publication",
     "ak.pub_lede": "<b>Until it is published this ARK does not resolve.</b> The name has "
-                   "not gone out yet, so it can still be withdrawn — once published it "
-                   "can never be deleted, only tombstoned.",
-    "ak.pub_done_lede": "<b>This ARK is public.</b> It cannot be deleted — when the "
-                        "object is gone, tombstone it or clear its target.",
+                   "not gone out yet, so it can still be deleted outright.",
+    "ak.pub_done_lede": "<b>This ARK is public.</b> If the object is merely gone, "
+                        "tombstone it or clear its target instead of removing it — "
+                        "<b>that way the identifier keeps resolving</b>.",
     "ak.publish": "Publish",
-    "ak.publish_warn": "<b>There is no way back.</b> A name that has gone out cannot be "
-                       "taken back, so this closes the door on deleting it.",
+    "ak.publish_warn": "Publishing starts resolution. It can be withdrawn later, but "
+                       "<b>withdrawing does not unmake the fact that it went out</b> — "
+                       "deleting it afterwards needs a reason and a retyped ARK.",
+    "ak.republish_note": "<b>This ARK was published once before.</b> You can publish it "
+                         "again, but the gap cannot be filled — whoever resolved it in "
+                         "the meantime got a 404.",
+    "ak.unpublish": "Withdraw from publication",
+    "ak.unpub_lede": "<b>The row stays, so it can be published again.</b> While it is "
+                     "withdrawn this ARK does not resolve. <b>The name never comes to "
+                     "mean something else</b> — a stale reference simply gets a 404.",
+    "ak.unpub_reason": "Why it is withdrawn",
+    "ak.unpub_reason_hint": "<b>Required.</b> Someone may be citing it already, and "
+                            "there is no way to know that from here.",
+    "ak.unpub_confirm": "Retype the ARK to confirm",
+    "ak.unpub_confirm_hint": "So that walking a list cannot act on everything by accident.",
     "ak.withdraw": "Withdraw and delete",
     "ak.withdraw_lede": "<b>It can be deleted because it was never published.</b> The row "
                         "goes, but the name is never assigned again — a reserved "
                         "identifier may already be in someone's hands.",
+    "ak.withdraw_exposed_lede": "<b>This ARK has been published.</b> It is withdrawn now, "
+                                "so it can be deleted — but <b>deleting does not come "
+                                "back</b>. To put it back, press Publish instead. The "
+                                "name is never assigned again.",
     "ak.withdraw_reason": "Why it is withdrawn",
     "ak.withdraw_reason_hint": "The only account left of a row that is gone "
                                "(it is not published anywhere).",
@@ -275,7 +310,8 @@ EN: dict[str, str] = {
     "ak.purge_lede": "<b>This breaks the promise.</b> A published ARK is meant to keep "
                      "resolving, and purging it breaks every reference still out there "
                      "— use it only as a way out for a removal order, or for what "
-                     "should never have been published.",
+                     "should never have been published. <b>If you are unsure, withdraw "
+                     "it from publication above</b> — that one comes back.",
     "ak.purge_keeps": "<b>The name is not freed.</b> It is never minted again, so it "
                       "cannot come to mean something else afterwards (a stale reference "
                       "simply gets a 404). The reason and the audit entry remain.",

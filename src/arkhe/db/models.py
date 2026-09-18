@@ -368,8 +368,10 @@ class Ark(Base, HoldMixin):
     #:   - **解決しない**（`domain.resolution` は未登録の名前と同じに扱う）
     #:   - **削除できる**（`domain.admin_ops.withdraw_ark`）
     #:
-    #: 公開した瞬間から、従来どおり何があっても消えない。**戻す道は無い**
-    #: ——「公開を取り消す」は、外に出た名前を無かったことにする操作だから。
+    #: **今この瞬間、公開しているか。** 0.3.0 では一方通行だったが、0.4.0 で
+    #: 戻せるようにした——取り下げの判断は、対象を持っている組織のところに
+    #: あるからである。**戻しても「一度出した」事実は消えない**
+    #: （`first_published_at` を見よ）。
     #:
     #: 既定は「採番と同時に公開」。**今までと同じ振る舞いを既定にする**ため
     #: ——公開の一手間を既存の呼び出し側に課すと、足すのを忘れた側では
@@ -381,6 +383,21 @@ class Ark(Base, HoldMixin):
     #: `domain.minting`（Ark を作る唯一の層）で、ここは器だけを持つ。
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None, index=True
+    )
+
+    #: **一度でも外に出したか。初めて公開した時刻で、二度と消えない。**
+    #:
+    #: `published_at` は行ったり来たりするが、**こちらは片道である**。外の世界に
+    #: 出た名前は、引っ込めても「出ていなかったこと」にはならない——その間に
+    #: 誰かが引用しているかもしれず、こちらからは知りようがないからである。
+    #:
+    #: この列が決めるのは**儀式の重さ**だけで、誰が行えるかではない。一度も
+    #: 公開していない名前の取り下げは軽く、**一度でも出した名前の取り下げは、
+    #: 理由と打ち直しを要求する**（`domain.admin_ops`）。重さを主体の位ではなく
+    #: 名前の履歴に結びつけたのは、**危ないのは「誰が消すか」ではなく
+    #: 「何が消えるか」**だからである。
+    first_published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
     )
 
     # ERC / Dublin Core（分野標準の受け皿）
@@ -409,8 +426,13 @@ class Ark(Base, HoldMixin):
 
     @property
     def is_public(self) -> bool:
-        """**もうグローバルに出したか。** 出していれば、この行は消えない。"""
+        """**今この瞬間、解決してよいか。** 取り下げていれば偽になる。"""
         return self.published_at is not None
+
+    @property
+    def was_ever_public(self) -> bool:
+        """**一度でも外に出したか。** 取り下げても真のままで、消えることは無い。"""
+        return self.first_published_at is not None
 
 
 class Subject(StrEnum):
@@ -776,8 +798,14 @@ def sanctioned_purge(session, ark: str):
 
 @event.listens_for(Ark, "before_delete")
 def _no_published_ark_delete(mapper, connection, target):  # noqa: ARG001
-    """**公開した ARK は消さない。** 公開前のものと、名指しで破棄するものだけが通る。"""
-    if target.published_at is None:
+    """**一度でも公開した ARK は消さない。** 名指しで取り下げるものだけが通る。
+
+    見るのは `published_at`（今 公開中か）ではなく **`first_published_at`（一度でも
+    出したか）**である。公開を取り消せるようになった以上、前者で見ると
+    **「取り下げてから消す」だけでこの守りを抜けられる**——抜け道が 1 手で
+    できるなら、守っていないのと同じである。
+    """
+    if target.first_published_at is None and target.published_at is None:
         return
     session = object_session(target)
     if session is not None and session.info.get(_PURGING) == target.ark:

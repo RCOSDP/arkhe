@@ -30,9 +30,10 @@ audit log the same way.
 | `arkhe hold release` | Lift a hold before its expiry. |
 | `arkhe hold list` | List the holds in force. **What is not visible becomes permanent.** |
 | `arkhe ark list` | List minted ARKs. **Stops at 50 by default** — the ledger only grows. `--naan` and `--org` narrow it; `-q` looks at the ARK, its target and its title. `--state public|reserved` keeps only the published or only the reserved ones. |
-| `arkhe ark publish` | **Publish it globally.** From then on it resolves and can no longer be deleted, only tombstoned. Running it twice is not an error. |
-| `arkhe ark delete` | **Withdraw an ARK that was never published.** It does nothing to a published one. Only the row goes — **the name is never assigned again.** |
-| `arkhe ark purge` | **Purge a published ARK. The registration authority's operator only.** A reason is required and it asks before doing it (`--yes` skips that). **It breaks the promise** — a way out for a removal order, or for what should never have been published |
+| `arkhe ark publish` | **Publish it globally**, including one that was withdrawn from publication. Running it twice is not an error. |
+| `arkhe ark unpublish` | **Withdraw it from publication.** The row stays, so `publish` puts it back — **this is the half that comes back.** A reason is required and it asks first (`--yes` skips that). |
+| `arkhe ark delete` | **Delete an ARK that is not currently published.** A published one must be unpublished first. **If it has ever been published, a reason is required and it asks first.** Only the row goes — **the name is never assigned again.** |
+| `arkhe ark purge` | **Purge a published ARK** — unpublish and delete in one step, within your own reach. A reason is required and it asks first (`--yes` skips that). **It breaks the promise** — a way out for a removal order, or for what should never have been published |
 
 `--help` on any command gives its arguments.
 
@@ -108,6 +109,8 @@ different meaning and no way back.
 curl -X POST /api/mint -d '{"reserve": true}'      # does not resolve yet
 arkhe ark list --state reserved
 arkhe ark publish ark:99999/x9tn1qkq2g7            # from here on it resolves
+arkhe ark unpublish ark:99999/x9tn1qkq2g7 --reason "published by mistake"
+arkhe ark publish ark:99999/x9tn1qkq2g7            # and back again
 arkhe ark delete ark:99999/x9tn1qkq2g7 --reason "the deposit was abandoned"
 ```
 

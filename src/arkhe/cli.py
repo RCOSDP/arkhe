@@ -386,7 +386,7 @@ def ark_list(
 
 @ark_app.command("publish", help=t("ark.publish.help"))
 def ark_publish(ark: str):
-    """**グローバルに公開する。** 画面・API と同じ `admin_ops` を通る。"""
+    """**グローバルに公開する。** 取り下げたものを出し直すのも同じ口。"""
     with _session() as s:
         key = ark_key_from_input(ark)
         before = s.get(Ark, key)
@@ -397,14 +397,50 @@ def ark_publish(ark: str):
         typer.echo(t(key, ark=compact_ark(row.ark)))
 
 
+@ark_app.command("unpublish", help=t("ark.unpublish.help"))
+def ark_unpublish(
+    ark: str,
+    reason: str = typer.Option(..., help=t("ark.unpublish.reason")),
+    yes: bool = typer.Option(False, "--yes", "-y", help=t("ark.unpublish.yes")),
+):
+    """**公開を取り下げる。** 行は残るので `ark publish` で出し直せる。
+
+    **確かめてから引っ込める。** 外に出た名前が解決しなくなる操作なので、
+    `--yes` が無ければ一度訊く——`admin_ops` 側の `confirm` はこの入力から
+    埋める（**打ち直しの照合は 1 か所**にしておく）。
+    """
+    key = ark_key_from_input(ark)
+    if not yes and not typer.confirm(t("ark.unpublish.confirm", ark=compact_ark(key))):
+        typer.echo(t("ark.unpublish.aborted"))
+        raise typer.Exit(1)
+    with _session() as s:
+        row = ops.unpublish_ark(s, _root(), ark=key, reason=reason, confirm=key)
+        name = compact_ark(row.ark)
+        s.commit()
+        typer.echo(t("ark.unpublish.done", ark=name))
+
+
 @ark_app.command("delete", help=t("ark.delete.help"))
 def ark_delete(
     ark: str,
     reason: str = typer.Option("", help=t("ark.delete.reason")),
+    yes: bool = typer.Option(False, "--yes", "-y", help=t("ark.delete.yes")),
 ):
-    """**公開前の ARK を取り下げる。** 公開済みなら `admin_ops` が断る。"""
+    """**公開していない ARK を消す。** 公開中なら `admin_ops` が断る。
+
+    **一度でも公開した名前なら訊く。** そのときは `admin_ops` が理由と打ち直しを
+    要求するので、`confirm` はこの入力から埋める。一度も出していない予約は
+    今までどおり黙って消える——**訊く回数は、消えるものの重さに合わせる。**
+    """
+    key = ark_key_from_input(ark)
     with _session() as s:
-        gone = ops.withdraw_ark(s, _root(), ark=ark_key_from_input(ark), reason=reason)
+        row = s.get(Ark, key)
+        exposed = row is not None and row.first_published_at is not None
+        if exposed and not yes:
+            if not typer.confirm(t("ark.delete.confirm", ark=compact_ark(key))):
+                typer.echo(t("ark.delete.aborted"))
+                raise typer.Exit(1)
+        gone = ops.withdraw_ark(s, _root(), ark=key, reason=reason, confirm=key)
         name = compact_ark(gone.ark)
         s.commit()
         typer.echo(t("ark.delete.done", ark=name))

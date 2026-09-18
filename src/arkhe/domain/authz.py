@@ -90,7 +90,7 @@ class ShoulderDelegated(Forbidden):
 #: 散らばると「登録できるのに検査されない scope」が生まれる。
 SCOPES = (
     "ark:mint", "ark:update", "ark:read", "ark:tombstone", "ark:hold", "ark:import",
-    "ark:delete", "ark:purge",
+    "ark:delete", "ark:unpublish", "ark:purge",
 )
 
 

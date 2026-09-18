@@ -29,9 +29,10 @@
 | `arkhe hold release` | 期限を待たずに保留を外す。 |
 | `arkhe hold list` | 今かかっている保留を並べる。**見えないと恒久化する。** |
 | `arkhe ark list` | 発行した ARK を並べる。**既定で 50 件で打ち切る**（台帳は増える一方なので）。`--naan` `--org` で絞り、`-q` は ARK・行き先・題名を見る。 `--state public|reserved` で公開したものだけ・公開前のものだけを引ける。 |
-| `arkhe ark publish` | **グローバルに公開する。** 以後は解決し、削除できなくなる（tombstone にするしかない）。二度実行しても落ちない。 |
-| `arkhe ark delete` | **公開前の ARK を取り下げて消す。** 公開したものには効かない。消えるのは行だけで、**その名前は二度と採られない。** |
-| `arkhe ark purge` | **公開した ARK を破棄する。RA の運用者だけ。** 理由が必須で、確認を訊く（`--yes` で省ける）。**約束を破る操作**——削除命令や、公開してはならなかったものへの逃げ道 |
+| `arkhe ark publish` | **グローバルに公開する。** 取り下げたものを出し直すのも同じ口。二度実行しても落ちない。 |
+| `arkhe ark unpublish` | **公開を取り下げる。** 行は残るので `publish` で出し直せる——**戻せるのはこちらだけ。** 理由が必須で、確認を訊く（`--yes` で省ける）。 |
+| `arkhe ark delete` | **公開していない ARK を消す。** 公開中のものは先に取り下げる。**一度でも公開した名前なら理由が必須で、確認を訊く。** 消えるのは行だけで、**その名前は二度と採られない。** |
+| `arkhe ark purge` | **公開した ARK を一手で破棄する**（取り下げと削除をまとめる）。届く範囲の内側だけ。理由が必須で、確認を訊く（`--yes` で省ける）。**約束を破る操作**——削除命令や、公開してはならなかったものへの逃げ道 |
 
 `--help` に各コマンドの引数がある。
 
@@ -104,6 +105,8 @@ arkhe hold release shoulder 3
 curl -X POST /api/mint -d '{"reserve": true}'      # まだ解決しない
 arkhe ark list --state reserved
 arkhe ark publish ark:99999/x9tn1qkq2g7            # ここから解決を始める
+arkhe ark unpublish ark:99999/x9tn1qkq2g7 --reason "誤って公開した"
+arkhe ark publish ark:99999/x9tn1qkq2g7            # 出し直す
 arkhe ark delete ark:99999/x9tn1qkq2g7 --reason "登録が取りやめになった"
 ```
 

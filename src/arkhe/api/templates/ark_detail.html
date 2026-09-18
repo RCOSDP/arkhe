@@ -45,8 +45,22 @@
   <div class="card-b">
     {% if ark.published_at %}
     <p class="hint" style="margin-top:0">{{ t('ak.pub_done_lede')|safe }}</p>
+    {% if can_unpublish %}
+    {# **戻せるほうを先に、目立つ形で置く。** 消したいだけの人が purge の欄に
+       たどり着く前に、戻せる道が目に入るように——順序は説明である。 #}
+    <form method="post" action="/admin/arks/{{ ark.ark }}/unpublish" style="margin-top:14px">
+      <p class="hint">{{ t('ak.unpub_lede')|safe }}</p>
+      <label>{{ t('ak.unpub_reason') }}
+        <input type="text" name="reason" maxlength="500" required>
+        <span class="hint">{{ t('ak.unpub_reason_hint')|safe }}</span></label>
+      <label>{{ t('ak.unpub_confirm') }}
+        <input type="text" name="confirm" placeholder="ark:{{ ark.ark }}" required>
+        <span class="hint">{{ t('ak.unpub_confirm_hint') }}</span></label>
+      <button class="btn sm" type="submit">{{ t('ak.unpublish') }}</button>
+    </form>
+    {% endif %}
     {% if can_purge %}
-    {# **RA の運用者だけに出す。** 出し分けと認可は同じ判定（`arks.ark_detail`）。
+    {# **一手で消す道。** 出し分けと認可は同じ判定（`arks.ark_detail`）。
        確認は ARK の打ち直し——この画面は JS を持たない（CSP）ので、
        ダイアログではなく入力で確かめる。 #}
     <div class="note stop" style="margin-top:14px">
@@ -70,12 +84,22 @@
       <p class="hint">{{ t('ak.publish_warn')|safe }}</p>
     </form>
     {% endif %}
+    {% if can_publish and was_exposed %}
+    <p class="hint">{{ t('ak.republish_note')|safe }}</p>
+    {% endif %}
     {% if can_withdraw %}
     <form method="post" action="/admin/arks/{{ ark.ark }}/delete" style="margin-top:14px">
-      <p class="hint">{{ t('ak.withdraw_lede')|safe }}</p>
+      {# **一度でも外に出した名前なら、予約を消すのと同じ軽さでは出さない。**
+         判定は `admin_ops._exposed_guards` と同じ事実（`was_exposed`）を見る。 #}
+      <p class="hint">{{ t('ak.withdraw_exposed_lede' if was_exposed else 'ak.withdraw_lede')|safe }}</p>
       <label>{{ t('ak.withdraw_reason') }}
-        <input type="text" name="reason" maxlength="500">
+        <input type="text" name="reason" maxlength="500"{% if was_exposed %} required{% endif %}>
         <span class="hint">{{ t('ak.withdraw_reason_hint') }}</span></label>
+      {% if was_exposed %}
+      <label>{{ t('ak.unpub_confirm') }}
+        <input type="text" name="confirm" placeholder="ark:{{ ark.ark }}" required>
+        <span class="hint">{{ t('ak.unpub_confirm_hint') }}</span></label>
+      {% endif %}
       <button class="btn sm" type="submit">{{ t('ak.withdraw') }}</button>
     </form>
     {% endif %}

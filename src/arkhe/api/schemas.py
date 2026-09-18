@@ -217,30 +217,66 @@ class PatchIn(ArkFields):
 
 
 class PublishIn(BaseModel):
-    """**予約していた ARK をグローバルに公開する。** 以後は消せない。"""
+    """**ARK をグローバルに公開する。** 予約していたものも、取り下げたものも。"""
 
     model_config = _spec(
-        "Publish a reserved ARK. From then on it resolves and **it can no longer be "
-        "deleted** — only tombstoned. Publishing twice is not an error; the second "
-        "call returns the same record."
+        "Publish an ARK: a reserved one, or one whose publication was withdrawn. From "
+        "then on it resolves again. Publishing twice is not an error; the second call "
+        "returns the same record. Deleting it now requires unpublishing it first."
     )
 
     ark: str
+
+
+class UnpublishIn(BaseModel):
+    """**公開を取り下げる。** 行は残り、解決しなくなる。"""
+
+    model_config = _spec(
+        "Withdraw an ARK from publication. The record stays and can be published "
+        "again; the identifier stops resolving in the meantime. **The name is never "
+        "reassigned**, so a stale reference gets `404`, never a different object. "
+        "Because the name has been published, a reason and `confirm` are required."
+    )
+
+    ark: str
+    reason: str = Field(
+        min_length=1,
+        max_length=500,
+        description=(
+            "Why it is being withdrawn. **Required**: someone may be citing it "
+            "already, and there is no way to know from here."
+        ),
+    )
+    confirm: str = Field(
+        description="The ARK again, to be sure of the target. Anything else is refused."
+    )
 
 
 class DeleteIn(BaseModel):
     """**公開前の ARK を取り下げる。** 公開したものには効かない。"""
 
     model_config = _spec(
-        "Withdraw an ARK that has not been published. **A published ARK is never "
-        "deleted** (409). The name itself is remembered and never assigned again."
+        "Delete an ARK that is not currently published. One that is published must be "
+        "unpublished first (409), or purged in one step. **If it has ever been "
+        "published, a reason and `confirm` are required.** The name itself is "
+        "remembered and never assigned again."
     )
 
     ark: str
     reason: str = Field(
         default="",
         max_length=500,
-        description="Why it was withdrawn. Kept with the name; not published.",
+        description=(
+            "Why it was withdrawn. Kept with the name; not published. **Required if "
+            "the ARK has ever been published.**"
+        ),
+    )
+    confirm: str = Field(
+        default="",
+        description=(
+            "The ARK again. **Required if the ARK has ever been published**, so that "
+            "a script walking a list cannot empty the ledger by accident."
+        ),
     )
 
 
@@ -248,8 +284,8 @@ class PurgeIn(BaseModel):
     """**公開した ARK を破棄する。** RA の運用者だけ。"""
 
     model_config = _spec(
-        "Purge a **published** ARK. For the registration authority's operator alone "
-        "(`authority=system`), for a legal removal order or data that should never have "
+        "Purge a **published** ARK in one step (unpublish and delete). Within the "
+        "caller's own reach, for a legal removal order or data that should never have "
         "been published. A reason is required and `confirm` must repeat the ARK."
     )
 

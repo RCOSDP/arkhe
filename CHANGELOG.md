@@ -9,6 +9,59 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **Publication can now be withdrawn.** In 0.3.0 `published_at` went one way only, and
+  "there is no way to unpublish" was written down as a decision. It is reversed because
+  **the judgement about whether something should be out belongs with whoever holds the
+  object** — the people who notice that something should never have been published are
+  the depositors, not the registration authority, and making them go up and back means
+  **it stays out in the meantime**.
+
+  - `POST /api/unpublish` (`ark:unpublish`) — the row stays, the ARK stops resolving
+  - `POST /api/publish` — the same endpoint **puts it back**
+  - `arkhe ark unpublish`, and the same actions on the admin ARK page
+
+  **Each caller acts inside their own reach**: an organisation within its own shoulder, a
+  NAAN administrator within its NAAN, the registration authority everywhere — the same
+  three-tier check (`authz.assert_may_touch`) that update and tombstone already use.
+
+- **A new `ark:unpublish` scope.** Being able to publish and being able to take back are
+  different decisions. It is separate from `ark:delete` too: **withdrawing comes back,
+  deleting does not**, and one key for both hands the irreversible half to anyone who
+  only wanted the reversible one.
+
+### Changed
+
+- **The weight of the ceremony now follows the name's history, not the actor's rank.** A
+  new column `ark.first_published_at` records when it first went out and is **one-way**:
+  withdrawing does not unmake having been out in the world.
+
+  Deleting a reservation nobody ever saw stays as light as before. **Withdrawing or
+  deleting anything that has ever been published requires a `reason` and `confirm`
+  repeating the ARK** (`ARKHE-1017` / `ARKHE-1018`). **The dangerous question is not who
+  deletes but what disappears**: the registration authority dropping a reservation nobody
+  saw is light, an organisation taking back a name cited for three years is heavy, and
+  ranking the actors gets those two backwards.
+
+- **`/api/purge` is no longer restricted to `authority=system`** — reach and scope bind
+  it, as they bind everything else. Once publication can be withdrawn, **`unpublish` then
+  `delete` reaches the same result in two steps**; restricting only the one-step form by
+  rank guards nothing. The reason, the retyped ARK, the audit trail and never freeing the
+  name are all unchanged.
+
+- **`/api/delete` refuses a published ARK differently** (`ARKHE-1501`): instead of "a
+  published ARK is never deleted", it now says **unpublish it first**, or purge it in one
+  step.
+
+- **Every existing ARK migrates as having been published** (`published_at` is copied into
+  `first_published_at`). Publication could not be undone before, so that is what they are
+  — **without this, every existing published ARK would count as never having gone out and
+  could be deleted with no reason and no confirmation.**
+
+BREAKING CHANGE: `ark` gains `first_published_at`. The `ark:unpublish` scope is new, and
+`ARKHE-1310` (purging is for the registration authority alone) is gone.
+
 ## [0.3.0] — 2026-09-17
 
 **The release in which a minted name can still be deleted, until it is published.**

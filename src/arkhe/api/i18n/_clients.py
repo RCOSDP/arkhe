@@ -167,13 +167,18 @@ JA: dict[str, str] = {
     "sc.ark:hold": "転送を止める",
     "sc.ark:hold.d": "行き先への転送を一時的に止める。<b>解決そのものは止まらない</b>"
                      "——識別子は生きたまま、記述を返す。",
-    "sc.ark:delete": "公開前のものを取り下げる",
-    "sc.ark:delete.d": "<b>まだ公開していない</b> ARK を台帳から消す。公開したものには"
-                       "効かない——名前は二度と採られないよう記録に残ります。",
-    "sc.ark:purge": "公開したものを破棄する",
-    "sc.ark:purge.d": "<b>公開した</b> ARK を消す。<b>RA の運用者だけ</b>が使えます"
-                      "——削除命令や、公開してはならなかったものへの逃げ道で、"
-                      "理由と監査が必ず残ります。",
+    "sc.ark:delete": "公開していないものを消す",
+    "sc.ark:delete.d": "<b>今 公開していない</b> ARK を台帳から消す。公開中のものは"
+                       "先に取り下げが要ります。<b>一度でも公開した名前なら、理由と"
+                       "打ち直しを要求します</b>——名前は二度と採られません。",
+    "sc.ark:unpublish": "公開を取り下げる",
+    "sc.ark:unpublish.d": "公開した ARK を<b>引っ込める</b>。行は残るので<b>出し直せます"
+                          "</b>——消すのは別の鍵（取り下げは戻せますが、削除は戻せません）。"
+                          "理由と打ち直しが要り、届く範囲の内側だけです。",
+    "sc.ark:purge": "公開したものを一手で破棄する",
+    "sc.ark:purge.d": "<b>公開した</b> ARK を、取り下げと削除をまとめて消す。"
+                      "削除命令や、公開してはならなかったものへの逃げ道で、"
+                      "理由と監査が必ず残ります。届く範囲の内側だけです。",
     "cu.f.scopes_hint": "<b>ここが上限です。</b>認可サーバのトークンに載っている scope との"
                         "積が、実際にできることになります——トークンで広がることはありません。",
 }
@@ -336,15 +341,21 @@ EN: dict[str, str] = {
     "sc.ark:hold": "Suspend forwarding",
     "sc.ark:hold.d": "Temporarily stop forwarding to the target. <b>Resolution itself does "
                      "not stop</b> — the identifier stays alive and returns a description.",
-    "sc.ark:delete": "Withdraw one not yet published",
-    "sc.ark:delete.d": "Remove an ARK that is <b>not yet public</b> from the ledger. It "
-                       "does not touch a published one, and the name is kept so that it "
-                       "is never assigned again.",
-    "sc.ark:purge": "Purge a published one",
-    "sc.ark:purge.d": "Remove a <b>published</b> ARK. <b>The registration authority's "
-                      "operator alone</b> — a way out for a removal order or for what "
-                      "should never have been published. A reason and an audit entry "
-                      "always remain.",
+    "sc.ark:delete": "Delete one not currently published",
+    "sc.ark:delete.d": "Remove an ARK that is <b>not published right now</b> from the "
+                       "ledger. A published one must be unpublished first. <b>If it has "
+                       "ever been published, a reason and a retyped ARK are required.</b> "
+                       "The name is kept so that it is never assigned again.",
+    "sc.ark:unpublish": "Withdraw from publication",
+    "sc.ark:unpublish.d": "Take a published ARK <b>out of publication</b>. The record "
+                          "stays, so it <b>can be published again</b> — deleting it is a "
+                          "different key, because withdrawing comes back and deleting does "
+                          "not. A reason and a retyped ARK are required, within your reach.",
+    "sc.ark:purge": "Purge a published one in one step",
+    "sc.ark:purge.d": "Remove a <b>published</b> ARK, unpublishing and deleting together "
+                      "— a way out for a removal order or for what should never have been "
+                      "published. A reason and an audit entry always remain, and only "
+                      "within your reach.",
     "cu.f.scopes_hint": "<b>This is the ceiling.</b> What it may actually do is the "
                         "intersection with the scopes in the token — a token cannot widen "
                         "it.",

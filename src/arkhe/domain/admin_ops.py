@@ -1054,27 +1054,93 @@ def publish_ark(session: Session, p: Principal, *, ark: str) -> Ark:
     row = _ark_in_reach(session, p, ark)
     if row.published_at is not None:
         return row  # 再送。**同じ結果を返す**（F4 の受け控えと同じ考え方）
-    row.published_at = datetime.now(UTC)
+    now = datetime.now(UTC)
+    # **再公開か、初めての公開か。** 前者は「一度引っ込めたものを出し直す」操作で、
+    # 読む側にとっては**その間に解決しなかった期間がある**ことが重要である。
+    again = row.first_published_at is not None
+    row.published_at = now
+    if not again:
+        # **片道。** 一度立てたら二度と倒さない——外に出た事実は取り消せない。
+        row.first_published_at = now
     row.updated_by = p.client_id
     from arkhe.domain import authz  # 循環 import を避ける
 
     # **識別子そのものの履歴に残す。** 監査は NAAN 単位以上しか残さないが、
     # 公開するのは組織である——「いつ外に出たか」は後から必ず要る。
-    authz.record_change(session, p, row, action="publish", before_url=row.url)
-    audit(session, p, "publish", row.ark)
+    action = "republish" if again else "publish"
+    authz.record_change(session, p, row, action=action, before_url=row.url)
+    audit(session, p, action, row.ark)
+    return row
+
+
+def _exposed_guards(row: Ark, *, reason: str, confirm: str) -> None:
+    """**一度でも外に出した名前に触るときの儀式。**
+
+    重さを主体の位ではなく**名前の履歴**に結びつけてある。危ないのは「誰が
+    消すか」ではなく**「何が消えるか」**だからである——RA の運用者が予約を
+    消すのは軽く、組織の管理者が 3 年前から引用されている名前を引っ込めるのは
+    重い。位で決めると、この 2 つが逆になる。
+
+    要求するのは 2 つだけで、`purge` と同じもの:
+
+    1. **理由。** 引っ込めた名前について後から言えることが、これしか残らない
+    2. **対象の打ち直し**（`confirm`）。一覧を回すスクリプトが、意図せず
+       全件を引っ込めることのないように
+    """
+    if not row.was_ever_public:
+        return
+    if not reason.strip():
+        raise Invalid(errors.EXPOSED_NEEDS_REASON)
+    if _key_of(confirm) != row.ark:
+        raise Invalid(errors.EXPOSED_NOT_CONFIRMED, ark=compact_ark(row.ark))
+
+
+def unpublish_ark(
+    session: Session, p: Principal, *, ark: str, reason: str, confirm: str = ""
+) -> Ark:
+    """**公開を取り下げる。** 行は残り、その ARK は公開のリゾルバで解決しなくなる。
+
+    0.3.0 では「公開を取り消す道は作らない」と決めていた。覆したのは、**取り下げの
+    判断が対象を持っている組織のところにある**からである——公開してはならなかった
+    ものに気づくのは、RA ではなく預けた側で、そこから RA に上げて戻ってくるまで
+    **出たままになる**。届く範囲は今までどおり 3 段（`_ark_in_reach`）。
+
+    **`NR` は破れない。** 取り下げても名前は誰のものでもなく、別の対象に振り直す
+    道はどこにも無い。残った参照は `404` になるだけである——**壊れるのは
+    「解決し続ける」ほうで、「別のものを指さない」ほうではない。**
+
+    **行は消さない。** 消すのは別の操作（`withdraw_ark`）で、そちらはさらに
+    「ぶら下がりが無いこと」を要求する。**引っ込めることと消すことを 1 手に
+    まとめない**——前者は戻せるが、後者は戻せない。
+    """
+    row = _ark_in_reach(session, p, ark)
+    if row.published_at is None:
+        raise Conflict(errors.ARK_NOT_PUBLIC, ark=compact_ark(row.ark))
+    _exposed_guards(row, reason=reason, confirm=confirm)
+    row.published_at = None
+    row.updated_by = p.client_id
+    from arkhe.domain import authz  # 循環 import を避ける
+
+    authz.record_change(session, p, row, action="unpublish", before_url=row.url)
+    audit(session, p, "unpublish", row.ark, reason=reason.strip()[:500])
     return row
 
 
 def withdraw_ark(
-    session: Session, p: Principal, *, ark: str, reason: str = ""
+    session: Session, p: Principal, *, ark: str, reason: str = "", confirm: str = ""
 ) -> WithdrawnName:
     """**公開前の ARK を取り下げる。** 行は消え、名前は使われないまま残る。
 
-    消せる条件は 2 つだけで、どちらも緩められない:
+    消せる条件は 2 つ:
 
-    1. **まだ公開していないこと。** 公開した名前を消すのは NR 違反である
+    1. **今は公開していないこと。** 公開中のものは先に `unpublish_ark` を通す
+       ——**引っ込めることと消すことを 1 手にまとめない**（前者は戻せるが、
+       後者は戻せない）。一手で済ませたいなら `purge_ark` が在る
     2. **修飾子付きの名前がぶら下がっていないこと。** 親だけ消すと、継ぐ先の
        無い部分参照が残る——先に下から取り下げる
+
+    **一度でも公開した名前なら、理由と打ち直しを要求する**（`_exposed_guards`）。
+    一度も出していない予約を消すのとは、消えるものの重さが違う。
 
     消した名前は `WithdrawnName` に移る。**行を消すこと自体は記録を消すことでは
     ない**——予約した文字列は既に人の手に渡っているので、別の対象に振り直せば
@@ -1088,7 +1154,9 @@ def withdraw_ark(
     row = _ark_in_reach(session, p, ark)
     if row.published_at is not None:
         raise Conflict(errors.ARK_ALREADY_PUBLIC, ark=compact_ark(row.ark))
-    return _remove_ark(session, p, row, reason=reason, action="withdraw")
+    _exposed_guards(row, reason=reason, confirm=confirm)
+    action = "withdraw_exposed" if row.was_ever_public else "withdraw"
+    return _remove_ark(session, p, row, reason=reason, action=action)
 
 
 def purge_ark(
@@ -1103,21 +1171,25 @@ def purge_ark(
     大量の行。逃げ道が無いと、そのとき誰かが DB を直接叩くことになる——
     **跡の残らない削除が、いちばん悪い削除である。**
 
-    だから「できないこと」にはせず、**通れる道を 1 本だけ作って、跡を残す**:
+    だから「できないこと」にはせず、**通れる道を作って、跡を残す**:
 
-      1. **RA の運用者（`authority=system`）だけ。** NAAN 管理者にも組織にも渡さない
+      1. **届く範囲の内側だけ**（`_ark_in_reach`）。組織は自分の shoulder、
+         NAAN 管理者は自 NAAN、RA は全部
       2. **理由が要る。** 空では通らない——残らない破棄は、無かったことと同じ
       3. **対象を打ち直す。** `confirm` に ARK そのものを渡させる（一覧を回す
          スクリプトが、意図せず全件消すことがないように）
       4. **名前は返さない。** `WithdrawnName` に移り、二度と採られない
-      5. **監査に残る。** system の操作なので `audit` が全件記録する
+      5. **監査に残る**
+
+    **0.4.0 で `authority=system` 限定をやめた。** 公開を取り下げられるように
+    した以上、`unpublish` → `withdraw` の 2 手で同じ結果に届く——**1 手だけを
+    位で縛っても、守っていることにはならない。** 縛るのは位ではなく、届く範囲
+    （3 段）と、儀式（理由と打ち直し）のほうである。
 
     4 が効いている。**行き先と記述は消えるが、その名前が別のものを指すことは
     絶対にない**——残っている参照は `404` になるだけで、`NR`（再割当てしない）
     という約束そのものは破らずに済む。破れるのは「解決し続ける」のほうである。
     """
-    if not p.is_system:
-        raise Forbidden(errors.PURGE_IS_SYSTEM_ONLY, authority=p.authority)
     if not reason.strip():
         raise Invalid(errors.PURGE_NEEDS_REASON)
     row = _ark_in_reach(session, p, ark)
@@ -1154,8 +1226,10 @@ def _remove_ark(
         shoulder_id=row.shoulder_id,
         minted_at=row.created_at,
         minted_by=row.created_by,
-        # **公開していたかを残す。** 取り下げと破棄は扱いが同じでも意味が違う。
-        published_at=row.published_at,
+        # **一度でも公開していたかを残す。** 見るのは `published_at`（今 公開中か）
+        # ではなく `first_published_at` ——取り下げてから消すと前者は null なので、
+        # **外に出した名前の記録が「ただの予約」に化ける**。
+        published_at=row.first_published_at or row.published_at,
         withdrawn_by=p.client_id,
         reason=reason.strip()[:500],
         ip=p.ip,

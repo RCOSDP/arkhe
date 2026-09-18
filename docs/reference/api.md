@@ -49,11 +49,18 @@ has never seen.
 `{"reserve": true}` to `POST /api/mint` and **a public resolver does not resolve it** — it
 answers as it does for a name it has never seen (a resolver inside a closed network does,
 with `ARKHE_RESOLVE_UNPUBLISHED`). `POST /api/publish` starts resolution
-and **closes the door on deletion**: `POST /api/delete` then answers `409`. A withdrawn
-name is never assigned again. See [Invariants](../concepts/invariants.md#before-publication).
+and **closes the door on deleting it outright**: `POST /api/delete` then answers `409`. A
+withdrawn name is never assigned again. See
+[Invariants](../concepts/invariants.md#before-publication).
 
-**There is exactly one way out for a published ARK.** `POST /api/purge` is for the
-registration authority's operator alone (`ark:purge` **and** `authority=system`) — for a
+**Publication can be withdrawn, and taken up again.** `POST /api/unpublish` (`ark:unpublish`)
+leaves the row and stops the ARK resolving; `POST /api/publish` puts it back. Both act
+**within the caller's own reach** — an organisation inside its own shoulder, a NAAN
+administrator inside its NAAN. Because the name has been out in the world, unpublishing
+needs a `reason` and `confirm` repeating the ARK, and so does deleting anything that has
+ever been published. **The weight follows the name's history, not the caller's rank.**
+
+**`POST /api/purge` does both steps at once** (`ark:purge`, within your reach) — for a
 removal order, or data that should never have been published — because **without a way
 out someone deletes rows straight from the database**. It requires a reason, `confirm`
 must repeat the ARK, and the whole thing is audited. **The name is not freed**, so a

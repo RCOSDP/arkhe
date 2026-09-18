@@ -30,6 +30,7 @@ from arkhe.api.schemas import (
     PurgeIn,
     RegisterIn,
     TombstoneIn,
+    UnpublishIn,
     UpdateIn,
 )
 from arkhe.api.token import scheme as oauth2_scheme
@@ -165,14 +166,35 @@ is found and in reach** — there is no partial application.
 """
 
 E_PUBLISH = """\
-**Publish a reserved ARK.** Requires `ark:mint`.
+**Publish an ARK.** Requires `ark:mint`.
 
-Until it is published an ARK does not resolve and can still be deleted; from here on
-it resolves and **it can never be deleted**, only tombstoned. There is no way back:
-un-publishing would mean taking back a name that has already gone out.
+Until it is published an ARK does not resolve and can be deleted outright; from here on
+it resolves, and deleting it means first withdrawing it from publication.
+
+This also **publishes again** an ARK that was withdrawn. The record keeps the moment it
+first went out (`first_published_at`), which never changes: what has been out in the
+world cannot be made never to have been out.
 
 Publishing twice is not an error — the second call returns the same record, so a lost
 response can simply be resent.
+"""
+
+E_UNPUBLISH = """\
+**Withdraw an ARK from publication.** Requires `ark:unpublish`, and the ARK must be
+within your reach — an organisation's own shoulder, a NAAN administrator's own NAAN,
+everything for the registration authority.
+
+The record stays and **can be published again**; in the meantime the identifier does not
+resolve. It is the reversible half: deleting the record is a separate call, and that one
+does not come back.
+
+**`NR` is not broken by this.** A withdrawn name belongs to nobody and there is no path
+anywhere that reassigns it, so a stale reference gets `404` — never a different object.
+What breaks is "keeps resolving", not "never means something else".
+
+Because the name **has been published**, two things are required: a `reason` (someone may
+be citing it already, and there is no way to know that from here) and `confirm` repeating
+the ARK (so that a script walking a list cannot withdraw everything by accident).
 """
 
 E_DELETE = """\
@@ -191,7 +213,8 @@ someone — re-using it would be indistinguishable, from the outside, from break
 """
 
 E_PURGE = """\
-**Purge a published ARK.** Requires `ark:purge` **and** `authority=system`.
+**Purge a published ARK** — unpublish and delete in one step. Requires `ark:purge`, and
+the ARK must be within your reach.
 
 Everything else in this service exists so that a published identifier keeps resolving.
 This endpoint is the one way out, and it is here because **reality sometimes brings a
@@ -202,8 +225,7 @@ worst kind.**
 
 So the way is narrow and it is recorded:
 
-* **the registration authority's operator only** — never a NAAN administrator, never an
-  organisation;
+* **within your own reach only** — an organisation cannot touch another's shoulder;
 * **a reason is required**, and it is kept with the name;
 * **`confirm` must repeat the ARK**, so that a script walking a list cannot empty the
   ledger by accident;
@@ -727,13 +749,41 @@ def publish(body: PublishIn, principal: CurrentPrincipal, session: Db):
 
 
 @router.post(
+    "/unpublish",
+    dependencies=needs("ark:unpublish"),
+    response_model=ArkOut,
+    description=E_UNPUBLISH,
+)
+def unpublish(body: UnpublishIn, principal: CurrentPrincipal, session: Db):
+    """**公開を取り下げる。** 行は残り、解決しなくなる。届く範囲の内側だけ。
+
+    **scope を `ark:mint` と分けてある。** 出せることと引っ込められることは別の
+    判断である——採番の鍵を配った先に、外に出した名前を止める力まで渡らない。
+
+    **`ark:delete` とも分けた。** こちらは戻せる操作で、あちらは戻せない。
+    同じ鍵にすると、**戻せるほうを使いたいだけの主体に、戻せないほうまで渡る。**
+    """
+    authz.require_scope(principal, "ark:unpublish")
+    ark = admin_ops.unpublish_ark(
+        session, principal, ark=_key(body.ark), reason=body.reason, confirm=body.confirm
+    )
+    session.commit()
+    return ArkOut.of(ark)
+
+
+@router.post(
     "/delete",
     dependencies=needs("ark:delete"),
     response_model=DeleteOut,
     description=E_DELETE,
 )
 def delete_ark(body: DeleteIn, principal: CurrentPrincipal, session: Db):
-    """**公開前の ARK を取り下げる。** 公開したものは 409 で断る。
+    """**公開していない ARK を消す。** 公開中のものは 409 で断る（先に取り下げる）。
+
+    **一度でも公開した名前なら、理由と打ち直しを要求する。** 一度も出していない
+    予約を消すのとは、消えるものの重さが違う——重さは主体の位ではなく、
+    **その名前が何であったか**で決まる。
+
 
     **`DELETE` ではなく `POST`。** ほかの書き込みと同じく本文で ARK を受け取る
     ——`DELETE` の本文は前段（プロキシ・クライアント）に落とされることがあり、
@@ -745,7 +795,7 @@ def delete_ark(body: DeleteIn, principal: CurrentPrincipal, session: Db):
     """
     authz.require_scope(principal, "ark:delete")
     gone = admin_ops.withdraw_ark(
-        session, principal, ark=_key(body.ark), reason=body.reason
+        session, principal, ark=_key(body.ark), reason=body.reason, confirm=body.confirm
     )
     out = DeleteOut(
         ark=compact_ark(gone.ark), withdrawn_at=gone.withdrawn_at, reason=gone.reason
@@ -761,14 +811,14 @@ def delete_ark(body: DeleteIn, principal: CurrentPrincipal, session: Db):
     description=E_PURGE,
 )
 def purge(body: PurgeIn, principal: CurrentPrincipal, session: Db):
-    """**公開した ARK を破棄する。** RA の運用者だけが通れる。
+    """**公開した ARK を一手で破棄する。** 取り下げと削除をまとめたもの。
 
     ここだけは「できない」と言い切らずに口を開けてある——逃げ道が無いと、必要に
     迫られた誰かが DB を直接叩くことになり、**跡の残らない削除**が起きる。詳しい
     理由と守りは `admin_ops.purge_ark` に書いた。
 
-    **scope も到達範囲も別で要求する。** `ark:delete`（公開前の取り下げ）を
-    持っているだけでは通らない——意味も取り返しのつかなさも違う操作である。
+    **scope は別で要求する。** `ark:delete` を持っているだけでは通らない
+    ——一手で外に出たものを消せることは、別の判断である。
     """
     authz.require_scope(principal, "ark:purge")
     gone = admin_ops.purge_ark(
