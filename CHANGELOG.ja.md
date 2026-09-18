@@ -8,6 +8,21 @@
 
 ## [未リリース]
 
+## [0.9.0] — 2026-09-18
+
+**予約したまま忘れられたものが、見つかるようになった版。** 公開前の ARK は
+放っておくと溜まる——誰も指さない番号が、誰にも気づかれずに残る。
+
+**件数では警報を出せない。** 10 件でも昨日採ったものなら普通で、1 件でも 3 年前なら
+放置である。だから**古さで見る**ようにした。
+
+**期限で自動的に消すことはしない。** 予約した名前は既に誰かの手にあることが多く、
+期限で消せば**まだ使うつもりだった名前が黙って二度と採れなくなる**
+——**取り返しがつかない操作を、時計に撃たせない。**
+
+これで STATUS.md が挙げていた arkhe 側の宿題は、すべて片付いた。**残るのは運用の
+作業だけである。**
+
 ### 追加
 
 - **公開前のまま放置された ARK を見つけられるようになった。**
@@ -1217,7 +1232,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.8.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0
 [0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0
 [0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0
 [0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0

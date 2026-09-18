@@ -9,6 +9,21 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-09-18
+
+**The release in which reservations nobody came back to can be found.** Reserved ARKs
+accumulate if left alone — numbers pointing at nothing, unnoticed by anyone.
+
+**A count cannot raise an alarm.** Ten reserved yesterday is normal; one reserved three
+years ago is abandoned. So the signal is **age**.
+
+**Nothing is deleted on a timer.** A reserved name is usually already in someone's hands,
+and expiring it would **quietly make a name they still meant to use unmintable forever** —
+**an irreversible operation should not be fired by a clock.**
+
+With this, every open item STATUS.md listed on arkhe's side is closed. **What remains is
+operational work.**
+
 ### Added
 
 - **Abandoned reservations can now be found.**
@@ -1324,7 +1339,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.0
 [0.8.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.8.0
 [0.7.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.7.0
 [0.6.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.6.0
