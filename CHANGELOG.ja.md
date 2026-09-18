@@ -8,6 +8,18 @@
 
 ## [未リリース]
 
+## [0.5.1] — 2026-09-18
+
+**冗長構成を検討していて踏んだ 1 件だけの版。** 同じ `request_id` が**同時に**届くと
+`500` を返していた——負荷分散の再送や、応答を待てなくなった呼び出し側の投げ直しが、
+別の minter に同時に当たる形で起きる。
+
+**台帳は壊れていなかった**（控えの一意制約が効いていた）。壊れていたのは応答のほうで、
+呼び出し側から見ると「**採番できたか分からない**」——そこで別の `request_id` で投げ直せば、
+1 つの対象に 2 つの ARK が付く。
+
+**再送に同じ答えを返すという約束は、順次でも同時でも同じでなければならない。**
+
 ### 修正
 
 - **同じ `request_id` が同時に届くと `500` を返していた。** 再送の判定と控えの
@@ -1066,7 +1078,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.5.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1
 [0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0
 [0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0
 [0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0

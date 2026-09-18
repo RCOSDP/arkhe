@@ -9,6 +9,19 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-09-18
+
+**One fix, found while working through redundancy.** The same `request_id` arriving **at
+the same time** returned `500` — which is what a load balancer's retry, or a caller that
+gave up waiting and resent, actually looks like when it lands on another minter.
+
+**The ledger was never wrong** (the uniqueness constraint on the receipt held). What was
+wrong was the answer: to the caller it reads as "**I do not know whether it minted**", and
+resending under a fresh `request_id` then puts two ARKs on one object.
+
+**The promise that a resend gets the same answer has to hold whether the resends are
+sequential or simultaneous.**
+
 ### Fixed
 
 - **The same `request_id` arriving at the same time returned `500`.** Between checking
@@ -1163,7 +1176,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.1
 [0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0
 [0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0
 [0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0
