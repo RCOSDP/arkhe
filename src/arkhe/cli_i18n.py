@@ -245,6 +245,9 @@ JA: dict[str, str] = {
     "stat.first": "最初の採番",
     "stat.last": "最後の採番",
     "stat.per_shoulder": "shoulder ごと:",
+    "fp.help": "**台帳の指紋を出す。** 復元できたことを、件数ではなく中身で確かめる"
+               "——件数が同じでも行き先が入れ替わっていれば、識別子は全部壊れている。\n\n"
+               "戻す前の値と突き合わせる。**行数に比例して重い**ので、月次の検証で回す。",
     "check.help": "設定を検証する。**起動前に落としたいものをここで落とす。**",
     "check.auth": "認証機構: {auth}",
     "check.role": "役割    : {role}",
@@ -464,6 +467,10 @@ EN: dict[str, str] = {
     "stat.first": "first mint",
     "stat.last": "last mint",
     "stat.per_shoulder": "Per shoulder:",
+    "fp.help": "**Print the ledger's fingerprint.** Prove a restore by its contents, not "
+               "its row count — the counts can agree while every target has moved.\n\n"
+               "Compare it against the value from before. **Costs time proportional to the "
+               "number of rows**, so run it in a monthly check.",
     "check.help": "Validate the configuration. **Fail here rather than at startup.**",
     "check.auth": "Mechanisms: {auth}",
     "check.role": "Role      : {role}",

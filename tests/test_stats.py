@@ -150,3 +150,64 @@ def test_画面とAPIとCLIが同じ数を出す(as_principal, principal_of, db,
     assert api["arks"] == dom.arks
     assert api["public"] == dom.public
     assert api["withdrawn_after_publication"] == dom.withdrawn_after_publication
+
+
+# ----------------------------------------------- 復元できたことの確認（指紋）
+
+
+def test_指紋は件数が同じでも行き先の入れ替わりを捕まえる(db, root, world, ledger):
+    """**件数が合うことは、確かめたことにならない。**
+
+    件数が同じでも行き先が入れ替わっていれば、識別子は全部壊れている——
+    復元の確認で見るべきはそこである。
+    """
+    from arkhe.db.models import Ark
+
+    before = stats.ledger_fingerprint(db)
+    row = db.query(Ark).order_by(Ark.ark).first()
+    row.url = "https://wrong.example/"
+    db.commit()
+    after = stats.ledger_fingerprint(db)
+
+    assert after.ark_count == before.ark_count, "件数は変わらない——だから件数では気づけない"
+    assert after.arks != before.arks, "行き先が入れ替わったのに指紋が同じ"
+
+
+def test_指紋は同じ台帳なら何度出しても同じ(db, root, ledger):
+    """**並びを固定していないと、出すたびに変わって使い物にならない。**"""
+    assert stats.ledger_fingerprint(db).arks == stats.ledger_fingerprint(db).arks
+
+
+def test_取り下げ台帳は別に数える(db, root, world, ledger):
+    """**`withdrawn_name` が落ちても採番は動き続ける**ので、黙って通る。
+
+    1 つの値に潰すと「どこが違うか」が消える——`arks` が同じまま
+    `withdrawn` だけ変わることを見る。
+    """
+    from arkhe.domain.minting import mint
+
+    a, _ = mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)
+    db.commit()
+    before = stats.ledger_fingerprint(db)
+    ops.withdraw_ark(db, root, ark=a.ark)
+    db.commit()
+    after = stats.ledger_fingerprint(db)
+
+    assert after.withdrawn != before.withdrawn, "取り下げたのに指紋が同じ"
+    assert after.withdrawn_count == before.withdrawn_count + 1
+
+
+def test_保留は指紋に入れない(db, root, world, ledger):
+    """**期限で勝手に変わるものを入れない。** 差が出ても「壊れた」と読めない
+    ——**鳴りっぱなしの警報は、誰も見なくなる。**
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from arkhe.db.models import Ark
+
+    ark = db.query(Ark).order_by(Ark.ark).first().ark
+    before = stats.ledger_fingerprint(db)
+    ops.set_hold(db, root, kind="ark", key=ark,
+                 until=datetime.now(UTC) + timedelta(days=3), reason="調査中")
+    db.commit()
+    assert stats.ledger_fingerprint(db).arks == before.arks

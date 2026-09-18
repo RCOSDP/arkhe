@@ -640,6 +640,29 @@ def stat(
             )
 
 
+@app.command("fingerprint", help=t("fp.help"))
+def fingerprint(as_json: bool = typer.Option(False, "--json", help=t("stat.json"))):
+    """**復元できたことを、件数ではなく中身で確かめる。**
+
+    バックアップから戻した台帳でこれを出し、**戻す前の値と突き合わせる**。
+    件数が合っていても行き先が入れ替わっていれば、識別子は全部壊れている。
+
+    出力は 2 行に分けてある。**1 つに潰すと「どこが違うか」が消える**
+    ——とくに `withdrawn`（二度と採らない名前）が落ちても採番は動き続けるので、
+    合わせて出さなければ黙って通る。
+    """
+    import json as _json
+    from dataclasses import asdict
+
+    with _session() as s:
+        fp = stats_mod.ledger_fingerprint(s)
+    if as_json:
+        typer.echo(_json.dumps(asdict(fp), ensure_ascii=False))
+        return
+    for line in fp.lines():
+        typer.echo(line)
+
+
 @app.command("check", help=t("check.help"))
 def check():
     s = get_settings()

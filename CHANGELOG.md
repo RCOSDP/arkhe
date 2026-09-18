@@ -9,6 +9,32 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **`arkhe fingerprint` — prove a restore by its contents, not its row count.** Run it on
+  the restored ledger and compare against the value from before: the counts can agree
+  while every target has moved, and then every identifier is broken.
+
+  ```
+  arks       c5e54e5af778420832800a7dc9104eee  53 rows
+  withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
+  ```
+
+  **Two lines, because blending them hides where the difference is.** Losing `withdrawn`
+  (the names never to be assigned again) **does not stop minting**: with a single number
+  you would never see it, and half of what makes `NR` hold would be gone while everything
+  appeared to work.
+
+  **Holds are excluded on purpose.** They change on their own as deadlines pass, so a
+  difference would not mean "broken" — **an alarm that is always ringing stops being
+  read.** Titles and descriptions are excluded too: losing them hurts, but **not in the
+  way an identifier pointing elsewhere hurts**, and mixing them flattens a grave
+  difference and a mild one into the same value.
+
+  [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/) used to carry the
+  `md5(string_agg(...))` SQL inline. **A mis-pasted check still reads as "they match"**,
+  so it is a command now — and one that does not depend on the database's dialect.
+
 ## [0.5.1] — 2026-09-18
 
 **One fix, found while working through redundancy.** The same `request_id` arriving **at

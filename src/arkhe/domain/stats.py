@@ -29,6 +29,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
@@ -268,3 +269,75 @@ def _holds(session: Session, p: Principal, out: LedgerStats, *, arks_held: int) 
             )
         ) or 0,
     }
+
+
+# --------------------------------------------------------------------------
+# 復元できたことの確認
+# --------------------------------------------------------------------------
+
+#: 指紋に入れる列と、その理由。**「識別子が生きているか」を決めるものだけ**を
+#: 入れる——`ark`（名前）、`url`（行き先）、`published_at`（解決するか）。
+#:
+#: **保留（`hold_until`）は入れない。** 期限で勝手に変わるので、差が出ても
+#: 「壊れた」と読めない——**鳴りっぱなしの警報は、誰も見なくなる。**
+#: 題名や記述も入れない。失われれば困るが、**識別子が別のものを指すのとは
+#: 重さが違う**——混ぜると、重い差と軽い差が同じ 1 つの値に潰れる。
+_ARK_COLUMNS = ("ark", "url", "published_at")
+
+
+@dataclass
+class Fingerprint:
+    """台帳の指紋。**復元の前後で突き合わせるためだけのもの。**"""
+
+    arks: str
+    ark_count: int
+    withdrawn: str
+    withdrawn_count: int
+
+    def lines(self) -> list[str]:
+        return [
+            f"arks       {self.arks}  {self.ark_count} rows",
+            f"withdrawn  {self.withdrawn}  {self.withdrawn_count} rows",
+        ]
+
+
+def _digest(rows) -> tuple[str, int]:
+    """並びを固定して 1 本の値にする。**数えながら流す**（全件を持たない）。"""
+    h, n = hashlib.sha256(), 0
+    for row in rows:
+        h.update("\x1f".join("" if v is None else str(v) for v in row).encode())
+        h.update(b"\x1e")
+        n += 1
+    return h.hexdigest()[:32], n
+
+
+def ledger_fingerprint(session: Session) -> Fingerprint:
+    """**台帳の指紋。復元できたことを、件数ではなく中身で確かめる。**
+
+    件数が合うことは、確かめたことにならない——**件数が同じでも行き先が入れ替わって
+    いれば、識別子は全部壊れている**。
+
+    **2 つに分けてある。** 1 つに潰すと「どこが違うか」が消える:
+
+      arks       いま在る名前と、その行き先と、解決するかどうか
+      withdrawn  二度と採らない名前——**`NR` を守る仕掛けの片側**
+
+    後者が消えても採番は動き続けるので、**黙って通る**。だから別に数える。
+
+    **DB の方言に依らない。** SQL の `md5(string_agg(...))` ではなく、並びを固定して
+    Python で畳む——PostgreSQL でも SQLite でも同じ値が出る。**費用は行数に比例する**
+    （全件を流すので、統計より重い）。月次の検証で回すためのものであって、
+    繰り返し叩く口ではない。
+    """
+    arks = _digest(
+        session.execute(
+            select(*(getattr(Ark, c) for c in _ARK_COLUMNS)).order_by(Ark.ark)
+        ).yield_per(1000)
+    )
+    gone = _digest(
+        session.execute(
+            select(WithdrawnName.ark, WithdrawnName.published_at).order_by(WithdrawnName.ark)
+        ).yield_per(1000)
+    )
+    return Fingerprint(arks=arks[0], ark_count=arks[1],
+                       withdrawn=gone[0], withdrawn_count=gone[1])

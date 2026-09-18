@@ -366,9 +366,9 @@ pg_restore -d arkhe --no-owner --no-privileges arkhe-YYYYMMDD.dump
 psql -d arkhe -tAc "SELECT version_num FROM alembic_version"
 uv run alembic check
 
-# 2. **ARK と行き先と公開状態の指紋。** ここが一致すれば、identifier は無傷である
-psql -d arkhe -tAc "SELECT md5(string_agg(ark||'|'||url||'|'||
-  coalesce(published_at::text,'-'), ',' ORDER BY ark)) FROM ark"
+# 2. **指紋。** ここが一致すれば、identifier は無傷である
+#    （SQL を貼り付けない——**貼り間違えても静かに「一致」と読める**）
+arkhe fingerprint
 
 # 3. **実際に解決する。** resolver 役で起動して引く
 #    （既定の起動は minter で、**解決の口を持たない**——ここで 404 を見て
@@ -381,6 +381,55 @@ arkhe stat && psql -d arkhe -tAc "SELECT last_value FROM shoulder_id_seq"
 
 **2 と 4 が本体である。** 1 と 3 は落ちれば分かるが、**指紋のずれと連番のずれは、
 黙って通る**——気づくのは、識別子が別のものを指した後になる。
+
+`arkhe fingerprint` は 2 行を出す:
+
+```
+arks       c5e54e5af778420832800a7dc9104eee  53 rows
+withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
+```
+
+**分けてあるのは、潰すと「どこが違うか」が消えるからである。** とくに
+`withdrawn`（二度と採らない名前）が落ちても**採番は動き続ける**ので、合わせて
+出さなければ黙って通る——`NR` を守る仕掛けの片側が欠けたまま、何事も無く動く。
+
+**保留は入れていない。** 期限で勝手に変わるので、差が出ても「壊れた」と読めない
+——**鳴りっぱなしの警報は、誰も見なくなる。**
+
+### 戻せることを、毎月証明する
+
+**手順書に「復元を試すこと」と書いても、誰も試さない。** 検証を仕事にする:
+
+```bash
+# 昨夜のダンプを使い捨ての DB に戻して、指紋を突き合わせる
+createdb arkhe_verify
+pg_restore -d arkhe_verify --no-owner --no-privileges "$LATEST_DUMP"
+ARKHE_DATABASE_URL=postgresql://…/arkhe_verify arkhe fingerprint > restored.txt
+diff expected.txt restored.txt && echo OK    # 落ちたら鳴る
+dropdb arkhe_verify
+```
+
+`expected.txt` は**ダンプを取った時点の本番で出しておく**（日次のジョブで
+ダンプの隣に置く）。**取った時点と戻した後を比べるのでなければ、意味が無い。**
+
+### バックアップが止まっていることに、どう気づくか
+
+**取得の失敗より、止まっていることに気づかないほうが怖い。** 成否ではなく
+**古さ**を見る:
+
+```sql
+-- PostgreSQL が自分で持っている。外から作らなくてよい
+SELECT last_archived_time, last_failed_time, failed_count, last_failed_wal
+FROM pg_stat_archiver;
+```
+
+- `last_archived_time` が **N 分より古い** → 警報
+- `last_failed_time > last_archived_time` → **即警報**
+- 最新ダンプのファイル更新時刻が **26 時間より古い** → 警報
+
+**2 つ目は可用性の問題でもある。** `archive_command` が失敗し続けると WAL は
+再利用されず、`pg_wal` が膨らんで**ディスクを食い潰し、主系が止まる**
+——バックアップが壊れているだけでは済まない。
 
 ## プロキシの後ろに置くとき
 

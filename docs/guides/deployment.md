@@ -380,10 +380,9 @@ and then every identifier is broken. Check **four** things:
 psql -d arkhe -tAc "SELECT version_num FROM alembic_version"
 uv run alembic check
 
-# 2. **A fingerprint over ARK, target and publication state.** If this matches, the
-#    identifiers survived.
-psql -d arkhe -tAc "SELECT md5(string_agg(ark||'|'||url||'|'||
-  coalesce(published_at::text,'-'), ',' ORDER BY ark)) FROM ark"
+# 2. **The fingerprint.** If it matches, the identifiers survived.
+#    (Do not paste SQL — **a mis-paste still reads as "they match".**)
+arkhe fingerprint
 
 # 3. **It actually resolves.** Start a resolver and ask it.
 #    (The default process is the minter and **has no resolution endpoint** — do not read
@@ -398,6 +397,56 @@ arkhe stat && psql -d arkhe -tAc "SELECT last_value FROM shoulder_id_seq"
 **Two and four are the real ones.** One and three announce themselves when they fail; **a
 drifted fingerprint and a reset sequence pass quietly** — you find out after an identifier
 has pointed at something else.
+
+`arkhe fingerprint` prints two lines:
+
+```
+arks       c5e54e5af778420832800a7dc9104eee  53 rows
+withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
+```
+
+**They are separate because blending them hides where the difference is.** In particular,
+losing `withdrawn` (the names never to be assigned again) **does not stop minting**: with
+one number you would never see it, and half of what makes `NR` hold would be missing while
+everything appeared to work.
+
+**Holds are deliberately excluded.** They change on their own as deadlines pass, so a
+difference would not mean "broken" — **an alarm that is always ringing stops being read.**
+
+### Prove every month that it comes back
+
+**A runbook that says "verify a restore" is never acted on.** Make the verification a job:
+
+```bash
+# Restore last night's dump into a throwaway database and compare fingerprints
+createdb arkhe_verify
+pg_restore -d arkhe_verify --no-owner --no-privileges "$LATEST_DUMP"
+ARKHE_DATABASE_URL=postgresql://…/arkhe_verify arkhe fingerprint > restored.txt
+diff expected.txt restored.txt && echo OK    # it rings when it fails
+dropdb arkhe_verify
+```
+
+Write `expected.txt` **on production at the moment the dump is taken** (the daily job can
+leave it beside the dump). **Comparing anything other than "at dump time" against "after
+restore" proves nothing.**
+
+### Noticing that backups have stopped
+
+**Not noticing is worse than failing.** Watch **age**, not success:
+
+```sql
+-- PostgreSQL keeps this itself; nothing to build
+SELECT last_archived_time, last_failed_time, failed_count, last_failed_wal
+FROM pg_stat_archiver;
+```
+
+- `last_archived_time` older than **N minutes** → alert
+- `last_failed_time > last_archived_time` → **alert immediately**
+- newest dump file older than **26 hours** → alert
+
+**The second one is an availability problem too.** While `archive_command` keeps failing,
+WAL cannot be recycled: `pg_wal` grows, **fills the disk, and the primary stops**. A broken
+archive does not merely mean broken backups.
 
 ## Behind a proxy
 
