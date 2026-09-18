@@ -8,16 +8,35 @@
 
 ## [未リリース]
 
+## [0.5.0] — 2026-09-18
+
+**台帳を数えられるようになった版。** 何件あるか、どこに寄っているか、直近どれだけ
+採番したか——運用の相談で最初に要る数字が、**CLI・API・管理画面のどれからでも同じ形で
+見られる**ようになった。
+
+**数えるのは 1 か所だけにしてある。** 3 つの入口が別々に集計を書けば、**同じ「件数」が
+場所によって違う**という、いちばん質の悪いずれが起きる。
+
+**合計も到達範囲で絞る。** 組織は自分の shoulder、NAAN 管理者は自 NAAN——
+**合計は在ることを漏らす**からである。そして**公開後に消した数は、合計から分けて
+数える**。あれはこの体系が守ると言っているものを破った回数で、埋めてよい数字ではない。
+
 ### 追加
 
-- **台帳の統計を見る口を足した**（`arkhe stat` ／ `GET /api/stats`、`ark:read`）。
+- **台帳の統計を見る口を足した**（`arkhe stat` ／ `GET /api/stats`（`ark:read`）／
+  管理画面の `統計`）。
   ARK（公開／公開前）、取り下げた名前、shoulder の状態、組織、主体、今かかって
   いる保留、直近 24h ／ 7 日 ／ 30 日の採番、最初と最後の採番、そして
   **shoulder ごとの内訳**。CLI は `--json` で機械にも渡せる。
 
   **数えるのは 1 か所（`domain/stats.py`）にした。** 画面・CLI・API が別々に
   集計を書くと、**同じ「件数」が場所によって違う**という、いちばん質の悪いずれが
-  起きる。絞り込みを `queries.py` に置いたのと同じ理由である。
+  起きる。絞り込みを `queries.py` に置いたのと同じ理由で、**3 つの入口が同じ数を
+  出すことはテストで縛ってある**。
+
+  **管理画面はダッシュボードにしていない。** この画面は台帳であって、見せるべきは
+  大きな数字ではない——図表を持たず、紙面を使ったのは**公開後に消した数を合計から
+  分けて置く**ことのほうである。
 
   **合計も到達範囲で絞る。** 組織は自分の shoulder、NAAN 管理者は自 NAAN、RA は
   全部——**合計は在ることを漏らす**からである。他組織の ARK が何件あるかはその
@@ -1015,7 +1034,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.4.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0
 [0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0
 [0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0
 [0.2.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0

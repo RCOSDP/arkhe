@@ -15,7 +15,7 @@
 
 | | |
 | --- | --- |
-| 版 | **0.4.0**（2026-09-18 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
+| 版 | **0.5.0**（2026-09-18 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
 | テスト | **すべて green**（`uv run pytest -q`） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語 |

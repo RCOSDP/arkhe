@@ -9,9 +9,26 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-18
+
+**The release in which the ledger can be counted.** How many there are, where they are
+concentrated, how much has been minted lately — the figures an operational conversation
+needs first are now available **in the same shape from the CLI, the API and the admin
+interface**.
+
+**Counting happens in exactly one place.** If the three entrances each wrote their own
+aggregate, **the same "count" would differ depending on where you looked** — the worst
+kind of drift.
+
+**Totals are limited by reach too**: an organisation sees its own shoulders, a NAAN
+administrator its NAAN, because **a total is itself a disclosure**. And **what was removed
+after publication is counted apart from the total** — that is the number of times the
+promise was broken, and it does not belong buried inside a sum.
+
 ### Added
 
-- **A way to see the ledger's numbers** (`arkhe stat`, `GET /api/stats`, `ark:read`):
+- **A way to see the ledger's numbers** (`arkhe stat`, `GET /api/stats` with `ark:read`,
+  and a **Statistics** page in the admin interface):
   ARKs (public and reserved), withdrawn names, shoulders by status, organisations,
   clients, holds in force, minting over the last 24h / 7 days / 30 days, the first and
   last mint, and **a breakdown per shoulder**. The CLI takes `--json` for machines.
@@ -19,7 +36,11 @@ breaking in a system whose identifiers cannot be reissued.
   **Counting happens in one place** (`domain/stats.py`). If the screen, the CLI and the
   API each wrote their own aggregate, **the same "count" would differ depending on where
   you looked** — the worst kind of drift. It is the same reason the filters live in
-  `queries.py`.
+  `queries.py`, and a test holds the three entrances to the same numbers.
+
+  **The admin page is not a dashboard.** This interface is a ledger, and what it owes the
+  reader is not a big number — it carries no charts, and the space goes to **keeping what
+  was removed after publication apart from the total**.
 
   **Totals are limited by reach too.** An organisation sees its own shoulders, a NAAN
   administrator its NAAN, the registration authority everything — **a total is itself a
@@ -1106,7 +1127,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.5.0
 [0.4.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.4.0
 [0.3.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.3.0
 [0.2.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.2.0
