@@ -18,6 +18,9 @@ description: kind クラスタの arkhe に Chaos Mesh で障害を注入し、�
 
 ## 新しいイメージを入れる
 
+**以下の `jc2`（クラスタ名・名前空間）はこの環境のもの。** 置き場ごとに違うので、
+自分のものに読み替える。
+
 ```bash
 docker build -f arkhe/Dockerfile -t arkhe:chaos arkhe
 kind load docker-image arkhe:chaos --name jc2

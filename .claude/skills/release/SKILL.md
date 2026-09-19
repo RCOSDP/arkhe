@@ -1,6 +1,6 @@
 ---
 name: release
-description: arkhe の版を出す。版・変更履歴（日英）・STATUS・OpenAPI を揃え、release.sh で検査してから公開し、docs と weko4 のサブモジュールまで追随させる。「リリースして」「vX.Y.Z を出して」のときに使う。
+description: arkhe の版を出す。版・変更履歴（日英）・STATUS・OpenAPI を揃え、release.sh で検査してから公開し、docs サイトまで追随させる。「リリースして」「vX.Y.Z を出して」のときに使う。
 ---
 
 # 版を出す
@@ -41,9 +41,8 @@ bash scripts/release.sh vNEW --publish       # タグ → push → GitHub のリ
 bash scripts/deploy-docs.sh                  # 変更履歴のページを追随させる
 ```
 
-最後に **weko4 のサブモジュールを進める**（`../` 側で `git add arkhe`、`STATUS.md`
-76 行目の版表記も）。**WEKO から見て何が効くか**をコミット本文に書く——arkhe の
-変更履歴をそのまま写さない。
+**組み込んでいる側がある構成なら、そこのポインタも進める。** それは置き場ごとに
+違う話なので、ここには書かない。
 
 ## 罠
 
