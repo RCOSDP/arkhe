@@ -1,11 +1,13 @@
-"""未登録の主体を残す
+"""Record principals that arrived without a registration
 
-認可サーバのトークンは正しいのに台帳に登録が無かった主体を残す表。
-**綴りが 1 文字違うだけで 401 になる**が、弾いた時点で正しい文字列は
-`azp` として手元にある——捨てずに残せば、運用者は打ち直さずに登録できる。
+A table for principals whose token from the authorisation server was valid while no
+registration existed here. One wrong character means 401, and at the moment of refusal
+the exact string is in hand as azp, so keeping it lets an operator register without
+retyping.
 
-`(subject, issuer)` を一意にして行を増やさない。台帳の他の表とは結ばない
-——トークンからは**どの組織のものか分からない**し、推測もしない。
+(subject, issuer) is unique, so rows do not accumulate. It is not joined to anything
+else in the ledger: the token does not say which organisation it belongs to, and nothing
+here guesses.
 
 Revision ID: b65e77b221ac
 Revises: b5f83e2c9014

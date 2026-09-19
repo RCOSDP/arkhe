@@ -1,18 +1,19 @@
-"""ARK の行き先の履歴を残す
+"""Keep the history of an ARK's target
 
 Revision ID: c4e70a91d5b6
 Revises: 9f2b6c4e18a3
 Create Date: 2026-08-29
 
-これが無いと、**以前どこを指していたかを復元できない**。`NR` を宣言する体系で
-「この識別子は変わらない」と言うなら、変えたのは何でいつ誰が変えたのかを
-示せなければならない——さもないと、約束を検証する手段が利用者の側に無い。
+Without it, where something used to point cannot be recovered. A scheme that declares
+NR and says an identifier does not change has to be able to show what changed, when, and
+who changed it; otherwise nobody outside can verify the promise.
 
-監査ログとは別に持つ。監査は NAAN 単位以上の操作しか残さないが、採番も
-付け替えも組織が行うので、監査だけでは肝心の変更が落ちる。
+It is kept separately from the audit log. The audit log keeps only operations at NAAN
+level and above, while minting and repointing are done by organisations, so it would
+miss the changes that matter.
 
-**既存の ARK には履歴が無い。** そのとき記録していなかったものを、後から
-作り出すことはできない。
+Existing ARKs have no history. What was not recorded at the time cannot be invented
+afterwards.
 """
 
 from collections.abc import Sequence

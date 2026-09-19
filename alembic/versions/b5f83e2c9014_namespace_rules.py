@@ -1,15 +1,17 @@
-"""名前空間の決まりを持たせる
+"""Give a namespace its own rules
 
 Revision ID: b5f83e2c9014
 Revises: c4e70a91d5b6
 Create Date: 2026-08-29
 
-**原則は NAAN、例外は組織。** 組織ごとの設定はここから狭めるだけで、広げられない。
+The rule belongs to the NAAN and an organisation records the exception: its settings
+may narrow these and never widen them.
 
-既定を NAAN 側に置くのは、**組織が増えると 1 つずつ掛けるのが現実的でなくなる**
-から。800 機関に同じ制限を入れて回る運用は成立しない。
+The default lives on the NAAN because applying it per organisation does not scale:
+setting the same restriction on 800 institutions one at a time is not a workable way to
+run anything.
 
-3 つとも既定は「これまでどおり」——既存の台帳の挙動は変わらない。
+All three default to what happened before, so an existing ledger behaves as it did.
 """
 
 from collections.abc import Sequence

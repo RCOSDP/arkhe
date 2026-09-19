@@ -1,12 +1,13 @@
-"""転送を一時的に止められるようにする
+"""Allow redirection to be held for a while
 
-`naan` / `shoulder` / `ark` の 3 つに、同じ 3 列を足す。**行き先は消さない**
-——止めるのは転送だけで、期限が切れれば元の行き先に戻る。tombstone（対象が
-失われた、恒久）とは別物で、こちらは可逆である。
+The same three columns are added to naan, shoulder and ark. The target is not
+discarded: only redirection stops, and when the hold expires the original target comes
+back. It is not a tombstone, which says an object is gone and is permanent; this is
+reversible.
 
-`hold_until` に索引を張るのは、**今かかっている保留を並べる**ための問い合わせ
-（`admin_ops.held`）が `hold_until > now` で引くから。掛かっている行は普通ごく
-少数なので、索引が効く形にしておく。
+hold_until is indexed because listing the holds in force (admin_ops.held) queries
+hold_until > now, and the number of held rows is normally tiny, so an index applies
+well.
 
 Revision ID: a3f1c9e2d570
 Revises: b65e77b221ac
@@ -35,8 +36,9 @@ def upgrade() -> None:
             batch_op.add_column(
                 sa.Column("hold_until", sa.DateTime(timezone=True), nullable=True)
             )
-            # 既存行に空文字を入れてから NOT NULL にする（server_default は残さない
-            # ——既定値をスキーマに埋めると、モデル側の既定と二重管理になる）。
+            # Fill existing rows with an empty string, then make it NOT NULL. No
+            # server_default is left behind: a default in the schema would be a second
+            # copy of the default in the models.
             batch_op.add_column(
                 sa.Column(
                     "hold_reason", sa.String(length=500), nullable=False, server_default=""

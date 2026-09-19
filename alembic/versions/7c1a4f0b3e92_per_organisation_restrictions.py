@@ -1,18 +1,19 @@
-"""組織ごとの制限を持たせる
+"""Give each organisation its own restrictions
 
 Revision ID: 7c1a4f0b3e92
 Revises: 3b8e5d1c7a44
 Create Date: 2026-08-29
 
-名前空間を配る側が、配られた側に**何を任せ、何を制限するか**を宣言できる
-ようにする。3 つとも既定は「これまでどおり」——既存の台帳の挙動は変わらない。
+This lets the side handing out a namespace state what the other side is trusted with
+and what is limited. All three default to what happened before, so an existing ledger
+behaves as it did.
 
-  allowed_auth       入り方の制限（空 = 構成の既定に従う）
-  may_self_register  組織の管理者が自分で利用者を登録してよいか（既定 true）
-  max_scopes         その組織の利用者に与えられる scope の上限（空 = 制限なし）
+  allowed_auth       how principals may get in (empty: follow the deployment default)
+  may_self_register  whether the organisation may register principals (default true)
+  max_scopes         the ceiling on the scopes its principals may hold (empty: none)
 
-autogenerate が毎回 `fk_manager_default_shoulder` を足そうとしていたのは、
-それが**本当に無かった**から。別の移行（3b8e5d1c7a44）で先に直してある。
+autogenerate kept trying to add fk_manager_default_shoulder because it really was
+missing. Another migration (3b8e5d1c7a44) fixes that first.
 """
 
 from collections.abc import Sequence

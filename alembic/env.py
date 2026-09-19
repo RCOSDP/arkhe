@@ -1,4 +1,5 @@
-"""Alembic の環境。**接続先とモデルは arkhe の設定から引く**（二重管理しない）。"""
+"""The Alembic environment. The database URL and the models come from arkhe's own
+settings, so neither is configured twice."""
 
 from __future__ import annotations
 
@@ -22,7 +23,8 @@ def run_migrations_offline() -> None:
         url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
-        # 制約に名前を付けて比較する。**名前が無いと SQLite で落とせない**。
+        # Constraints are named and compared by name: without a name, SQLite cannot
+        # drop one.
         render_as_batch=True,
         compare_type=True,
     )

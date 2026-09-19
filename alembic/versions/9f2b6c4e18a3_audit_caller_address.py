@@ -1,13 +1,14 @@
-"""監査に接続元を残す
+"""Keep the caller's address in the audit log
 
 Revision ID: 9f2b6c4e18a3
 Revises: 7c1a4f0b3e92
 Create Date: 2026-08-29
 
-**前段を信じた結果**であって、証拠ではない。`ARKHE_TRUSTED_PROXIES` が 0 なら
-直接の接続元そのもの、n なら `X-Forwarded-For` の右から n 番目。
+It is the result of trusting whatever is in front, not evidence. With
+ARKHE_TRUSTED_PROXIES at 0 it is the direct peer; with n, it is the nth entry from the
+right of X-Forwarded-For.
 
-既存の行は空のまま（そのとき記録していないものを、後から埋めない）。
+Existing rows stay empty: what was not recorded at the time is not filled in later.
 """
 
 from collections.abc import Sequence
