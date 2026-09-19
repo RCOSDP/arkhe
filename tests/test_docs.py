@@ -1,14 +1,13 @@
-"""参照ページが実装から遅れていないこと。
+"""That the reference pages have not fallen behind the implementation.
 
-**「忘れずに書く」に頼らない。** これは arkhe の設計方針そのもの（決まりは
-コードに持たせる）を、文書にも当てるだけのこと——覚えている前提の規則は
-いずれ破られる。実際、この検査を入れた時点で設定 2 つとコマンド 1 つが
-落ちていた。
+Nothing here relies on remembering to write something down. It is the same principle the
+rest of arkhe follows, rules live in code, applied to the documentation: a rule that
+depends on memory is eventually broken. When these checks were added, two settings and
+one command were already missing.
 
-対象は**表に並べる参照ページだけ**。散文の解説まで機械で縛ると、書く手が
-止まって誰も直さなくなる。**例外は例示する ARK** ——あれは文面ではなく、
-検査桁が合うかどうかという機械で確かめられる事実だから、散文の中にあっても
-縛ってよい。
+Only the reference pages with tables are covered. Binding the prose mechanically would
+stop people writing it at all. The exception is example ARKs, because whether a check
+digit is correct is a fact a machine can verify, so it can be bound even in prose.
 """
 
 from __future__ import annotations
@@ -33,24 +32,25 @@ def _commands(app, prefix: str = "") -> list[str]:
 
 
 @pytest.mark.parametrize("page", ["reference/configuration.md", "reference/configuration.ja.md"])
-def test_設定はすべて参照ページに載っている(page):
+def test_every_setting_is_on_the_reference_page(page):
     doc = (DOCS / page).read_text(encoding="utf-8")
     missing = [f"ARKHE_{n.upper()}" for n in Settings.model_fields
                if f"ARKHE_{n.upper()}" not in doc]
-    assert not missing, f"{page} に無い設定: {missing}"
+    assert not missing, f"settings missing from {page}: {missing}"
 
 
 @pytest.mark.parametrize("page", ["reference/cli.md", "reference/cli.ja.md"])
-def test_コマンドはすべて参照ページに載っている(page):
+def test_every_command_is_on_the_reference_page(page):
     doc = (DOCS / page).read_text(encoding="utf-8")
     missing = [c for c in _commands(cli.app) if f"arkhe {c}" not in doc]
-    assert not missing, f"{page} に無いコマンド: {missing}"
+    assert not missing, f"commands missing from {page}: {missing}"
 
 
-def test_日本語版と英語版の行数がそろっている():
-    """**片方だけ足す**のを見つける。訳文の一致までは見ない（無理だし、要らない）。
+def test_both_languages_have_the_same_table_rows():
+    """Catch a row added to one language only. The prose is not compared.
 
-    表の行が片方に無ければ、そちらの読者にはその設定もコマンドも存在しない。
+    A row missing from one page means that setting or command does not exist for those
+    readers.
     """
     def rows(text: str) -> int:
         return sum(1 for ln in text.splitlines() if ln.startswith("| `"))
@@ -58,21 +58,21 @@ def test_日本語版と英語版の行数がそろっている():
     for stem in ("reference/configuration", "reference/cli"):
         en = rows((DOCS / f"{stem}.md").read_text(encoding="utf-8"))
         ja = rows((DOCS / f"{stem}.ja.md").read_text(encoding="utf-8"))
-        assert en == ja, f"{stem}: 表の行数が en={en} ja={ja}"
+        assert en == ja, f"{stem}: table rows differ, en={en} ja={ja}"
 
 
 # --------------------------------------------------------------------------
-# 公開する OpenAPI は英語
+# The published OpenAPI documents are in English
 # --------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("resolver", [False, True], ids=["minter", "resolver"])
-def test_公開するOpenAPIに日本語が混ざらない(resolver):
-    """**読者はこの台帳の外にいる。** 日本語が読めるとは限らない。
+def test_no_japanese_leaks_into_the_published_openapi(resolver):
+    """The readers are outside this ledger and may not read Japanese.
 
-    docstring は日本語のまま残してあるので、`description` を渡し忘れると
-    そこから日本語が仕様書に漏れる——**漏れたことに気づく手立てをここに置く**。
-    口を足すたびに人が思い出す前提にはしない（この方針は `test_docs` 全体と同じ）。
+    Anything that reaches the specification through a docstring or a message catalogue
+    would leak, so the leak is detected here rather than relying on someone remembering
+    each time a route is added.
     """
     import re
 
@@ -83,7 +83,7 @@ def test_公開するOpenAPIに日本語が混ざらない(resolver):
                  admin_login="bearer", token_secret="x" * 32)
     ).openapi()
 
-    cjk = re.compile(r"[ぁ-んァ-ヶ一-龥]")
+    cjk = re.compile(r"[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]")
     found = []
 
     def walk(node, path=""):
@@ -97,31 +97,32 @@ def test_公開するOpenAPIに日本語が混ざらない(resolver):
             found.append(f"{path}: {node[:60]}")
 
     walk(schema)
-    assert not found, "OpenAPI に日本語が混ざっている:\n  " + "\n  ".join(found)
+    assert not found, "Japanese in the OpenAPI document:\n  " + "\n  ".join(found)
 
 
 # --------------------------------------------------------------------------
-# 誤りの符号は参照ページに載っている
+# Every error code is on the reference page
 # --------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("page", ["reference/errors.md", "reference/errors.ja.md"])
-def test_誤りの符号はすべて参照ページに載っている(page):
-    """**符号を足したのに書き忘れる**を検査で止める。
+def test_every_error_code_is_on_the_reference_page(page):
+    """Stop a code being added without being written down.
 
-    符号は「文面ではなくこれで判定してよい」と約束するものなので、
-    **一覧に無い符号を返すのは約束を破ること**になる。設定とコマンドを
-    同じやり方で縛っているのと同じ理由（このファイルの冒頭を見よ）。
+    A code is a promise that callers may branch on it rather than on the wording, so
+    returning one that is not in the list breaks that promise. Same reasoning as the
+    settings and the commands above.
     """
     from arkhe import errors
 
     text = (DOCS / page).read_text()
     missing = [c.number for c in errors.CODES if f"`{c.number}`" not in text]
-    assert not missing, f"{page} に無い符号: {missing}"
+    assert not missing, f"codes missing from {page}: {missing}"
 
 
-def test_符号は重複せず番号順に並ぶ():
-    """**符号は再利用しない。** 意味の違う 2 つが同じ番号だと、判定が壊れる。"""
+def test_codes_are_unique_and_in_order():
+    """A code is never reused: two different meanings behind one number breaks every
+    caller that branches on it."""
     from arkhe import errors
 
     numbers = [c.number for c in errors.CODES]
@@ -130,44 +131,47 @@ def test_符号は重複せず番号順に並ぶ():
     assert all(n.startswith("ARKHE-") and n[6:].isdigit() for n in numbers)
 
 
-def test_日本語の説明と英語の文面が両方ある():
-    """**片方だけ書いて終わらせない。** 本文は英語、運用の説明は日本語で要る。"""
+def test_each_code_has_english_wording_and_a_japanese_note():
+    """Both are needed: the message that goes out is English, and the operational note
+    is Japanese."""
     import re
 
     from arkhe import errors
 
-    cjk = re.compile(r"[ぁ-んァ-ヶ一-龥]")
+    cjk = re.compile(r"[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]")
     for c in errors.CODES:
-        # 本文に日本語を混ぜない（`§` のような記号は英語の文でも使う）。
+        # No Japanese in the message itself.
         assert c.message.strip() and not cjk.search(c.message), c.number
         assert cjk.search(c.ja), c.number
 
 
 # --------------------------------------------------------------------------
-# 例示する ARK は、実際に採番される形をしている
+# Example ARKs are shaped like ARKs that would really be minted
 # --------------------------------------------------------------------------
 
-#: 例示に使う NAAN。他所の NAAN（`ark:12345/…`、実在の `ark:67531/…`）は、
-#: 名前の形もその機関のものなので、こちらの規約を当てない。
+#: The NAAN used in examples. Other NAANs, such as ark:12345/... or the real
+#: ark:67531/..., follow their own institution's conventions, not ours.
 EXAMPLE_NAAN = "99999"
 
-#: **わざと合わない例。** 検査桁が何を守っているかは、合わない例でしか見せられない。
+#: Examples that are deliberately wrong. What a check digit protects can only be shown
+#: with a name that fails it.
 DELIBERATELY_WRONG = {
-    "x9tn1qkq2g8": "転記ミスを 404 と区別して見せる（ARKHE-1403）",
-    "c7w545sj4zz": "外から来た名前を import が拒む（ARKHE-1012）",
+    "x9tn1qkq2g8": "a transcription error, told apart from a 404 (ARKHE-1403)",
+    "c7w545sj4zz": "a name from outside that import refuses (ARKHE-1012)",
 }
 
-#: `ark:99999/x9…` のように読者が自分の採番結果を入れる場所は、末尾の `…` で除く。
-#: 修飾子（`/c3`・`.pdf`・`%2F…`）はここで切れる——N7 のとおり検査桁は base name に
-#: 対して計算されるので、切れたところがちょうど検査すべき範囲になる。
+#: Where the reader is meant to substitute their own name, the example ends in an
+#: ellipsis and is skipped. Qualifiers such as /c3, .pdf or %2F... are cut here, which
+#: is exactly right: N7 computes the check digit over the base name.
 _ARK = re.compile(r"ark:/?(\d{5})/([0-9a-z]+)(\u2026?)")
 
-#: OpenAPI は実装から生成する。ここに含めると、**src の docstring に書いた例**も縛れる。
+#: The OpenAPI documents are generated from the implementation, so including them
+#: binds the examples written in docstrings as well.
 _PAGES = sorted(DOCS.rglob("*.md")) + sorted(DOCS.glob("assets/openapi-*.json"))
 
 
 def _example_arks():
-    """文書に出てくる `ark:99999/…` を (ページ, 行, 名前) で返す。"""
+    """Yield (page, line, name) for every ark:99999/... in the documentation."""
     for path in _PAGES:
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             for naan, name, elided in _ARK.findall(line):
@@ -175,13 +179,13 @@ def _example_arks():
                     yield path.relative_to(DOCS), lineno, name
 
 
-def test_例示するARKは実際に採番される形をしている():
-    """**読者は例からその形を覚える。** 採番されない形を見せると、桁数も文字集合も
-    間違って伝わり、「配られる名前はこの長さか」と思われる。
+def test_example_arks_are_shaped_like_minted_ones():
+    """Readers learn the shape from the examples.
 
-    見るのは 2 つ——**betanumeric だけでできていること**（母音と `l` は入らない）と、
-    **検査桁が合うこと**。どちらも `arkspec` が実際に課している規則なので、
-    例が実装から離れれば必ずここで落ちる。
+    An example that could never be minted teaches the wrong length and the wrong
+    character set. Two things are checked: that the name is betanumeric, with no vowels
+    and no l, and that the check digit is correct. Both are rules arkspec really
+    enforces, so an example that drifts from the implementation fails here.
     """
     from arkhe.arkspec.betanumeric import BETANUMERIC, verify_ark_check_digit
 
@@ -190,38 +194,40 @@ def test_例示するARKは実際に採番される形をしている():
         if name in DELIBERATELY_WRONG:
             continue
         if outside := set(name) - set(BETANUMERIC):
-            bad.append(f"{page}:{lineno} ark:99999/{name} — betanumeric に無い文字 "
+            bad.append(f"{page}:{lineno} ark:99999/{name} - not betanumeric: "
                        f"{sorted(outside)}")
         elif not verify_ark_check_digit(EXAMPLE_NAAN, name):
-            bad.append(f"{page}:{lineno} ark:99999/{name} — 検査桁が合わない")
-    assert not bad, "採番されない形の例:\n  " + "\n  ".join(bad)
+            bad.append(f"{page}:{lineno} ark:99999/{name} - the check digit is wrong")
+    assert not bad, "examples that could not be minted:\n  " + "\n  ".join(bad)
 
 
-def test_わざと合わない例は本当に合わない():
-    """**許可した例が腐るのを止める。** 名前を書き換えたのに `DELIBERATELY_WRONG` を
-    直し忘れると、上の検査に穴が開いたまま気づけない。だから**合わないことを確かめ、
-    文書にまだ在ることも確かめる**。
+def test_the_deliberately_wrong_examples_really_are_wrong():
+    """Keep the allow list from going stale.
+
+    Renaming an example without updating DELIBERATELY_WRONG leaves a hole in the check
+    above. So both are verified: that each one still fails, and that it still appears in
+    the documentation.
     """
     from arkhe.arkspec.betanumeric import verify_ark_check_digit
 
     for name, why in DELIBERATELY_WRONG.items():
-        assert not verify_ark_check_digit(EXAMPLE_NAAN, name), f"{name} は合ってしまう（{why}）"
+        assert not verify_ark_check_digit(EXAMPLE_NAAN, name), f"{name} now passes ({why})"
 
     used = {name for _, _, name in _example_arks()}
     assert not (set(DELIBERATELY_WRONG) - used), \
-        f"文書に無い例が許可されたまま: {sorted(set(DELIBERATELY_WRONG) - used)}"
+        f"allowed but no longer in the documentation: {sorted(set(DELIBERATELY_WRONG) - used)}"
 
 
 # --------------------------------------------------------------------------
-# 実装に在る口と scope が、変更履歴に出ているか
+# Every route and scope in the implementation appears in the changelog
 # --------------------------------------------------------------------------
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
-#: **この検査より前から在るもの。** 散文で説明されてはいるが、綴りでは当たらない
-#: ——`/api/hold` は「転送の保留」、`/ark:{rest}` は解決の経路そのもので、パスを
-#: そのまま書く場所が無い。**新しく足したものをここに入れてはいけない。**
-#: 書く場所が無いのではなく、まだ書いていないだけだからである。
+#: Routes that predate this check. The changelog describes them in prose but never
+#: spells the path: /api/hold is "holding redirection", and /ark:{rest} is the
+#: resolution path itself. Nothing newly added belongs here; if a path is missing, it
+#: has not been written down yet.
 PREDATES_THE_CHECK = {
     "/api/hold",
     "/api/hold/release",
@@ -234,10 +240,11 @@ PREDATES_THE_CHECK = {
 
 
 def _exposed() -> set[str]:
-    """**実装が外に出している口と scope。** OpenAPI から採る。
+    """The routes and scopes the implementation exposes, taken from the OpenAPI
+    documents.
 
-    あれは実装から生成され、`check.sh` がコミット済みとのずれで落とすので、
-    **実装に在って OpenAPI に無い口は存在しえない**。
+    Those are generated from the implementation and check.sh fails when the committed
+    copies differ, so a route cannot exist without appearing there.
     """
     import json
 
@@ -251,65 +258,67 @@ def _exposed() -> set[str]:
     return names
 
 
-def test_口とscopeは変更履歴に出ている():
-    """**足したことを書き忘れるのを止める。**
+def test_routes_and_scopes_appear_in_the_changelog():
+    """Stop something being added without being written down.
 
-    0.3.0 で `POST /api/purge` と `ark:purge` を出したのに、変更履歴の日英どちらにも
-    書いていなかった。実装もテストも守りも在り、`cli.md` にも `errors.md` にも
-    OpenAPI にも出るのに、**変更履歴だけが黙っていた**——差分が 58 ファイルあれば
-    起きる。とくに **scope は、変更履歴に無ければ運用者が知りようがない。**
+    0.3.0 shipped POST /api/purge and ark:purge without a word in either changelog. The
+    implementation, the tests and the guards were all there, and it appeared in cli.md,
+    errors.md and the OpenAPI documents, but the changelog was silent. That happens in a
+    58-file diff. A scope in particular is something operators can only learn from the
+    changelog.
 
-    日英の両方を見る。片方にしか無ければ、そちらの読者には無いのと同じである。
+    Both languages are checked: present in only one is absent for those readers.
     """
     logs = {name: (ROOT / name).read_text(encoding="utf-8")
             for name in ("CHANGELOG.md", "CHANGELOG.ja.md")}
-    missing = [f"{n} が {log} に無い"
+    missing = [f"{n} is missing from {log}"
                for n in sorted(_exposed() - PREDATES_THE_CHECK)
                for log, text in logs.items() if n not in text]
-    assert not missing, "変更履歴に出ていない:\n  " + "\n  ".join(missing)
+    assert not missing, "missing from the changelog:\n  " + "\n  ".join(missing)
 
 
-def test_古いものとして許した口が今も在る():
-    """**許可リストが腐るのを止める。** 口の名前を変えたのに `PREDATES_THE_CHECK` を
-    直し忘れると、**新しい綴りが誰にも見られないまま**通ってしまう。
+def test_the_allowed_old_routes_still_exist():
+    """Keep the allow list from going stale. Renaming a route without updating
+    PREDATES_THE_CHECK would let the new spelling through unseen.
     """
     gone = PREDATES_THE_CHECK - _exposed()
-    assert not gone, f"実装に無いものが許可されたまま: {sorted(gone)}"
+    assert not gone, f"allowed but no longer implemented: {sorted(gone)}"
 
 
 def _status_test_table() -> str:
-    """STATUS.md の「テストの内訳」の囲み記事。
+    """The code block under the list of test files in STATUS.md.
 
-    **STATUS.md 全体ではなく、その囲みだけを見る。** 表の別の行にファイル名が
-    出ているだけで通ってしまっては、一覧を見ていることにならない。
+    Only that block is read, not the whole file: a file name appearing somewhere else
+    would pass without the list itself being right. STATUS.md is written in Japanese, so
+    its heading is quoted as an escape.
     """
+    heading = "\u30c6\u30b9\u30c8\u306e\u5185\u8a33"  # "the test breakdown"
     text = (ROOT / "STATUS.md").read_text(encoding="utf-8")
-    _, _, after = text.partition("テストの内訳")
-    assert after, "STATUS.md に「テストの内訳」が無い"
+    _, _, after = text.partition(heading)
+    assert after, "STATUS.md has no list of test files"
     parts = after.split("```")
-    assert len(parts) >= 3, "「テストの内訳」の下に囲み記事が無い"
+    assert len(parts) >= 3, "no code block under the list of test files"
     return parts[1]
 
 
-def test_テストの内訳は実在するファイルとそろっている():
-    """**唯一の一覧になったものが遅れるのを止める。**
+def test_the_test_file_list_matches_what_exists():
+    """Keep the one remaining list from falling behind.
 
-    この一覧は AGENTS.md にもあり、**そちらが 5 本ぶん遅れていた**。重複を
-    やめて STATUS.md だけにしたので、ここが遅れると**もう誰も気づけない**。
+    This list also lived in AGENTS.md, where it was five files out of date. The
+    duplicate is gone and only STATUS.md has it, so nobody would notice it drifting.
 
-    両方向を見る。**足したファイルが載っていない**のは一覧の穴だが、
-    **載っているファイルが無い**のも同じくらい悪い——名前を変えたときに
-    古い名前が残り、読んだ人が探しても見つからない。
+    Both directions are checked. A file that is missing leaves a hole, and a file that
+    is listed but does not exist is just as bad: after a rename the old name stays and
+    the reader cannot find it.
     """
     listed = set(re.findall(r"test_\w+\.py", _status_test_table()))
     files = {p.name for p in (ROOT / "tests").glob("test_*.py")}
-    assert not (files - listed), f"STATUS.md の内訳に無い: {sorted(files - listed)}"
-    assert not (listed - files), f"内訳にあるが実在しない: {sorted(listed - files)}"
+    assert not (files - listed), f"missing from the list in STATUS.md: {sorted(files - listed)}"
+    assert not (listed - files), f"listed but not present: {sorted(listed - files)}"
 
 
-#: 変更履歴の検査より前から在る画面。**綴りでは当たらないものもある**
-#: ——`/admin/callback` は OIDC の戻り先で、読む人が行く場所ではない。
-#: **新しく足した画面をここに入れてはいけない。**
+#: Screens that predate this check. Some are never spelt out: /admin/callback is where
+#: OIDC returns to, not somewhere a reader goes. Nothing newly added belongs here.
 PAGES_PREDATING_THE_CHECK = {
     "/admin/",
     "/admin/arks",
@@ -327,10 +336,10 @@ PAGES_PREDATING_THE_CHECK = {
 
 
 def _admin_pages() -> set[str]:
-    """管理画面の**ページ**。`GET` で、経路に変数を持たないものだけ。
+    """The admin pages: GET routes with no variable in the path.
 
-    変数を持つもの（`/admin/arks/{ark}`）と `POST` の操作は、読む人が綴りで
-    書く対象ではない——**書けないものを書けと言う検査にしない。**
+    Routes with a variable, such as /admin/arks/{ark}, and POST operations are not
+    things a reader would write down, so they are not demanded here.
     """
     from fastapi.routing import APIRoute
 
@@ -343,90 +352,89 @@ def _admin_pages() -> set[str]:
     }
 
 
-def test_管理画面のページは変更履歴に出ている():
-    """**画面は OpenAPI に出ないので、口と scope の検査では拾えない。**
+def test_admin_pages_appear_in_the_changelog():
+    """The screens are not in the OpenAPI documents, so the route check cannot see
+    them.
 
-    0.5.0 で統計のページを足したとき、変更履歴の日英どちらにも書いていなかった
-    ——CLI と API は書いてあったのに、**あとから足した画面だけが落ちた**。
-    0.3.0 で `purge` を落としたのと同じ形である。出す前に人が気づいたが、
-    **仕組みで止まったわけではない。**
+    0.5.0 added the statistics page without a word in either changelog. The CLI and the
+    API were written up; only the screen, added later, was missed, the same shape as the
+    purge omission in 0.3.0. A person caught it before release, but nothing stopped it.
     """
     logs = {name: (ROOT / name).read_text(encoding="utf-8")
             for name in ("CHANGELOG.md", "CHANGELOG.ja.md")}
-    missing = [f"{p} が {log} に無い"
+    missing = [f"{p} is missing from {log}"
                for p in sorted(_admin_pages() - PAGES_PREDATING_THE_CHECK)
                for log, text in logs.items() if p not in text]
-    assert not missing, "変更履歴に出ていない画面:\n  " + "\n  ".join(missing)
+    assert not missing, "screens missing from the changelog:\n  " + "\n  ".join(missing)
 
 
-def test_古いものとして許した画面が今も在る():
-    """**許可リストが腐るのを止める。** 経路を変えて直し忘れると、新しい綴りが
-    誰にも見られないまま通ってしまう。
+def test_the_allowed_old_screens_still_exist():
+    """Keep the allow list from going stale. Changing a path without updating it would
+    let the new spelling through unseen.
     """
     gone = PAGES_PREDATING_THE_CHECK - _admin_pages()
-    assert not gone, f"実装に無い画面が許可されたまま: {sorted(gone)}"
+    assert not gone, f"allowed but no longer implemented: {sorted(gone)}"
 
 
-#: 変更履歴に綴りが出ていないコマンド。**いまは空である**——検査を入れた時点では
-#: 13 件あったが、それぞれが入った版の節に遡って埋めた。
-#:
-#: **空のまま保つ。** ここに足したくなったら、足すのではなく変更履歴を書く。
+#: Commands whose names do not appear in the changelog. It is empty: there were 13
+#: when the check was added, and each was filled in under the version that introduced
+#: it. Keep it empty. If you want to add one, write the changelog entry instead.
 COMMANDS_PREDATING_THE_CHECK: set[str] = set()
 
 
-def test_運用コマンドは変更履歴に出ている():
-    """**参照ページは縛っていたが、変更履歴は見ていなかった。**
+def test_operator_commands_appear_in_the_changelog():
+    """The reference page was bound, but the changelog was not.
 
-    `cli.md` に載っているかは前から見ている——だが載っているだけでは、
-    **いつ増えたのか**が読む人に伝わらない。`arkhe stat` はたまたま書けていた
-    が、仕組みで止まっていたわけではない。
+    Whether a command is in cli.md has been checked for a while, but that does not tell
+    a reader when it appeared. arkhe stat happened to be written up; nothing enforced
+    it.
     """
     logs = {name: (ROOT / name).read_text(encoding="utf-8")
             for name in ("CHANGELOG.md", "CHANGELOG.ja.md")}
-    missing = [f"arkhe {c} が {log} に無い"
+    missing = [f"arkhe {c} is missing from {log}"
                for c in _commands(cli.app)
                if c not in COMMANDS_PREDATING_THE_CHECK
                for log, text in logs.items() if f"arkhe {c}" not in text]
-    assert not missing, "変更履歴に出ていないコマンド:\n  " + "\n  ".join(missing)
+    assert not missing, "commands missing from the changelog:\n  " + "\n  ".join(missing)
 
 
-def test_古いものとして許したコマンドが今も在る():
-    """**許可リストが腐るのを止める。** 名前を変えて直し忘れると、新しい綴りが
-    誰にも見られないまま通ってしまう。
+def test_the_allowed_old_commands_still_exist():
+    """Keep the allow list from going stale. Renaming a command without updating it
+    would let the new name through unseen.
     """
     gone = COMMANDS_PREDATING_THE_CHECK - set(_commands(cli.app))
-    assert not gone, f"実装に無いコマンドが許可されたまま: {sorted(gone)}"
+    assert not gone, f"allowed but no longer implemented: {sorted(gone)}"
 
 
 # --------------------------------------------------------------------------
-# STATUS.md が主張する「今の値」が、実際の値と合っているか
+# The current values STATUS.md states match the real ones
 # --------------------------------------------------------------------------
 
 
-def test_STATUSの版はpyprojectと一致する():
-    """**リリースで動く数字を、リリースの手が触らなければ必ずずれる。**
+def test_the_version_in_status_matches_pyproject():
+    """A number that moves at every release drifts unless the release touches it.
 
-    実際 0.1.0 と 0.2.0 のあいだ触られず、「版 0.0.9」のまま 2 版ぶん据え置きに
-    なっていた。手順（AGENTS.md）に入れたが、**手順は守られないことがある**。
+    It sat at 0.0.9 through two releases. The procedure in AGENTS.md now says to update
+    it, but procedures are not always followed.
     """
     import tomllib
 
     version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     want = version["project"]["version"]
     status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
-    assert f"**{want}**" in status, f"STATUS.md が {want} を版として書いていない"
+    assert f"**{want}**" in status, f"STATUS.md does not state {want} as the version"
 
 
-def test_STATUSの移行headは実際のheadと一致する():
-    """**`alembic check` はスキーマと模型を見るが、文書は見ない。**
+def test_the_migration_head_in_status_matches_the_real_one():
+    """alembic check compares the schema with the models, not with the documentation.
 
-    実際にずれていた——0.4.0 の移行を足したあと、STATUS.md は 0.3.0 の head を
-    指したままだった。**機械で読める値なので、読んで確かめる。**
+    They did drift: after the 0.4.0 migration, STATUS.md still named the 0.3.0 head. The
+    value can be read mechanically, so it is.
     """
     import re
 
-    # **注釈の書き方が揃っていない**（`str | … | None` と `Union[str, …]`、
-    # 引用符も両方ある）。型ではなく**代入されている文字列**だけを見る。
+    # The annotations are not written consistently (str | ... | None against
+    # Union[str, ...], and both quote styles), so only the assigned string is read.
     revisions, downs = set(), set()
     for f in (ROOT / "alembic" / "versions").glob("*.py"):
         text = f.read_text(encoding="utf-8")
@@ -435,7 +443,7 @@ def test_STATUSの移行headは実際のheadと一致する():
         if m := re.search(r'^down_revision\b[^=]*=\s*["\']([^"\']+)["\']', text, re.M):
             downs.add(m.group(1))
     heads = revisions - downs
-    assert len(heads) == 1, f"head が単一でない: {sorted(heads)}"
+    assert len(heads) == 1, f"the head is not unique: {sorted(heads)}"
     head = heads.pop()
     status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
-    assert head in status, f"STATUS.md が今の head（{head}）を書いていない"
+    assert head in status, f"STATUS.md does not name the current head ({head})"

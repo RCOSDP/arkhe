@@ -1,11 +1,11 @@
-"""台帳の統計。
+"""Statistics over the ledger.
 
-**確かめたいのは 2 点。** 数が合うことと、**届かないものが 1 件も混ざらないこと**
-——合計は在ることを漏らす。他組織の ARK が何件あるかはその組織の規模であり、
-こちらが教えてよい事実ではない。
+Two things matter. The numbers have to add up, and nothing out of reach may be counted:
+a total leaks that something exists, and how many ARKs another organisation holds is a
+measure of its size, which is not ours to tell.
 
-数え方を 1 か所に置いた（`domain/stats.py`）ので、画面・CLI・API のどれから
-呼んでも同じ数になる。ここではドメインと API を見る。
+The counting lives in one place, domain/stats.py, so the screens, the CLI and the API
+all report the same numbers. These tests look at the domain and the API.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from arkhe.domain.minting import mint
 
 @pytest.fixture
 def ledger(db, world):
-    """組織 a に 3 本（うち 1 本は公開前）、組織 b に 2 本。"""
+    """Three ARKs in organisation a, one of them reserved, and two in organisation b."""
     for _ in range(2):
         mint(db, shoulder=world["sh_a"], created_by="test")
     mint(db, shoulder=world["sh_a"], created_by="test", reserve=True)
@@ -29,8 +29,9 @@ def ledger(db, world):
     db.commit()
 
 
-def test_合計と内訳が足して合う(db, root, ledger):
-    """**足して合わない統計は、読む人の信頼を失う。** 公開の別は 1 回で数える。"""
+def test_the_totals_and_the_breakdown_agree(db, root, ledger):
+    """Statistics that do not add up lose the reader's trust. Published and reserved
+    are counted in one pass."""
     st = stats.ledger_stats(db, root)
     assert st.arks == 5
     assert st.public + st.reserved == st.arks
@@ -38,62 +39,64 @@ def test_合計と内訳が足して合う(db, root, ledger):
     assert sum(s.arks for s in st.by_shoulder) == st.arks
 
 
-def test_組織には自分のぶんしか見えない(db, world, ledger, principal_of):
-    """**合計は在ることを漏らす。** ここが緩むと、他組織の規模が漏れる。"""
+def test_an_organisation_sees_only_its_own(db, world, ledger, principal_of):
+    """A total leaks existence. Loosen this and another organisation's size leaks."""
     org = principal_of(manager=world["a"], scopes={"ark:read"})
     st = stats.ledger_stats(db, org)
     assert st.arks == 3
     assert st.public == 2 and st.reserved == 1
-    # 内訳にも他組織の shoulder が出ない——**名前だけでも漏れてはいけない。**
+    # No other organisation appears in the breakdown either, not even by name.
     assert [s.shoulder for s in st.by_shoulder] == [world["sh_a"].shoulder]
 
 
-def test_NAAN管理者には自NAANの全組織が見える(db, ledger, principal_of):
+def test_a_naan_administrator_sees_every_organisation_under_it(db, ledger, principal_of):
     naan_admin = principal_of(authority=Authority.NAAN, scopes={"ark:read"})
     st = stats.ledger_stats(db, naan_admin)
     assert st.arks == 5
     assert st.scope == "naan"
 
 
-def test_絞り込みは範囲を広げない(db, world, ledger, principal_of):
-    """**届かない組織を指定しても 0。** 絞り込みの引数は鍵にならない。"""
+def test_filtering_cannot_widen_the_reach(db, world, ledger, principal_of):
+    """Naming an organisation out of reach returns zero. A filter is not a key."""
     org = principal_of(manager=world["a"], scopes={"ark:read"})
     st = stats.ledger_stats(db, org, org=str(world["b"].id))
     assert st.arks == 0
 
 
-def test_取り下げた名前は公開後のものを分けて数える(db, root, world, ledger):
-    """**公開後に消した回数は、約束を破った回数である。** 合計に埋めない。"""
+def test_names_withdrawn_after_publication_are_counted_separately(db, root, world, ledger):
+    """Removing something after publishing it is breaking the promise, so it is not
+    buried in the total."""
     a, _ = mint(db, shoulder=world["sh_a"], created_by="test", reserve=True)
     b, _ = mint(db, shoulder=world["sh_a"], created_by="test")
     db.commit()
-    ops.withdraw_ark(db, root, ark=a.ark)                      # 予約の取り下げ
-    ops.purge_ark(db, root, ark=b.ark, reason="削除命令", confirm=b.ark)  # 公開後
+    ops.withdraw_ark(db, root, ark=a.ark)                      # a reserved one
+    ops.purge_ark(db, root, ark=b.ark, reason="removal order", confirm=b.ark)  # published
     db.commit()
     st = stats.ledger_stats(db, root)
     assert st.withdrawn == 2
     assert st.withdrawn_after_publication == 1
 
 
-def test_shoulderは0件の状態も出す(db, root, ledger):
-    """**「delegated が 0 件」と「delegated を知らない」は別のこと。**"""
+def test_shoulder_states_appear_even_when_empty(db, root, ledger):
+    """"No delegated shoulders" and "we do not track delegation" are different
+    statements."""
     st = stats.ledger_stats(db, root)
     assert set(st.shoulders) == {"active", "reserved", "delegated", "retired"}
 
 
-def test_保留は今かかっているものだけ数える(db, root, world, ledger):
+def test_only_holds_in_force_are_counted(db, root, world, ledger):
     from datetime import UTC, datetime, timedelta
 
     ark, _ = mint(db, shoulder=world["sh_a"], created_by="test")
     db.commit()
     assert stats.ledger_stats(db, root).holds["ark"] == 0
     ops.set_hold(db, root, kind="ark", key=ark.ark,
-                 until=datetime.now(UTC) + timedelta(days=3), reason="調査中")
+                 until=datetime.now(UTC) + timedelta(days=3), reason="under investigation")
     db.commit()
     assert stats.ledger_stats(db, root).holds["ark"] == 1
 
 
-def test_APIは到達範囲のぶんだけ返す(as_principal, principal_of, world, ledger):
+def test_the_api_returns_only_what_is_in_reach(as_principal, principal_of, world, ledger):
     org = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
     r = org.get("/api/stats")
     assert r.status_code == 200
@@ -102,25 +105,27 @@ def test_APIは到達範囲のぶんだけ返す(as_principal, principal_of, wor
     assert body["scope"] == "organisation"
 
 
-def test_APIはark_readが要る(as_principal, principal_of, world, ledger):
-    """**読みも鍵で縛る。** 数だけなら誰でもよい、にはしない。"""
+def test_the_api_requires_ark_read(as_principal, principal_of, world, ledger):
+    """Reads need a credential too. Counts are not public just because they are
+    numbers."""
     no_read = as_principal(principal_of(manager=world["a"], scopes={"ark:mint"}))
     assert no_read.get("/api/stats").status_code == 403
 
 
-def test_採番の窓は重なって数える(db, root, ledger):
-    """24h のぶんは 7d にも 30d にも入る。**別々の母数ではない。**"""
+def test_the_minting_windows_overlap(db, root, ledger):
+    """What was minted in 24 hours is also in the 7-day and 30-day counts; they are
+    not separate populations."""
     st = stats.ledger_stats(db, root)
     assert st.minted["24h"] <= st.minted["7d"] <= st.minted["30d"]
     assert st.minted["30d"] == st.arks
 
 
-# ------------------------------------------------- 管理画面（同じ数を見る）
+# ------------------------------- The admin screens, which show the same numbers
 
 
-def test_画面は数えた結果をそのまま見せる(as_principal, principal_of, db, world, ledger):
-    """**画面が独自に集計を書かない。** 同じ「件数」が場所によって違うのが
-    いちばん質の悪いずれなので、ドメインの数と一致することを見る。
+def test_the_screen_shows_what_the_domain_counted(as_principal, principal_of, db, world, ledger):
+    """The screen does not do its own counting. One count differing by where it is
+    read is the worst kind of drift, so it is compared with the domain.
     """
     from arkhe.domain import stats as domain
 
@@ -129,19 +134,21 @@ def test_画面は数えた結果をそのまま見せる(as_principal, principa
     assert page.status_code == 200
     st = domain.ledger_stats(db, principal_of(authority=Authority.NAAN, scopes={"ark:read"}))
     assert str(st.arks) in page.text
-    assert "/admin/stats" in page.text          # 左の案内に出ている
+    assert "/admin/stats" in page.text          # it is in the navigation
 
 
-def test_画面も到達範囲の外を見せない(as_principal, principal_of, world, ledger):
-    """**合計は在ることを漏らす。** 他組織の shoulder 名も出してはいけない。"""
+def test_the_screen_shows_nothing_out_of_reach(as_principal, principal_of, world, ledger):
+    """A total leaks existence, and another organisation's shoulder must not appear
+    either."""
     org = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
     page = org.get("/admin/stats")
     assert page.status_code == 200
     assert world["sh_b"].shoulder not in page.text
 
 
-def test_画面とAPIとCLIが同じ数を出す(as_principal, principal_of, db, world, ledger):
-    """**数える場所は 1 つ**（`domain/stats.py`）。3 つの入口が食い違わないこと。"""
+def test_the_screen_the_api_and_the_cli_agree(as_principal, principal_of, db, world, ledger):
+    """One place counts, domain/stats.py, and the three entrances must not
+    disagree."""
     from arkhe.domain import stats as domain
 
     p = principal_of(authority=Authority.NAAN, scopes={"ark:read"})
@@ -152,14 +159,14 @@ def test_画面とAPIとCLIが同じ数を出す(as_principal, principal_of, db,
     assert api["withdrawn_after_publication"] == dom.withdrawn_after_publication
 
 
-# ----------------------------------------------- 復元できたことの確認（指紋）
+# ------------------------------- Fingerprints, for confirming a restore worked
 
 
-def test_指紋は件数が同じでも行き先の入れ替わりを捕まえる(db, root, world, ledger):
-    """**件数が合うことは、確かめたことにならない。**
+def test_a_fingerprint_catches_swapped_targets_at_the_same_count(db, root, world, ledger):
+    """Matching counts prove nothing.
 
-    件数が同じでも行き先が入れ替わっていれば、識別子は全部壊れている——
-    復元の確認で見るべきはそこである。
+    With the same count but swapped targets, every identifier is broken, and that is
+    what confirming a restore has to look at.
     """
     from arkhe.db.models import Ark
 
@@ -169,20 +176,20 @@ def test_指紋は件数が同じでも行き先の入れ替わりを捕まえ�
     db.commit()
     after = stats.ledger_fingerprint(db)
 
-    assert after.ark_count == before.ark_count, "件数は変わらない——だから件数では気づけない"
-    assert after.arks != before.arks, "行き先が入れ替わったのに指紋が同じ"
+    assert after.ark_count == before.ark_count, "the count is unchanged, which is the point"
+    assert after.arks != before.arks, "targets changed but the fingerprint did not"
 
 
-def test_指紋は同じ台帳なら何度出しても同じ(db, root, ledger):
-    """**並びを固定していないと、出すたびに変わって使い物にならない。**"""
+def test_a_fingerprint_is_stable_for_one_ledger(db, root, ledger):
+    """Without a fixed order it would differ every time and be useless."""
     assert stats.ledger_fingerprint(db).arks == stats.ledger_fingerprint(db).arks
 
 
-def test_取り下げ台帳は別に数える(db, root, world, ledger):
-    """**`withdrawn_name` が落ちても採番は動き続ける**ので、黙って通る。
+def test_withdrawn_names_are_fingerprinted_separately(db, root, world, ledger):
+    """Minting keeps working if withdrawn_name is lost, so the loss is silent.
 
-    1 つの値に潰すと「どこが違うか」が消える——`arks` が同じまま
-    `withdrawn` だけ変わることを見る。
+    Collapsing everything into one value would hide where the difference is, so check
+    that arks stays equal while withdrawn changes.
     """
     from arkhe.domain.minting import mint
 
@@ -193,13 +200,13 @@ def test_取り下げ台帳は別に数える(db, root, world, ledger):
     db.commit()
     after = stats.ledger_fingerprint(db)
 
-    assert after.withdrawn != before.withdrawn, "取り下げたのに指紋が同じ"
+    assert after.withdrawn != before.withdrawn, "a name was withdrawn but nothing changed"
     assert after.withdrawn_count == before.withdrawn_count + 1
 
 
-def test_保留は指紋に入れない(db, root, world, ledger):
-    """**期限で勝手に変わるものを入れない。** 差が出ても「壊れた」と読めない
-    ——**鳴りっぱなしの警報は、誰も見なくなる。**
+def test_holds_are_left_out_of_the_fingerprint(db, root, world, ledger):
+    """Anything that changes by itself at an expiry is left out: a difference could
+    not be read as damage, and an alarm that always rings stops being read.
     """
     from datetime import UTC, datetime, timedelta
 
@@ -208,51 +215,51 @@ def test_保留は指紋に入れない(db, root, world, ledger):
     ark = db.query(Ark).order_by(Ark.ark).first().ark
     before = stats.ledger_fingerprint(db)
     ops.set_hold(db, root, kind="ark", key=ark,
-                 until=datetime.now(UTC) + timedelta(days=3), reason="調査中")
+                 until=datetime.now(UTC) + timedelta(days=3), reason="under investigation")
     db.commit()
     assert stats.ledger_fingerprint(db).arks == before.arks
 
 
-# --------------------------------- 公開前のまま放置されたものを見つける
+# ------------------------------- Finding reserved ARKs that were left behind
 
 
-def test_いちばん古い公開前が出る(db, root, world):
-    """**溜まっていることは、数ではなく古さに出る。**
+def test_the_oldest_reserved_ark_is_reported(db, root, world):
+    """A backlog shows in age, not in count.
 
-    10 件でも昨日採ったものなら普通で、1 件でも 3 年前なら放置である
-    ——件数では警報を出せない。
+    Ten reserved yesterday is ordinary; one reserved three years ago is forgotten. A
+    count cannot tell them apart.
     """
     from datetime import UTC, datetime, timedelta
 
     from arkhe.domain.minting import mint
 
-    assert stats.ledger_stats(db, root).reserved_oldest is None, "何も無ければ出ない"
+    assert stats.ledger_stats(db, root).reserved_oldest is None, "nothing to report yet"
 
     a, _ = mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)
     a.created_at = datetime.now(UTC) - timedelta(days=400)
-    mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)   # 新しい予約
-    mint(db, shoulder=world["sh_a"], created_by="t")                 # 公開済みは関係ない
+    mint(db, shoulder=world["sh_a"], created_by="t", reserve=True)   # a recent one
+    mint(db, shoulder=world["sh_a"], created_by="t")                 # published, so ignored
     db.commit()
 
     oldest = stats.ledger_stats(db, root).reserved_oldest
     assert oldest is not None
-    assert (datetime.now(UTC) - oldest).days >= 399, "いちばん古いものを見ていない"
+    assert (datetime.now(UTC) - oldest).days >= 399, "this is not the oldest one"
 
 
-def test_公開済みは古くても放置に数えない(db, root, world):
-    """**公開したものは放置ではない。** 出してあるのだから、古くてよい。"""
+def test_a_published_ark_is_never_a_backlog(db, root, world):
+    """Something published is out in the world; being old is fine."""
     from datetime import UTC, datetime, timedelta
 
     from arkhe.domain.minting import mint
 
-    a, _ = mint(db, shoulder=world["sh_a"], created_by="t")   # 公開済み
+    a, _ = mint(db, shoulder=world["sh_a"], created_by="t")   # published
     a.created_at = datetime.now(UTC) - timedelta(days=999)
     db.commit()
     assert stats.ledger_stats(db, root).reserved_oldest is None
 
 
-def test_古さで絞れる(db, root, world):
-    """**拾えなければ、気づいても手が出せない。**"""
+def test_reserved_arks_can_be_filtered_by_age(db, root, world):
+    """Noticing a backlog is no use if the rows cannot be listed."""
     from datetime import UTC, datetime, timedelta
 
     from arkhe.domain.minting import mint
@@ -266,17 +273,17 @@ def test_古さで絞れる(db, root, world):
     stmt = narrow_arks(visible_arks(root), state="reserved", older_than_days=365)
     found = {a.ark for a in db.scalars(stmt)}
     assert old.ark in found
-    assert new.ark not in found, "新しい予約まで拾っている"
-    # **`state` と直交している。** 公開済みの古いものを探したい日も来る。
+    assert new.ark not in found, "a recently reserved ARK was picked up"
+    # Age is independent of state; one day someone will want old published ones.
     assert isinstance(db.scalars(narrow_arks(visible_arks(root), older_than_days=1)).all(), list)
 
 
-def test_日時は必ずUTC付きで返る(db, root, world):
-    """**engine によって型が変わると、受け取った側が落ちる。**
+def test_every_timestamp_comes_back_with_a_time_zone(db, root, world):
+    """A type that depends on the engine breaks whoever receives it.
 
-    SQLite には時刻帯の型が無いので、`DateTime(timezone=True)` と宣言していても
-    naive な `datetime` が返る。PostgreSQL では aware——**片方でだけ
-    `TypeError`**、というのが実際に起きた（`arkhe stat` が落ちた）。
+    SQLite has no time zone type, so a column declared DateTime(timezone=True) comes
+    back naive, while PostgreSQL returns an aware value. That meant a TypeError on one
+    of them, which is what made arkhe stat crash.
     """
     from datetime import UTC, datetime
 
@@ -287,20 +294,20 @@ def test_日時は必ずUTC付きで返る(db, root, world):
     st = stats.ledger_stats(db, root)
     for name in ("first_mint", "last_mint", "reserved_oldest"):
         got = getattr(st, name)
-        assert got is not None and got.tzinfo is not None, f"{name} に時刻帯が無い"
-        datetime.now(UTC) - got          # 引き算が通ること自体が検査である
+        assert got is not None and got.tzinfo is not None, f"{name} has no time zone"
+        datetime.now(UTC) - got          # the subtraction working is the check
 
 
-def test_数える列は必ず名指しする():
-    """**`count(*)` を置かない。** 数える列を名指しする。
+def test_every_count_names_its_column():
+    """No count(*) anywhere: name the column being counted.
 
-    `count(*)` は行そのものを数えるので、**索引だけでは答えられない**ことがある
-    （PostgreSQL は可視性を確かめに heap を見に行く）。`count(<列>)` なら、その列の
-    索引で足りる形に寄せられる——台帳が伸びるほど差が出るのは、**数えるのは画面と
-    採番の上限**という、いちばん止められない場所だからである。
+    count(*) counts rows, which an index alone cannot always answer, since PostgreSQL
+    visits the heap to check visibility. count(<column>) can be answered from that
+    column's index. It matters more as the ledger grows, because counting happens on the
+    screens and in the minting quota, which are the hardest places to avoid.
 
-    **機械で見る。** 「今ある 3 か所を直した」で終わらせると、次に書く人がまた
-    `func.count()` と書き、レビューが見落とせばそのまま入る。
+    This is checked mechanically. Fixing the three that exist today would not stop the
+    next person writing func.count() again.
     """
     import re
     from pathlib import Path
@@ -312,4 +319,4 @@ def test_数える列は必ず名指しする():
         for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
         if re.search(r"\bcount\(\s*\)", line)
     ]
-    assert not bare, "数える列が名指しされていない（count(*) になる）: " + ", ".join(bare)
+    assert not bare, "a count does not name its column: " + ", ".join(bare)
