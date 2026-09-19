@@ -1,7 +1,7 @@
-"""**一生**を通しで踏む。公開前 → 公開 → 取り下げ → 再公開 → 削除。
+"""The whole life of an ARK: reserved, published, withdrawn, republished, deleted.
 
-単体の試験は各段を個別に見ているが、ここで見るのは**段と段のあいだ**である
-——採番した minter の書き込みが、**別プロセスの resolver から見えるか**。
+The unit tests cover each step on its own. What this covers is the gaps between steps:
+whether what the minter wrote is visible to the resolver in another process.
 """
 
 from __future__ import annotations
@@ -15,16 +15,17 @@ pytestmark = pytest.mark.e2e
 TARGET = "https://example.org/e2e/lifecycle"
 
 
-def test_同じ_request_id_の再送では番号が増えない(world, published):
-    """F4: **応答が失われただけのときに、死んだ番号を増やさない。**"""
+def test_a_resend_of_one_request_id_mints_nothing_new(world, published):
+    """F4: a lost response must not leave dead numbers behind."""
     r = world.api("post", "/api/mint",
                   json={"url": published["url"], "request_id": "e2e-shared"})
     assert r.status_code == 200, r.text
     assert r.json()["ark"] == published["ark"]
 
 
-def test_公開前は解決しないが公開すれば解決する(world, mint):
-    """**公開前の ARK は、未登録の名前と同じに扱う**——`?info` にも出さない。"""
+def test_a_reserved_ark_resolves_only_once_published(world, mint):
+    """A reserved ARK is treated like a name that was never registered, so ?info does
+    not show it either."""
     ark = mint(url=TARGET, reserve=True)["ark"]
     assert ark
     assert world.resolve(ark).status_code == 404
@@ -35,13 +36,14 @@ def test_公開前は解決しないが公開すれば解決する(world, mint):
     assert world.resolve(ark).headers["location"] == TARGET
 
 
-def test_取り下げると解決を止め_再公開すると戻る(world, mint):
-    """公開は**行き来できる**。名前は振り直さないので、古い参照は 404 のまま。"""
+def test_withdrawing_stops_resolution_and_publishing_again_restores_it(world, mint):
+    """Publication can be reversed. The name is never reassigned, so an old reference
+    keeps getting 404 rather than a different object."""
     ark = mint(url=TARGET)["ark"]
     assert world.resolve(ark).status_code == 302
 
     r = world.api("post", "/api/unpublish",
-                  json={"ark": ark, "reason": "e2e で取り下げる", "confirm": ark})
+                  json={"ark": ark, "reason": "withdrawn by the e2e suite", "confirm": ark})
     assert r.status_code == 200, r.text
     assert world.resolve(ark).status_code == 404
 
@@ -49,41 +51,43 @@ def test_取り下げると解決を止め_再公開すると戻る(world, mint)
     assert world.resolve(ark).status_code == 302
 
 
-def test_一度も公開していない_ARK_は理由なしで消せる(world, mint):
-    """**公開前だけの特権。** 消した名前は `WithdrawnName` に残り、二度と当たらない。"""
+def test_an_ark_never_published_can_be_deleted_without_a_reason(world, mint):
+    """Only the unpublished can go this way. The name is kept in WithdrawnName and is
+    never assigned again."""
     ark = mint(url=TARGET, reserve=True)["ark"]
     r = world.api("post", "/api/delete", json={"ark": ark})
     assert r.status_code in (200, 204), r.text
     assert world.resolve(ark).status_code == 404
-    # 消えたことを、読みの口からも確かめる
+    # Check from the read side that it is really gone
     q = world.api("post", "/api/query", json={"data": [ark]})
     assert q.json()["data"] == []
 
 
-def test_一度公開した_ARK_は理由と確認がないと消せない(world, mint):
-    """**「一度出した」は一方通行。** 取り下げても、消すには理由と打ち直しが要る。"""
+def test_an_ark_once_published_needs_a_reason_and_a_confirmation(world, mint):
+    """Having been published is permanent. Even after withdrawal, deleting it takes a
+    reason and the ARK typed again."""
     ark = mint(url=TARGET)["ark"]
     world.api("post", "/api/unpublish",
-              json={"ark": ark, "reason": "消す前に取り下げる", "confirm": ark})
+              json={"ark": ark, "reason": "withdrawn before deleting", "confirm": ark})
 
     bare = world.api("post", "/api/delete", json={"ark": ark})
     assert bare.status_code in (400, 409, 422), bare.text
 
     ok = world.api("post", "/api/delete",
-                   json={"ark": ark, "reason": "e2e で消す", "confirm": ark})
+                   json={"ark": ark, "reason": "deleted by the e2e suite", "confirm": ark})
     assert ok.status_code in (200, 204), ok.text
 
 
-def test_公開中のものは取り下げずに消せない(world, mint):
+def test_a_published_ark_cannot_be_deleted_before_withdrawal(world, mint):
     ark = mint(url=TARGET)["ark"]
     r = world.api("post", "/api/delete",
-                  json={"ark": ark, "reason": "消す", "confirm": ark})
+                  json={"ark": ark, "reason": "delete it", "confirm": ark})
     assert r.status_code == 409, r.text
-    assert world.resolve(ark).status_code == 302  # **解決は続いている**
+    assert world.resolve(ark).status_code == 302  # it still resolves
 
 
-def test_行き先を書き換えると解決が追う(world, mint):
-    """minter で書いたものが、**別プロセスの resolver から見える**か。"""
+def test_resolution_follows_a_changed_target(world, mint):
+    """What the minter writes has to be visible to the resolver process."""
     ark = mint(url=TARGET)["ark"]
     moved = "https://example.org/e2e/moved"
     r = world.api("put", "/api/update", json={"ark": ark, "url": moved})
@@ -91,8 +95,9 @@ def test_行き先を書き換えると解決が追う(world, mint):
     assert world.resolve(ark).headers["location"] == moved
 
 
-def test_まとめて採ると全部解決する(world):
-    """一括は**認証 1 回を件数で割る**道。採った全部が本当に引けるかを見る。"""
+def test_everything_minted_in_bulk_resolves(world):
+    """Bulk minting divides one authentication over many rows. Check that every row it
+    minted can really be looked up."""
     r = world.api("post", "/api/mint/bulk", json={"data": [
         {"url": f"https://example.org/e2e/bulk/{i}"} for i in range(5)
     ]})
@@ -105,40 +110,41 @@ def test_まとめて採ると全部解決する(world):
         assert got.headers["location"] == f"https://example.org/e2e/bulk/{i}"
 
 
-def test_修飾子を明示して登録すると_継承より優先される(world, mint):
-    """B4: 既定は祖先に継ぐが、**その 1 点だけ別の所在**にできる。"""
+def test_an_explicit_qualifier_beats_the_inherited_one(world, mint):
+    """B4: a qualifier inherits by default, but one part can be registered elsewhere."""
     base = mint(url=TARGET)["ark"]
     special = "https://example.org/e2e/elsewhere"
     r = world.api("post", "/api/register",
                   json={"ark": base, "qualifier": "/part1", "url": special})
     assert r.status_code == 201, r.text
     assert world.resolve(base, "/part1").headers["location"] == special
-    # 登録していない兄弟は、今までどおり継ぐ
+    # A sibling that was not registered still inherits
     assert world.resolve(base, "/part2").headers["location"].endswith("/part2")
 
 
-def test_保留は転送だけを止め_記述は返り続ける(world, mint):
-    """`404` は嘘（識別子は在る）、`503` は壊れて見える。**`200` と記述**を返す。"""
+def test_a_hold_stops_redirection_and_keeps_describing(world, mint):
+    """404 would be untrue, because the identifier exists, and 503 makes it look broken.
+    A hold answers 200 with a description instead."""
     ark = mint(url=TARGET)["ark"]
     until = (datetime.now(UTC) + timedelta(days=1)).isoformat()
     r = world.api("put", "/api/hold",
-                  json={"ark": ark, "until": until, "reason": "e2e で止める"})
+                  json={"ark": ark, "until": until, "reason": "held by the e2e suite"})
     assert r.status_code == 200, r.text
 
     held = world.resolve(ark)
     assert held.status_code == 200
-    assert "e2e で止める" in held.text  # **理由は公開の口に出る**
+    assert "held by the e2e suite" in held.text  # the reason is published
 
     assert world.api("put", "/api/hold/release", json={"ark": ark}).status_code == 200
     assert world.resolve(ark).status_code == 302
 
 
-def test_墓碑は識別子を残して到達性だけを消す(world, mint):
-    """`NR` を宣言している以上、**識別子は消せない**。消せるのは行き先だけ。"""
+def test_a_tombstone_keeps_the_identifier_and_drops_reachability(world, mint):
+    """With NR declared, the identifier cannot be removed. Only the target can."""
     ark = mint(url=TARGET)["ark"]
     r = world.api("put", "/api/tombstone", json={"ark": ark, "url": ""})
     assert r.status_code == 200, r.text
 
     gone = world.resolve(ark)
-    assert gone.status_code == 200          # **404 にはしない**——名前は在る
+    assert gone.status_code == 200          # not 404: the name still exists
     assert world.api("post", "/api/query", json={"data": [ark]}).json()["data"]

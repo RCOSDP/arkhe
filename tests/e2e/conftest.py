@@ -1,17 +1,18 @@
-"""通しの検査の土台。**建てるのは 1 度きり**（session 単位）。
+"""Fixtures for the end-to-end suite. Everything is started once, per session.
 
-ここで建てるもの:
+What is started:
 
-  PostgreSQL   docker の使い捨て。**ほかの試験は SQLite** なので、方言の差はここでしか出ない
-  minter       採番・管理画面・`/oauth/token`。**認証は本物**（apikey と client_credentials）
-  resolver     解決だけ。**書き込み側はどこにも繋がらない先に向けてある**（`_BOGUS`）
+  PostgreSQL   a throwaway container. The rest of the suite uses SQLite, so dialect
+               differences only show up here
+  minter       minting, the admin interface and /oauth/token, with real authentication
+  resolver     resolution only. Its write URL points nowhere (see _BOGUS)
 
-台帳は **`scripts/seed_e2e.py` が組む**（あちらは CLI を通す——運用で実際に使う道で
-なければ検査にならない。**この形で ARKHE-1303 を踏んだ**）。**検査の側に同じ組み立てを
-書かない**: 手で確かめるときも同じ台帳から始めたいし、2 か所に書けば片方が古くなる。
+The ledger is built by scripts/seed_e2e.py, which goes through the CLI. The setup is not
+repeated here: checking by hand should start from the same ledger, and code written in
+two places drifts apart. See the top of that script for what the ledger contains.
 
-どんな台帳かは `scripts/seed_e2e.py` の冒頭にある。ここで押さえておくのは 1 点
-——**主体は用途ごとに分けてある**。1 つを使い回すと、止める検査が後続を巻き添えにする。
+Each principal has one purpose. If they shared one, the check that disables a principal
+would break the checks that run after it.
 """
 
 from __future__ import annotations
@@ -31,20 +32,19 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PG_NAME = "arkhe-e2e-pg"
 
-#: 種として入れる ARK の本数。**状態が混ざっていることに意味がある**ので、
-#: 数は少なくてよい（種蒔きの側が 10 本に 1 本を公開前にする）。
+#: How many ARKs to seed. What matters is the mix of states, not the number, so a small
+#: number is enough. The seeder reserves every tenth one.
 SEEDED_ARKS = 12
 
-#: **誰も知らない NAAN。** 種を蒔く側は知らないので、こちらに置く。
+#: A NAAN that is not in the ledger. The seeder does not create it, so it lives here.
 UNKNOWN_NAAN = "12345"
 GLOBAL_RESOLVER = "https://n2t.example.net"
 
 SESSION_SECRET = "e2e-session-secret-0123456789abcdef"
 TOKEN_SECRET = "e2e-token-secret-0123456789abcdef"
 
-#: resolver の**書き込み側を、どこにも繋がらない先に向ける**。読みは本物に向ける。
-#: resolver が解決や `/readyz` で書き込み側を触ったら、**検査が落ちる**——実際
-#: `/readyz` は 0.11.0 まで触っていた。
+#: The resolver's write URL points nowhere; its read URL points at the real database.
+#: If the resolver touches the write side, this suite fails. /readyz did until 0.11.0.
 _BOGUS = "postgresql+psycopg://arkhe:arkhe@127.0.0.1:1/arkhe"
 
 
@@ -55,12 +55,12 @@ def free_port() -> int:
 
 
 def run_cli(args: list[str], env: dict[str, str]) -> str:
-    """**落ちたら出力ごと見せる。** 通しの検査で「どこかで失敗した」は使えない。"""
+    """Run a command and show its output if it fails."""
     p = subprocess.run(
         args, cwd=ROOT, env={**os.environ, **env}, capture_output=True, text=True
     )
     if p.returncode != 0:
-        raise AssertionError(f"{' '.join(args)} が落ちた\n{p.stdout}\n{p.stderr}")
+        raise AssertionError(f"{' '.join(args)} failed\n{p.stdout}\n{p.stderr}")
     return p.stdout
 
 
@@ -75,15 +75,16 @@ class Server:
 
 
 def serve(env: dict[str, str], log: Path, label: str, *, workers: int = 1) -> Server:
-    """`uvicorn` で 1 つ建てて、`/healthz` が返るまで待つ。
+    """Start one server with uvicorn and wait until /healthz answers.
 
-    **`workers` を増やすと、本番と同じく別プロセスが並ぶ。** 1 つのままだと
-    Python の側が直列になり、**プロセスをまたぐ競りが再現しない**。
+    More workers means more processes, as in production. With a single worker the Python
+    side serialises, and a race between processes cannot be reproduced.
     """
     port = free_port()
     handle = log.open("w")
     proc = subprocess.Popen(
-        # **`--factory`。** ここを落とすと "Attribute \"app\" not found" で死ぬ。
+        # --factory matters: without it the process dies with
+        # 'Attribute "app" not found'.
         ["uv", "run", "uvicorn", "arkhe.app:create_app", "--factory",
          "--host", "127.0.0.1", "--port", str(port), "--log-level", "warning",
          "--workers", str(workers)],
@@ -93,14 +94,14 @@ def serve(env: dict[str, str], log: Path, label: str, *, workers: int = 1) -> Se
     deadline = time.time() + 60
     while time.time() < deadline:
         if proc.poll() is not None:
-            raise AssertionError(f"{label} が起動せずに終了した\n{server.tail()}")
+            raise AssertionError(f"{label} exited instead of starting\n{server.tail()}")
         try:
             if httpx.get(f"{server.url}/healthz", timeout=1).status_code == 200:
                 return server
         except httpx.HTTPError:
             time.sleep(0.3)
     proc.kill()
-    raise AssertionError(f"{label} が 60 秒で応えなかった\n{server.tail()}")
+    raise AssertionError(f"{label} did not answer within 60 seconds\n{server.tail()}")
 
 
 def stop(server: Server) -> None:
@@ -116,7 +117,7 @@ class World:
     minter: Server
     resolver: Server
     env: dict[str, str]
-    #: `scripts/seed_e2e.py --json` が返したもの。**台帳の形はあちらが決める。**
+    #: What scripts/seed_e2e.py --json returned. That script decides the shape.
     seed: dict = field(default_factory=dict)
 
     @property
@@ -144,7 +145,7 @@ class World:
         return self.seed["admin"]
 
     def api(self, method: str, path: str, *, key: str | None = "ops", **kw) -> httpx.Response:
-        """minter を叩く。`key=None` なら**資格情報を付けない**。"""
+        """Call the minter. key=None sends no credentials."""
         headers = dict(kw.pop("headers", {}))
         if key is not None:
             headers["Authorization"] = f"Bearer {self.keys[key] if key in self.keys else key}"
@@ -162,13 +163,11 @@ class World:
 
 
 def _bootstrap(env: dict[str, str]) -> dict:
-    """台帳を **`scripts/seed_e2e.py` で**組む。
+    """Build the ledger with scripts/seed_e2e.py.
 
-    **検査の側に同じ組み立てを書かない。** 手で確かめるときも同じ台帳から始めたいし、
-    2 か所に書けば片方が必ず古くなる。**呼んでいるから、あちらも腐らない。**
-
-    `--arks` で状態の混ざった ARK も入れる——公開・公開前・保留・墓碑・修飾子つき・
-    取り下げ済み。**全部が公開済みの台帳では、画面も統計も確かめられない。**
+    --arks also seeds ARKs in mixed states: published, reserved, held, tombstoned,
+    qualified and withdrawn. A ledger where everything is published says nothing about
+    how the screens or the statistics behave.
     """
     out = run_cli(
         ["uv", "run", "python", "scripts/seed_e2e.py", "--migrate", "--json",
@@ -181,9 +180,9 @@ def _bootstrap(env: dict[str, str]) -> dict:
 @pytest.fixture(scope="session")
 def world(tmp_path_factory) -> World:
     if not shutil.which("docker"):
-        pytest.skip("docker が無い。**通しの検査を通していない**")
+        pytest.skip("no docker, so the end-to-end suite did not run")
     if not shutil.which("uv"):
-        pytest.skip("uv が無い。**通しの検査を通していない**")
+        pytest.skip("no uv, so the end-to-end suite did not run")
 
     logs = tmp_path_factory.mktemp("e2e")
     port = free_port()
@@ -204,7 +203,7 @@ def world(tmp_path_factory) -> World:
                 break
             time.sleep(1)
         else:
-            raise AssertionError("PostgreSQL が起動しない")
+            raise AssertionError("PostgreSQL never came up")
 
         url = f"postgresql+psycopg://arkhe:arkhe@127.0.0.1:{port}/arkhe"
         env = {"ARKHE_DATABASE_URL": url, "ARKHE_AUTH": "apikey", "ARKHE_RESOLVER": "0"}
@@ -212,13 +211,13 @@ def world(tmp_path_factory) -> World:
 
         minter = serve(
             {**env,
-             # **口を全部開けて建てる。** 鍵で入る道・トークンを取る道・合言葉で
-             # 画面に入る道は、どれも組み上がってからでないと通せない。
+             # Open every door. Signing in with a key, taking a token and entering the
+             # admin interface with a password can only be exercised once assembled.
              "ARKHE_AUTH": "apikey,oauth2",
              "ARKHE_TOKEN_SECRET": TOKEN_SECRET,
              "ARKHE_ADMIN_LOGIN": "password",
              "ARKHE_SESSION_SECRET": SESSION_SECRET,
-             "ARKHE_SESSION_SECURE": "false",  # 検査は平文 HTTP。**本番は true**
+             "ARKHE_SESSION_SECURE": "false",  # plain HTTP here; true in production
              "ARKHE_GLOBAL_RESOLVER": GLOBAL_RESOLVER},
             logs / "minter.log", "minter",
         )
@@ -239,7 +238,7 @@ def world(tmp_path_factory) -> World:
 
 @pytest.fixture(scope="session")
 def mint(world: World):
-    """1 本採る。**採番は取り消せない**ので、要るときだけ呼ぶ。"""
+    """Mint one ARK. Minting cannot be undone, so only call it when needed."""
 
     def go(*, key: str = "ops", **fields) -> dict:
         r = world.api("post", "/api/mint", key=key, json=fields)
@@ -251,5 +250,5 @@ def mint(world: World):
 
 @pytest.fixture(scope="session")
 def published(mint) -> dict:
-    """公開済みの ARK 1 本。**読むだけの検査で使い回す**（状態を変えないこと）。"""
+    """One published ARK, shared by the read-only checks. Do not change its state."""
     return mint(url="https://example.org/e2e/object", title="E2E", request_id="e2e-shared")

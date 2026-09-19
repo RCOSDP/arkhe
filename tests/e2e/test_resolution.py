@@ -1,8 +1,8 @@
-"""解決の道。**resolver に建てた口を、素の HTTP で仕様どおりに叩く。**
+"""Resolution, driven over plain HTTP against the resolver.
 
-ここで見るのは、単体の試験が `TestClient` で見ているのと同じ規則が、
-**本物の経路（ASGI サーバ・ヘッダ・URL の正規化）を通っても同じか**である。
-`%2F` や大文字小文字は、途中の層で握り潰されうる。
+The rules themselves are covered by the unit tests. What this adds is whether they still
+hold through the real path: an ASGI server, real headers and real URL handling. Percent
+encoding and letter case are the first things an intermediate layer gets wrong.
 """
 
 from __future__ import annotations
@@ -14,22 +14,22 @@ from tests.e2e.conftest import GLOBAL_RESOLVER, UNKNOWN_NAAN, World
 pytestmark = pytest.mark.e2e
 
 
-def test_修飾子は祖先から継いで転送される(world: World, published):
-    """A1: 登録されていない修飾子は、**祖先の行き先に継いで**送る。"""
+def test_a_qualifier_is_inherited_from_its_ancestor(world: World, published):
+    """A1: an unregistered qualifier is appended to the ancestor's target."""
     r = world.resolve(published["ark"], "/page1")
     assert r.status_code == 302
     assert r.headers["location"].startswith(published["url"])
     assert r.headers["location"].endswith("/page1")
 
 
-def test_ark_のラベルは大文字でも通る(world: World, published):
-    """§2.5.1: `ark:` のラベルは大小を区別しない。**名前の側は区別する。**"""
+def test_the_ark_label_is_case_insensitive(world: World, published):
+    """2.5.1: the ark: label ignores case. The name itself does not."""
     upper = published["ark"].replace("ark:", "ARK:", 1)
     assert world.resolve(upper).status_code == 302
 
 
-def test_名前の中のハイフンは無視される(world: World, published):
-    """§2.5.2: ハイフンは**書き写しのための飾り**で、名前の一部ではない。"""
+def test_hyphens_inside_a_name_are_ignored(world: World, published):
+    """2.5.2: hyphens help people copy a name; they are not part of it."""
     name = published["ark"].split("/", 1)[1]
     hyphenated = f"ark:{world.naan}/{name[:3]}-{name[3:]}"
     r = world.resolve(hyphenated)
@@ -37,50 +37,49 @@ def test_名前の中のハイフンは無視される(world: World, published):
     assert r.headers["location"] == published["url"]
 
 
-def test_info_は認証なしで読める(world: World, published):
+def test_info_needs_no_credentials(world: World, published):
     r = world.resolve(published["ark"], "?info")
     assert r.status_code == 200
     assert published["ark"].split(":")[1] in r.text
     assert published["url"] in r.text
 
 
-def test_疑問符二つも記述を返す(world: World, published):
-    """C4: `??` は「この識別子について教えよ」。**転送しない。**"""
+def test_double_question_mark_also_describes(world: World, published):
+    """C4: ?? asks about the identifier instead of following it."""
     r = world.resolve(published["ark"], "??")
     assert r.status_code == 200
 
 
-def test_公開ページで_script_を実行させない(world: World, published):
-    """`?info` は**認証を要さない公開ページ**で、載る文字列を決めるのは採番した側。
-
-    だから **CSP で script を止める**。ここが緩むと、採番できる者が
-    公開ページに任意の script を置けることになる。
-    """
+def test_the_public_page_runs_no_script(world: World, published):
+    """?info is public and needs no credentials, and whoever minted the ARK chooses the
+    text on it. The CSP therefore blocks scripts: without it, anyone who can mint could
+    put a script on a public page."""
     r = world.resolve(published["ark"], "?info")
     csp = r.headers.get("content-security-policy", "")
     assert "script-src 'none'" in csp, csp
     assert r.headers.get("x-content-type-options") == "nosniff"
 
 
-def test_知らない名前は404(world: World):
-    """D3: **自分が権威を持つ NAAN の未知の名前は 404。**「無い」と言える。"""
+def test_an_unknown_name_is_404(world: World):
+    """D3: for a NAAN we are authoritative for, an unknown name really is absent."""
     assert world.resolve(f"ark:{world.naan}/e1zzzzzzzzz").status_code == 404
 
 
-def test_委譲した_NAAN_は委譲先へ送る(world: World):
-    """D2: 解決を委ねた NAAN は、**その先へ転送する**。台帳に行は無い。"""
+def test_a_delegated_naan_goes_to_its_delegate(world: World):
+    """D2: a NAAN whose resolution is delegated is forwarded. No row is held here."""
     r = world.resolve(f"ark:{world.delegated_naan}/anything")
     assert r.status_code == 302
     assert r.headers["location"].startswith(world.delegate)
 
 
-def test_知らない_NAAN_は全体リゾルバへ送る(world: World):
-    """D2: 知らない NAAN は**自分の知識の外**。n2t へ渡す（404 にはしない）。"""
+def test_an_unknown_naan_goes_to_the_global_resolver(world: World):
+    """D2: an unknown NAAN is outside what this ledger knows, so hand it to n2t rather
+    than answer 404."""
     r = world.resolve(f"ark:{UNKNOWN_NAAN}/whatever")
     assert r.status_code == 302
     assert r.headers["location"].startswith(GLOBAL_RESOLVER)
 
 
-def test_壊れた_ark_は400(world: World):
-    """NAAN の形をしていないものは、**解決以前に読めない**。"""
+def test_a_malformed_ark_is_refused(world: World):
+    """Something that is not shaped like a NAAN cannot even be read."""
     assert world.resolve("ark:/").status_code in (400, 404)

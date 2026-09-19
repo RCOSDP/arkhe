@@ -1,8 +1,9 @@
-"""**認証と到達範囲**を、本物の資格情報で。
+"""Authentication and reach, with real credentials.
 
-単体の試験は認証を差し替えて認可だけを見ている——速く、網も細かい。**ここで見るのは
-差し替えていない側**である: CLI が刷った鍵で本当に入れるか、止めた主体が本当に
-止まるか、`client_credentials` で取ったトークンが本当に使えるか。
+The unit tests substitute authentication and look only at authorisation. This looks at
+the part that is not substituted: whether the key the CLI printed opens the door,
+whether a stopped principal really stops, and whether a token from client_credentials
+works.
 """
 
 from __future__ import annotations
@@ -14,54 +15,56 @@ from tests.e2e.conftest import World
 pytestmark = pytest.mark.e2e
 
 
-def test_鍵が無ければ採番できない(world: World):
+def test_no_key_no_minting(world: World):
     r = world.api("post", "/api/mint", key=None, json={"url": "https://example.org/x"})
     assert r.status_code == 401
 
 
-def test_でたらめな鍵では入れない(world: World):
+def test_a_made_up_key_does_not_open_the_door(world: World):
     r = world.api("post", "/api/mint", key="arkhe_" + "z" * 43,
                   json={"url": "https://example.org/x"})
     assert r.status_code == 401
 
 
-def test_scope_の外は断る(world: World, published):
-    """scope は**階層ではない**。`ark:mint` を持っていても読めるとは限らない。"""
+def test_anything_outside_the_scope_is_refused(world: World, published):
+    """Scopes are not a hierarchy: holding ark:mint says nothing about reading."""
     r = world.api("get", "/api/stats", key="mint_only")
     assert r.status_code == 403, r.text
     upd = world.api("put", "/api/update", key="mint_only",
                     json={"ark": published["ark"], "url": "https://example.org/nope"})
     assert upd.status_code == 403
-    # 持っている scope は通る
+    # The scope it does hold still works
     assert world.api("post", "/api/mint", key="mint_only",
                      json={"url": "https://example.org/e2e/mint-only"}).status_code == 201
 
 
-def test_他組織の_ARK_には届かない(world: World, published):
-    """M4: **読み取りも到達範囲に絞る**（arklet は認可を一切していなかった）。"""
+def test_another_organisation_is_out_of_reach(world: World, published):
+    """M4: reads are bounded by reach as well. arklet did no authorisation at all."""
     seen = world.api("post", "/api/query", key="other", json={"data": [published["ark"]]})
     assert seen.status_code == 200
-    assert seen.json()["data"] == [], "**他組織の行が読めている**"
+    assert seen.json()["data"] == [], "another organisation's row was readable"
 
     wrote = world.api("put", "/api/update", key="other",
                       json={"ark": published["ark"], "url": "https://evil.example/x"})
     assert wrote.status_code in (403, 404), wrote.text
-    # 行き先は動いていない
+    # The target did not move
     assert world.resolve(published["ark"]).headers["location"] == published["url"]
 
 
-def test_止めた主体は入れなくなる(world: World):
-    """委譲した認証では**止めるのが唯一の手立て**——鍵を持っていないのだから。"""
+def test_a_stopped_principal_is_locked_out(world: World):
+    """Where authentication is delegated, stopping the principal is the only lever: we
+    hold no credential to revoke."""
     assert world.api("post", "/api/mint", key="stop",
                      json={"url": "https://example.org/e2e/before-stop"}).status_code == 201
-    world.cli("client", "disable", "e2e-stop")
+    world.cli("client", "disable", world.seed["clients"]["stop"])
     after = world.api("post", "/api/mint", key="stop",
                       json={"url": "https://example.org/e2e/after-stop"})
     assert after.status_code in (401, 403), after.text
 
 
-def test_一日の上限を超えたら採番できない(world: World):
-    """R3: **一組織の暴走を止める。** 上限 1 本の組織で 2 本目を採る。"""
+def test_minting_stops_at_the_daily_quota(world: World):
+    """R3: the quota stops one organisation from running away. This organisation is
+    capped at one ARK a day."""
     first = world.api("post", "/api/mint", key="quota",
                       json={"url": "https://example.org/e2e/quota-1"})
     assert first.status_code == 201, first.text
@@ -70,11 +73,11 @@ def test_一日の上限を超えたら採番できない(world: World):
     assert second.status_code in (403, 429), second.text
 
 
-def test_client_credentials_で取ったトークンで採番できる(world: World):
-    """RFC 6749 §4.4。**本文でも Basic でも受ける**と仕様書に書いてある道。"""
+def test_a_client_credentials_token_can_mint(world: World):
+    """RFC 6749 section 4.4, with the credentials in the body."""
     got = world.api("post", "/oauth/token", key=None, data={
         "grant_type": "client_credentials",
-        "client_id": "e2e-secret",
+        "client_id": world.seed["clients"]["secret"],
         "client_secret": world.keys["secret"],
         "scope": "ark:mint",
     })
@@ -87,13 +90,13 @@ def test_client_credentials_で取ったトークンで採番できる(world: Wo
     assert r.json()["ark"].startswith(f"ark:{world.naan}/")
 
 
-def test_登録に無い_scope_を求めたら断る(world: World):
-    """**要求で範囲は広がらない**（権限昇格そのもの）。RFC 6749 §5.2 の
-    `invalid_scope` で断る——**黙って削らない**。削ると、クライアントは取れた
-    つもりの権限で動き、後から 403 に出会う。"""
+def test_asking_for_an_unregistered_scope_is_refused(world: World):
+    """A request cannot widen the reach; that would be privilege escalation. RFC 6749
+    section 5.2 calls it invalid_scope, and the scope is not trimmed silently: a client
+    that believes it holds a permission would only find out much later."""
     got = world.api("post", "/oauth/token", key=None, data={
         "grant_type": "client_credentials",
-        "client_id": "e2e-secret",
+        "client_id": world.seed["clients"]["secret"],
         "client_secret": world.keys["secret"],
         "scope": "ark:purge",
     })
@@ -101,9 +104,10 @@ def test_登録に無い_scope_を求めたら断る(world: World):
     assert got.json()["error"] == "invalid_scope", got.text
 
 
-def test_知らない_grant_type_は断る(world: World):
+def test_an_unknown_grant_type_is_refused(world: World):
     got = world.api("post", "/oauth/token", key=None, data={
-        "grant_type": "password", "client_id": "e2e-secret",
+        "grant_type": "password",
+        "client_id": world.seed["clients"]["secret"],
         "client_secret": world.keys["secret"],
     })
     assert got.status_code == 400

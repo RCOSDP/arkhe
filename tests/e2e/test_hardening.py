@@ -1,8 +1,8 @@
-"""**設定で締める側**。宣言してあるだけで効いていない設定を、外から確かめる。
+"""Settings that lock things down, checked from outside.
 
-`ARKHE_ALLOWED_HOSTS` は**設定として宣言され、文書にも書いてあって、どこからも
-読まれていなかった**——単体の試験は app を自前で組み立てるので、
-`create_app` が入れるはずの中間層が抜けていても気づけない。**建てないと分からない。**
+ARKHE_ALLOWED_HOSTS was declared as a setting and written up in the guide, but nothing
+read it. The unit tests assemble the app themselves, so a middleware that create_app
+forgets to install is invisible to them. It only shows up once the app is built.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ HOST = "ark.example.test"
 
 @pytest.fixture(scope="module")
 def guarded(world, tmp_path_factory):
-    """`ARKHE_ALLOWED_HOSTS` を締めた resolver を 1 つだけ建てる。"""
+    """One resolver with ARKHE_ALLOWED_HOSTS set."""
     logs = tmp_path_factory.mktemp("e2e-hardening")
     env = {**world.env, "ARKHE_RESOLVER": "1",
            "ARKHE_READ_DATABASE_URL": world.env["ARKHE_DATABASE_URL"],
@@ -29,22 +29,24 @@ def guarded(world, tmp_path_factory):
     stop(server)
 
 
-def test_許した_Host_なら通る(guarded, published):
+def test_an_allowed_host_gets_through(guarded, published):
     r = httpx.get(f"{guarded.url}/{published['ark']}",
                   headers={"Host": HOST}, follow_redirects=False, timeout=30)
     assert r.status_code == 302
 
 
-def test_許していない_Host_は断る(guarded, published):
-    """**この設定は 0.9.2 まで死んでいた。** ここが 302 に戻ったら、また死んでいる。"""
+def test_a_host_that_was_not_allowed_is_refused(guarded, published):
+    """This setting did nothing until 0.9.2. If this goes back to 302, it is dead
+    again."""
     r = httpx.get(f"{guarded.url}/{published['ark']}",
                   headers={"Host": "evil.example"}, follow_redirects=False, timeout=30)
-    assert r.status_code == 400, f"**Host を見ていない**: {r.status_code}"
+    assert r.status_code == 400, f"the Host header was not checked: {r.status_code}"
 
 
 @pytest.fixture(scope="module")
 def closed(world, tmp_path_factory):
-    """閉域のリゾルバ。**自分の領域なら公開前でも解決する**（`ARKHE_RESOLVE_UNPUBLISHED`）。"""
+    """A resolver for a closed network, which resolves unpublished ARKs in its own
+    namespace (ARKHE_RESOLVE_UNPUBLISHED)."""
     logs = tmp_path_factory.mktemp("e2e-closed")
     env = {**world.env, "ARKHE_RESOLVER": "1",
            "ARKHE_READ_DATABASE_URL": world.env["ARKHE_DATABASE_URL"],
@@ -54,9 +56,10 @@ def closed(world, tmp_path_factory):
     stop(server)
 
 
-def test_閉域のリゾルバは公開前も解決する(world, closed, mint):
-    """**閉じた網の中で採った ARK を、その網のリゾルバが解決できないなら**
-    閉じた対象に PID を配る意味が無い。公開のリゾルバでは、同じ行が 404。"""
+def test_a_closed_resolver_resolves_the_unpublished(world, closed, mint):
+    """If ARKs minted inside a closed network cannot be resolved there, handing out
+    identifiers for closed objects is pointless. The public resolver still answers 404
+    for the same row."""
     target = "https://closed.example.org/object"
     ark = mint(url=target, reserve=True)["ark"]
 
@@ -64,4 +67,4 @@ def test_閉域のリゾルバは公開前も解決する(world, closed, mint):
     assert inside.status_code == 302
     assert inside.headers["location"] == target
 
-    assert world.resolve(ark).status_code == 404, "**公開のリゾルバが公開前を出した**"
+    assert world.resolve(ark).status_code == 404, "the public resolver served a reserved ARK"

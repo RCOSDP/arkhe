@@ -1,38 +1,41 @@
 #!/usr/bin/env python3
-"""通しの検査のための台帳を作る。**`tests/e2e/` と、手で確かめるときの共通の土台。**
+"""Build the ledger the end-to-end suite runs against, and that you can use by hand.
 
-    uv run python scripts/seed_e2e.py                 # 組んで、鍵を人が読む形で出す
-    uv run python scripts/seed_e2e.py --json          # 同じものを機械が読む形で
-    uv run python scripts/seed_e2e.py --arks 500      # 状態の混ざった ARK を足す
-    uv run python scripts/seed_e2e.py --migrate       # 先に alembic upgrade head も
+    uv run python scripts/seed_e2e.py                 # build it and print the keys
+    uv run python scripts/seed_e2e.py --json          # the same, for a program to read
+    uv run python scripts/seed_e2e.py --arks 500      # add ARKs in mixed states
+    uv run python scripts/seed_e2e.py --migrate       # run alembic upgrade head first
 
-**`tests/e2e/` はこれを呼ぶ。** 検査の側に同じ組み立てを書くと、片方が必ず古くなる
-——そして**呼ばれているから、腐らない**。手で確かめるときも同じ台帳から始められる。
+tests/e2e/ calls this script. Writing the same setup inside the suite would leave one of
+the two copies stale, and because the suite calls it, this script cannot rot either.
+Checking by hand starts from the same ledger.
 
-## 何を組むか
+What it builds
 
-  NAAN 99999      権威を持つ。ここに 3 つの組織を迎える
-  NAAN 88888      **解決を外へ委ねた**。台帳に行は無く、解決は委譲先へ飛ぶ
-  組織 a          名前空間 `/e1`。**上限なし**——ここに ARK を足す
-  組織 b          `/b2`。**届かないこと**を確かめるための別組織
-  組織 q          `/q1`、**1 日 1 本**。上限に当たることを確かめるためだけの組織
+  NAAN 99999      authoritative. Three organisations are onboarded under it
+  NAAN 88888      resolution is delegated. No rows here; resolution is forwarded
+  organisation a  namespace /e1, no quota. Seeded ARKs go here
+  organisation b  namespace /b2, used to check that reach stops at the organisation
+  organisation q  namespace /q1, one ARK a day, used to check the quota
 
-主体は**用途ごとに分ける**。1 つを使い回すと、止める検査が後続を巻き添えにする:
+Each principal has one purpose. Sharing one would let the check that disables a
+principal break the checks that run after it.
 
-  ops / mint_only / other / quota / stop … API 鍵（`arkhe_…`）
-  secret                                … client_secret（`arkhes_…`）
-  admin                                 … 人。合言葉で管理画面に入る
+  ops / mint_only / other / quota / stop   API keys (arkhe_...)
+  secret                                   a client secret (arkhes_...)
+  admin                                    a person, who signs in with a password
 
-## 足す ARK の状態
+Seeded ARKs
 
-`--arks N` は **N 本を組織 a に**入れ、公開・公開前・保留・墓碑・修飾子つき・
-取り下げ済みの名前を混ぜる。**組織 q には 1 本も入れない**——あそこは 1 日 1 本が
-上限で、種を蒔いた時点で検査が上限に当たってしまう。
+--arks N adds N ARKs to organisation a, mixing published, reserved, held, tombstoned,
+qualified and withdrawn names. Nothing is added to organisation q: it is capped at one
+ARK a day, so seeding it would use up the quota the suite wants to test.
 
-## 気をつけること
+Notes
 
-**既に台帳があるなら何もしない。** `--force` を付けたときだけ足す。**この道具は
-検査のためのもの**で、実運用の台帳は `arkhe naan add` / `arkhe onboard` で組む。
+If the ledger already holds a NAAN, the script does nothing unless --force is given.
+This is a tool for testing; a real ledger is built with `arkhe naan add` and
+`arkhe onboard`.
 """
 
 from __future__ import annotations
@@ -49,17 +52,17 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 NAAN = "99999"
-#: 採番も解決も外に委ねた NAAN。**台帳に行は無い。**
+#: A NAAN whose minting and resolution are delegated. No rows are held for it.
 DELEGATED_NAAN = "88888"
 DELEGATE = "https://delegate.example.org"
 
-#: **組織と名前空間は同じ鍵で引く。** a が主役、b は「届かないこと」を確かめる別組織、
-#: q は上限に当たることだけのための組織。
-ORGS = {"a": "E2E org", "b": "E2E 別組織", "q": "E2E 上限組織"}
+#: Organisations and namespaces share one key. "a" is the main one, "b" is there to
+#: check that reach stops at the organisation, "q" only exists for the quota.
+ORGS = {"a": "E2E org", "b": "E2E other org", "q": "E2E capped org"}
 SHOULDERS = {"a": "/e1", "b": "/b2", "q": "/q1"}
 
 ADMIN_USER = "e2e-person"
-#: **検査用の合言葉。** 本番に持ち込まない（この文字列はリポジトリに在る）。
+#: A password for testing. Do not use it anywhere real: it is in the repository.
 ADMIN_PASSWORD = "correct horse battery staple"
 
 ALL_SCOPES = (
@@ -67,7 +70,7 @@ ALL_SCOPES = (
     "ark:delete ark:unpublish ark:purge"
 )
 
-#: (鍵の名, client_id, 組織, scope, 種類)
+#: (name of the key, client_id, organisation, scopes, kind of credential)
 CLIENTS = [
     ("ops", "e2e-ops", "a", ALL_SCOPES, "api_key"),
     ("mint_only", "e2e-mint-only", "a", "ark:mint", "api_key"),
@@ -79,11 +82,11 @@ CLIENTS = [
 
 
 def _sow(session, arks: int) -> dict[str, int]:
-    """状態の混ざった ARK を、組織 a の名前空間に入れる。
+    """Add ARKs in mixed states to organisation a.
 
-    **画面と統計は「状態が混ざっている」ことでしか確かめられない。** 全部が
-    公開済みの台帳では、保留の行がどう出るかも、公開前が `?info` に出ないことも、
-    見て確かめられない。
+    The screens and the statistics can only be checked against a ledger where the states
+    differ. If everything is published, there is no held row to look at, and no way to
+    see that a reserved ARK stays out of ?info.
     """
     from sqlalchemy import select
 
@@ -102,12 +105,12 @@ def _sow(session, arks: int) -> dict[str, int]:
              "qualified": 0, "withdrawn": 0}
     minted = []
     for i in range(arks):
-        # 10 本に 1 本は公開前。**解決せず、まだ消せる**状態のものを混ぜておく。
+        # Every tenth ARK is reserved: it does not resolve and can still be deleted.
         reserve = i % 10 == 9
         ark, _ = minting.mint(
             session, shoulder=shoulder, created_by="seed-e2e", reserve=reserve,
             url=f"https://repo.example.ac.jp/records/{i}",
-            title=f"検査用のデータセット {i + 1}",
+            title=f"Test dataset {i + 1}",
         )
         minted.append(ark)
         tally["reserved" if reserve else "published"] += 1
@@ -115,10 +118,11 @@ def _sow(session, arks: int) -> dict[str, int]:
 
     public = [a for a in minted if a.published_at is not None]
     if public:
-        # 保留（転送だけ止まる）・墓碑（行き先だけ消える）・修飾子つき
+        # A hold stops redirection only; a tombstone drops the target; a qualifier is
+        # registered on its own.
         ops.set_hold(
             session, root, kind="ark", key=public[0].ark,
-            until=datetime.now(UTC) + timedelta(days=7), reason="検査用に止めてある",
+            until=datetime.now(UTC) + timedelta(days=7), reason="held for testing",
         )
         tally["held"] = 1
         if len(public) > 1:
@@ -133,8 +137,9 @@ def _sow(session, arks: int) -> dict[str, int]:
             tally["qualified"] = 1
     reserved = [a for a in minted if a.published_at is None]
     if reserved:
-        # **公開前に取り下げた名前。** 二度と採られないことを、実物で確かめられる。
-        ops.withdraw_ark(session, root, ark=reserved[0].ark, reason="検査用に取り下げた")
+        # A name withdrawn before publication, so that "never assigned again" can be
+        # checked against a real row.
+        ops.withdraw_ark(session, root, ark=reserved[0].ark, reason="withdrawn for testing")
         tally["reserved"] -= 1
         tally["withdrawn"] = 1
     session.commit()
@@ -142,14 +147,17 @@ def _sow(session, arks: int) -> dict[str, int]:
 
 
 def _cli(env: dict[str, str], *args: str) -> str:
-    """**組み立ては CLI を通す。** 運用者が実際に使う道であり、ここを通したから
-    「組織に結び付けない主体は採番できない」（ARKHE-1303）に気づけた。"""
+    """Run an arkhe command.
+
+    The setup goes through the CLI because that is the path operators use. Going through
+    it is how ARKHE-1303 (a principal with no organisation cannot mint) was found.
+    """
     p = subprocess.run(
         ["uv", "run", "arkhe", *args], cwd=ROOT, env={**os.environ, **env},
         capture_output=True, text=True,
     )
     if p.returncode != 0:
-        raise SystemExit(f"arkhe {' '.join(args)} が落ちた\n{p.stdout}\n{p.stderr}")
+        raise SystemExit(f"arkhe {' '.join(args)} failed\n{p.stdout}\n{p.stderr}")
     return p.stdout
 
 
@@ -164,17 +172,16 @@ def build(*, arks: int = 0, migrate: bool = False, force: bool = False) -> dict:
         p = subprocess.run(["uv", "run", "alembic", "upgrade", "head"], cwd=ROOT,
                            env={**os.environ, **env}, capture_output=True, text=True)
         if p.returncode != 0:
-            raise SystemExit(f"alembic upgrade head が落ちた\n{p.stderr}")
+            raise SystemExit(f"alembic upgrade head failed\n{p.stderr}")
 
     with session_factory()() as s:
         if s.scalar(select(Naan).limit(1)) is not None and not force:
             raise SystemExit(
-                "台帳に既に NAAN がある。**何もしない**"
-                "（足すなら --force。検査用の台帳は捨てて作り直すのが安い）"
+                "the ledger already holds a NAAN, so nothing was done. "
+                "Pass --force to add to it; a test ledger is cheaper to recreate."
             )
-        # **途中まで在る台帳にも足せるようにする。** 検査は落ちる途中で終わるので、
-        # 「NAAN だけ在って組織が無い」はふつうに起きる——そこで止まると、
-        # 作り直すしか手が無くなる。
+        # Allow topping up a half-built ledger. A suite that fails stops halfway, so
+        # "the NAAN exists but no organisation does" is an ordinary state to be in.
         have_naans = set(s.scalars(select(Naan.naan)))
         have_orgs = set(s.scalars(select(Manager.name)))
         have_clients = set(s.scalars(select(Client.client_id)))
@@ -182,7 +189,7 @@ def build(*, arks: int = 0, migrate: bool = False, force: bool = False) -> dict:
     if NAAN not in have_naans:
         _cli(env, "naan", "add", NAAN, "E2E RA", "--policy", "NP | NR, OP, CC | 2026")
     if DELEGATED_NAAN not in have_naans:
-        _cli(env, "naan", "add", DELEGATED_NAAN, "E2E 委譲先",
+        _cli(env, "naan", "add", DELEGATED_NAAN, "E2E delegate",
              "--no-authoritative", "--redirect", DELEGATE)
 
     for tag, name in ORGS.items():
@@ -191,8 +198,7 @@ def build(*, arks: int = 0, migrate: bool = False, force: bool = False) -> dict:
         quota = ["--quota", "1"] if tag == "q" else []
         _cli(env, "onboard", NAAN, name, "-s", SHOULDERS[tag], *quota)
 
-    # id は `manager list` の 1 列目——CLI が「ids are input to other commands」と
-    # 言っているとおりに読む。
+    # The id is the first column of `manager list`, as that command says.
     listing = _cli(env, "manager", "list")
     managers = {}
     for line in listing.splitlines():
@@ -200,15 +206,15 @@ def build(*, arks: int = 0, migrate: bool = False, force: bool = False) -> dict:
             if line.rstrip().endswith(name):
                 managers[tag] = line.split()[0]
     if set(managers) != set(ORGS):
-        raise SystemExit(f"組織の id を読めない:\n{listing}")
+        raise SystemExit(f"could not read the organisation ids:\n{listing}")
 
     keys = {}
     for tag, client_id, org, scopes, kind in CLIENTS:
         if client_id not in have_clients:
             _cli(env, "client", "add", client_id, NAAN,
                  "--manager", managers[org], "--scopes", scopes)
-        # **鍵は刷った 1 度しか出ない。** 1 行目がその平文。既に主体が在るときも
-        # 刷り直す——**古い鍵は失効させない**（並行させて切り替えるため）。
+        # A credential is shown once, on the first line. Issue a new one even when the
+        # principal already exists; older credentials are not revoked.
         keys[tag] = _cli(env, "client", "key", client_id, "--kind", kind).splitlines()[0]
 
     if ADMIN_USER not in have_clients:
@@ -236,10 +242,12 @@ def build(*, arks: int = 0, migrate: bool = False, force: bool = False) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--arks", type=int, default=0, help="足す ARK の本数（状態を混ぜる）")
-    ap.add_argument("--migrate", action="store_true", help="先に alembic upgrade head")
-    ap.add_argument("--force", action="store_true", help="台帳に既に NAAN があっても足す")
-    ap.add_argument("--json", action="store_true", help="機械が読む形で出す")
+    ap.add_argument("--arks", type=int, default=0,
+                    help="how many ARKs to add, in mixed states")
+    ap.add_argument("--migrate", action="store_true", help="run alembic upgrade head first")
+    ap.add_argument("--force", action="store_true",
+                    help="add to a ledger that already holds a NAAN")
+    ap.add_argument("--json", action="store_true", help="print it for a program to read")
     args = ap.parse_args()
 
     out = build(arks=args.arks, migrate=args.migrate, force=args.force)
@@ -247,16 +255,17 @@ def main() -> None:
         print(json.dumps(out, ensure_ascii=False))
         return
 
-    print(f"NAAN {out['naan']}（委譲先 {out['delegated_naan']} → {out['delegate']}）")
+    print(f"NAAN {out['naan']} (delegate {out['delegated_naan']} -> {out['delegate']})")
     for tag, shoulder in out["shoulders"].items():
-        print(f"  {out['naan']}{shoulder:<4} 組織 id {out['managers'][tag]:<3} {ORGS[tag]}")
-    print("\n鍵（**この一度しか出ない**）:")
+        print(f"  {out['naan']}{shoulder:<4} organisation id {out['managers'][tag]:<3} "
+              f"{ORGS[tag]}")
+    print("\nCredentials (shown once):")
     for tag, key in out["keys"].items():
         print(f"  {tag:<10} {out['clients'][tag]:<14} {key}")
-    print(f"\n管理画面: {out['admin']['username']} / {out['admin']['password']}")
-    print("  ARKHE_ADMIN_LOGIN=password ＋ ARKHE_SESSION_SECRET が要る")
+    print(f"\nAdmin interface: {out['admin']['username']} / {out['admin']['password']}")
+    print("  needs ARKHE_ADMIN_LOGIN=password and ARKHE_SESSION_SECRET")
     if out["arks"]:
-        print("\n入れた ARK: " + ", ".join(f"{k} {v}" for k, v in out["arks"].items()))
+        print("\nARKs added: " + ", ".join(f"{k} {v}" for k, v in out["arks"].items()))
 
 
 if __name__ == "__main__":  # pragma: no cover

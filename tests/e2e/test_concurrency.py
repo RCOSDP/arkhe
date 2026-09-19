@@ -1,8 +1,8 @@
-"""**同時に来たとき**にどうなるか。SQLite の単体試験では出ない。
+"""What happens when requests arrive together. SQLite unit tests cannot show this.
 
-ここで見る競り合いは、実際に起きたもの——`request_id` を揃えた再送を 200 件
-同時に投げて、**102 件が 500 を返した**。同じ鍵で INSERT が競り、後から来た側が
-`IntegrityError` で落ちていた。直した今は、**負けた側が勝った側の結果を返す。**
+The race these checks describe did happen: 200 resends that shared one request_id
+returned 500 for 102 of them, because the inserts collided and the losing side raised
+IntegrityError. Today the losing side returns what the winner wrote.
 """
 
 from __future__ import annotations
@@ -20,22 +20,18 @@ from tests.e2e.conftest import TOKEN_SECRET, serve, stop
 
 pytestmark = pytest.mark.e2e
 
-#: **同時に投げないと、この競りは起きない。** 順に投げれば 2 本目は再送の判定で
-#: 弾かれ、書き込みまで進まない——揃えて撃つために関所を置く。
 RACERS = 32
-#: **本番と同じく、プロセスを並べる。** 1 つだと Python の側が直列になり、
-#: `_replay` を見てから commit するまでの隙が**別の要求と重ならない**
-#: ——実際、1 worker では直しを外しても落ちなかった。
+#: Run several processes, as in production. With one worker the Python side serialises,
+#: so the gap between reading the receipt and committing never overlaps another request.
 WORKERS = 4
 
 
 @pytest.fixture(scope="module")
 def racing(world, tmp_path_factory):
-    """worker を並べた minter。**競りはここでしか出ない。**"""
+    """A minter with several workers."""
     logs = tmp_path_factory.mktemp("e2e-race")
     minter = serve(
-        {**world.env, "ARKHE_AUTH": "apikey,oauth2",
-         "ARKHE_TOKEN_SECRET": TOKEN_SECRET},
+        {**world.env, "ARKHE_AUTH": "apikey,oauth2", "ARKHE_TOKEN_SECRET": TOKEN_SECRET},
         logs / "racing.log", "racing minter", workers=WORKERS,
     )
     yield replace(world, minter=minter)
@@ -43,14 +39,11 @@ def racing(world, tmp_path_factory):
 
 
 def _fire_together(url: str, token: str, body: dict, count: int) -> list[tuple[int, dict]]:
-    """**同じ要求を、本当に同時に投げる。**
+    """Send the same request from many sockets at the same moment.
 
-    `httpx` で投げると、接続も組み立ても要求ごとに起きる。それだけで数 ms 散らばり、
-    **先頭が commit し終えてから次が `_replay` を見る**ので競りにならない
-    ——実際、これを直す前は、直しを外しても落ちなかった。
-
-    そこで**接続まで先に済ませ**、関所で揃えて、あとは組み立て済みの
-    バイト列を流すだけにする。
+    Sending with httpx would open a connection and build a request per call, which
+    spreads the sends over several milliseconds. The connections are therefore opened
+    first, and after the barrier each thread only writes bytes that are ready.
     """
     host, port = urlsplit(url).hostname, urlsplit(url).port
     payload = json.dumps(body).encode()
@@ -85,32 +78,24 @@ def _fire_together(url: str, token: str, body: dict, count: int) -> list[tuple[i
     return out
 
 
-def test_同じ_request_id_を同時に投げても番号は1つ(racing):
-    """F4 を**競り合いの下で**。201 は 1 つだけ、残りは 200 で同じ ARK。
+def test_one_request_id_sent_together_mints_one_ark(racing):
+    """F4 under contention: exactly one 201, and every other answer is the same ARK.
 
-    実際に壊れていた形である: `request_id` を揃えた再送を同時に投げると、
-    **どれも「まだ無い」と見てから、どれも書きにいく**。台帳は DB の一意制約で
-    守られるが、**負けたほうには `500` が返っていた**（200 件中 102 件）。
+    Note what this check does not do. Even sending 32 resends from pre-opened sockets,
+    with 1.3 ms between the first and last send and 170 ms per request, the race inside
+    _commit_or_replay never opens: the first request commits before any other reaches
+    the receipt lookup, with four workers as well. Reverting that fix does not make this
+    check fail, so do not read it as the guard for it.
 
-    **ただし、この検査はその競りを再現していない。** 測って分かったことを残す:
+    What it does guard is the promise itself: resends get one ARK, in sequence or all at
+    once.
 
-      送信の散らばり  1.3 ms（32 本を、接続を済ませてから関所で揃えて撃った）
-      1 件の所要      中央値 170 ms、全体 194 ms
-      結果            201 が 1 件、残り 31 件は 200。**衝突は 1 度も起きない**
-
-    要求は確かに同時に届いている。それでも競らないのは、**先頭が commit し
-    終えるまでに、後続が `_replay` まで到達しないから**である（worker 4 つでも
-    同じ）。実際、`_commit_or_replay` の直しを外しても**この検査は落ちない**
-    ——**競りの守りの検査として読んではいけない。**
-
-    ここが守っているのは、**同時に投げても番号は 1 つ**という約束のほうである。
-    再送に同じ答えを返すという約束は、順次でも同時でも同じでなければならない。
-
-    **鍵ではなくトークンで撃つ。** API 鍵の検証は Argon2 で 1 件 50 ms ほどかかり、
-    そこが順番待ちになる。JWT の検証は署名 1 回である。
+    A token is used rather than an API key. Verifying an API key costs about 50 ms of
+    Argon2, and the requests queue up behind it; verifying a JWT is one signature check.
     """
     token = racing.api("post", "/oauth/token", key=None, data={
-        "grant_type": "client_credentials", "client_id": "e2e-secret",
+        "grant_type": "client_credentials",
+        "client_id": racing.seed["clients"]["secret"],
         "client_secret": racing.keys["secret"], "scope": "ark:mint",
     }).json()["access_token"]
 
@@ -122,13 +107,13 @@ def test_同じ_request_id_を同時に投げても番号は1つ(racing):
     assert len(results) == RACERS
     codes = [c for c, _ in results]
     arks = {b.get("ark") for _, b in results}
-    assert not [c for c in codes if c >= 400], f"**落ちた要求がある**: {sorted(codes)}"
-    assert codes.count(201) == 1, f"201 が {codes.count(201)} 件——番号が増えている"
-    assert len(arks) == 1, f"**別の番号が採られた**: {arks}"
+    assert not [c for c in codes if c >= 400], f"some requests failed: {sorted(codes)}"
+    assert codes.count(201) == 1, f"{codes.count(201)} requests minted, expected 1"
+    assert len(arks) == 1, f"more than one ARK was minted: {arks}"
 
 
-def test_同時に採っても名前は衝突しない(racing):
-    """E1: **既存 ARK を黙って上書きしない。** 32 本を同時に採って、全部別物か。"""
+def test_names_do_not_collide_when_minted_together(racing):
+    """E1: an existing ARK is never overwritten. Mint 32 at once and check they differ."""
     def send(i: int):
         r = racing.api("post", "/api/mint", json={"url": f"https://example.org/e2e/par/{i}"})
         assert r.status_code == 201, r.text
@@ -137,24 +122,24 @@ def test_同時に採っても名前は衝突しない(racing):
     with ThreadPoolExecutor(max_workers=16) as pool:
         arks = list(pool.map(send, range(32)))
 
-    assert len(set(arks)) == 32, "**同じ名前が 2 度採られた**"
-    # 採った全部が、別プロセスの resolver から引ける
+    assert len(set(arks)) == 32, "the same name was minted twice"
+    # Everything minted is visible to the resolver process
     assert racing.resolve(arks[0]).status_code == 302
     assert racing.resolve(arks[-1]).status_code == 302
 
 
-def test_同時に取り下げても壊れない(racing, mint):
-    """**同じ行を同時に触る。** どれかは通り、どれも 500 にはならない。"""
+def test_withdrawing_the_same_ark_together_does_not_break(racing, mint):
+    """Touch one row from several requests at once: one succeeds, none return 500."""
     ark = mint(url="https://example.org/e2e/concurrent-unpublish")["ark"]
 
     def send(_: int):
         return racing.api("post", "/api/unpublish", json={
-            "ark": ark, "reason": "同時に取り下げる", "confirm": ark
+            "ark": ark, "reason": "withdrawn concurrently", "confirm": ark
         }).status_code
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         codes = list(pool.map(send, range(8)))
 
     assert 200 in codes, codes
-    assert not [c for c in codes if c >= 500], f"**500 を返した**: {codes}"
+    assert not [c for c in codes if c >= 500], f"a request returned 500: {codes}"
     assert racing.resolve(ark).status_code == 404
