@@ -1421,17 +1421,23 @@
 変更が生まれ、やがて誰も片方を見なくなる。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span>e2e<span class="w">           </span><span class="c1"># 通しの検査だけ</span>
 </code></pre></div>
-<p>素の <code>pytest</code> からは外してある——1 分ほどかかるからで、docker で PostgreSQL を立て、
+<p>素の <code>pytest</code> からは外してある——25 秒ほどかかるからで、docker で PostgreSQL を立て、
 <strong>minter と resolver を <code>uvicorn</code> で建て</strong>、台帳を <strong>CLI で組み</strong>、<strong>素の HTTP</strong> で
 叩く。ほかの試験は <code>TestClient</code> で app を直に呼び、SQLite の上で、認証を差し替えて
 いる——<strong>ここで見るのは部品ではなく、組み上がった形である。</strong></p>
+<p>台帳を組むのは <code>scripts/seed_e2e.py</code> で、<strong>手で確かめるときも同じものが使える</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>scripts/seed_e2e.py<span class="w"> </span>--migrate<span class="w"> </span>--arks<span class="w"> </span><span class="m">500</span>
+</code></pre></div>
+<p>NAAN・組織・主体と鍵・合言葉を作り、<strong>状態の混ざった ARK</strong>（公開・公開前・保留・
+墓碑・修飾子つき・取り下げ済み）を入れて、鍵を刷って見せる。<strong>検査がこれを呼ぶので、
+この道具だけが古くなることはない。</strong></p>
 <p>出す側の 2 本:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bash<span class="w"> </span>scripts/deploy-docs.sh<span class="w">                 </span><span class="c1"># このサイトを gh-pages へ</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w">              </span><span class="c1"># 検査と dist の作成だけ（既定）</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w"> </span>--publish<span class="w">    </span><span class="c1"># タグ → push → GitHub のリリース</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>bash<span class="w"> </span>scripts/deploy-docs.sh<span class="w">                 </span><span class="c1"># このサイトを gh-pages へ</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w">              </span><span class="c1"># 検査と dist の作成だけ（既定）</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>bash<span class="w"> </span>scripts/release.sh<span class="w"> </span>vX.Y.Z<span class="w"> </span>--publish<span class="w">    </span><span class="c1"># タグ → push → GitHub のリリース</span>
 </code></pre></div>
 <p><strong>検査ではない</strong>ものが 1 つ。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
 </code></pre></div>
 <p><code>check.sh</code> からは呼ばない。負荷測定は時間がかかるうえ、結果が機械とその日の状態に
 左右されるので、<strong>緑と赤で語れない</strong>。<strong>自分の数字</strong>を取るための道具である
@@ -1448,14 +1454,17 @@ SQLite は PostgreSQL が弾くスキーマを通す。開発中に 2 度、こ�
 <h2 id="テスト">テスト<a class="headerlink" href="#テスト" title="Permanent link">&para;</a></h2>
 <p>新しい振る舞いには、それが無いと落ちるテストを付ける。<strong>認可に触るなら否定側も</strong>——
 正しい主体が入れたことより、<strong>間違った主体が入れなかったこと</strong>のほうが重要。</p>
-<p>テスト名は文になっている（<code>test_他組織のARKは更新できない</code>）。<strong>失敗したときに、
-例外を投げた関数ではなく壊れた規則の名前が出る</strong>ようにするため。</p>
+<p>テスト名は文になっている（<code>test_m3_another_organisations_ark_cannot_be_updated</code>）。
+<strong>失敗したときに、例外を投げた関数ではなく壊れた規則の名前が出る</strong>ようにするため。</p>
+<p><strong>コードは英語で書く</strong>——識別子・コメント・docstring とも。日本語が残るのは
+多言語カタログ（<code>api/i18n/</code>・<code>cli_i18n.py</code>・<code>errors.py</code> の <code>ja</code>）だけで、
+あれは日本語の画面そのものである。文書は日英の両方を保つ。</p>
 <h2 id="層">層<a class="headerlink" href="#層" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>arkspec/    ARK 仕様の純関数層。stdlib のみ。
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>domain/     解決・認可・採番・管理。HTTP を知らない。
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>db/         SQLAlchemy のモデルとリポジトリ。
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>auth/       3 機構、1 つの Principal。
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>api/        FastAPI のルータ、管理画面、国際化。
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>arkspec/    ARK 仕様の純関数層。stdlib のみ。
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>domain/     解決・認可・採番・管理。HTTP を知らない。
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>db/         SQLAlchemy のモデルとリポジトリ。
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>auth/       3 機構、1 つの Principal。
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>api/        FastAPI のルータ、管理画面、国際化。
 </code></pre></div>
 <p><code>arkspec/</code> と <code>domain/resolution.py</code> が何にも依存しないのは偶然ではない。<strong>フレーム
 ワークを丸ごと入れ替えても 97 本のテストが無改造で通った</strong>のはこれのおかげである。
@@ -1464,8 +1473,8 @@ SQLite は PostgreSQL が弾くスキーマを通す。開発中に 2 度、こ�
 <h2 id="ドキュメント">ドキュメント<a class="headerlink" href="#ドキュメント" title="Permanent link">&para;</a></h2>
 <p>MkDocs Material、素の Markdown、接尾で対訳（<code>page.md</code> が英語、<code>page.ja.md</code> が日本語）。
 図は Mermaid をコードブロックに書く——<strong>画像を書き出す手順を挟まない。</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>scripts/export_openapi.py<span class="w">     </span><span class="c1"># API 仕様をコードから作り直す</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>mkdocs<span class="w"> </span>serve
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>scripts/export_openapi.py<span class="w">     </span><span class="c1"># API 仕様をコードから作り直す</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>mkdocs<span class="w"> </span>serve
 </code></pre></div>
 <p>生成しているのは API 仕様だけ。<strong>設定とコマンドのページは手で書く</strong>——項目や
 コマンドを足したら、2 言語ぶん行を足すこと。忘れると <code>tests/test_docs.py</code> が落ちる。
