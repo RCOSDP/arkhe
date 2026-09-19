@@ -1,9 +1,10 @@
-"""採番。**既存 ARK を黙って上書きしない**（E1）ことを構造で守る。
+"""Minting, built so that an existing ARK is never silently overwritten (E1).
 
-arklet で最重大の欠陥は「主キー衝突が UPDATE に化け、既存 ARK の向き先を黙って
-書き換える」だった。Django 版は `create()`（内部で `force_insert`）で防いでいた。
-SQLAlchemy では **`session.add()` は常に INSERT** なので同じ性質が得られるが、
-`merge()` を使うと UPDATE に化ける。**この層以外で Ark を作らない**ことで守る。
+The worst flaw in arklet was that a primary key collision turned into an UPDATE and
+silently rewrote where an existing ARK pointed. The Django version prevented it with
+create(), which uses force_insert internally. In SQLAlchemy, session.add() is always an
+INSERT, which gives the same property, while merge() would turn into an UPDATE. The
+guard is that no other layer creates an Ark.
 """
 
 from __future__ import annotations
@@ -34,15 +35,15 @@ NOID_LENGTH = 8
 
 
 class AlreadyRegistered(Exception):
-    """B4: 修飾子付き ARK が既に在る。**上書きせず呼び出し側に返す。**"""
+    """B4: the qualified ARK already exists. Return it rather than overwrite it."""
 
 
 class QualifierForm(ValueError):
-    """修飾子が `/` でも `.` でも始まっていない。"""
+    """The qualifier begins with neither / nor .."""
 
 
 class QualifierOutsideBase(ValueError):
-    """修飾子が base の内側を指していない。"""
+    """The qualifier does not point inside the base name."""
 
     def __init__(self, qualifier: str):
         self.qualifier = qualifier
@@ -50,7 +51,8 @@ class QualifierOutsideBase(ValueError):
 
 
 class Withdrawn(ValueError):
-    """**公開前に取り下げられた名前。** 二度と採らない（`WithdrawnName` を見よ）。"""
+    """A name withdrawn before publication. It is never minted again; see
+    WithdrawnName."""
 
     def __init__(self, ark: str):
         self.ark = ark
@@ -58,7 +60,8 @@ class Withdrawn(ValueError):
 
 
 class NameTooLong(ValueError):
-    """名前が索引できる長さを超えた。**仕様の下限（255）まで**は受ける。"""
+    """The name is longer than can be indexed. Up to the 255 the specification
+    requires is accepted."""
 
     def __init__(self, length: int, limit: int):
         self.length, self.limit = length, limit
@@ -69,13 +72,14 @@ def mint(
     session: Session, *, shoulder: Shoulder, created_by: str = "", reserve: bool = False,
     **fields
 ) -> tuple[Ark, int]:
-    """衝突をリトライしながら 1 本採番する。戻り値は (Ark, 衝突回数)。
+    """Mint one ARK, retrying on a collision. Returns (Ark, number of collisions).
 
-    衝突は**握りつぶさず数えて採り直す**。回数を返すのは、名前空間の枯渇が
-    静かに進むのを検知できるようにするため（衝突率が上がったら桁を増やす合図）。
+    A collision is counted and retried rather than swallowed. The count is returned so
+    that a namespace filling up can be noticed: a rising rate means the names need
+    another character.
 
-    `reserve=True` なら**公開前**として採る——解決せず、取り下げれば消せる
-    （`Ark.published_at`）。既定は今までどおり、採番と同時に公開する。
+    With reserve=True it is minted as reserved: it does not resolve and can still be
+    deleted (Ark.published_at). By default it is published as it is minted, as before.
     """
     collisions = 0
     for _ in range(MINT_COLLISION_RETRIES):
@@ -84,8 +88,8 @@ def mint(
         digit = noid_check_digit(check_digit_base(shoulder.naan, stem))
         name = f"{stem}{digit}"
         key = ark_key(shoulder.naan, name)
-        # **取り下げた名前は二度と当てない。** 行はもう無いので INSERT では
-        # 弾けない——ここで見て、衝突と同じに数えて採り直す。
+        # A withdrawn name is never handed out again. Its row is gone, so an INSERT
+        # cannot refuse it; it is checked here and counted as a collision.
         if session.get(WithdrawnName, key) is not None:
             collisions += 1
             continue
@@ -97,14 +101,15 @@ def mint(
             created_by=created_by,
             updated_by=created_by,
             published_at=None if reserve else (now := utcnow()),
-            # **公開するなら、同じ時刻で「一度出した」も立てる。** ここを
-            # 落とすと、採番と同時に公開した ARK が「一度も出していない」ことに
-            # なり、**理由も打ち直しも無しに消せてしまう**。
+            # When it is published, mark that it has been, at the same moment.
+            # Without this, an ARK published as it was minted would count as never
+            # published, and could be deleted with no reason and no confirmation.
             first_published_at=None if reserve else now,
             **fields,
         )
         try:
-            with session.begin_nested():  # SAVEPOINT。衝突しても外側を巻き込まない
+            with session.begin_nested():  # a savepoint: a collision does not take
+                                          # the outer transaction with it
                 session.add(ark)
                 session.flush()
         except IntegrityError:
@@ -117,21 +122,22 @@ def mint(
     raise RuntimeError(f"gave up minting after {collisions} collision(s)")
 
 
-#: ドメインの層から記録する。**`observability` は import しない**——あちらは
-#: FastAPI を引き込むので、HTTP を知らないはずの層が知ることになる。書式
-#: （`extra={"fields": …}`）だけ合わせておけば、同じ流れに乗る。
+#: Logged from the domain layer. observability is not imported: it pulls in FastAPI,
+#: which would mean a layer that should not know about HTTP knowing about it. Matching
+#: the shape (extra={"fields": ...}) is enough to join the same stream.
 _log = logging.getLogger("arkhe")
 
 
 def _report_collisions(shoulder: Shoulder, collisions: int, *, gave_up: bool = False) -> None:
-    """**衝突したことを残す。** 数えているのに捨てていたら、数えた意味が無い。
+    """Record that a collision happened. Counting them and throwing the count away
+    would be pointless.
 
-    衝突は**名前空間の枯渇が静かに進む**唯一の兆しである。1 回起きても実害は
-    無い（採り直して通る）が、**率が上がっていくのは桁を増やす合図**で、
-    それは誰かが見ていないかぎり誰も気づかない。
+    A collision is the only sign that a namespace is filling up. One does no harm, since
+    minting retries, but a rising rate means the names need another character, and
+    nobody sees that unless it is recorded.
 
-    **0 のときは出さない。** 採番のたびに 1 行増やしても、読む人は速やかに
-    読まなくなる——**出す価値があるのは、起きたときだけ**である。
+    Nothing is logged when there were none. A line per mint would soon stop being read;
+    what is worth logging is the times it happens.
     """
     _log.warning(
         "mint_collision",
@@ -145,7 +151,7 @@ def _report_collisions(shoulder: Shoulder, collisions: int, *, gave_up: bool = F
 
 
 class NotDelegated(Exception):
-    """委譲していない shoulder に取り込もうとした。"""
+    """An import was attempted into a shoulder that is not delegated."""
 
     def __init__(self, shoulder: str, status: str):
         self.shoulder, self.status = shoulder, status
@@ -153,11 +159,11 @@ class NotDelegated(Exception):
 
 
 class BadCheckDigit(ValueError):
-    """取り込む名前の検査桁が合わない。"""
+    """The check digit of the name being imported does not match."""
 
 
 class OutsideShoulder(ValueError):
-    """取り込む名前が、その shoulder の内側に無い。"""
+    """The name being imported is not inside that shoulder."""
 
     def __init__(self, name: str, naan: str):
         self.name, self.naan = name, naan
@@ -165,11 +171,12 @@ class OutsideShoulder(ValueError):
 
 
 def check_importable(session: Session, shoulder: Shoulder, name: str) -> str:
-    """取り込んでよい名前か。**書く前に済む検査はここに集める。**
+    """Whether this name may be imported. Every check that can happen before writing
+    is collected here.
 
-    一括の取り込みが「1 件でも通らなければ何も作らない」と言えるのは、
-    **衝突以外の検査が書き込み無しで済む**からである（衝突だけは INSERT に
-    しか分からない）。正規化した名前を返す。
+    A bulk import can promise that one bad row creates nothing because every check but
+    the collision needs no write; only a collision is known to the INSERT. Returns the
+    normalised name.
     """
     if shoulder.status != ShoulderStatus.DELEGATED:
         raise NotDelegated(shoulder.shoulder, shoulder.status)
@@ -178,11 +185,11 @@ def check_importable(session: Session, shoulder: Shoulder, name: str) -> str:
         raise NameTooLong(len(name), MAX_NAME_LENGTH)
     if not name.startswith(shoulder.shoulder.lstrip("/")):
         raise OutsideShoulder(name, shoulder.naan)
-    # N7: 検査桁は base name に対して計算される。修飾子付きは `register` の仕事。
+    # N7: the digit is computed over the base name. Qualifiers are register's job.
     if not verify_ark_check_digit(shoulder.naan, name):
         raise BadCheckDigit(name)
-    # **取り下げた名前は受け取らない。** 外で採られた名前でも、この台帳が
-    # 一度公開前に取り下げた文字列なら、別の対象に付け直すことになる。
+    # A withdrawn name is not accepted. Even minted elsewhere, a string this ledger
+    # once withdrawn before publication would be attached to a different object.
     key = ark_key(shoulder.naan, name)
     if session.get(WithdrawnName, key) is not None:
         raise Withdrawn(compact_ark(key))
@@ -192,30 +199,30 @@ def check_importable(session: Session, shoulder: Shoulder, name: str) -> str:
 def import_minted(
     session: Session, *, shoulder: Shoulder, name: str, created_by: str = "", **fields
 ) -> Ark:
-    """**外で採番された名前を、この台帳に取り込む。**
+    """Bring a name minted elsewhere into this ledger.
 
-    `mint` との違いは 1 点だけ——**名前を呼び出し側が持ってくる**こと。それが
-    どれだけ違うかというと、`mint` が構造で守っていた「衝突しない」「検査桁が
-    正しい」「自分の名前空間の内側」が、**全部この関数の検査に移る**。だから
-    scope も `ark:mint` とは分けてある。
+    There is one difference from mint: the caller brings the name. That difference is
+    large. Everything mint guaranteed structurally, no collision, a correct check digit,
+    inside our own namespace, becomes a check in this function, which is why it has its
+    own scope rather than ark:mint.
 
-    要るのは、閉じた側で採番した ARK を後から公開側に出せるようにするため
-    （`federation.md` の C-2 → C-1）。**これが無いと、閉じた期間に配った名前を
-    そのまま公開する道が無く、別の名前を採り直すしかなくなる**——それは
-    「閉じた対象にも同じ形の PID を配る」という設計の目的そのものを壊す。
+    It exists so that an ARK minted on a closed network can later be published
+    (federation.md, C-2 to C-1). Without it, a name handed out while closed could not be
+    published as it stands and another would have to be minted, which breaks the very
+    point of giving closed objects the same kind of identifier.
 
-    検査は 3 つ。どれも**緩めてはいけない**:
+    There are three checks, and none of them may be loosened:
 
-    1. **委譲した shoulder であること。** 自分で採番している名前空間に外から
-       名前を入れると、こちらの採番と衝突しうる。委譲したからこそ、外に採られた
-       名前が存在する
-    2. **名前がその shoulder の内側にあること。** 委譲した範囲の外を書ける口に
-       してはいけない
-    3. **検査桁が合うこと。** 外から来た名前を信じる唯一の手立てである
-       （N7: base name に対して計算する。修飾子は含めない）
+    1. The shoulder is delegated. Accepting outside names into a namespace we mint from
+       ourselves could collide with our own minting. Names minted elsewhere exist
+       precisely because the namespace was delegated.
+    2. The name is inside that shoulder. This must not become a way to write outside
+       what was delegated.
+    3. The check digit matches. It is the only way to trust a name from outside (N7:
+       computed over the base name, excluding any qualifier).
 
-    衝突は `mint` と同じく **1 本の INSERT** で弾く（E1）。既に在る名前は
-    黙って上書きしない。
+    A collision is refused by a single INSERT, as in mint (E1). An existing name is
+    never overwritten silently.
     """
     name = check_importable(session, shoulder, name)
 
@@ -226,8 +233,9 @@ def import_minted(
         assigned_name=name,
         created_by=created_by,
         updated_by=created_by,
-        # **取り込んだ名前は公開済み。** 外で採られて既に配られている名前を
-        # 引き受ける操作なので、こちらの都合で伏せる意味が無い。
+        # An imported name is published. This takes on a name that was minted
+        # elsewhere and is already in circulation, so there is nothing to be gained by
+        # holding it back here.
         published_at=(imported_at := utcnow()),
         first_published_at=imported_at,
         **fields,
@@ -244,30 +252,31 @@ def import_minted(
 def register_qualified(
     session: Session, *, base: Ark, qualifier: str, created_by: str = "", **fields
 ) -> Ark:
-    """B4: **既存 ARK に修飾子を付けた行を登録する。**
+    """B4: register a row for an existing ARK with a qualifier attached.
 
-    「NOID を省略した採番」ではない。**修飾子は新しい名前ではなく、既存の名前に
-    対する部分参照**なので、チェックディジットも付け直さない（N7: 検査桁は base
-    compact name に対して計算され、修飾子を含まない）。
+    This is not minting with the NOID left out. A qualifier is not a new name but a part
+    reference to an existing one, so no check digit is computed for it (N7: the digit is
+    computed over the base compact name and excludes qualifiers).
 
-    用途は **suffix passthrough の上書き**——既定では祖先の URL に修飾子を
-    continuation として足すが、「このサブツリーだけ別ストレージ」「この変換版だけ
-    別の所在」を表したいときに、その 1 点だけ明示的に登録する。
+    It exists to override what inheritance would do. By default a qualifier is appended
+    to the ancestor's URL as a continuation; this registers one point explicitly, for
+    "this subtree lives in another store" or "this converted form is somewhere else".
 
-    `shoulder` は base から継ぐ。**別の shoulder に生やせてはいけない**——
-    修飾子は base の名前空間の内側にあるものだから。
+    The shoulder is inherited from the base. It must not be possible to attach one to a
+    different shoulder, because a qualifier lives inside the base's namespace.
     """
     if not qualifier.startswith(("/", ".")):
         raise QualifierForm("a qualifier must begin with '/' or '.'")
-    # A4: 修飾子にも %-エンコードは来る（`%2F` は「区切りではない `/`」）。
-    # **解決側と同じ式を通す**——揃えないと、登録できたのに解決できない行ができる。
+    # A4: a qualifier can carry percent encoding too (%2F is a slash that is not a
+    # separator). It goes through the same normalisation as resolution; otherwise a row
+    # could be registered and then never resolve.
     name = strip_hyphens(normalize_structural(normalize_percent(base.assigned_name + qualifier)))
     if name == base.assigned_name or not name.startswith(base.assigned_name):
         raise QualifierOutsideBase(qualifier)
     if len(name) > MAX_NAME_LENGTH:
-        # **DB のエラーで落とさない。** 仕様（§3.1）が受け取る側に義務づけるのは
-        # 255 オクテットまでで、我々もそこまでを索引できる。長い名前を作る側は
-        # 「受け取る実装が索引できないかもしれない」と仕様に警告されている。
+        # Not failed with a database error. 3.1 requires receiving implementations to
+        # support 255 octets, which is what we index, and it warns whoever makes longer
+        # names that a receiving implementation may not index them.
         raise NameTooLong(len(name), MAX_NAME_LENGTH)
     ark = Ark(
         ark=ark_key(base.naan, name),
@@ -276,8 +285,8 @@ def register_qualified(
         assigned_name=name,
         created_by=created_by,
         updated_by=created_by,
-        # **公開状態は base から継ぐ。** 部分参照が base より先に世に出ることは
-        # ないし、公開前の base を取り下げるときに、置き去りの子を残さない。
+        # Publication is inherited from the base. A part reference never goes out
+        # before its base, and withdrawing a reserved base leaves no orphan behind.
         published_at=base.published_at,
         first_published_at=base.first_published_at,
         **fields,
@@ -287,8 +296,8 @@ def register_qualified(
             session.add(ark)
             session.flush()
     except IntegrityError as exc:
-        # E1: 既に在るものを黙って上書きしない。更新は `update` の仕事。
+        # E1: nothing existing is overwritten silently. Changing it is update's job.
         raise AlreadyRegistered(
-            f"{compact_ark(ark_key(base.naan, name))} は既に登録済み"
+            f"{compact_ark(ark_key(base.naan, name))} is already registered"
         ) from exc
     return ark
