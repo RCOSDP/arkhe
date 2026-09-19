@@ -1268,6 +1268,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../project/comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How arkhe compares
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../project/versioning/" class="md-nav__link">
         
   
@@ -1564,10 +1592,11 @@ used. Set <code>status=retired</code> instead; existing ARKs keep resolving.</p>
 <p>A <code>delegated</code> shoulder especially cannot be removed — an external minter may be
 creating names in it that this ledger has never seen.</p>
 <h2 id="minting-never-becomes-an-update">Minting never becomes an update<a class="headerlink" href="#minting-never-becomes-an-update" title="Permanent link">&para;</a></h2>
-<p>This was <strong>the worst defect in arklet</strong>: a primary key collision was absorbed by
-<code>save()</code> and silently became an <code>UPDATE</code>, quietly rewriting where an existing ARK
-pointed. arkhe confines minting to one code path where a collision fails, is counted,
-and is retried with a new name.</p>
+<p>This was <strong>the worst defect in the arklet arkhe started from</strong>: a primary key collision
+was absorbed by <code>save()</code> and silently became an <code>UPDATE</code>, quietly rewriting where an
+existing ARK pointed. (It has since been fixed upstream, which is one of the things
+<a href="../../project/comparison/">the comparison</a> checked.) arkhe confines minting to one code
+path where a collision fails, is counted, and is retried with a new name.</p>
 <p>The collision count is returned rather than swallowed, because a rising collision
 rate is how you find out a namespace is filling up.</p>
 <h2 id="reach-cannot-be-widened-by-a-request">Reach cannot be widened by a request<a class="headerlink" href="#reach-cannot-be-widened-by-a-request" title="Permanent link">&para;</a></h2>

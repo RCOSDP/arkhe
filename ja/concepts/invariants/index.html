@@ -1268,6 +1268,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../project/comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ほかの実装との比較
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../project/versioning/" class="md-nav__link">
         
   
@@ -1551,9 +1579,10 @@ shoulder、NAAN 管理者は自 NAAN の内側で行う。</p>
 <p>とくに <code>delegated</code> の shoulder は消せない——外部の minter が、この台帳の知らない名前を
 その中に作っている可能性がある。</p>
 <h2 id="採番が更新に化けない">採番が更新に化けない<a class="headerlink" href="#採番が更新に化けない" title="Permanent link">&para;</a></h2>
-<p><strong>arklet で最重大の欠陥がこれだった。</strong> 主キーの衝突が <code>save()</code> に吸収されて
-<code>UPDATE</code> に化け、<strong>既存の ARK の向き先を黙って書き換えていた</strong>。arkhe は採番を
-1 か所の経路に閉じ、衝突は失敗させ、数えて、別の名前で採り直す。</p>
+<p><strong>arkhe が出発点にした arklet で、最重大の欠陥がこれだった。</strong> 主キーの衝突が <code>save()</code> に
+吸収されて <code>UPDATE</code> に化け、<strong>既存の ARK の向き先を黙って書き換えていた</strong>（本家では
+その後直っている——<a href="../../project/comparison/">ほかの実装との比較</a>で確かめた）。arkhe は
+採番を 1 か所の経路に閉じ、衝突は失敗させ、数えて、別の名前で採り直す。</p>
 <p>衝突回数を握りつぶさず返しているのは、<strong>衝突率の上昇が名前空間の枯渇を知らせる唯一の
 合図</strong>だから。</p>
 <h2 id="到達範囲はリクエストで広がらない">到達範囲はリクエストで広がらない<a class="headerlink" href="#到達範囲はリクエストで広がらない" title="Permanent link">&para;</a></h2>
