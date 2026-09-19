@@ -9,6 +9,20 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-09-19
+
+**The release that settled which language the code is written in.**
+
+Identifiers, comments, docstrings and test names: Japanese is gone from `src/`, `tests/`,
+`scripts/`, `alembic/` and `compose/`. It remains in the three places where the Japanese
+is the product, the message catalogues, the `ja` field of each error code and the
+Japanese navigation of the documentation site, so the screens and the CLI still speak
+both languages.
+
+The same release widened the end-to-end suite from 13 checks to 54 and added the tool
+that builds the ledger it runs against. It also records what did not reproduce, because
+a check that cannot fail is not counted as cover.
+
 ### Added
 
 - **The code is now written in English throughout**: identifiers, comments, docstrings
@@ -1654,7 +1668,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0
 [0.11.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.11.0
 [0.10.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.10.0
 [0.9.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.2

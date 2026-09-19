@@ -8,6 +8,19 @@
 
 ## [未リリース]
 
+## [0.12.0] — 2026-09-19
+
+**コードの言語を英語に揃えた版。**
+
+識別子・コメント・docstring・テスト名——`src/` `tests/` `scripts/` `alembic/`
+`compose/` から日本語を無くした。**日本語が残るのは、日本語が製品そのものである
+3 か所だけ**（多言語カタログ、`errors.py` の `ja`、文書サイトの日本語ナビゲーション）
+で、**画面も CLI も日英の対はそのまま**である。
+
+同じ版に、通しの検査を 13 本から 54 本に広げ、その台帳を作る道具を出した。
+**落ちない検査を「守っている」と数えない**——再現しなかった競りの測定結果も、
+測ったこととして残してある。
+
 ### 追加
 
 - **コードをすべて英語で書き直した。** 識別子・コメント・docstring・テスト名の
@@ -1527,7 +1540,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.11.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0
 [0.11.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.11.0
 [0.10.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.10.0
 [0.9.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.2
