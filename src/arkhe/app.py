@@ -1,12 +1,13 @@
-"""アプリの組み立て。**役割で口を分ける。**
+"""Assembling the application. The routes it has follow its role.
 
-  resolver … 解決だけ。採番も管理もできない。読み取り専用ロールに向けられる
-  minter   … 採番・更新 API
-  admin    … 管理画面（`ARKHE_ADMIN=on` のときだけ）
+  resolver  resolution only: it cannot mint and has no admin interface, so it can be
+            pointed at a read-only role
+  minter    the minting and update API
+  admin     the admin screens, only when ARKHE_ADMIN=on
 
-分けているのは、resolver を別々にスケールさせるためと、**採番の口を持たない
-プロセスを作れる**ようにするため。解決は止められないが採番は止めてよい、という
-運用ができる。
+They are separate so that resolvers can be scaled on their own, and so that a process
+without any minting route can exist. That allows running things where resolution must
+never stop while minting may.
 """
 
 from __future__ import annotations
@@ -26,7 +27,8 @@ from arkhe.db.session import session_factory
 from arkhe.domain.authz import Conflict, Invalid, NotFound, ShoulderDelegated, Throttled
 from arkhe.settings import Settings, get_settings
 
-#: Swagger UI の冒頭に出る説明。**仕様上の要点を、試す前に読めるところに置く。**
+#: The description at the top of Swagger UI, putting what matters about the
+#: specification where it is read before anything is tried.
 API_DESCRIPTION = """\
 Minting and resolution of ARK identifiers.
 
@@ -75,7 +77,7 @@ TAGS = [
 
 
 def _install_handlers(app: FastAPI) -> None:
-    """ドメインの例外を HTTP に写す。**ドメイン側は HTTP を知らないままにする。**"""
+    """Map domain exceptions to HTTP, so that the domain never knows about HTTP."""
 
     @app.exception_handler(AuthError)
     async def _auth(request: Request, exc: AuthError):  # noqa: ARG001
@@ -85,11 +87,13 @@ def _install_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ShoulderDelegated)
     async def _delegated(request: Request, exc: ShoulderDelegated):  # noqa: ARG001
-        # **プロキシせず 307 で行き先を案内する。** 代理で呼ぶと、応答が失われた
-        # ときに「向こうでは採番されたがこちらは知らない ARK」が生まれる。
+        # Point at the other endpoint with 307 rather than proxying. Calling on
+        # someone's behalf means a lost response leaves an ARK minted over there that
+        # we know nothing about.
         #
-        # **叩ける口が無いときは 403。** `Location` は「同じ要求をここへ出し直せ」と
-        # いう意味なので、人向けのページを載せてはいけない（本文に案内を置く）。
+        # With no endpoint to call, 403. Location means "send the same request
+        # there", so a page for people must not go in it; the guidance goes in the
+        # body.
         if exc.minter:
             return JSONResponse(exc.body(), status_code=307, headers={"Location": exc.minter})
         return JSONResponse(exc.body(), status_code=403)
@@ -98,8 +102,8 @@ def _install_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(NeedsLogin)
     async def _needs_login(request: Request, exc: NeedsLogin):  # noqa: ARG001
-        # **401 を返さない。** ブラウザに Authorization ヘッダは付けられないので、
-        # 401 を見せても人には何もできない。ログイン画面へ送る。
+        # Not a 401. A browser cannot add an Authorization header, so a 401 leaves
+        # the person with nothing to do. Send them to sign in.
         from urllib.parse import quote
 
         return RedirectResponse(f"/admin/login?next={quote(exc.next_url)}", status_code=302)
@@ -111,20 +115,21 @@ def _install_handlers(app: FastAPI) -> None:
 
         @app.exception_handler(exc_type)
         async def _h(request: Request, exc, _code=code):  # noqa: ARG001
-            # **符号が付いていればその状態符号を使う。** 例外の型と符号がずれた
-            # ときに、型のほうを信じて別の符号を返すと診断がぶれる。
+            # When a code is attached, use its status. If the type and the code
+            # disagree, trusting the type would return a different code and make
+            # diagnosis unreliable.
             return JSONResponse(exc.body(), status_code=getattr(exc, "status", _code))
 
 
-#: 画面に付ける保護。**CSP が本体**で、ほかは補助。
+#: The protective headers. The CSP is the substance; the rest supports it.
 #:
-#: 転送先のスキームは書き込み時にも読み取り時にも絞っているが、`?info` は
-#: 認証を要さない公開ページで、そこに載る文字列を決めるのは採番した側である。
-#: **一段目が破れても実行させない**ためにインラインスクリプトを禁じる。
+#: Target schemes are restricted both when written and when read, but ?info is a public
+#: page that needs no credentials, and whoever minted the ARK chooses the text on it.
+#: Inline script is forbidden so that nothing runs even if the first layer is bypassed.
 #:
-#: `style-src` に `unsafe-inline` が要るのは、この画面が CSS を HTML に
-#: 埋め込んでいるため（配信物を増やさないための選択）。**スクリプトは
-#: 一切埋め込んでいない**ので、`script-src 'none'` にできる。
+#: style-src needs unsafe-inline because these pages embed their CSS in the HTML, which
+#: keeps the number of served files down. No script is embedded at all, so script-src
+#: can be none.
 SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; "
@@ -137,13 +142,13 @@ SECURITY_HEADERS = {
     ),
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
-    # HTTPS で出すかは前段が決めるので、ここでは HSTS を付けない
-    # （http で配っている構成に付けると、そのホストが開けなくなる）。
+    # Whether this is served over HTTPS is decided in front, so no HSTS is added
+    # here: on a deployment served over http it would make the host unreachable.
 }
 
 
-#: API ドキュメントだけは別扱い。**Swagger UI は CDN から script を読む**ので、
-#: `script-src 'none'` を当てると真っ白になる。読み込み先を限る形に緩める。
+#: The API documentation is the exception. Swagger UI loads script from a CDN, so
+#: script-src none would leave a blank page. It is loosened by naming the sources.
 DOCS_CSP = (
     "default-src 'none'; "
     "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
@@ -155,24 +160,25 @@ DOCS_CSP = (
 DOCS_PATHS = ("/api/docs", "/api/redoc")
 
 
-#: A1: ラベルの照合は**大小非依存**。仕様（draft-kunze-ark-42 §3.2 手順3）:
+#: A1: the label matches case-insensitively. draft-kunze-ark-42, 3.2, step 3:
 #: "The **first case-insensitive match** on 'ark:/' or 'ark:' is converted to 'ark:'".
 _LABEL_IN_PATH = re.compile(r"^/ark:", re.IGNORECASE)
 
 
 def _install_ark_label_case(app: FastAPI) -> None:
-    """経路の `ark:` ラベルだけを小文字に直してから経路照合に渡す。
+    """Lower-case the ark: label in the path before the router matches it.
 
-    `parse_ark` は最初から大小非依存だが、**経路照合は大小を見る**ので
-    `/ARK:/99999/x9abc` はルータに届かず 404 になっていた。仕様は手順3 で
-    ラベルの大小非依存を求めており、これは受理の話（**狭めてはいけない**側）である。
+    parse_ark has always ignored case, but route matching does not, so /ARK:/99999/x9abc
+    never reached the router and answered 404. Step 3 requires the label to match
+    case-insensitively, and that is about what is accepted, which must not be narrowed.
 
-    **直すのはラベルの 5 文字だけ。** 名前の大小は識別子の一部なので
-    （手順5「the case of all other letters must be preserved」）、
-    `path` の残りには触らない。
+    Only the five characters of the label are changed. The case of the name is part of
+    the identifier (step 5: the case of all other letters must be preserved), so the
+    rest of the path is left alone.
 
-    `raw_path` は直さない。`parse_ark` がラベルを大小非依存で切るので不要で、
-    触ると %-エンコードを保つ経路（A4）に余計な書き換えが入る。
+    raw_path is not touched. parse_ark strips the label case-insensitively, so it is
+    unnecessary, and changing it would add a rewrite to the path that preserves percent
+    encoding (A4).
     """
 
     @app.middleware("http")
@@ -184,13 +190,14 @@ def _install_ark_label_case(app: FastAPI) -> None:
 
 
 def _install_allowed_hosts(app: FastAPI, hosts: list[str]) -> None:
-    """`Host` を検める。**設定は前から在ったが、どこからも使っていなかった。**
+    """Check the Host header. The setting existed for a while and was read by nothing.
 
-    宣言され、参照ページにも載っているのに効かない設定は、**無いより悪い**
-    ——絞ったつもりの運用者が、絞れていないまま「対処済み」と数えてしまう。
+    A setting that is declared and documented but does nothing is worse than no setting:
+    an operator who set it counts the problem as handled while nothing is restricted.
 
-    `["*"]`（既定）のときは何も挟まない。前段で終端している構成では、前段が
-    見ているのが普通で、**ここで二重に弾くと切り分けが難しくなる**からである。
+    With ["*"], the default, no middleware is installed. Where a proxy terminates the
+    connection it usually checks this, and refusing twice makes problems harder to
+    place.
     """
     if not hosts or hosts == ["*"]:
         return
@@ -209,9 +216,9 @@ def _install_security_headers(app: FastAPI) -> None:
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """app を 1 つ組む。**役割（`ARKHE_RESOLVER`）で持つ口が変わる。**
+    """Build one application. Which routes it has follows the role (ARKHE_RESOLVER).
 
-    `settings` を渡さないときは環境変数から引く（本番の起動はこちら——
+    Without settings it reads the environment, which is how it starts in production (
     `uvicorn arkhe.app:create_app --factory`）。
     """
     s = settings or get_settings()
@@ -228,11 +235,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
     )
-    # **この app が使う設定を、要求の層にも通す。** `Config` も `get_session` も
-    # `Depends(get_settings)` で受けるが、それは環境変数のキャッシュであって、
-    # `create_app(settings=…)` に渡されたものとは限らない。食い違うと、**ルータの
-    # 出し分けと接続先の判断が別々の設定を見る**——resolver として建てたつもりの
-    # app が書き込み DB に繋ぎ、minter が読み取り専用の複製へ書きにいく。
+    # Pass the settings this app uses down to the request layer. Config and
+    # get_session both receive Depends(get_settings), which caches the environment and
+    # is not necessarily what create_app(settings=...) was given. When they differ, the
+    # routes and the choice of database follow different settings: an app meant to be a
+    # resolver connects to the write database, and a minter writes to a read-only
+    # replica.
     app.dependency_overrides[get_settings] = lambda: s
 
     _install_handlers(app)
@@ -242,33 +250,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     observability.configure(s.log_level)
     observability.install(app)
 
-    # **どのモードでも生存確認の口は要る。** 以前は resolve ルータにしか無く、
-    # minter と admin は probe に 404 を返し続けて kubelet に殺されていた。
-    # 認証も DB も通さない——落ちているのがアプリ自身かどうかだけを見る。
+    # Every role needs a liveness endpoint. This used to live only on the resolve
+    # router, so the minter and the admin interface answered 404 to the probe and
+    # kubelet kept killing them. It touches neither authentication nor the database: it
+    # answers only whether this process itself is up.
     @app.get("/healthz", include_in_schema=False)
     def healthz():
-        """**生きているか。** 依存を見ない——落ちているのがこのプロセス自身
-        かどうかだけを見る口なので、依存を足すと probe が本来の役目を失う。"""
+        """Whether the process is alive. It looks at no dependency: adding one would
+        take away what this probe is for."""
         return {"ok": True}
 
     @app.get("/readyz", include_in_schema=False)
     def readyz(response: Response):
-        """**要求を捌けるか。** こちらは DB を見る。
+        """Whether requests can be served. This one looks at the database.
 
-        両方を `/healthz` で兼ねていたので、**DB が落ちても Ready のまま
-        トラフィックを受け続けた**。生存と可用は別の問い。
+        Both used to share /healthz, so with the database down it kept answering Ready
+        and kept receiving traffic. Being alive and being able to serve are different
+        questions.
 
-        **見るのは、この役割が実際に読む側である。** resolver は
-        `ARKHE_READ_DATABASE_URL`（レプリカ）から読むので、主系を叩いて
-        確かめても意味が無い——**レプリカが落ちて解決が 500 を返しているのに、
-        主系が生きていれば Ready と答えていた**（実際にレプリカを落として確かめた）。
+        It probes the side this role actually reads. A resolver reads from
+        ARKHE_READ_DATABASE_URL, the replica, so probing the primary proves nothing:
+        with the replica down and resolution answering 500, a live primary kept it
+        answering Ready. That was checked by taking a replica down.
         """
-        # **依存として受け取らない。** 依存の解決中に落ちると、この関数に
-        # 入る前に 500 になり、503 を返せない。ここで自分で開く。
+        # Not taken as a dependency. A failure while dependencies are resolved would
+        # be a 500 before this function runs, and it could not answer 503. The session
+        # is opened here instead.
         try:
             with session_factory(read_only=s.resolver, settings=s)() as probe:
                 probe.execute(text("select 1"))
-        except Exception as exc:  # noqa: BLE001 - 理由によらず「捌けない」
+        except Exception as exc:  # noqa: BLE001 - whatever the reason, it cannot serve
             observability.log("not ready", reason=type(exc).__name__)
             response.status_code = 503
             return {"ok": False, "db": "unreachable"}
@@ -278,23 +289,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         from arkhe.api import resolve
 
         app.include_router(resolve.router)
-        return app  # **minter に解決の口が無いのと同様、resolver に採番の口は無い**
+        return app  # as the minter has no resolution route, a resolver has no
+                    # minting route
 
     from arkhe.api import admin, mint
 
     if "oauth2" in s.auth:
-        # **自前でトークンを配るときだけ口を開ける。** 使わない構成に
-        # 認可サーバの入口を生やさない。
+        # The endpoint exists only where we issue tokens ourselves. A deployment that
+        # does not use it should not expose it.
         from arkhe.api import token
 
         app.include_router(token.router)
     else:
-        # **口が無いなら広告も出さない。** 「ここで取れる」と書いてある仕様書から
-        # クライアントを起こすと、取りに行って 404 を踏む。
+        # Without the endpoint, it is not advertised either. A client generated from
+        # a document that says "get one here" would fetch it and meet a 404.
         #
-        # 刈り取る形にしているのは、**scope は口ごと・広告の可否は app ごと**に
-        # 決まるため。口は import の時点で組まれるので、そこで条件を見られない
-        # （`mint.needs()` を見よ）。
+        # It is removed afterwards because scopes are decided per route while whether
+        # to advertise is decided per app. Routes are built at import time, where that
+        # condition cannot be seen; see mint.needs().
         _hide_oauth2(app)
     app.include_router(mint.router)
     app.include_router(admin.router)
@@ -302,13 +314,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 def _hide_oauth2(app: FastAPI) -> None:
-    """`oauth2` を提供しない構成の仕様書から、その広告を取り除く。"""
+    """Remove the oauth2 advertisement from the document of a deployment that does not
+    offer it."""
     build = app.openapi
 
     def openapi() -> dict:
         schema = build()
         if schema.get("components", {}).get("securitySchemes", {}).pop("oauth2", None) is None:
-            return schema  # 既に取り除いてある（FastAPI が結果を覚えている）
+            return schema  # already removed; FastAPI caches the result
         for methods in schema.get("paths", {}).values():
             for op in methods.values():
                 if not (req := op.get("security")):
