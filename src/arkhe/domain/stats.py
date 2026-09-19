@@ -1,30 +1,33 @@
-"""台帳の統計。**数えるのはここだけ。**
+"""Statistics over the ledger. All counting happens here.
 
-画面・CLI・API が別々に集計を書くと、**同じ「件数」が場所によって違う**という
-いちばん質の悪いずれが起きる。絞り込みを `queries.py` に置いたのと同じ理由で、
-数え方もここに 1 つだけ置く。
+If the screens, the CLI and the API each wrote their own aggregates, the same count
+would differ by where it was read, which is the worst kind of drift. For the same reason
+the filters live in queries.py, the counting lives here.
 
-**到達範囲は `queries.visible_arks` をそのまま通す。** 統計は合計しか返さないが、
-**合計は在ることを漏らす**——他組織の ARK が何件あるかは、その組織の規模であり、
-こちらが教えてよい事実ではない。認可を書き直さず、一覧と同じ式に重ねる。
+The reach comes from queries.visible_arks. Statistics return only totals, but a total
+leaks existence: how many ARKs another organisation holds is a measure of its size, and
+not ours to tell. The authorisation is not written again; it is the same query the lists
+use.
 
-## 数え方の費用
+What counting costs
 
-**費用は行数に比例する。** 一覧が `COUNT` を避けて「1 件多く取る」で済ませている
-のと対照的で——あちらが欲しいのは有無だけ、こちらは数そのものが目的だから、
-走査そのものは避けようがない。
+It costs time in proportion to the number of rows. The lists avoid COUNT by fetching one
+extra row, because all they need is whether there is more; here the count is the point,
+so the scan cannot be avoided.
 
-**避けようがないなら、回数を減らす。** 公開の別・最初と最後・3 つの窓・保留は
-どれも同じ絞り込みへの集計なので、条件つき集計（`FILTER`）で **1 回の走査に
-畳んである**。shoulder ごとの内訳も、合計と公開を 1 回で採る。結果として
-**大きい `ark` 表を読むのは 2 回だけ**（素朴に書くと 7 回になる）。
+Since it cannot be avoided, it is done as few times as possible. Published against
+reserved, the first and last mint, the three windows and the holds are all aggregates
+over the same filter, so they are folded into one scan with conditional aggregation
+(FILTER). The per-shoulder breakdown takes its total and its published count in one pass
+too. In the end the large ark table is read twice, where the obvious version reads it
+seven times.
 
-畳むのは速さのためだけではない。**別々に数えると、その間に増えた分だけ数どうしが
-食い違う**——24h が 7d を上回る、公開が合計を超える、といった見え方になる。
-**足して合わない統計は、読む人の信頼を失う。**
+Folding them is not only about speed. Counted separately, the numbers disagree by
+whatever arrived in between: 24 hours exceeding 7 days, or published exceeding the
+total. Statistics that do not add up lose the reader's trust.
 
-数える列は明示してある（`count(ark.ark)`）。実測は 30 万件で約 110 ms
-（SQLite、手元）。**呼ぶ側が毎秒叩く口ではない。**
+The column being counted is named (count(ark.ark)). Measured at about 110 ms over
+300,000 rows on SQLite here. This is not an endpoint to poll.
 """
 
 from __future__ import annotations
@@ -48,13 +51,15 @@ from arkhe.db.models import (
 )
 from arkhe.domain.queries import narrow_arks, visible_arks
 
-#: 採番の勢いを見る窓。**日・週・月**で、運用の相談で実際に使う単位に合わせた。
+#: The windows minting is measured over: a day, a week and a month, which are the
+#: units that come up when operators talk about it.
 WINDOWS = (("24h", 1), ("7d", 7), ("30d", 30))
 
 
 @dataclass
 class ShoulderStat:
-    """shoulder 1 つぶん。**台帳が組織されている単位**なので、内訳はこれで採る。"""
+    """One shoulder. The ledger is organised by them, so that is how it is broken
+    down."""
 
     naan: str
     shoulder: str
@@ -67,7 +72,7 @@ class ShoulderStat:
 
 @dataclass
 class LedgerStats:
-    """**この主体から見た台帳。** 届かないものは 1 件も入っていない。"""
+    """The ledger as this principal sees it. Nothing out of reach is included."""
 
     scope: str                       # system / naan / organisation
     naans: int
@@ -85,23 +90,23 @@ class LedgerStats:
     minted: dict[str, int] = field(default_factory=dict)
     first_mint: datetime | None = None
     last_mint: datetime | None = None
-    #: **いちばん古い「公開前のまま」。** 件数では警報を出せない——10 件でも
-    #: 昨日採ったものなら普通で、1 件でも 3 年前なら放置である。**溜まっている
-    #: ことは、数ではなく古さに出る。**
+    #: The oldest ARK still reserved. A count cannot raise an alarm: ten reserved
+    #: yesterday is ordinary, one reserved three years ago is forgotten. A backlog
+    #: shows in age, not in number.
     reserved_oldest: datetime | None = None
     by_shoulder: list[ShoulderStat] = field(default_factory=list)
 
 
 def _utc(dt: datetime | None) -> datetime | None:
-    """**返す日時は必ず UTC 付きにする。**
+    """Every timestamp returned carries a time zone.
 
-    SQLite には時刻帯の型が無いので、`DateTime(timezone=True)` と宣言していても
-    **naive な `datetime` が返る**。PostgreSQL では aware で返るので、**engine に
-    よって型が変わる**——受け取った側が引き算すると、片方でだけ `TypeError` で
-    落ちる（実際 `arkhe stat` がそうなった）。
+    SQLite has no time zone type, so a column declared DateTime(timezone=True) comes
+    back naive, while PostgreSQL returns an aware value: the type depends on the engine,
+    and subtracting it raises TypeError on one of them. That is what made arkhe stat
+    crash.
 
-    **付けるのは推測ではない。** 台帳は `utcnow()` しか書かないので、naive で
-    返ってきた値は UTC である。
+    Attaching UTC is not a guess: the ledger only ever writes utcnow(), so a naive value
+    read back is UTC.
     """
     if dt is not None and dt.tzinfo is None:
         return dt.replace(tzinfo=UTC)
@@ -117,20 +122,21 @@ def _reach(p: Principal) -> str:
 def ledger_stats(
     session: Session, p: Principal, *, naan: str = "", org: str = "", now: datetime | None = None
 ) -> LedgerStats:
-    """**この主体に見えている範囲を数える。**
+    """Count what this principal can see.
 
-    `naan` と `org` は一覧と同じ絞り込み（`narrow_arks`）を重ねるだけで、
-    **範囲を広げる手段にはならない**——届かない NAAN を指定しても 0 が返る。
+    naan and org apply the same filters the lists use (narrow_arks) and never widen the
+    reach: naming a NAAN out of reach returns zero.
     """
     now = now or datetime.now(UTC)
     base = narrow_arks(visible_arks(p), naan=naan, org=org)
 
-    # **大きい表は 1 回しか読まない。**
+    # The large table is read once.
     #
-    # 公開の別・最初と最後・3 つの窓・保留は、**どれも同じ絞り込みへの集計**である。
-    # 別々に数えると `ark` を 5 回走査するうえ、**その間に増えた分だけ数どうしが
-    # 食い違う**——24h が 7d を上回る、公開が合計を超える、といった見え方になる。
-    # 条件つき集計（`FILTER`）で 1 つのスナップショットから全部出す。
+    # Published against reserved, the first and last mint, the three windows and the
+    # holds are all aggregates over the same filter. Counted separately they would scan
+    # ark five times and disagree by whatever arrived in between: 24 hours exceeding 7
+    # days, or published exceeding the total. Conditional aggregation (FILTER) takes
+    # them all from one snapshot.
     since = {label: now - timedelta(days=days) for label, days in WINDOWS}
     agg = session.execute(
         base.with_only_columns(
@@ -175,7 +181,8 @@ def _count_naans(session: Session, p: Principal) -> int:
 
 
 def _visible_shoulders(p: Principal):
-    """**採番に使える範囲と同じ絞り方。** 認可を 2 度書かない。"""
+    """Narrowed exactly as what may be minted into. The authorisation is not written
+    twice."""
     stmt = select(Shoulder)
     if not p.is_system:
         stmt = stmt.where(Shoulder.naan == p.naan)
@@ -188,11 +195,11 @@ def _visible_shoulders(p: Principal):
 
 
 def _withdrawn(session: Session, p: Principal, out: LedgerStats) -> None:
-    """取り下げた名前。**公開後に消したものを分けて数える。**
+    """Withdrawn names, counting separately those removed after publication.
 
-    予約を引っ込めたのと、世に出した名前を消したのとでは意味がまるで違う
-    ——後者はこの体系が守ると言っているものを破った回数である。**見えない
-    ところに置いてはいけない数字。**
+    Pulling back a reservation and removing a name that went out into the world mean
+    entirely different things: the second is the number of times this scheme broke what
+    it promises. That is not a number to keep out of sight.
     """
     stmt = select(WithdrawnName.published_at.is_not(None), func.count(WithdrawnName.ark)).group_by(
         WithdrawnName.published_at.is_not(None)
@@ -215,14 +222,15 @@ def _shoulders(session: Session, p: Principal, out: LedgerStats) -> None:
         )
     ).all()
     seen = dict(rows)
-    # **0 の状態も出す。** 「delegated が 0 件」と「delegated という状態を知らない」は
-    # 読む側にとって別のことである。
+    # States with no rows are still reported. "No delegated shoulders" and "we do not
+    # track delegation" are different statements to a reader.
     out.shoulders = {s.value: seen.get(s.value, 0) for s in ShoulderStatus}
 
-    # 内訳。**shoulder は台帳が組織されている単位**で、数もたかが知れている。
-    # **合計と公開を 1 回の走査で採る。** 2 度に分けると表を 2 度読むうえ、
-    # その間に増えた分だけ**公開が合計を上回る**ような内訳が出る。
-    # `ix_ark_shoulder_created` が効く形（shoulder_id が先頭）にしてある。
+    # The breakdown. The ledger is organised by shoulder, and there are not many of
+    # them. The total and the published count come from one scan: two scans would read
+    # the table twice and could report more published than total, by whatever arrived in
+    # between. It is written so that ix_ark_shoulder_created applies, with shoulder_id
+    # first.
     rows = session.execute(
         visible_arks(p)
         .with_only_columns(
@@ -270,11 +278,12 @@ def _people(session: Session, p: Principal, out: LedgerStats) -> None:
 
 
 def _holds(session: Session, p: Principal, out: LedgerStats, *, arks_held: int) -> None:
-    """**今かかっている保留だけ。** 期限切れは解決のたびに時計で判定されるので、
-    ここでも同じく「今」で見る——バッチで戻していない以上、行は残っている。
+    """Only the holds in force. An expiry is judged against the clock on each
+    resolution, so it is judged the same way here: nothing puts the rows back, so they
+    are still there.
 
-    ARK のぶんは `ledger_stats` の 1 回の走査で採ってある（**大きい表をもう一度
-    読まない**）。shoulder と NAAN は小さいので、そのまま数える。
+    The ARK figure comes from the single scan in ledger_stats, so the large table is not
+    read again. Shoulders and NAANs are small enough to count directly.
     """
     now = datetime.now(UTC)
     out.holds = {
@@ -294,22 +303,23 @@ def _holds(session: Session, p: Principal, out: LedgerStats, *, arks_held: int) 
 
 
 # --------------------------------------------------------------------------
-# 復元できたことの確認
+# Confirming that a restore worked
 # --------------------------------------------------------------------------
 
-#: 指紋に入れる列と、その理由。**「識別子が生きているか」を決めるものだけ**を
-#: 入れる——`ark`（名前）、`url`（行き先）、`published_at`（解決するか）。
+#: The columns in the fingerprint, and why. Only what decides whether an identifier is
+#: alive: ark (the name), url (the target) and published_at (whether it resolves).
 #:
-#: **保留（`hold_until`）は入れない。** 期限で勝手に変わるので、差が出ても
-#: 「壊れた」と読めない——**鳴りっぱなしの警報は、誰も見なくなる。**
-#: 題名や記述も入れない。失われれば困るが、**識別子が別のものを指すのとは
-#: 重さが違う**——混ぜると、重い差と軽い差が同じ 1 つの値に潰れる。
+#: Holds (hold_until) are left out. They change by themselves at an expiry, so a
+#: difference could not be read as damage, and an alarm that always rings stops being
+#: read. Titles and descriptions are left out too: losing them matters, but not as much
+#: as an identifier pointing at something else, and mixing them would collapse a serious
+#: difference and a small one into one value.
 _ARK_COLUMNS = ("ark", "url", "published_at")
 
 
 @dataclass
 class Fingerprint:
-    """台帳の指紋。**復元の前後で突き合わせるためだけのもの。**"""
+    """A fingerprint of the ledger, for comparing before and after a restore."""
 
     arks: str
     ark_count: int
@@ -324,7 +334,8 @@ class Fingerprint:
 
 
 def _digest(rows) -> tuple[str, int]:
-    """並びを固定して 1 本の値にする。**数えながら流す**（全件を持たない）。"""
+    """Fold a fixed order into one value, counting as it streams rather than holding
+    every row."""
     h, n = hashlib.sha256(), 0
     for row in rows:
         h.update("\x1f".join("" if v is None else str(v) for v in row).encode())
@@ -334,22 +345,26 @@ def _digest(rows) -> tuple[str, int]:
 
 
 def ledger_fingerprint(session: Session) -> Fingerprint:
-    """**台帳の指紋。復元できたことを、件数ではなく中身で確かめる。**
+    """A fingerprint of the ledger, confirming a restore by its contents rather than
+    by its row count.
 
-    件数が合うことは、確かめたことにならない——**件数が同じでも行き先が入れ替わって
-    いれば、識別子は全部壊れている**。
+    Matching counts prove nothing: with the same count but swapped targets, every
+    identifier is broken.
 
-    **2 つに分けてある。** 1 つに潰すと「どこが違うか」が消える:
+    There are two values. Collapsed into one, it would no longer say where the
+    difference is:
 
-      arks       いま在る名前と、その行き先と、解決するかどうか
-      withdrawn  二度と採らない名前——**`NR` を守る仕掛けの片側**
+      arks       the names that exist, their targets, and whether they resolve
+      withdrawn  the names that are never minted again, which is half of how NR is kept
 
-    後者が消えても採番は動き続けるので、**黙って通る**。だから別に数える。
+    Losing the second is silent, because minting keeps working without it, so it is
+    counted separately.
 
-    **DB の方言に依らない。** SQL の `md5(string_agg(...))` ではなく、並びを固定して
-    Python で畳む——PostgreSQL でも SQLite でも同じ値が出る。**費用は行数に比例する**
-    （全件を流すので、統計より重い）。月次の検証で回すためのものであって、
-    繰り返し叩く口ではない。
+    It does not depend on the database. Rather than md5(string_agg(...)) in SQL, the
+    order is fixed and the fold happens in Python, so PostgreSQL and SQLite give the
+    same value. It costs time in proportion to the number of rows, since every row is
+    streamed, which makes it heavier than the statistics. It is for a monthly check, not
+    for polling.
     """
     arks = _digest(
         session.execute(
