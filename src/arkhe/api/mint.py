@@ -1,6 +1,7 @@
-"""採番・更新の API。**shoulder は主体から引き、リクエストでは広げられない。**
+"""The minting and update API. The shoulder comes from the principal and a request
+cannot widen it.
 
-到達範囲の判定は `domain.authz` が一手に引き受ける。ここは HTTP の形を整えるだけ。
+domain.authz makes every decision about reach; this module only shapes HTTP.
 """
 
 from __future__ import annotations
@@ -47,26 +48,28 @@ router = APIRouter(prefix="/api", tags=["ark"])
 
 
 def needs(scope: str) -> list:
-    """**この口が要求する scope を宣言する。** 仕様書の security requirement に出る
-    ——`{"oauth2": ["ark:mint"]}` のように、口ごとに何が要るかが機械可読になる。
+    """Declare the scope a route requires. It appears as a security requirement in the
+    document, so that what each route needs is machine readable, as
+    {"oauth2": ["ark:mint"]}.
 
-    **弾くのは本体の `require_scope` のまま。** 宣言と検査が 2 か所に分かれるので、
-    一致することを検査で固定してある（`test_宣言した scope と検査する scope が一致する`）。
+    What refuses a request is still require_scope in the body. The declaration and the
+    check live in two places, so a test pins them together
+    (test_the_declared_scope_matches_the_enforced_one).
 
-    scope を載せるのは oauth2 の要求だけである。`bearer` は `type: http` で、
-    **OpenAPI では oauth2 以外のスキームに scope を書けない**（空配列でなければ
-    ならない）——ここで `Security` に包む対象を `oauth2_scheme` に限る理由。
+    Only oauth2 requirements carry scopes. bearer is type: http, and OpenAPI does not
+    allow scopes on any scheme other than oauth2 and openIdConnect, where the array must
+    be empty, which is why only oauth2_scheme is wrapped in Security.
     """
     return [Security(oauth2_scheme, scopes=[scope])]
 
 
 
-# --------------------------------------------------------------- 仕様書の文面
+# ------------------------------------------------ The wording in the document
 #
-# **公開する OpenAPI は英語**——読者はこの台帳の外にいて、日本語を読むとは限らない。
-# docstring は日本語のまま残す。**あれは実装を読む人のためのもの**で、仕様書の
-# 読者とは別。FastAPI は `description` を渡すと docstring より優先するので、
-# 出す文面はここに置き、コードの説明は下の docstring に残る。
+# The published document and the docstrings have different readers. A docstring is for
+# whoever reads the implementation; the document is for whoever calls the API, and it
+# says only what a caller needs. FastAPI prefers description over a docstring, so what
+# is published lives here and the explanation stays in the docstring below.
 
 E_MINT = """\
 **Mint one new ARK.** Requires `ark:mint`.
@@ -296,11 +299,12 @@ are.
 """
 
 def _key(raw: str) -> str:
-    """`ark:99999/x9tn1qkq2g7` でも、旧形式の `ark:/99999/x9tn1qkq2g7` でも、
-    `99999/x9tn1qkq2g7` でも受ける。
+    """Accept ark:99999/x9tn1qkq2g7, the older ark:/99999/x9tn1qkq2g7, or a bare
+    99999/x9tn1qkq2g7.
 
-    **正規化は `domain.queries` の 1 か所**（画面・CLI・API が同じ式を通る）。
-    ここで独自に書くと、API では触れる ARK が CLI では 404 になる。
+    The normalisation lives in one place, domain.queries, which the screens, the CLI and
+    the API all go through. Written again here, an ARK the API accepts could answer 404
+    in the CLI.
     """
     try:
         return ark_key_from_input(raw)
@@ -310,10 +314,10 @@ def _key(raw: str) -> str:
 
 
 def _qualifier_error(exc: Exception) -> authz.Invalid:
-    """`register_qualified` が投げた理由を符号に写す。
+    """Map what register_qualified raised to a code.
 
-    **符号はドメインの側で決めない。** あちらは HTTP も API の語彙も知らない層
-    なので、例外の型を見てここで符号を選ぶ。
+    The domain does not choose codes: that layer knows nothing about HTTP or the API's
+    vocabulary, so the code is chosen here from the type of the exception.
     """
     if isinstance(exc, minting.AlreadyRegistered):
         return authz.Invalid(errors.ALREADY_REGISTERED, ark=str(exc))
@@ -336,10 +340,10 @@ def _parse(raw: str):
 
 
 def _check_importable(session, shoulder, name: str, raw: str) -> None:
-    """**書かずに済む検査を、書く前に済ませる。**
+    """Do every check that needs no write, before writing.
 
-    委譲されているか・名前がその内側か・検査桁が合うか。ここを通らない行が
-    1 つでもあれば、一括は 1 件も入れない。
+    Whether the shoulder is delegated, whether the name is inside it, whether the check
+    digit matches. One row that fails and the bulk import creates nothing.
     """
     try:
         minting.check_importable(session, shoulder, name)
@@ -348,8 +352,8 @@ def _check_importable(session, shoulder, name: str, raw: str) -> None:
             errors.IMPORT_SHOULDER_NOT_DELEGATED, shoulder=exc.shoulder, status=exc.status
         ) from exc
     except minting.BadCheckDigit as exc:
-        # **呼び出し側が送った文字列を返す。** 正規化後の名前を見せても、
-        # 打ち間違いを探している人の手元とは一致しない。
+        # Return the string the caller sent. A normalised name would not match what
+        # someone hunting for a typo has in front of them.
         raise authz.Invalid(errors.IMPORT_CHECK_DIGIT, ark=raw) from exc
     except minting.OutsideShoulder as exc:
         raise authz.Invalid(
@@ -362,7 +366,8 @@ def _check_importable(session, shoulder, name: str, raw: str) -> None:
 
 
 def _insert_import(session, principal, shoulder, row) -> Ark:
-    """検査を通した 1 件を入れる。衝突だけはここでしか分からない（E1）。"""
+    """Insert one row that has passed the checks. Only a collision is known here
+    (E1)."""
     authz.assert_within_quota(session, principal)
     try:
         return minting.import_minted(
@@ -377,10 +382,10 @@ def _insert_import(session, principal, shoulder, row) -> Ark:
 
 
 def _import_one(session, principal, row) -> Ark:
-    """取り込み 1 件。**単体でも一括でも、通る検査は同じ。**
+    """Import one row. One at a time or in bulk, the checks are the same.
 
-    ドメイン側の例外を符号に写すのはここ。`domain/` は HTTP も API の語彙も
-    知らない層なので、対応表を上に置く。
+    Mapping the domain's exceptions to codes happens here: domain/ knows nothing about
+    HTTP or the API's vocabulary, so the table lives above.
     """
     parsed = _parse(row.ark)
     shoulder = _shoulder_holding(session, principal, parsed)
@@ -389,11 +394,11 @@ def _import_one(session, principal, row) -> Ark:
 
 
 def _shoulder_holding(session, principal, parsed):
-    """取り込む名前が属する shoulder を、**主体の到達範囲の内側から**選ぶ。
+    """Find the shoulder an imported name belongs to, within the principal's reach.
 
-    first-digit 規約で名前から shoulder を切り出し、その 1 つだけを見る
-    ——**総当たりで「入る shoulder」を探さない**。探すと、委譲していない
-    名前空間に名前を滑り込ませる余地ができる。
+    The first-digit convention cuts the shoulder out of the name, and only that one is
+    considered. Searching for a shoulder the name would fit into would leave room to
+    slip a name into a namespace that was never delegated.
     """
     prefix = split_shoulder(parsed.name)[0]
     if not prefix:
@@ -409,17 +414,18 @@ def _shoulder_holding(session, principal, parsed):
         raise authz.Invalid(
             errors.IMPORT_NAME_OUTSIDE_SHOULDER, name=parsed.name, naan=parsed.naan
         )
-    # **2 つ別のことを確かめる。**
-    #   1. この台帳がその NAAN の権威を持つか（取り次いでいるだけの名前空間に
-    #      名前を引き受けてはいけない）
-    #   2. この主体がその shoulder に届くか（**上位の権威は下位を覆う**)
+    # Two separate things are checked:
+    #   1. whether this ledger is authoritative for that NAAN, since a namespace we
+    #      only forward must not have names taken on for it
+    #   2. whether this principal reaches that shoulder, where a wider authority covers
+    #      a narrower one
     authz.assert_naan_is_ours(session, parsed.naan)
     authz.assert_reaches_shoulder(session, principal, shoulder)
     return shoulder
 
 
 def _replay(session, principal, request_id: str) -> Ark | None:
-    """F4: 同じ `request_id` の採番が既にあれば、その ARK を返す。"""
+    """F4: if this request_id already minted something, return that ARK."""
     if not request_id:
         return None
     key = session.scalar(
@@ -432,8 +438,8 @@ def _replay(session, principal, request_id: str) -> Ark | None:
 
 
 def _keep_receipt(session, principal, request_id: str, ark: Ark) -> None:
-    """F4: 控えを残す。**採番と同じトランザクションで**——別にすると、控えを書く前に
-    落ちたときに「採番したが再送で二重に採番される」が起きる。"""
+    """F4: keep the receipt, in the same transaction as the mint. Separately, a failure
+    between the two would leave an ARK minted and a resend minting another."""
     if request_id:
         session.add(
             MintReceipt(client_id=principal.client_id, request_id=request_id, ark=ark.ark)
@@ -441,20 +447,19 @@ def _keep_receipt(session, principal, request_id: str, ark: Ark) -> None:
 
 
 def _commit_or_replay(session, principal, request_id: str, ark: Ark) -> Ark:
-    """commit する。**同じ `request_id` を先に書かれていたら、そちらを返す。**
+    """Commit, and if the same request_id was written first, return what it wrote.
 
-    再送の判定（`_replay`）と控えの書き込みのあいだには隙がある。**同じ
-    `request_id` が同時に 2 つ届くと、どちらも「まだ無い」と見てから、
-    どちらも書きにいく**——負荷分散の再送や、応答待ちの client が痺れを切らして
-    投げ直したときに、実際に起きる。
+    There is a gap between checking for a resend (_replay) and writing the receipt. Two
+    requests with the same request_id arriving together both see nothing and both write,
+    which happens with a retry from a load balancer or a caller that gave up waiting.
 
-    守り自体は DB に在る（`one_ark_per_request_id`）ので**台帳は壊れない**が、
-    素通しすると**負けたほうに `500` が返る**。呼び出し側から見ると「採番できたか
-    分からない」がいちばん困る応答で、**別の `request_id` で投げ直せば二重採番に
-    なる**。
+    The guard is in the database (one_ark_per_request_id), so the ledger is safe, but
+    left alone the loser gets a 500. To the caller that is the worst answer, because it
+    says nothing about whether an ARK was minted, and retrying with a new request_id
+    would mint a second one.
 
-    だから負けたほうは、**勝ったほうが書いた ARK をそのまま返す**。再送に同じ
-    答えを返すという約束は、順次でも同時でも同じでなければならない。
+    So the loser returns the ARK the winner wrote. The promise that a resend gets the
+    same answer has to hold whether the requests arrive in sequence or together.
     """
     try:
         session.commit()
@@ -463,7 +468,7 @@ def _commit_or_replay(session, principal, request_id: str, ark: Ark) -> Ark:
         session.rollback()
         if (won := _replay(session, principal, request_id)) is not None:
             return won
-        # 競合ではなく別の不整合。**握りつぶさない。**
+        # Not a race but some other inconsistency. It is not swallowed.
         raise
 
 
@@ -476,7 +481,7 @@ def _apply(ark: Ark, data: dict, principal) -> Ark:
     return ark
 
 
-# ------------------------------------------------------------------- 採番
+# ------------------------------------------------------------------ Minting
 
 
 @router.post(
@@ -485,29 +490,29 @@ def _apply(ark: Ark, data: dict, principal) -> Ark:
     response_model=ArkOut,
     status_code=201,
     description=E_MINT,
-    # **再送は 201 では返らない。** 宣言しないと、生成クライアントが 200 を
-    # 「知らない応答」として扱う。
+    # A resend does not answer 201. Without declaring that, a generated client
+    # treats the 200 as an unknown response.
     responses={200: {"model": ArkOut, "description": "returned an earlier minting (a resend)"}},
 )
 def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Response):
-    """**新しい ARK を 1 つ発行する。** `ark:mint` が要る。
+    """Mint one new ARK. It requires ark:mint.
 
-    採番先の shoulder は、省略すれば組織の既定。指定した場合は**その主体の到達範囲に
-    含まれるかを検証するだけ**で、範囲を広げる手段にはならない。
+    The shoulder is the organisation's default when omitted; when named, it is only
+    checked against the principal's reach and never widens it.
 
-    **`request_id` を付けると再送で番号が増えない**（F4）。同じ主体が同じ
-    `request_id` で送り直すと、最初に採番した ARK をそのまま返す——応答だけが失われた
-    ときに死んだ番号が増えるのを防ぐ。区別は状態符号に出る:
+    With a request_id, a resend does not mint again (F4): the same principal sending the
+    same request_id gets the ARK that was minted first, which stops a lost response
+    leaving dead numbers behind. The status code says which happened:
 
-      201  採番した
-      200  以前の採番を返した（再送）
+      201  it was minted
+      200  an earlier minting was returned (a resend)
 
-    ARK は**振り直せない**。採番は取り消せない操作である——ただし
-    **`reserve` を付けて採れば、公開するまでは取り下げられる**（`/api/publish`
-    と `/api/delete`）。公開してしまえば、そこから先は今までどおり消えない。
+    An ARK is never reassigned, and minting cannot be undone. Minting with reserve set
+    can still be withdrawn until it is published (/api/publish and /api/delete); once
+    published, it cannot be removed.
     """
     authz.require_scope(principal, "ark:mint")
-    # F4: **再送なら採番しない。** 応答が失われただけのときに番号を増やさない。
+    # F4: a resend mints nothing. A lost response must not add a number.
     if (existing := _replay(session, principal, body.request_id)) is not None:
         response.status_code = 200
         return ArkOut.of(existing)
@@ -522,8 +527,8 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
     authz.audit(session, principal, "mint", ark.ark, reserved=body.reserve)
     settled = _commit_or_replay(session, principal, body.request_id, ark)
     if settled is not ark:
-        # 競り負けた。**採った番号は commit されていない**（同じトランザクション
-        # だったので巻き戻っている）ので、増えた番号は無い。
+        # This one lost. The number it drew was never committed, since it was in the
+        # same transaction and rolled back, so no number was used up.
         response.status_code = 200
     return ArkOut.of(settled)
 
@@ -539,30 +544,31 @@ def mint(body: MintIn, principal: CurrentPrincipal, session: Db, response: Respo
 def bulk_mint(
     body: BulkMintIn, principal: CurrentPrincipal, session: Db, cfg: Config, response: Response
 ):
-    """**まとめて採番する。** `ark:mint` が要る。1 リクエストの上限は
-    `ARKHE_BULK_LIMIT`（既定 1000）。
+    """Mint in bulk. It requires ark:mint, and one request is capped by ARKHE_BULK_LIMIT
+    (1000 by default).
 
-    **1 件でも範囲外なら、何も作らない。** 到達範囲と shoulder の検証を全件先に済ませて
-    から採番するので、途中まで採番された状態は残らない。
+    One row out of reach and nothing is created: the reach and the shoulder are checked
+    for every row before anything is minted, so no half-minted state is left.
 
-    **応答は入力の順序で返す。** 再送ぶん（`request_id` が既知の行）と新規ぶんが混ざる
-    ので、並びを保って呼び出し側が突き合わせられるようにしてある。`created` と
-    `replayed` にそれぞれの件数が出る。全件が再送なら 200、1 件でも採番していれば 201。
+    The answer keeps the order of the input, because resends (rows whose request_id is
+    known) are mixed with new mints and the caller has to line them up. created and
+    replayed give the two counts. All resends answers 200; one mint answers 201.
 
-    行ごとに `request_id` を付けておけば、**切れた塊をそのまま送り直せる**——
-    採番済みの行は飛ばされる。**同じ `request_id` が 1 回の要求に複数あるときも
-    1 件にまとめる**（同じ依頼を 2 度書いたのだから、番号も 1 つ）。
+    With a request_id on each row, an interrupted batch can be sent again as it stands:
+    rows already minted are skipped. Several rows sharing a request_id are collapsed
+    into one, because writing the same request twice still means one request.
     """
     authz.require_scope(principal, "ark:mint")
     rows = body.data
     if len(rows) > cfg.bulk_limit:
         raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
 
-    # **同じ塊が同時に 2 つ届いたら、一度だけ組み直す。** 再送の判定と控えの
-    # 書き込みのあいだに隙があり、負けたほうは commit で落ちる——素通しすると
-    # **1 件も採番されないまま `500`** になる。組み直せば、勝ったほうの控えが
-    # 見えるので**全件が再送ぶんとして揃う**（採番は増えない）。
-    # 2 度目は無い。**そこでも負けるなら、それは競合ではなく別の不整合である。**
+    # If the same batch arrives twice at once, it is rebuilt once. There is a gap
+    # between checking for a resend and writing the receipt, and the loser fails at
+    # commit; left alone that is a 500 with nothing minted. Rebuilt, the winner's
+    # receipts are visible and every row lines up as a resend, minting nothing.
+    # There is no third attempt: losing again would not be a race but some other
+    # inconsistency.
     for attempt in (1, 2):
         try:
             return _bulk_mint(session, principal, rows, response)
@@ -570,11 +576,11 @@ def bulk_mint(
             if attempt == 2:
                 raise
             session.rollback()
-    raise AssertionError("到達しない")  # pragma: no cover
+    raise AssertionError("unreachable")  # pragma: no cover
 
 
 def _bulk_mint(session, principal, rows, response):
-    # F4: **既に採番済みの行は飛ばす。** 切れた塊をそのまま再送できるようにする。
+    # F4: rows already minted are skipped, so an interrupted batch can be sent again.
     wanted = {r.request_id for r in rows if r.request_id}
     replayed: dict[str, Ark] = {}
     if wanted:
@@ -586,10 +592,10 @@ def _bulk_mint(session, principal, rows, response):
         ).all():
             replayed[rid] = session.get(Ark, key)
 
-    # **同じ塊のなかの重複も、再送と同じ扱いにする。** 控えは (client, request_id) で
-    # 一意なので、同じ `request_id` の行を 2 つ採番すると控えを 2 度書くことになり、
-    # commit で IntegrityError——500 で落ち、1 件も採番されない。同じ `request_id` は
-    # 「同じ 1 つの依頼」という意味なのだから、**1 件だけ採番して両方に同じ ARK を返す。**
+    # A repeat inside one batch is treated as a resend too. The receipt is unique per
+    # (client, request_id), so minting two rows with the same request_id would write the
+    # receipt twice, fail at commit with IntegrityError and mint nothing. One request_id
+    # means one request, so one ARK is minted and returned for both rows.
     fresh, seen = [], set()
     for r in rows:
         if r.request_id in replayed or r.request_id in seen:
@@ -597,7 +603,7 @@ def _bulk_mint(session, principal, rows, response):
         if r.request_id:
             seen.add(r.request_id)
         fresh.append(r)
-    # 到達範囲の検証を**先に全件済ませる**（1 件でも範囲外なら何も作らない）。
+    # Reach is checked for every row first: one out of reach and nothing is created.
     shoulders = [authz.shoulder_for(session, principal, r.shoulder or None) for r in fresh]
     for sh in shoulders:
         authz.assert_shoulder_mintable(sh)
@@ -614,8 +620,8 @@ def _bulk_mint(session, principal, rows, response):
     authz.audit(session, principal, "bulk_mint", count=len(minted))
     session.commit()
 
-    # **入力の順序で返す。** 再送ぶんと新規ぶんが混ざるので、呼び出し側が
-    # 突き合わせられるように並びを保つ。
+    # The order of the input is kept, because resends and new mints are mixed and the
+    # caller has to line them up.
     by_request = {r.request_id: minted[id(r)] for r in fresh if r.request_id}
     made = [
         replayed.get(r.request_id) or by_request.get(r.request_id) or minted[id(r)]
@@ -636,13 +642,13 @@ def _bulk_mint(session, principal, rows, response):
     description=E_REGISTER,
 )
 def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
-    """B4: **既存 ARK に修飾子を付けた行を登録する。**
+    """B4: register a row for an existing ARK with a qualifier attached.
 
-    既定では suffix passthrough が任意の深さを賄う。この口は**その既定を 1 点だけ
-    上書きする**ためにある——「このサブツリーだけ別ストレージ」「この変換版だけ別の所在」。
+    By default inheritance covers any depth. This route overrides that at one point:
+    "this subtree lives in another store", "this converted form is somewhere else".
 
-    **`ark:mint` を要求する。** 採番ではないが、**新しく解決可能な識別子が増える**
-    ので、更新権限しか持たない主体に渡してはいけない。
+    It requires ark:mint. Nothing is minted, but a new resolvable identifier comes into
+    existence, so it must not be handed to a principal that can only update.
     """
     authz.require_scope(principal, "ark:mint")
     base = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
@@ -664,7 +670,7 @@ def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
     return ArkOut.of(ark)
 
 
-# ------------------------------------------------------------------- 更新
+# ----------------------------------------------------------------- Updates
 
 
 @router.post(
@@ -675,17 +681,19 @@ def register(body: RegisterIn, principal: CurrentPrincipal, session: Db):
     description=E_IMPORT,
 )
 def import_ark(body: ImportIn, principal: CurrentPrincipal, session: Db):
-    """**外で採番された ARK を、この台帳に取り込む。**
+    """Bring an ARK minted elsewhere into this ledger.
 
-    `federation.md` の C-2（閉じた側で採番）から C-1（公開側が名前と記述を持つ）
-    へ移るための口。**これが無いと、閉じた期間に配った名前をそのまま公開できない。**
+    It is how something moves from C-2 in federation.md, minted on the closed side, to
+    C-1, where the public side holds the name and its description. Without it, a name
+    handed out while closed could not be published as it stands.
 
-    scope を `ark:mint` と分けてあるのは、**名前を呼び出し側が選ぶ**から。採番は
-    「番号をもらう」操作で、取り込みは「この番号だと言い張る」操作である。
+    Its scope is separate from ark:mint because the caller brings the name. Minting is
+    asking for a number; importing is asserting that this is the number.
     """
     authz.require_scope(principal, "ark:import")
     ark = _import_one(session, principal, body)
-    # **採番とは別の語で記録する。** あとから「どれが外から来たか」を追えるように。
+    # Recorded under a different word from minting, so that what came from outside
+    # can be traced later.
     authz.audit(session, principal, "import", ark.ark)
     session.commit()
     return ArkOut.of(ark)
@@ -699,19 +707,19 @@ def import_ark(body: ImportIn, principal: CurrentPrincipal, session: Db):
     description=E_IMPORT_BULK,
 )
 def bulk_import(body: BulkImportIn, principal: CurrentPrincipal, session: Db, cfg: Config):
-    """**shoulder ごと引き取る。** 閉じた側が採った名前を、まとめて渡してもらう形。
+    """Take on a whole shoulder: the names the closed side minted, handed over at once.
 
-    **1 件でも通らなければ何も作らない**（M5 と同じ）。中途半端に入った名前は
-    引っ込められないので、部分適用は採番より重い事故になる。
+    One row that fails and nothing is created, as in M5. Half-imported names cannot be
+    taken back, which makes a partial apply worse here than in minting.
     """
     authz.require_scope(principal, "ark:import")
     rows = body.data
     if len(rows) > cfg.bulk_limit:
         raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
 
-    # **全件の検査を先に済ませてから入れる**（採番の一括と同じ順序）。途中で
-    # 落ちるとロールバックには任せられる形でも、**入れてから気づく**のは避ける
-    # ——取り込みは名前を増やす操作で、増えた名前は引っ込められない。
+    # Every row is checked before anything is written, as in bulk minting. A failure
+    # partway could be rolled back, but noticing after writing is avoided: importing
+    # brings names into existence, and those cannot be taken back.
     checked = [(_shoulder_holding(session, principal, _parse(row.ark)), row) for row in rows]
     for shoulder, row in checked:
         _check_importable(session, shoulder, _parse(row.ark).name, row.ark)
@@ -729,13 +737,14 @@ def bulk_import(body: BulkImportIn, principal: CurrentPrincipal, session: Db, cf
     description=E_UPDATE,
 )
 def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
-    """既存 ARK を更新する。**対象の shoulder の manager を照合する**（M3）。"""
+    """Update an existing ARK, checking the organisation of its shoulder (M3)."""
     authz.require_scope(principal, "ark:update")
     ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
     authz.assert_may_touch(session, principal, ark)
     before = ark.url
     _apply(ark, body.model_dump(), principal)
-    # **行き先の履歴は誰が行っても残す**（監査は NAAN 単位以上しか残さない）。
+    # A change of target is recorded whoever made it; the audit log keeps only NAAN
+    # level and above.
     authz.record_change(session, principal, ark, action="update", before_url=before)
     authz.audit(session, principal, "update", ark.ark)
     session.commit()
@@ -749,15 +758,15 @@ def update(body: UpdateIn, principal: CurrentPrincipal, session: Db):
     description=E_PATCH,
 )
 def patch(body: PatchIn, principal: CurrentPrincipal, session: Db):
-    """**送られた項目だけを書き換える。** `PUT` と同じ権限・同じ検証を通る。
+    """Change only the fields that were sent, with the same permissions and checks as
+    PUT.
 
-    `PUT` が要るのは「レコードをこの内容にする」と言い切れるときで、実際には
-    **行き先だけを付け替えたい**ほうがずっと多い。そこで `PUT` を送ると、
-    省いた記述が既定値で上書きされて消える——`?info` が答えるべき中身が、
-    行き先の付け替えのついでに失われる。
+    PUT is for saying "make the record this". In practice the common case is moving only
+    the target, and PUT there overwrites every omitted field with its default: what
+    ?info should answer with is lost along the way.
 
-    空文字を**送れば**消える。送らなければ触らない。この 2 つを区別できないと、
-    値を消す手段が無くなる。
+    Sending an empty string clears a field; not sending it leaves it alone. Without that
+    distinction there would be no way to clear one.
     """
     authz.require_scope(principal, "ark:update")
     ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
@@ -777,13 +786,13 @@ def patch(body: PatchIn, principal: CurrentPrincipal, session: Db):
     description=E_BULK_UPDATE,
 )
 def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cfg: Config):
-    """M5: **辞書で引き当て、部分適用しない。**"""
+    """M5: rows are matched by key, and nothing is applied in part."""
     authz.require_scope(principal, "ark:update")
     rows = body.data
     if len(rows) > cfg.bulk_limit:
         raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
     keys = [_key(r.ark) for r in rows]
-    found = authz.fetch_for_update(session, principal, keys)  # 欠けが 1 件でもあれば 404
+    found = authz.fetch_for_update(session, principal, keys)  # one missing row is 404
     for key, row in zip(keys, rows, strict=True):
         ark = found[key]
         authz.assert_may_touch(session, principal, ark)
@@ -795,7 +804,7 @@ def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cf
     return BulkUpdateOut(updated=len(rows))
 
 
-# --------------------------------------------------------- 公開と取り下げ
+# ------------------------------------------- Publishing and withdrawing
 
 
 @router.post(
@@ -805,13 +814,15 @@ def bulk_update(body: BulkUpdateIn, principal: CurrentPrincipal, session: Db, cf
     description=E_PUBLISH,
 )
 def publish(body: PublishIn, principal: CurrentPrincipal, session: Db):
-    """**予約していた ARK をグローバルに公開する。** 以後は解決し、消せない。
+    """Publish a reserved ARK to the world. From then on it resolves and cannot be
+    deleted.
 
-    **scope は `ark:mint`。** 公開は採番の後半であって、別の判断ではない
-    ——予約した主体がそのまま出せないと、下書きのたびに別の鍵が要る。
+    Its scope is ark:mint. Publishing is the second half of minting rather than a
+    separate decision: if whoever reserved it could not publish it, every draft would
+    need another credential.
 
-    **二度呼んでも落ちない。** 応答だけが失われることがあるので、再送に 409 を
-    返すと、呼び出し側は「公開できたのか」を別の口で確かめに行くことになる。
+    Calling it twice is not an error. A response can be lost, and answering 409 to a
+    resend would send the caller off to check somewhere else whether it worked.
     """
     authz.require_scope(principal, "ark:mint")
     ark = admin_ops.publish_ark(session, principal, ark=_key(body.ark))
@@ -826,13 +837,16 @@ def publish(body: PublishIn, principal: CurrentPrincipal, session: Db):
     description=E_UNPUBLISH,
 )
 def unpublish(body: UnpublishIn, principal: CurrentPrincipal, session: Db):
-    """**公開を取り下げる。** 行は残り、解決しなくなる。届く範囲の内側だけ。
+    """Withdraw a publication. The row stays and it stops resolving, within the
+    caller's reach.
 
-    **scope を `ark:mint` と分けてある。** 出せることと引っ込められることは別の
-    判断である——採番の鍵を配った先に、外に出した名前を止める力まで渡らない。
+    Its scope is separate from ark:mint. Publishing and taking down are different
+    decisions: handing out a minting credential should not hand out the power to stop a
+    name that went out.
 
-    **`ark:delete` とも分けた。** こちらは戻せる操作で、あちらは戻せない。
-    同じ鍵にすると、**戻せるほうを使いたいだけの主体に、戻せないほうまで渡る。**
+    It is separate from ark:delete too. This can be undone and that cannot, and one
+    credential for both would give the irreversible one to anyone who only wanted the
+    other.
     """
     authz.require_scope(principal, "ark:unpublish")
     ark = admin_ops.unpublish_ark(
@@ -849,20 +863,21 @@ def unpublish(body: UnpublishIn, principal: CurrentPrincipal, session: Db):
     description=E_DELETE,
 )
 def delete_ark(body: DeleteIn, principal: CurrentPrincipal, session: Db):
-    """**公開していない ARK を消す。** 公開中のものは 409 で断る（先に取り下げる）。
+    """Delete an ARK that is not published. While it is, this answers 409: withdraw it
+    first.
 
-    **一度でも公開した名前なら、理由と打ち直しを要求する。** 一度も出していない
-    予約を消すのとは、消えるものの重さが違う——重さは主体の位ではなく、
-    **その名前が何であったか**で決まる。
+    If the name was ever published, a reason and a confirmation are required. Deleting a
+    reservation that was never published loses less, and how much is asked follows what
+    the name was, not the caller's tier.
 
 
-    **`DELETE` ではなく `POST`。** ほかの書き込みと同じく本文で ARK を受け取る
-    ——`DELETE` の本文は前段（プロキシ・クライアント）に落とされることがあり、
-    「理由が消えたまま通る」のはこの操作でいちばん避けたい壊れ方である。
+    POST rather than DELETE. Like the other writes it takes the ARK in the body:
+    proxies and clients sometimes drop the body of a DELETE, and "the reason disappeared
+    but it went through" is the last thing this operation should do.
 
-    **scope を `ark:tombstone` と分けてある。** 墓碑は「もう無い」と公開の口で
-    述べる操作で、こちらは**まだ誰にも見えていないものを引っ込める**操作。
-    意味も、取り返しのつかなさも違う。
+    Its scope is separate from ark:tombstone. A tombstone states publicly that something
+    is gone; this withdraws something nobody has seen yet. They differ in meaning and in
+    how irreversible they are.
     """
     authz.require_scope(principal, "ark:delete")
     gone = admin_ops.withdraw_ark(
@@ -887,14 +902,13 @@ def ledger_stats(
     naan: str = "",
     org: str = "",
 ):
-    """**台帳を数える。** 画面・CLI と同じ `domain.stats` を通る。
+    """Count the ledger, through the same domain.stats as the screens and the CLI.
 
-    **`GET` にしてある。** 入力を持たない読みで、経路の途中で素直に載る
-    ——この API がほかで `POST` を使うのは本文で鍵を渡すからで、ここには渡す
-    ものが無い。
+    It is a GET: a read with no input, which sits naturally in a path. This API uses
+    POST elsewhere because the body carries a key, and there is nothing to carry here.
 
-    `naan` と `org` は一覧と同じ絞り込みを重ねるだけで、**範囲を広げる手段には
-    ならない**。届かないものを指定すれば 0 が返る。
+    naan and org apply the same filters the lists use and never widen the reach: naming
+    something out of reach returns zero.
     """
     authz.require_scope(principal, "ark:read")
     return stats.ledger_stats(session, principal, naan=naan, org=org)
@@ -907,14 +921,14 @@ def ledger_stats(
     description=E_PURGE,
 )
 def purge(body: PurgeIn, principal: CurrentPrincipal, session: Db):
-    """**公開した ARK を一手で破棄する。** 取り下げと削除をまとめたもの。
+    """Purge a published ARK in one step: withdrawal and deletion together.
 
-    ここだけは「できない」と言い切らずに口を開けてある——逃げ道が無いと、必要に
-    迫られた誰かが DB を直接叩くことになり、**跡の残らない削除**が起きる。詳しい
-    理由と守りは `admin_ops.purge_ark` に書いた。
+    This is the one place where the answer is not simply "you cannot". With no way out,
+    someone under pressure edits the database directly, and a deletion that leaves no
+    trace is worse. The reasoning and the guards are in admin_ops.purge_ark.
 
-    **scope は別で要求する。** `ark:delete` を持っているだけでは通らない
-    ——一手で外に出たものを消せることは、別の判断である。
+    It requires its own scope: holding ark:delete is not enough. Removing something that
+    went out, in one step, is a separate decision.
     """
     authz.require_scope(principal, "ark:purge")
     gone = admin_ops.purge_ark(
@@ -937,20 +951,20 @@ def purge(body: PurgeIn, principal: CurrentPrincipal, session: Db):
     description=E_TOMBSTONE,
 )
 def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
-    """**対象が失われたと宣言する。** ARK は削除しない。
+    """Declare that the object is gone. The ARK is not deleted.
 
-    `NR`（No Re-assignment）を宣言している以上、識別子は消せない。消せるのは
-    対象への到達性だけで、**識別子とメタデータは残る**。
+    Having declared NR, the identifier cannot be removed. What can be removed is
+    reachability; the identifier and its metadata stay.
 
-    **scope を `ark:update` と分けてある。** 墓碑化は「どこにあるか」ではなく
-    「もう無い」という宣言で、意味も影響も違う。取り消しにくく、公開されると
-    信頼に関わるので、投入バッチのような日常の書き手には渡さない。
+    Its scope is separate from ark:update. A tombstone says "it is gone" rather than
+    "it is here", which differs in meaning and in consequence. It is hard to undo and it
+    is published, so it is not handed to an everyday writer such as a loading batch.
     """
     authz.require_scope(principal, "ark:tombstone")
     ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
     authz.assert_may_touch(session, principal, ark)
     before = ark.url
-    # url が空なら、リゾルバが記述そのものを返す（D6 と同じ経路）。
+    # With an empty url the resolver returns the description itself, as in D6.
     ark.url = body.url
     if body.commitment:
         ark.commitment = body.commitment
@@ -961,7 +975,7 @@ def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
     return ArkOut.of(ark)
 
 
-# --------------------------------------------------------------- 転送の保留
+# ---------------------------------------------------- Holding redirection
 
 
 @router.put(
@@ -971,16 +985,18 @@ def tombstone(body: TombstoneIn, principal: CurrentPrincipal, session: Db):
     description=E_HOLD,
 )
 def hold(body: HoldIn, principal: CurrentPrincipal, session: Db, cfg: Config):
-    """**転送を一時的に止める。** 解決は止めない——記述は返り続ける。
+    """Hold redirection for a while. Resolution is not stopped; the description keeps
+    coming back.
 
-    委譲先が落ちた、間違った行き先を配ってしまった、対象が移動中——急いで
-    止めたいが、識別子は殺したくない場面のためのもの。`404` は嘘（その識別子は
-    存在する）で、`503` は識別子が壊れて見えるので、**`200` と記述**を返す
-    経路（D6・tombstone と同じ）に乗せる。
+    It is for the moments when a delegate is down, a wrong target was handed out, or
+    something is being moved: stop quickly without killing the identifier. 404 would be
+    untrue, because the identifier exists, and 503 makes it look broken, so it answers
+    200 with a description, as D6 and a tombstone do.
 
-    **scope を `ark:update` と分けてある。** 止めるのは「どこにあるか」を書き換える
-    のとは別の判断で、公開の口に理由が出る。tombstone とも分ける——あちらは
-    「もう無い」という恒久の宣言で、こちらは**期限つきで、元の行き先を残す**。
+    Its scope is separate from ark:update. Stopping something is a different decision
+    from changing where it points, and the reason is published. It is separate from a
+    tombstone too: that is a permanent statement that something is gone, while this has
+    an expiry and keeps the original target.
     """
     authz.require_scope(principal, "ark:hold")
     ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
@@ -999,7 +1015,8 @@ def hold(body: HoldIn, principal: CurrentPrincipal, session: Db, cfg: Config):
     description=E_HOLD_RELEASE,
 )
 def hold_release(body: HoldReleaseIn, principal: CurrentPrincipal, session: Db):
-    """期限を待たずに保留を外す。**期限切れは時計が勝手に外す**ので、これは前倒し。"""
+    """Lift a hold before its expiry. An expiry lifts itself against the clock, so this
+    is only ever early."""
     authz.require_scope(principal, "ark:hold")
     ark = authz.fetch_for_update(session, principal, [_key(body.ark)]).popitem()[1]
     admin_ops.release_hold(session, principal, kind="ark", key=ark.ark)
@@ -1014,7 +1031,7 @@ def hold_release(body: HoldReleaseIn, principal: CurrentPrincipal, session: Db):
     description=E_BULK_QUERY,
 )
 def bulk_query(body: BulkQueryIn, principal: CurrentPrincipal, session: Db, cfg: Config):
-    """M4: **読み取りも到達範囲に絞る**（arklet は認可を一切していなかった）。"""
+    """M4: reads are bounded by reach too. arklet did no authorisation at all."""
     authz.require_scope(principal, "ark:read")
     keys = [_key(a) for a in body.data[: cfg.bulk_limit]]
     arks = authz.visible_arks(session, principal, keys)
