@@ -1,19 +1,21 @@
-"""管理画面が共有するもの——ルータ、テンプレート、主体の解決、出し分けの述語。
+"""What the admin screens share: the router, the templates, resolving the principal,
+and the predicates that decide what is shown.
 
-**画面ごとのモジュールはここだけを見る。** 判定を各画面に散らすと、
-「ボタンは出ないが URL は通る」「押しても断られるだけのボタンが出る」の
-どちらかが必ず起きる。
+The per-screen modules look only at this. Spreading those decisions across the screens
+leads to one of two things: a button that is hidden while the URL still works, or a
+button that only refuses when pressed.
 
-もとは 1 ファイル 1,100 行だった。認証・認可・画面・フォーム処理が同居して
-いて、どこを直すと何に響くかが読み取れなかったので、既にコメントで区切って
-あった境界のとおりに割った。**行を動かしただけで、中身は変えていない。**
+This was one file of 1,100 lines. Authentication, authorisation, the screens and form
+handling lived together and it was impossible to see what a change would affect, so it
+was split along the boundaries the comments already marked. The lines moved; nothing
+else changed.
 
-画面が呼ぶのは `domain.admin_ops` と `domain.minting` で、DB を直接は触らない。
-CLI と同じ関数を通るので、画面から不変条件を破る道が生まれない。
+The screens call domain.admin_ops and domain.minting rather than touching the database,
+so they go through the same functions as the CLI and cannot break an invariant.
 
-見せる範囲は `Principal` の 3 段（system / naan / manager）でそのまま絞る。
-**画面の出し分けと実際の認可は同じ判定**を使う——別々にすると、ボタンは出ないが
-URL を直接叩けば通る、という穴ができる。
+What is shown is narrowed by the principal's tier, system, naan or manager. Display and
+authorisation use the same decision: kept apart, a button would be hidden while the URL
+still works.
 """
 
 from __future__ import annotations
@@ -42,9 +44,9 @@ from arkhe.db.models import (
     Subject,
 )
 
-# 管理画面は HTML であって API ではない。**OpenAPI には載せない。**
-#: 1 ページの件数。**総件数は数えない**——ARK は増える一方で、毎回の
-#: `count(*)` が効いてくる。「次があるか」は 1 件多く引いて判断する。
+# These screens are HTML, not an API, so they are left out of the OpenAPI document.
+#: Rows per page. The total is not counted: ARKs only accumulate and counting them on
+#: every request costs. Whether there is a next page is decided by fetching one extra.
 PAGE = 50
 
 
@@ -53,16 +55,16 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templa
 
 
 def _issuable_kinds(cfg) -> list[str]:
-    """この構成で**実際に使える**資格情報の種別。
+    """The kinds of credential this deployment can actually use.
 
-    機構が有効でなければ、出した鍵はどこからも通らない（`auth.deps.authenticate`
-    は `ARKHE_AUTH` に挙がった機構しか試さない）。**使えない鍵を出せる画面は、
-    押しても何も起きないボタンと同じ。**
+    Without the mechanism enabled, a credential issued here would work nowhere:
+    auth.deps.authenticate only tries what ARKHE_AUTH lists. Offering one that cannot be
+    used is a button that does nothing.
 
-      apikey ∈ auth  → API キー（Bearer でそのまま送る）
-      oauth2 ∈ auth  → client_secret（arkhe 自身の /oauth/token で換える）
-      oidc   のみ    → **どちらも出さない。** 秘密は認可サーバが持っていて、
-                       arkhe が持つのは client_id と到達範囲の対応だけ
+      apikey in auth  an API key, sent as a bearer token
+      oauth2 in auth  a client secret, exchanged at arkhe's own /oauth/token
+      oidc alone      neither. The secret is held by the authorisation server, and
+                      arkhe holds only the client_id and what it reaches
     """
     kinds = []
     if "apikey" in cfg.auth:
@@ -73,39 +75,43 @@ def _issuable_kinds(cfg) -> list[str]:
 
 
 def _entry_route(client: Client, cfg) -> str:
-    """この主体が**どうやって入ってくるか**。
+    """How this principal gets in.
 
-    `oidc` だけの構成では機械も鍵を持たない。にもかかわらず「資格情報 0 有効」と
-    出していたので、**正しく設定できている主体が未設定に見えていた。**
-    ここは「鍵を何本持っているか」ではなく「入れるかどうか」を出す。
+    With oidc alone, machines hold no credential either. Reporting "0 credentials" made
+    a correctly configured principal look unfinished, so this answers whether it can get
+    in rather than how many credentials it holds.
 
-    **機構は主体に結びついていない。** 有効な機構のうち、この `client_id` を
-    示せるものならどれでも通る——だから「この主体の入り方」は、持っている鍵と
-    構成の両方から決まる。台帳に別途持たせても認証には使われず、実態とずれる
-    だけなので持たせていない。
+    A mechanism is not attached to a principal. Any live mechanism that can present this
+    client_id works, so how a principal gets in follows from both what it holds and how
+    the deployment is configured. Storing it in the ledger would not be used for
+    authentication and would only drift from reality.
     """
     if client.subject_type != Subject.MACHINE:
-        return "person"                       # 外部ログイン / パスワード
-    # **機構が無効な鍵は数えない。** 持っていても通らないので、あると言うと嘘になる
-    # （`oidc` だけの構成に残っている古い API キーがまさにこれ）。
+        return "person"                       # external sign-in or a password
+    # A credential for a disabled mechanism does not count. It would not work, so
+    # saying it is there would be untrue; an old API key left in an oidc-only
+    # deployment is exactly that.
     usable = set(_issuable_kinds(cfg))
     if any(c.active and c.kind in usable for c in client.credentials):
-        return "key"                          # arkhe が出した鍵
+        return "key"                          # a credential arkhe issued
     if "oidc" in cfg.auth:
-        return "idp"                          # 認可サーバのトークン
-    return "none"                             # **本当に未設定**
+        return "idp"                          # a token from the authorisation server
+    return "none"                             # genuinely unconfigured
 
 
 def _can_add_client(p: Principal) -> bool:
-    """届く範囲として利用者を作れるか。組織単位でも自組織なら作れる。"""
+    """Whether a principal may be created within reach. An organisation may create its
+    own."""
     return p.is_naan_wide or p.manager_id is not None
 
 
 def _may_register(session: Session, p: Principal) -> bool:
-    """実際に登録できるか。**配る側が自己登録を止めていればできない。**
+    """Whether it can actually be registered. Not if whoever hands out the namespace
+    turned self-registration off.
 
-    `_ctx` の既定は到達範囲だけを見るので、組織の設定はここで重ねる
-    （`register_client` が拒む条件と同じものを、画面の出し分けにも使う）。
+    The default in _ctx looks only at reach, so the organisation's settings are applied
+    here: the same conditions register_client refuses on are used to decide what the
+    screen shows.
     """
     if not _can_add_client(p):
         return False
@@ -124,10 +130,10 @@ def _ctx(request: Request, principal: Principal, page: str, **extra) -> dict:
         "lang": lang,
         "langs": i18n.LANGS,
         "t": i18n.translator(lang),
-        # **画面の出し分けと実際の認可は同じ判定を使う。**
-        # 別々にすると「ボタンは出ないが URL を直接叩けば通る」穴ができる。
-        # 逆に、**押しても断られるだけのボタンも出さない**——押せるものだけを
-        # 見せるのが、到達範囲を画面で表すということ。
+        # Display and authorisation use one decision. Kept apart, a button would be
+        # hidden while the URL still worked. Equally, nothing is shown that only
+        # refuses when pressed: showing what can be used is how reach appears on a
+        # screen.
         "can_manage": principal.is_naan_wide,
         "can_audit": principal.is_naan_wide,
         "can_mint": principal.has("ark:mint"),
@@ -137,17 +143,18 @@ def _ctx(request: Request, principal: Principal, page: str, **extra) -> dict:
 
 
 def _refuse(request: Request, key: str) -> Forbidden:
-    """断りを**画面の言語で**返す。
+    """Return a refusal in the language of the screen.
 
-    画面は `?lang=` → cookie → `Accept-Language` で切り替わるのに、断りの文面
-    だけ直書きの日本語だった——**いちばん困っているときに母語から落ちる**。
-    語彙は画面と同じ catalogue から採るので、抜ければ起動時に落ちる。
+    The screens switch on ?lang=, the cookie and Accept-Language, while the refusals
+    used to be written inline in one language: the reader was dropped out of their own
+    language exactly when they were stuck. The wording comes from the same catalogue as
+    the screens, so a gap fails at startup.
     """
     return Forbidden(i18n.translator(i18n.pick(request))(key))
 
 
 def _remember_lang(request: Request, response):
-    """`?lang=` での明示の選択を記憶する。以降のページでも保たれる。"""
+    """Remember an explicit ?lang= choice, so that it holds on later pages."""
     q = request.query_params.get("lang")
     if q in i18n.CATALOGS:
         response.set_cookie(i18n.COOKIE, q, max_age=31536000, httponly=True, samesite="lax")
@@ -155,7 +162,8 @@ def _remember_lang(request: Request, response):
 
 
 def _visible_naans(session: Session, p: Principal) -> list[Naan]:
-    """その主体に見える NAAN。system は全部、それ以外は自分の 1 つ。"""
+    """The NAANs this principal can see: all of them for the system administrator, its
+    own otherwise."""
     stmt = select(Naan).order_by(Naan.naan)
     if not p.is_system:
         stmt = stmt.where(Naan.naan == p.naan)
@@ -163,7 +171,8 @@ def _visible_naans(session: Session, p: Principal) -> list[Naan]:
 
 
 def _visible_shoulders(session: Session, p: Principal) -> list[Shoulder]:
-    """採番に使える shoulder。**認可と同じ絞り方**にする。"""
+    """The shoulders that can be minted into, narrowed as authorisation narrows
+    them."""
     stmt = select(Shoulder).options(selectinload(Shoulder.manager)).order_by(
         Shoulder.naan, Shoulder.shoulder
     )
@@ -178,15 +187,16 @@ def _visible_shoulders(session: Session, p: Principal) -> list[Shoulder]:
 
 
 class NeedsLogin(Exception):
-    """ログインへ送る。**401 を返さない**——ブラウザにヘッダは付けられないので、
-    401 を見せても人には何もできない。"""
+    """Send them to sign in. Not a 401: a browser cannot add the header, so a 401
+    leaves the person with nothing to do."""
 
     def __init__(self, next_url: str = "/admin/"):
         self.next_url = next_url
 
 
 def _with_ip(request: Request, cfg: Config, p: Principal) -> Principal:
-    """接続元を刻む。**API と同じ判定**（`deps.client_ip`）を使う。"""
+    """Record the caller's address, using the same decision as the API
+    (deps.client_ip)."""
     from dataclasses import replace
 
     from arkhe.auth.deps import client_ip
@@ -195,12 +205,13 @@ def _with_ip(request: Request, cfg: Config, p: Principal) -> Principal:
 
 
 def admin_principal(request: Request, session: Db, cfg: Config) -> Principal:
-    """管理画面の主体。**入口は設定で選ぶ**（`ARKHE_ADMIN_LOGIN`）。
+    """The principal for the admin screens. The entrance is chosen by configuration
+    (ARKHE_ADMIN_LOGIN).
 
-    どの入口でも、行き着く先は API と同じ `Principal`。到達範囲の判定も同じ。
-    違うのは「誰であるかをどう確かめたか」だけ。
+    Whichever entrance is used, it ends at the same Principal the API uses, with the
+    same reach. Only how identity was established differs.
     """
-    # 1) セッション Cookie（oidc / proxy でログイン済み）
+    # 1) The session cookie, for someone already signed in through oidc or proxy
     if cfg.admin_login != "bearer":
         raw = request.cookies.get(sess.COOKIE, "")
         claims = sess.read(raw, secret=cfg.session_secret) if raw else None
@@ -210,16 +221,16 @@ def admin_principal(request: Request, session: Db, cfg: Config) -> Principal:
                     session, claims["sub"], mechanism=claims.get("via", "")
                 ))
             except AuthError:
-                pass  # 登録が消えた・無効化された。ログインし直させる
+                pass  # the registration is gone or disabled; sign in again
 
-    # 2) 前段の認証プロキシ
+    # 2) An authenticating proxy in front
     if cfg.admin_login == "proxy":
         try:
             return _with_ip(request, cfg, login_flow.from_proxy(session, cfg, request.headers))
         except AuthError as exc:
             raise NeedsLogin() from exc
 
-    # 3) Bearer（自動化・curl。bearer モードではこれだけ）
+    # 3) A bearer token, for automation and curl; the only way in bearer mode
     try:
         return _with_ip(request, cfg, authenticate(bearer(request), session, cfg))
     except AuthError:
@@ -232,7 +243,8 @@ AdminPrincipal = Annotated[Principal, Depends(admin_principal)]
 
 
 class _ShoulderChoice:
-    """採番フォームの選択肢。テンプレートに ORM を直接渡さないための薄い型。"""
+    """A choice on the minting form: a thin type, so no ORM object reaches a
+    template."""
 
     def __init__(self, s: Shoulder):
         self.naan = s.naan
@@ -240,9 +252,10 @@ class _ShoulderChoice:
         self.manager_name = s.manager.name if s.manager else ""
 
 
-#: 採番フォームの種別の候補。**DataCite の `resourceTypeGeneral`** を採る
-#: （この分野で通っている語彙で、自前定義しない）。**縛りではなく候補**——
-#: ERC の `what` は語彙を定めないので、一覧に無いものは直接入力できる。
+#: Suggested values for the type field on the minting form, taken from DataCite's
+#: resourceTypeGeneral: a vocabulary this field already uses, rather than one invented
+#: here. They are suggestions, not a restriction: the ERC what element defines no
+#: vocabulary, so anything outside the list can be typed in.
 RESOURCE_TYPES = (
     "Audiovisual", "Award", "Book", "BookChapter", "Collection",
     "ComputationalNotebook", "ConferencePaper", "ConferenceProceeding", "DataPaper",
@@ -258,7 +271,8 @@ def _mintable(session: Session, p: Principal) -> list[_ShoulderChoice]:
 
 
 def _redirect(to: str) -> RedirectResponse:
-    """POST の後は 303 で GET に戻す（再読み込みで二重に実行させない）。"""
+    """After a POST, return to a GET with 303, so that reloading does not repeat
+    it."""
     return RedirectResponse(to, status_code=303)
 
 
