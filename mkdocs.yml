@@ -1,7 +1,9 @@
-# arkhe のドキュメント。**Markdown だけで書けること**を最優先にしてある。
-#   - 本文は docs/ 以下の .md。日本語は同じ名前に `.ja` を挟む（docs/index.ja.md）
-#   - 図は Mermaid をコードブロックに書く（画像を書き出す手順を挟まない）
-#   - API 仕様は実装から生成した openapi.json を読ませる（手で二重に書かない）
+# The arkhe documentation. Everything is written in Markdown and nothing else.
+#   - the text is .md under docs/. Japanese uses the same name with .ja inserted
+#     (docs/index.ja.md)
+#   - diagrams are Mermaid in a code block, with no step that exports an image
+#   - the API specification is the openapi.json generated from the implementation,
+#     so it is not written twice
 site_name: arkhe
 site_description: ARK identifier infrastructure — minter and resolver as separate services
 site_url: https://rcosdp.github.io/arkhe/
@@ -31,7 +33,7 @@ theme:
       accent: deep purple
       toggle: {icon: material/weather-sunny, name: Switch to light mode}
   features:
-    # navigation.instant は i18n の言語切替と両立しない（警告になる）
+    # navigation.instant does not work with the i18n language switcher; it warns
     - navigation.tracking
     - navigation.sections
     - navigation.top
@@ -44,7 +46,8 @@ theme:
 
 plugins:
   - search
-  # 日英。**同じ名前に `.ja` を挟むだけ**で対訳になる（別ディレクトリを掘らない）。
+  # Japanese and English. Inserting .ja into the same name pairs them, with no
+  # separate directory tree.
   - i18n:
       docs_structure: suffix
       languages:
@@ -93,24 +96,25 @@ markdown_extensions:
   - toc:
       permalink: true
       toc_depth: 3
-      # **既定の slugify は非 ASCII を落とす。** 日本語見出しのアンカーが
-      # `_1` `_2` … になり、深いリンクが使えないうえ、見出しを 1 つ足すと
-      # 番号がずれて既存のリンクが黙って別の場所を指す。
+      # The default slugify drops non-ASCII, so Japanese headings become anchors
+      # like _1 and _2: deep links are impossible, and adding one heading shifts the
+      # numbers so that existing links quietly point somewhere else.
       slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
   - pymdownx.details
-  # **アイコンの `:material-…:` は emoji 拡張が変換している。** これが無いと、
-  # 「どこから読むか」のカードに `:material-api:` という文字列がそのまま出る
-  # （警告は出ない——未知の短縮記法はただの文字列として通るので、
-  # `--strict` でも気づけない。実際にそのまま公開されていた）。
+  # The :material-...: icons are converted by the emoji extension. Without it, the
+  # cards on the landing page show the literal string :material-api:. Nothing warns:
+  # an unknown shorthand passes through as text, so --strict does not catch it, and it
+  # was published that way for a while.
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight: {anchor_linenums: true}
   - pymdownx.inlinehilite
-  # ルートの CHANGELOG をドキュメントに取り込む（二重管理しない）
+  # Pull the changelog at the repository root into the documentation, rather than
+  # keeping a second copy
   - pymdownx.snippets: {base_path: ['.', 'docs']}
   - pymdownx.tabbed: {alternate_style: true}
-  # Mermaid をそのまま書けるようにする（画像を書き出す手順を挟まない）
+  # Let Mermaid be written inline, with no step that exports an image
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

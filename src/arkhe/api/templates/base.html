@@ -7,11 +7,12 @@
 <title>{% block title %}arkhe{% endblock %}</title>
 <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 <style>
-/* arkhe — 管理画面
+/* arkhe admin interface
  *
- * これは台帳であって、ダッシュボードではない。見せるべきは大きな数字ではなく、
- * (1) 委譲の構造（NAAN → 組織 → shoulder）と (2) 引き返せない操作の重さ。
- * 色は状態の区別にだけ使い、それ以外は余白と階層で読ませる。
+ * This is a ledger, not a dashboard. What it should show is not large numbers but
+ * the structure of delegation (NAAN, organisation, shoulder) and the weight of the
+ * operations that cannot be undone. Colour distinguishes states and nothing else;
+ * the rest is read through spacing and hierarchy.
  */
 :root {
   color-scheme: light dark;
@@ -63,14 +64,14 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 
-/* ── 骨格：サイドバー + 本体 ───────────────────────────────── */
+/* --- Frame: sidebar and body ------------------------------------------- */
 .shell { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100%; }
 
 aside {
   border-right: 1px solid var(--line); background: var(--panel);
   padding: 18px 12px; display: flex; flex-direction: column; gap: 4px;
   position: sticky; top: 0; height: 100vh;
-  overflow-y: auto;   /* ウィンドウが低いときに項目が届かなくならないように */
+  overflow-y: auto;   /* so items stay reachable in a short window */
 }
 .brand { display: flex; align-items: center; gap: 9px; padding: 6px 10px 20px; }
 .mark-svg { width: 18px; height: 18px; }
@@ -95,9 +96,10 @@ aside a.nav[aria-current] { background: var(--accent-soft); color: var(--accent)
 aside a.nav svg { width: 16px; height: 16px; flex: none; stroke-width: 1.8; }
 
 .rail-foot { margin-top: auto; border-top: 1px solid var(--line); padding: 14px 10px 4px; }
-/* 言語切替。**ヘッダーに置く**——サイドバーの底だとウィンドウが低いとき見切れる。
- * 横並びのセグメントにしないのは、言語が増えると横に伸びて破綻するため。
- * 開閉は Popover API に任せる（外側クリックと Esc で閉じるのが標準で効くので JS が要らない）。 */
+/* The language switcher sits in the header: at the bottom of the sidebar it is cut
+ * off in a short window. It is not a row of segments, which would stretch and break
+ * as languages are added. Opening and closing is left to the Popover API, which gives
+ * clicking outside and Esc for free, with no JavaScript. */
 .icon-btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12px;
             font-weight: 600; padding: 5px 9px; border-radius: var(--r-sm);
             border: 1px solid var(--line); background: var(--panel); color: var(--ink-2);
@@ -124,7 +126,8 @@ aside a.nav svg { width: 16px; height: 16px; flex: none; stroke-width: 1.8; }
 .menu-i .label { flex: 1; }
 .menu-i .code { font-size: 11px; color: var(--ink-3); letter-spacing: .04em; }
 
-/* 位置合わせに対応している環境ではボタンの真下に付ける（未対応でも上の固定値で成立する）。 */
+/* Where anchor positioning is supported it sits under the button; without it, the
+ * fixed values above still work. */
 @supports (position-anchor: --lang) {
   .menu { position-anchor: --lang; top: anchor(bottom); right: anchor(right);
           margin-top: 6px; }
@@ -141,7 +144,7 @@ aside a.nav svg { width: 16px; height: 16px; flex: none; stroke-width: 1.8; }
 .icon-btn.out svg { width: 15px; height: 15px; stroke-width: 1.7; }
 .icon-btn.out .lbl { font-size: 12px; }
 
-/* ── 本体 ─────────────────────────────────────────────── */
+/* --- Body --------------------------------------------------------------- */
 .body { min-width: 0; display: flex; flex-direction: column; }
 header.bar {
   position: sticky; top: 0; z-index: 5;
@@ -161,7 +164,7 @@ h1 { font-size: 21px; font-weight: 650; letter-spacing: -.02em; margin: 0 0 6px;
 h2 { font-size: 13px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase;
      color: var(--ink-3); margin: 34px 0 12px; }
 
-/* ── カード ───────────────────────────────────────────── */
+/* --- Cards -------------------------------------------------------------- */
 .card { background: var(--panel); border: 1px solid var(--line);
         border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; }
 .card > .card-h { padding: 14px 18px; border-bottom: 1px solid var(--line);
@@ -171,7 +174,7 @@ h2 { font-size: 13px; font-weight: 650; letter-spacing: .06em; text-transform: u
 .card-h .right { margin-left: auto; }
 .card > .card-b { padding: 18px; }
 
-/* ── 委譲ツリー ────────────────────────────────────────── */
+/* --- The delegation tree ------------------------------------------------ */
 .tree { }
 .node { display: flex; align-items: center; gap: 12px; padding: 13px 18px;
         border-top: 1px solid var(--line-2); transition: background .12s ease; }
@@ -186,7 +189,7 @@ h2 { font-size: 13px; font-weight: 650; letter-spacing: .06em; text-transform: u
 .node.d2 { padding-left: 66px; }
 .node.d1 .name, .node.d2 .name { font-size: 12.5px; }
 
-/* ── 状態 ─────────────────────────────────────────────── */
+/* --- States ------------------------------------------------------------- */
 .pill { font-size: 11px; font-weight: 600; letter-spacing: .02em;
         padding: 2.5px 8px; border-radius: 999px; white-space: nowrap; }
 .pill.active    { color: var(--ok);   background: var(--ok-soft); }
@@ -197,9 +200,9 @@ h2 { font-size: 13px; font-weight: 650; letter-spacing: .06em; text-transform: u
 .pill.naan      { color: var(--warn); background: var(--warn-soft); }
 .pill.manager   { color: var(--ink-2);background: var(--line-2); }
 
-/* ── 表 ───────────────────────────────────────────────── */
-/* **はみ出しはカードの中で受け止める。** ページ全体が横に伸びると、
- * 本文まで一緒にずれて読めなくなる。 */
+/* --- Tables ------------------------------------------------------------- */
+/* Overflow is absorbed inside the card. A page that stretches sideways drags the
+ * text with it and stops being readable. */
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; }
 thead th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
@@ -211,7 +214,7 @@ tbody tr:hover { background: var(--panel-2); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .dim { color: var(--ink-3); }
 
-/* ── 操作 ─────────────────────────────────────────────── */
+/* --- Actions ------------------------------------------------------------ */
 .btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px;
        font-weight: 500; padding: 7px 13px; border-radius: var(--r-sm);
        border: 1px solid var(--line); background: var(--panel); color: var(--ink-2);
@@ -219,14 +222,14 @@ tbody tr:hover { background: var(--panel-2); }
 .btn:hover { background: var(--line-2); color: var(--ink); border-color: var(--ink-3); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn.primary:hover { filter: brightness(1.07); border-color: var(--accent); }
-/* **引き返せない操作は、見た目で引き返せないと分かるようにする。** */
+/* An operation that cannot be undone looks like one. */
 .btn.danger { color: var(--stop); border-color: color-mix(in srgb, var(--stop) 28%, transparent); }
 .btn.danger:hover { background: var(--stop-soft); border-color: var(--stop); color: var(--stop); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn.sm { padding: 4px 9px; font-size: 12px; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* ── 入力 ─────────────────────────────────────────────── */
+/* --- Inputs ------------------------------------------------------------- */
 label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
 label .opt { font-weight: 400; color: var(--ink-3); }
 input, select {
@@ -242,8 +245,8 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
 .search input { max-width: 380px; }
 .pager { display: flex; gap: 12px; align-items: center; border-top: 1px solid var(--line-2); }
 .hint { font-size: 12px; color: var(--ink-3); margin-top: 5px; }
-/* 選択肢は、名前だけでなく**何が起きるか**を添える。`ark:tombstone` のような
- * 綴りだけ見せても、選んでよいかは判断できない。 */
+/* A choice carries what it does, not only its name. Shown as ark:tombstone alone,
+ * nobody can tell whether to pick it. */
 .checks { display: grid; gap: 2px; }
 .check { display: flex; gap: 10px; align-items: start; font-weight: 400;
          padding: 9px 11px; border-radius: var(--r-sm); margin: 0;
@@ -255,13 +258,14 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
 .check .hint { display: block; margin-top: 2px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
 
-/* ── 注記 ─────────────────────────────────────────────── */
+/* --- Notes -------------------------------------------------------------- */
 .note { display: flex; gap: 10px; border-radius: var(--r-sm); padding: 11px 14px;
         font-size: 13px; line-height: 1.55; margin: 14px 0; }
 .note.info { background: var(--line-2); color: var(--ink-2); }
 .note.stop { background: var(--stop-soft); color: var(--stop); }
 .note b { font-weight: 650; }
-/* 見出しと値の対。狭い画面では 1 列に落とす（表と同じ考え方）。 */
+/* Label and value pairs. On a narrow screen they fall into one column, as tables
+ * do. */
 .kv { display: grid; grid-template-columns: 8.5em 1fr; gap: 10px 14px; align-items: baseline; }
 .kv .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
          color: var(--ink-3); font-weight: 650; }
@@ -283,8 +287,8 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   main, header.bar { padding-left: 18px; padding-right: 18px; }
   .menu { right: 18px; }
   .grid2 { grid-template-columns: 1fr; }
-  /* ツリーの meta（件数・状態・操作）は行の右端に寄せてあるが、狭いと
-   * 押し出されてはみ出す。折り返して次の行に置く。 */
+  /* The counts, states and actions in the tree sit at the right of a row, and on a
+   * narrow screen they are pushed out of it. They wrap onto the next line. */
   .node { flex-wrap: wrap; row-gap: 6px; }
   .node .meta { margin-left: 0; flex-wrap: wrap; width: 100%; padding-left: 30px; }
   .node.d1 { padding-left: 24px; }
@@ -293,11 +297,11 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   .card-h .right { margin-left: auto; }
 }
 
-/* ── 手のひらの幅 ─────────────────────────────────────── */
+/* --- Palm width ---------------------------------------------------------- */
 @media (max-width: 640px) {
-  /* **5 列の表は横スクロールでも読めない。1 行を 1 枚に畳む。**
-   * 見出しは各セルの前に `data-label` として出す——どの値が何なのかが
-   * 分からなくなるのが、畳んだ表のいちばんの失敗。 */
+  /* A five-column table cannot be read even with horizontal scrolling, so each row
+   * folds into a card. The heading appears before each cell through data-label:
+   * losing which value is which is how a folded table usually fails. */
   .table-wrap { overflow-x: visible; }
   table, tbody, tr, td { display: block; width: 100%; }
   thead { display: none; }
@@ -312,7 +316,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   tbody td[data-label=""]::before, tbody td:not([data-label])::before { display: none; }
   tbody td:empty { display: none; }
   td.empty { display: block; padding: 32px 0; }
-  /* ヘッダーは名前を落としてアイコンだけにする（幅を食うため） */
+  /* The header drops the names and keeps the icons, which take less width */
   header.bar .crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis;
                       white-space: nowrap; }
   .icon-btn.out .lbl { position: absolute; width: 1px; height: 1px;
@@ -340,7 +344,8 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
   <a class="nav" href="/admin/clients" {% if page=='clients' %}aria-current="page"{% endif %}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"/></svg>
     {{ t("nav.clients") }}</a>
-  {# **止めた転送を目に見えるところに置く。** 期限つきでも、見えないと恒久化する。 #}
+  {# A hold is kept where it can be seen. Even with an expiry, one nobody sees
+     becomes permanent. #}
   <a class="nav" href="/admin/holds" {% if page=='holds' %}aria-current="page"{% endif %}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><path d="M10 9v6M14 9v6"/></svg>
     {{ t("nav.holds") }}</a>
@@ -348,8 +353,9 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>
     {{ t("nav.stats") }}</a>
 
-  {# **押しても断られるだけの項目は出さない。** 採番は scope、監査ログは
-     到達範囲で決まる。判定は `_ctx` が持っていて、ルートと同じ式を使う。 #}
+  {# Nothing is shown that would only refuse when used. Minting follows the scope
+     and the audit log follows the reach; _ctx decides both, with the same expression
+     the routes use. #}
   {% if can_mint or can_audit %}<div class="rail-h">{{ t("nav.actions") }}</div>{% endif %}
   {% if can_mint %}
   <a class="nav" href="/admin/mint" {% if page=='mint' %}aria-current="page"{% endif %}>
@@ -396,12 +402,12 @@ input:focus, select:focus { outline: none; border-color: var(--accent);
         {% endfor %}
       </div>
       <span class="pill {{ principal.authority }}">{{ t("au." ~ principal.authority) }}</span>
-      {# **ログアウトはヘッダーに置く。** サイドバーの底に置くと (1) 名前の無い
-         アイコンなので気づかれず (2) 幅の狭い画面ではサイドバーごと畳まれて
-         押す手段が無くなる。ここなら幅によらず同じ場所にある。 #}
+      {# Signing out sits in the header. At the bottom of the sidebar it is an
+         unlabelled icon nobody notices, and on a narrow screen the sidebar folds
+         away and takes it with it. Here it is in the same place at any width. #}
       {% if principal.mechanism in ("password", "oidc-login", "proxy") %}
-      {# **GET ではなく POST。** SameSite=Lax はトップレベルの GET 遷移では
-         Cookie を送るので、GET のままだと外部から強制ログアウトさせられる。 #}
+      {# POST rather than GET. SameSite=Lax still sends the cookie on a top-level
+         GET, so as a GET another site could sign people out. #}
       <form method="post" action="/admin/logout" style="display:contents">
         <button class="icon-btn out" type="submit" title="{{ t('login.logout') }}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">

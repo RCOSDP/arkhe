@@ -9,13 +9,13 @@
 
 <div class="card">
   <div class="card-h">
-    {# **探せることが先。** 件数は増える一方なので、並べるだけの画面は
-       すぐ使えなくなる。 #}
+    {# Searching comes first. The count only grows, so a page that merely lists
+       everything stops being usable. #}
     <form method="get" action="/admin/arks" class="search">
       <input name="q" value="{{ q }}" placeholder="{{ t('ak.search_ph') }}"
              aria-label="{{ t('ak.search') }}">
-      {# **絞り込みは到達範囲を広げない。** 届く組織しか選択肢に出ないし、
-         出ないものを指定しても `_visible_arks` が先に絞っている。 #}
+      {# A filter does not widen the reach. Only organisations within reach are
+         offered, and naming one that is not still meets _visible_arks first. #}
       {% if orgs %}
       <select name="org" aria-label="{{ t('ak.org') }}">
         <option value="">{{ t('ak.org_all') }}</option>
@@ -25,8 +25,8 @@
         {% endfor %}
       </select>
       {% endif %}
-      {# **公開前は放っておくと溜まる。** 予約したまま公開も取り下げもされない
-         番号を、一覧から名指しで引けるようにしておく。 #}
+      {# Reserved ARKs accumulate if nothing is done, so a number that is neither
+         published nor withdrawn can be listed directly. #}
       <select name="state" aria-label="{{ t('ak.state') }}">
         <option value="">{{ t('ak.state_all') }}</option>
         {% for st in states %}

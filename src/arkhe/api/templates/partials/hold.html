@@ -1,6 +1,6 @@
-{# 転送の保留。**shoulder と NAAN で同じものを出す**——同じ操作を 2 か所に
-   書き分けると、片方だけ直したときに挙動が割れる。
-   呼び出し側は `row`（保留の 3 列を持つ行）と `action`（POST 先）を渡す。 #}
+{# A hold on redirection, shown the same way for a shoulder and for a NAAN: written
+   twice, fixing one would make them behave differently. The caller passes row, which
+   carries the three hold columns, and action, where the form posts. #}
 <fieldset class="field">
   <legend>{{ t('hold.f.legend') }}
     {% if row.hold_until %}<span class="pill reserved">{{ t('hold.f.on') }}</span>{% endif %}

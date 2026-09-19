@@ -1,28 +1,29 @@
-# arkhe を OIDC モードで体験する一式。
+# A set of services for trying arkhe in OIDC mode.
 #
-# ## issuer の文字列を揃えるのが要点
+# Matching the issuer string is the point
 #
-# 認可サーバの issuer は、**ブラウザから見た URL と arkhe（コンテナ）から見た URL が
-# 同じ文字列**でなければならない。食い違うと `iss` の検証で落ちる。
+# The authorisation server's issuer has to be the same string seen from the browser and
+# seen from arkhe inside its container. If they differ, verifying iss fails.
 #
-# ここでは `keycloak.localhost:8080` に揃える:
-#   ブラウザ  keycloak.localhost → 127.0.0.1 → 公開ポート 8080 → Keycloak
-#   arkhe     keycloak.localhost → compose のネットワークエイリアス → Keycloak:8080
+# Here both are keycloak.localhost:8080:
+#   browser  keycloak.localhost, 127.0.0.1, published port 8080, Keycloak
+#   arkhe    keycloak.localhost, a compose network alias, Keycloak:8080
 #
-# `*.localhost` は多くの環境で 127.0.0.1 に解決される（systemd-resolved・主要ブラウザ）。
-# 解決されないときは hosts に `127.0.0.1 keycloak.localhost` を足す。
+# *.localhost resolves to 127.0.0.1 in most environments (systemd-resolved and the major
+# browsers). Where it does not, add 127.0.0.1 keycloak.localhost to the hosts file.
 #
-# ## 役割ごとにプロセスを分けてある
+# One process per role
 #
-# 本番と同じ形にしてある——**minter に解決の口は無く、resolver に採番の口は無い**。
-# resolver は認証を一切要さないので、Keycloak を落としても解決だけは生き続ける
-# （それを実際に試せるのがこの一式を分けている理由）。
+# It has the same shape as production: the minter has no resolution route and the
+# resolver has no minting route. A resolver needs no authentication at all, so stopping
+# Keycloak leaves resolution running, and being able to try that is why they are
+# separate here.
 #
 #   docker compose up -d --build
-#   → http://localhost:8057/admin/   管理画面と採番 API
-#   → http://localhost:8058/ark:/…   解決（認証不要）
+#   http://localhost:8057/admin/   the admin interface and the minting API
+#   http://localhost:8058/ark:/... resolution, which needs no credentials
 #
-# 利用者は ops / naan-admin / org-admin、いずれもパスワードは arkhe-demo-2026。
+# The users are ops, naan-admin and org-admin, all with the password arkhe-demo-2026.
 name: arkhe-oidc
 
 services:
@@ -32,8 +33,8 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      # **issuer をこの文字列に固定する。** 既定だと要求の Host から組み立てられ、
-      # ブラウザ経由とコンテナ経由で食い違う。
+      # The issuer is pinned to this string. By default it is built from the request
+      # Host, which differs between the browser and the container.
       KC_HOSTNAME: http://keycloak.localhost:8080
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "false"
       KC_HEALTH_ENABLED: "true"
@@ -45,8 +46,8 @@ services:
       default:
         aliases: [keycloak.localhost]
     healthcheck:
-      # **このイメージに curl は入っていない。** bash の /dev/tcp で叩く
-      # （CMD-SHELL は /bin/sh なので bash を明示する）。
+      # This image has no curl, so bash's /dev/tcp is used. CMD-SHELL runs /bin/sh, so
+      # bash is named explicitly.
       test: ["CMD", "bash", "-c",
              "exec 3<>/dev/tcp/127.0.0.1/9000; printf 'GET /health/ready HTTP/1.1\\r\\nHost: x\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q UP <&3"]
       interval: 5s
@@ -77,26 +78,29 @@ services:
       keycloak: {condition: service_healthy}
     environment:
       ARKHE_DATABASE_URL: postgresql+psycopg://arkhe:arkhe@db/arkhe
-      # 管理画面の入口。**arkhe は OIDC のクライアント(RP)として認可コードフローを回す**
-      # （認可サーバにはならない。トークンを発行せず、同意も預からない）。
+      # The way in to the admin interface. arkhe acts as an OIDC relying party and runs
+      # the authorization code flow; it is not an authorisation server, issues no tokens
+      # and holds no consent.
       ARKHE_ADMIN_LOGIN: oidc
       ARKHE_OIDC_ISSUER: http://keycloak.localhost:8080/realms/arkhe
       ARKHE_ADMIN_CLIENT_ID: arkhe-admin
       ARKHE_ADMIN_CLIENT_SECRET: arkhe-admin-secret-for-demo-only
-      # 体験用の値。**本番では必ず差し替える。**
+      # Values for trying it out. Always replace them in production.
       ARKHE_SESSION_SECRET: demo-only-session-secret-change-me-0123456789
-      ARKHE_SESSION_SECURE: "false"   # http で動かすため。HTTPS なら外す
-      # **機構は排他ではない。** 3 つとも有効にして、違いをその場で比べられるようにする
-      # ——移行期に「API キーと OIDC の両方を受ける」が普通に要る。
-      #   apikey  arkhe が出した鍵をそのまま Bearer で送る
-      #   oauth2  arkhe 自身の /oauth/token で client_secret をトークンに換える
-      #   oidc    外部の認可サーバ（この一式では Keycloak）が出したトークンを検証する
+      ARKHE_SESSION_SECURE: "false"   # this runs over http; drop it under HTTPS
+      # The mechanisms are not exclusive. All three are enabled so that the difference
+      # can be compared here; during a migration, accepting both an API key and OIDC is
+      # ordinary.
+      #   apikey  a credential arkhe issued, sent as a bearer token
+      #   oauth2  a client secret exchanged for a token at arkhe's own /oauth/token
+      #   oidc    a token from an external authorisation server, Keycloak here
       ARKHE_AUTH: apikey,oauth2,oidc
-      # oauth2 の署名鍵。**体験用の値。本番では必ず差し替える。**
+      # The signing key for oauth2. A value for trying it out; replace it in
+      # production.
       ARKHE_TOKEN_SECRET: demo-only-token-secret-change-me-0123456789abcd
-      # API のアクセストークンに求める audience。realm の client scope
-      # `arkhe-api` が audience mapper でこれを立てる。
-      # （管理画面の ID トークンの aud は arkhe-admin。別物なので混ぜない）
+      # The audience required of an access token for the API. The realm's arkhe-api
+      # client scope sets it through an audience mapper. The aud of the ID token used to
+      # sign in to the admin interface is arkhe-admin: a different thing, not mixed.
       ARKHE_OIDC_AUDIENCE: arkhe-api
     ports:
       - "127.0.0.1:8057:8000"
@@ -104,18 +108,18 @@ services:
       sh -c "alembic upgrade head && python -m arkhe.seed_demo &&
              uvicorn arkhe.app:create_app --factory --host 0.0.0.0 --port 8000"
 
-  # **解決だけ。** 認証の設定を一切持たない——ここに置く理由が無いので置かない。
-  # Keycloak を止めて `docker compose stop keycloak` してから解決を叩くと、
-  # 採番は 401 になるのに解決は動き続けるのが見える。
+  # Resolution only. It carries no authentication settings, because there is no reason
+  # for them here. Stop Keycloak with docker compose stop keycloak and then resolve
+  # something: minting answers 401 while resolution keeps working.
   resolver:
     image: arkhe:local
     depends_on:
-      arkhe: {condition: service_started}   # スキーマの適用を待つ
+      arkhe: {condition: service_started}   # wait for the schema to be applied
       db: {condition: service_healthy}
     environment:
       ARKHE_RESOLVER: "1"
       ARKHE_DATABASE_URL: postgresql+psycopg://arkhe:arkhe@db/arkhe
-      # 実運用では読み取り専用ロール（できればレプリカ）に向ける。
+      # In production this points at a read-only role, ideally on a replica.
       # ARKHE_READ_DATABASE_URL: postgresql+psycopg://arkhe_ro:…@replica/arkhe
       ARKHE_GLOBAL_RESOLVER: https://n2t.net
     ports:

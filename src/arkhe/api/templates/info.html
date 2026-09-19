@@ -6,8 +6,8 @@
   <h1>{{ erc.what or erc.ark }}</h1>
   <p class="ark mono">{{ erc.ark }}</p>
 
-  {# **止まっていることを隠さない。** 転送しない理由が分からないと、利用者には
-     「壊れている」としか見えない——識別子が生きていることを、ここで言う。 #}
+  {# A hold is not hidden. Without a reason for not redirecting, all a reader sees
+     is something broken; this says the identifier is alive. #}
   {% if hold %}
   <p class="note"><b>{{ t('in.held.h') }}</b>
     {% if hold.reason %}{{ hold.reason }}{% endif %}
@@ -22,13 +22,13 @@
     {% if erc.who %}<dt>who</dt><dd>{{ erc.who }}</dd>{% endif %}
     {% if erc.what %}<dt>what</dt><dd>{{ erc.what }}</dd>{% endif %}
     {% if erc.when %}<dt>when</dt><dd>{{ erc.when }}</dd>{% endif %}
-    {# C6: **where は ARK。** 「行き先が変わっても変わらない値」が記述の要点で、
-       転送先は別行に出す（§5.1.2）。 #}
+    {# C6: where is the ARK. A description turns on a value that survives a change
+       of target, so the target itself goes on its own line (5.1.2). #}
     <dt>where</dt>
     <dd><span class="mono">{{ erc.where }}</span></dd>
     <dt>{{ t('in.redirect') }}</dt>
-    {# **安全なスキームのときだけリンクにする。** そうでなければ文字として出す
-       ——踏めなければ実行されない。 #}
+    {# Only a safe scheme becomes a link; anything else is printed as text, and
+       what cannot be followed cannot run. #}
     <dd>{% if hold %}<span class="dim">{{ t('in.redirect.held') }}</span>
       {% elif erc.redirect and erc.redirect_safe %}<a href="{{ erc.redirect }}">{{ erc.redirect }}</a>
       {% elif erc.redirect %}<span class="mono">{{ erc.redirect }}</span>
@@ -49,8 +49,8 @@
 
   <p class="fine dim">
     <a href="?">?</a> · <a href="??">??</a> · <a href="?json">?json</a>
-    {# **切り替えは `&lang=`。** `?info` はクエリ文字列そのものが inflection なので、
-       `?lang=` では inflection を壊してしまう。 #}
+    {# The switch is &lang=. For ?info the query string itself is the inflection, so
+       ?lang= would destroy it. #}
     · {% for code, name in langs.items() %}{% if code != lang %}<a href="?info&lang={{ code }}">{{ name }}</a>{% endif %}{% endfor %}
   </p>
 </div>

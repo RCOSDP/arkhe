@@ -1,5 +1,6 @@
-{# ページ送り。**総件数は数えない**——増える一方の表で毎回 `count(*)` を
-   走らせないため。「次があるか」は 1 件多く引いて判断している。 #}
+{# Pagination. The total is not counted, so that a table which only grows is not
+   counted on every request; whether there is a next page comes from fetching one
+   extra row. #}
 {% if page_no > 1 or more %}
 <div class="card-b pager">
   {% if page_no > 1 %}

@@ -9,8 +9,8 @@
 
 <div class="card">
   <div class="card-h">
-    {# 「番号 → 組織 → 名前空間」の並びは木がそのまま見せているし、説明にも
-       書いてある。見出しでもう一度言わない。 #}
+    {# The order, NAAN then organisation then namespace, is what the tree shows and
+       what the text says. The heading does not repeat it. #}
     <span class="t">{{ t('ov.naans') }}</span>
     <span class="sub">{{ naans|length }}</span>
     {% if principal.is_system %}
@@ -35,16 +35,18 @@
           <span class="tick">└</span>
           <span class="label">{{ m.name }}</span>
           <span class="meta">
-            {# **用語は捨てず、括弧で残す。** 生の `permanent-dynamic` だけだと初めて
-               見る人に伝わらず、訳語だけだと仕様書・CLI・API の語と対応が取れない。 #}
+            {# The term is kept, in brackets. permanent-dynamic alone means nothing
+               to a newcomer, while plain wording alone would not line up with the
+               specification, the CLI and the API. #}
             <span class="dim">{{ t('cm.' ~ m.commitment_level) }}<span class="mono">{{ t('f.paren_open') }}{{ m.commitment_level }}{{ t('f.paren_close') }}</span></span>
             {% if m.quota_per_day %}<span class="dim">{{ t('ov.quota') }} {{ m.quota_per_day }}{{ t('ov.per_day') }}</span>{% endif %}
             {% if m.succeeded_by_id %}<span class="pill retired">{{ t('ov.succeeded') }}</span>{% endif %}
             {% if not m.active %}<span class="pill retired">{{ t('ov.inactive') }}</span>{% endif %}
             {% if m.allowed_auth or m.max_scopes %}<span class="pill reserved">{{ t('op.restricted') }}</span>{% endif %}
             {% if not m.may_self_register %}<span class="pill reserved">{{ t('op.no_self') }}</span>{% endif %}
-            {# 約束は組織自身のものなので、組織管理者にもこの導線を出す。
-               何が変えられるかは遷移先で `admin_ops` が判定する。 #}
+            {# The promise belongs to the organisation, so its administrator gets
+               this link too. What can be changed is decided by admin_ops on the page
+               it leads to. #}
             <a class="btn sm" href="/admin/manager/{{ m.id }}">{{ t('ov.manage') }}</a>
           </span>
         </div>

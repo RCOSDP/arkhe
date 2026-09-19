@@ -1,33 +1,33 @@
-# LAN の別の端末から見るための上書き。
+# An override for opening this from another machine on the network.
 #
 #   ARKHE_DEMO_HOST=192.168.1.20 docker compose -f docker-compose.yml -f lan.yml up -d
 #
-# ## 待ち受けアドレスと issuer は別物
+# What it listens on and what the issuer says are different things
 #
-# 公開先を `0.0.0.0` にするだけでは足りない。**issuer と redirect_uri は
-# ブラウザが実際に打つ URL** でなければならないので、具体的なアドレスが要る。
-# `0.0.0.0` は「未指定のアドレス」で宛先には使えず、ブラウザはこれを localhost と
-# 解釈するため、別の端末から開くとその端末自身に接続しに行く。
+# Publishing on 0.0.0.0 is not enough. The issuer and the redirect_uri have to be the URL
+# the browser actually requests, so a concrete address is needed. 0.0.0.0 is the
+# unspecified address and cannot be a destination; a browser reads it as localhost, so
+# another machine would try to connect to itself.
 #
-#   待ち受け        0.0.0.0                    どの NIC でも受ける
-#   issuer          ${ARKHE_DEMO_HOST}:8080    ブラウザが打つ URL
-#   redirect_uri    ${ARKHE_DEMO_HOST}:8057    Keycloak が照合する文字列
+#   listening      0.0.0.0                    accept on any interface
+#   issuer         ${ARKHE_DEMO_HOST}:8080    the URL the browser requests
+#   redirect_uri   ${ARKHE_DEMO_HOST}:8057    the string Keycloak compares against
 #
-# ## 既定を 127.0.0.1 のままにしてある理由
+# Why the default stays 127.0.0.1
 #
-# この一式は**デモ用の秘密値が平文**で、Keycloak は dev モード、利用者の
-# パスワードは README に公開してある。既定で LAN に出るべきものではないので、
-# 出すのは明示的な操作にしてある。
+# These services keep their demonstration secrets in plain text, Keycloak runs in
+# development mode, and the users' passwords are published in the README. None of that
+# belongs on a network by default, so exposing it is a deliberate step.
 #
-# arkhe から Keycloak へも同じアドレスで出る（ホストの公開ポートを経由して
-# 戻ってくる）。issuer の文字列を 1 つに揃えるためで、遠回りだが確実。
+# arkhe reaches Keycloak at the same address, going out through the host's published port
+# and back. It is a detour, but it keeps the issuer a single string.
 
 services:
   keycloak:
     environment:
-      # `KC_HOSTNAME` を変えないと、issuer は要求の Host から組み立てられ、
-      # 経路によって食い違う。
-      KC_HOSTNAME: http://${ARKHE_DEMO_HOST:?ARKHE_DEMO_HOST に LAN のアドレスを入れてください（例 192.168.1.20）}:8080
+      # Without changing KC_HOSTNAME, the issuer is built from the request Host and
+      # differs depending on the route taken.
+      KC_HOSTNAME: http://${ARKHE_DEMO_HOST:?set ARKHE_DEMO_HOST to this machine's address on the network, for example 192.168.1.20}:8080
     ports: !override
       - "0.0.0.0:8080:8080"
 
@@ -38,11 +38,11 @@ services:
       - "0.0.0.0:8057:8000"
 
   resolver:
-    # 解決に認証は要らないので、ここは公開先を変えるだけ。
+    # Resolution needs no authentication, so only the published address changes here.
     ports: !override
       - "0.0.0.0:8058:8000"
 
-  # **realm JSON に特定のアドレスは焼き込まない。** 起動のたびにここで足す。
+  # No particular address is baked into the realm JSON; it is added here at startup.
   lan-redirect:
     image: arkhe:local
     depends_on:

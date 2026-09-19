@@ -12,8 +12,8 @@
   <div class="card-h"><span class="t">{{ t('mint.done') }}</span></div>
   <div class="card-b">
     <div class="secret">ark:{{ minted.ark }}</div>
-    {# **採ったものがどちらなのかを、採った直後に言う。** 公開前の採番は
-       「できたのに解決しない」ので、何も言わないと壊れて見える。 #}
+    {# Say which kind was minted, immediately. A reserved ARK exists but does not
+       resolve, and without a word that looks broken. #}
     {% if minted.published_at %}
     <div class="note info"><span>{{ t('mint.irreversible')|safe }}</span></div>
     {% else %}
@@ -46,8 +46,8 @@
       </div>
       <div class="grid2">
         <div class="field"><label for="title">{{ t('mint.title_field') }}</label><input id="title" name="title"></div>
-        {# **候補は出すが、縛らない。** `datalist` なら一覧から選べて、
-           一覧に無いものはそのまま打てる（JS も要らない）。 #}
+        {# Values are suggested, not imposed. A datalist offers the list and still
+           accepts anything typed, with no JavaScript. #}
         <div class="field">
           <label for="type">{{ t('mint.type') }}</label>
           <input id="type" name="type" list="resource-types" placeholder="Dataset"

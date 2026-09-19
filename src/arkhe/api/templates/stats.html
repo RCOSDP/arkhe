@@ -7,7 +7,8 @@
 <p class="lede">{{ t('stat.lede')|safe }}</p>
 <p class="hint">{{ t('stat.scope') }}: <b>{{ t('stat.scope.' ~ st.scope) }}</b></p>
 
-{# **既にある形だけで組む。** 統計のためにクラスを増やすと、次に誰かが増やす。 #}
+{# Built from what already exists. Adding a class for the statistics invites the next
+   person to add another. #}
 <div class="card" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('stat.ledger') }}</span></div>
   <div class="card-b">
@@ -49,7 +50,8 @@
   </div>
 </div>
 
-{# **破った回数を、合計に埋めない。** 分けて置くこと自体が主張である。 #}
+{# The number of times the promise was broken is not buried in a total. Keeping it
+   separate is itself the point. #}
 <div class="card" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('stat.withdrawn') }}</span>
     <span class="sub">{{ "{:,}".format(st.withdrawn) }}</span></div>

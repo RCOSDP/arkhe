@@ -1,4 +1,5 @@
-{# 探す欄。**件数は増える一方なので、並べるだけの画面はすぐ使えなくなる。** #}
+{# The search field. The count only grows, so a page that merely lists everything
+   stops being usable. #}
 <form method="get" action="{{ base }}" class="search">
   <input name="q" value="{{ q }}" placeholder="{{ placeholder }}" aria-label="{{ label }}">
   <button class="btn sm" type="submit">{{ label }}</button>

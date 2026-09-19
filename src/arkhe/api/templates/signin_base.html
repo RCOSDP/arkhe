@@ -1,5 +1,5 @@
-{# ログイン系の外枠。**ログイン画面と、そこへ戻す画面で同じ体裁にする。**
-   別々に持つと、片方だけ古びて「別のサービスに飛ばされた」ように見える。 #}
+{# The frame for signing in. The login page and the pages that lead back to it share
+   it: kept separately, one would age and start to look like another service. #}
 <!doctype html>
 <html lang="{{ lang }}">
 <head>
@@ -49,9 +49,10 @@ padding:10px 13px;margin-bottom:18px;font-size:13px}
 padding:11px;border:0;border-radius:var(--r-sm);background:var(--accent);
 color:var(--accent-ink);text-decoration:none;transition:filter .12s}
 .again:hover{filter:brightness(1.07)}
-/* 言語切替は**管理画面と同じ形**にする（アイコンを押すと選べる）。
- * 横並びのセグメントは、言語が増えると横に伸びて破綻する。
- * 開閉は Popover API に任せる（外側クリックと Esc が標準で効くので JS が要らない）。 */
+/* The language switcher has the same shape as in the admin interface: an icon that
+ * opens a list. A row of segments would stretch and break as languages are added.
+ * Opening and closing is left to the Popover API, which gives clicking outside and
+ * Esc for free, with no JavaScript. */
 .foot{display:flex;justify-content:center;margin-top:18px}
 .icon-btn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12px;
 font-weight:600;padding:5px 9px;border-radius:var(--r-sm);border:1px solid var(--line);
@@ -75,7 +76,8 @@ color:var(--ink2);font-size:13.5px;text-decoration:none;transition:.12s}
 .menu-i .tick{width:12px;flex:none;color:var(--accent);font-size:12px}
 .menu-i .label{flex:1}
 .menu-i .code{font-size:11px;color:var(--ink3);letter-spacing:.04em}
-/* 位置合わせに対応していれば真下に付ける。未対応なら中央に出す。 */
+/* Where anchor positioning is supported it sits directly below; without it, it is
+ * centred. */
 .menu{left:50%;top:auto;bottom:24px;transform:translateX(-50%)}
 @supports (position-anchor: --lang){
 .menu{position-anchor:--lang;top:anchor(bottom);left:anchor(center);bottom:auto;

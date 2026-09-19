@@ -35,8 +35,9 @@
   </div>
 </div>
 
-{# **公開したかどうかで、できることが変わる。** 公開前だけが消せる——
-   その境目を画面でも 1 か所に見せる（判定は `admin_ops` 側と同じ）。 #}
+{# What can be done depends on whether it is published: only a reserved ARK can be
+   deleted. The boundary is shown in one place here too, using the same decision as
+   admin_ops. #}
 <div class="card" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('ak.publication') }}</span>
     <span class="pill {{ 'active' if ark.published_at else 'reserved' }}">
@@ -46,8 +47,9 @@
     {% if ark.published_at %}
     <p class="hint" style="margin-top:0">{{ t('ak.pub_done_lede')|safe }}</p>
     {% if can_unpublish %}
-    {# **戻せるほうを先に、目立つ形で置く。** 消したいだけの人が purge の欄に
-       たどり着く前に、戻せる道が目に入るように——順序は説明である。 #}
+    {# The reversible option comes first and is the prominent one, so that someone
+       who only wants it gone sees it before reaching the purge field. Order is an
+       explanation. #}
     <form method="post" action="/admin/arks/{{ ark.ark }}/unpublish" style="margin-top:14px">
       <p class="hint">{{ t('ak.unpub_lede')|safe }}</p>
       <label>{{ t('ak.unpub_reason') }}
@@ -60,9 +62,9 @@
     </form>
     {% endif %}
     {% if can_purge %}
-    {# **一手で消す道。** 出し分けと認可は同じ判定（`arks.ark_detail`）。
-       確認は ARK の打ち直し——この画面は JS を持たない（CSP）ので、
-       ダイアログではなく入力で確かめる。 #}
+    {# The one-step removal. Display and authorisation use one decision
+       (arks.ark_detail). Confirmation is the ARK typed again: these pages carry no
+       JavaScript (the CSP forbids it), so it is a field rather than a dialogue. #}
     <div class="note stop" style="margin-top:14px">
       <span>{{ t('ak.purge_lede')|safe }}</span></div>
     <form method="post" action="/admin/arks/{{ ark.ark }}/purge" style="margin-top:14px">
@@ -89,8 +91,8 @@
     {% endif %}
     {% if can_withdraw %}
     <form method="post" action="/admin/arks/{{ ark.ark }}/delete" style="margin-top:14px">
-      {# **一度でも外に出した名前なら、予約を消すのと同じ軽さでは出さない。**
-         判定は `admin_ops._exposed_guards` と同じ事実（`was_exposed`）を見る。 #}
+      {# A name that was ever public is not offered as lightly as a reservation.
+         This looks at the same fact as admin_ops._exposed_guards (was_exposed). #}
       <p class="hint">{{ t('ak.withdraw_exposed_lede' if was_exposed else 'ak.withdraw_lede')|safe }}</p>
       <label>{{ t('ak.withdraw_reason') }}
         <input type="text" name="reason" maxlength="500"{% if was_exposed %} required{% endif %}>
@@ -107,8 +109,9 @@
   </div>
 </div>
 
-{# **止めるのは転送だけ。** 削除でも「失われた宣言」でもないことが画面から
-   分かるようにしておく——ここを取り違えると、戻せない操作を戻せると思って押す。 #}
+{# Only redirection stops. The screen makes clear that this is neither a deletion
+   nor a statement that the object is gone: mistaking them means pressing something
+   irreversible believing it can be undone. #}
 <div class="card" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('ak.hold') }}</span>
     {% if ark.hold_until %}<span class="pill reserved">{{ t('ak.hold_on') }}</span>{% endif %}
@@ -142,8 +145,8 @@
   </div>
 </div>
 
-{# **`?` と `??` で公開されるのはこの内容。** 画面と公開面がずれていないかを
-   ここで見られるようにする。空は出さない——ERC は「無い」ことを書かない書式。 #}
+{# This is what ? and ?? publish, so the screen and the public face can be compared
+   here. Empty values are not shown: ERC does not write down what is absent. #}
 <div class="card" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('ak.meta') }}</span></div>
   <div class="card-b">

@@ -5,9 +5,9 @@
 {% block body %}
 <div class="head">
   <h1>{{ title }}{% if client %} <span class="mono dim">{{ client.client_id }}</span>{% endif %}</h1>
-  {# **この構成での「登録」が何をすることなのかを先に言う。** 認可サーバに
-     寄せた構成では、鍵を出すことではなく、向こうの主体とこちらの到達範囲を
-     結びつけることが登録の中身になる。 #}
+  {# Say first what registering means in this deployment. Where an authorisation
+     server is used, it is not issuing a credential but binding a principal over
+     there to a reach over here. #}
   <p class="lede">{{ t('cu.lede' if client
        else ('cu.new.lede_oidc' if uses_oidc and not kinds else 'cu.new.lede'))|safe }}</p>
 </div>
@@ -16,7 +16,7 @@
 <div class="note info"><span>{{ t('f.saved') }}</span></div>
 {% endif %}
 
-{# **平文はこの応答にしか載らない。** 保存しているのはハッシュだけ。 #}
+{# The plaintext appears in this response and nowhere else; only a hash is stored. #}
 {% if issued %}
 <div class="card" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('cu.key.issued') }}</span></div>
@@ -65,8 +65,8 @@
         </div>
       </div>
       <div class="grid2">
-        {# **語彙は 1 か所（`authz.SCOPES`）から出す。** 自由入力だと、
-           検査されない綴りを登録できてしまう。 #}
+        {# The vocabulary comes from one place, authz.SCOPES. Free text would let
+           an unchecked spelling into the ledger. #}
         <div class="field">
           <label>{{ t('cu.f.scopes') }}</label>
           <div class="checks">
@@ -126,11 +126,11 @@
     {% if entry == 'none' %}
     <div class="note stop"><span>{{ t('en.none_hint')|safe }}</span></div>
     {% elif entry == 'idp' %}
-    {# **arkhe には確かめようがない。** 認可サーバに問い合わせないので、
-       「入れる」と断言せず「委ねている」と述べる。 #}
+    {# arkhe has no way to check: it never asks the authorisation server, so this
+       says what is delegated rather than claiming the principal can get in. #}
     <div class="note info"><span>{{ t('en.idp_hint')|safe }}</span></div>
     {% endif %}
-    {# **認可サーバに寄せた構成では、ここが arkhe 側の唯一の止め方。** #}
+    {# Where an authorisation server is used, this is the only lever arkhe has. #}
     <div class="note info" style="margin-bottom:0">
       <span>{{ t('cu.disable_note' if client.active else 'cu.enable_note')|safe }}</span>
     </div>
@@ -179,9 +179,9 @@
   {% endif %}
 
   <div class="card-b" style="border-top:1px solid var(--line-2)">
-    {# **認可サーバに寄せた構成では、ここで出すものが無い。** 秘密は向こうが持ち、
-       arkhe が持つのは識別子と到達範囲の対応だけ。押しても通らない鍵を
-       出せる画面にしない。 #}
+    {# With an authorisation server there is nothing to issue here: the secret lives
+       over there, and arkhe holds only the identifier and what it reaches. The screen
+       does not offer a credential that would work nowhere. #}
     {% if uses_oidc %}
       <div class="note info"><span>{{ t('cu.key.oidc')|safe }}
         {{ t('cu.key.oidc_match')|safe }}

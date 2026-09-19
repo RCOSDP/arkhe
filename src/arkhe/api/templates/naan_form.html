@@ -16,8 +16,9 @@
   <div class="card-b">
     <form method="post" action="{{ '/admin/naan/' ~ naan.naan if naan else '/admin/naan/new' }}">
       {% if naan %}
-        {# **NAAN と組織名は後から変えない。** 名前空間の同一性そのものなので、
-           変えられると既に配った ARK の帰属が動く。 #}
+        {# A NAAN and an organisation name are not changed afterwards. They are the
+           identity of the namespace, and changing one would move where ARKs already
+           handed out belong. #}
         <div class="grid2">
           <div class="field">
             <label>{{ t('naan.f.naan') }} <span class="opt">— {{ t('f.readonly_here') }}</span></label>
@@ -80,8 +81,9 @@
   </div>
 </div>
 
-{# **原則はここ。** 配下の組織すべてにかかる既定で、組織ごとの設定は
-   ここから狭めるだけ。組織が増えると 1 つずつ掛けるのが現実的でなくなる。 #}
+{# The rule lives here: the default for every organisation under it, which an
+   organisation may narrow and nothing more. Applying it per organisation does not
+   scale. #}
 <div class="card" style="margin-top:20px">
   <div class="card-h"><span class="t">{{ t('np.title') }}</span></div>
   <div class="card-b">

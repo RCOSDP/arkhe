@@ -17,8 +17,9 @@
 </div>
 {% endif %}
 
-{# **登録の無いまま来た主体。** 認可サーバが署名した識別子をそのまま渡すので、
-   ここから登録すれば綴り違いが起こらない。登録が済めばひとりでに消える。 #}
+{# Principals that arrived without a registration. The identifier the authorisation
+   server signed is carried through, so registering from here cannot misspell it, and
+   the row disappears once it is registered. #}
 {% if unknown %}
 <div class="card stop" style="margin-bottom:20px">
   <div class="card-h"><span class="t">{{ t('uk.title') }}</span></div>
@@ -77,9 +78,9 @@
           <span class="dim">{{ c.scope_label }}</span>
         </td>
         <td class="mono dim" data-label="{{ t('cl.scope') }}">{{ c.allowed_scopes }}</td>
-        {# **「鍵を何本持っているか」ではなく「入れるかどうか」を出す。**
-           認可サーバに任せた構成では鍵を持たないので、本数を出すと
-           正しく設定できている主体が未設定に見える。 #}
+        {# This says whether the principal can get in rather than how many
+           credentials it holds. With an authorisation server it holds none, and a
+           count would make a correctly configured principal look unfinished. #}
         <td data-label="{{ t('cl.entry') }}" data-entry="{{ c.entry }}">
           {% if c.entry == 'key' %}
             <span class="dim">{{ t('en.key') }} {{ c.live_credentials }}</span>

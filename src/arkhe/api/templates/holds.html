@@ -33,7 +33,8 @@
   </table>
   </div>
   {% else %}
-  {# **何も無いことを、はっきり出す。** 空の表だと「読み込めていない」と紛れる。 #}
+  {# Say plainly that there is nothing. An empty table reads as a page that failed
+     to load. #}
   <div class="card-b"><p class="dim">{{ t('hold.none') }}</p></div>
   {% endif %}
 </div>

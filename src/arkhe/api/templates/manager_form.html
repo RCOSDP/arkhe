@@ -36,7 +36,8 @@
         </div>
       {% endif %}
 
-      {# **約束は組織自身のもの。** 組織管理者も自分の分は変えられる。 #}
+      {# The promise belongs to the organisation, so its own administrator can change
+         it. #}
       <div class="field">
         <label for="commitment">{{ t('manager.f.commitment') }}</label>
         <select id="commitment" name="commitment">
@@ -50,7 +51,8 @@
         <p class="hint">{{ t('manager.f.commitment_hint')|safe }}</p>
       </div>
 
-      {# 採番上限は配った側が課すもの。**自組織では変えられない。** #}
+      {# The quota is imposed by the side handing out the namespace, so an
+         organisation cannot change its own. #}
       {% if can_manage %}
         <div class="field">
           <label for="quota">{{ t('manager.f.quota') }} <span class="opt">— {{ t('f.optional') }}</span></label>
@@ -70,17 +72,18 @@
   </div>
 </div>
 
-{# **配る側の宣言なので、別の紙に置く。** 約束の水準（組織自身のもの）と
-   同じカードに並べると、誰が決めることなのかが読み取れない。
-   組織自身には出さない——見せて押せないより、そもそも自分の裁量ではないことが
-   分かるほうがよい。 #}
+{# These are declared by the side handing out the namespace, so they sit on their own
+   card. Next to the commitment level, which belongs to the organisation, nobody could
+   tell who decides what. They are not shown to the organisation at all: better to see
+   that it is not theirs to decide than a control that does nothing. #}
 {% if can_manage %}
 <div class="card" style="margin-top:20px">
   <div class="card-h"><span class="t">{{ t('op.title') }}</span></div>
   <div class="card-b">
     <p class="hint" style="margin-top:0">{{ t('op.lede')|safe }}</p>
-    {# 追加のときは**上の form の続き**（開いたまま）。2 つに割ると、片方だけ
-       送られて「迎えたが制限が掛かっていない組織」が残る。 #}
+    {# When adding one, this continues the form above rather than closing it. Split
+       in two, only one could be submitted, leaving an organisation onboarded with no
+       restrictions applied. #}
     {% if manager %}<form method="post" action="/admin/manager/{{ manager.id }}">{% endif %}
       <input type="hidden" name="policy" value="1">
 
