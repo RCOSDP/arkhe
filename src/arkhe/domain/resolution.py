@@ -1,15 +1,18 @@
-"""解決の決定ロジック。**HTTP から切り離してある**ので単体で検証できる。
+"""The decision logic of resolution, kept away from HTTP so that it can be verified on
+its own.
 
-一本の流れとして書く（`arklet_ark_conformance.md` §7-1）:
+It reads as one flow (arklet_ark_conformance.md, 7-1):
 
-    正規化（A1・N4）
-      → 完全一致（公開のリゾルバでは**公開したものだけ**。閉域のリゾルバは公開前も答える）
-      → 祖先 passthrough（D5・D6・B3）
-      → チェックディジット検証（D1。**自分が権威を持つ NAAN のときだけ**）
-      → shoulder の redirect
-      → 自 NAAN なら 404（D3）／他所なら Naan.redirect／未知 NAAN なら n2t（D2）
+    normalise (A1, N4)
+      then an exact match (a public resolver serves only what is published; a closed
+        one answers for reserved ARKs too)
+      then inheritance from an ancestor (D5, D6, B3)
+      then the check digit (D1, only for a NAAN we are authoritative for)
+      then the shoulder's redirect
+      then 404 for our own NAAN (D3), the NAAN's redirect for another, or n2t for one
+        we do not know (D2)
 
-受け入れ条件: D1・D2・D3・D5・D6・B3・C5・N4・A2・SC1
+Acceptance criteria: D1, D2, D3, D5, D6, B3, C5, N4, A2, SC1
 """
 
 from __future__ import annotations
@@ -35,20 +38,22 @@ from arkhe.arkspec.naming import (
 )
 from arkhe.arkspec.shoulder import split_shoulder
 
-#: D2: 未知 NAAN の取次先。設定可能にする。
-#: **ブラウザに解釈させると危ないスキーム。** 登録を拒む唯一の理由。
+#: D2: where an unknown NAAN is forwarded. It is configurable.
+#: The schemes that are dangerous for a browser to interpret. They are the only reason
+#: registration is ever refused.
 #:
-#: `?info` は認証を要さない公開ページなので、そこに載る文字列を採番した側が
-#: 自由に決められると、リゾルバのオリジンで動くスクリプトを他人に踏ませられる。
+#: ?info is a public page that needs no credentials, so if whoever minted an ARK could
+#: choose any string on it, they could make other people run script on the resolver's
+#: origin.
 #:
-#: 黒名簿で足りるのは、**綴りの揺れを `urlsplit` が吸収する**から——大小混在も、
-#: 前置きの空白も、途中のタブ・改行・NUL も、同じ scheme に正規化される
-#: （ブラウザの扱いと同じ）。文字列のまま比べるなら白名簿が要るが、
-#: 解析してから比べるなら数え上げられる。
+#: A list of what is refused is enough because urlsplit absorbs the spelling: mixed
+#: case, leading whitespace, and tabs, newlines or NULs in the middle all normalise to
+#: the same scheme, as a browser would treat them. Comparing raw strings would need a
+#: list of what is allowed; comparing after parsing can be enumerated.
 DANGEROUS_SCHEMES = frozenset({"javascript", "data", "vbscript", "blob", "filesystem"})
 
-#: **ブラウザに「そこへ行け」と言ってよいスキーム。**
-#: これ以外は、リンクにもせず転送もしない——ただし**登録は妨げない**。
+#: The schemes a browser may be sent to. Anything else is neither linked nor redirected
+#: to, but registering it is not prevented.
 FOLLOWABLE_SCHEMES = frozenset({"http", "https"})
 
 
@@ -60,23 +65,23 @@ def _scheme(url: str) -> str:
 
 
 def is_registrable(url: str) -> bool:
-    """行き先として台帳に入れてよいか。
+    """Whether this may be stored as a target.
 
-    **ARK は物理オブジェクトにも、他の識別子にも付けられる。** `where` は URI で
-    あって HTTP URL とは限らないので、`urn:` `doi:` `ark:` `mailto:` などを
-    拒んではいけない。空も正当——**行き先が無い対象**は中心的な用途である。
+    An ARK can name a physical object or another identifier. The target is a URI, not
+    necessarily an HTTP URL, so urn:, doi:, ark: and mailto: must all be accepted, and
+    empty is valid too: an object with no target is a central use.
 
-    拒むのは、ブラウザに解釈させると危ないものだけ。
+    Only what is dangerous for a browser to interpret is refused.
     """
     return not url or _scheme(url) not in DANGEROUS_SCHEMES
 
 
 def is_followable(url: str) -> bool:
-    """ブラウザを転送してよいか／リンクにしてよいか。
+    """Whether a browser may be redirected there, or a link made to it.
 
-    `urn:isbn:…` は正当な行き先だが、**転送先にはならない**（ブラウザは開けない）。
-    そういう ARK は記述を返す——これは制限ではなく、`?info` が最初から
-    担っている役目である。
+    urn:isbn:... is a valid target but not one to redirect to, because a browser cannot
+    open it. Such an ARK is described instead, which is not a restriction: it is what
+    ?info has always been for.
     """
     return bool(url) and _scheme(url) in FOLLOWABLE_SCHEMES
 
@@ -85,13 +90,14 @@ DEFAULT_GLOBAL_RESOLVER = "https://n2t.net"
 
 
 class Inflection(Enum):
-    """`?` で始まる問い合わせ。**仕様上の必須は `?info` だけ**（C1 の訂正）。"""
+    """A query beginning with ?. The specification requires only ?info (C1,
+    corrected)."""
 
     NONE = "none"
-    BRIEF = "brief"  # `?`     — ERC/ANVL の簡潔な記述
-    INFO = "info"  # `?info` — 人間可読の記述（MUST）
-    JSON = "json"  # `?json` — 機械可読（arklet 由来の拡張）
-    POLICY = "policy"  # `??`    — 永続性宣言を返す（C4）
+    BRIEF = "brief"  # ?      a brief description in ERC/ANVL
+    INFO = "info"  # ?info  a description for people (required)
+    JSON = "json"  # ?json  machine readable, an extension from arklet
+    POLICY = "policy"  # ??     the persistence statement (C4)
 
     @property
     def wants_metadata(self) -> bool:
@@ -99,19 +105,19 @@ class Inflection(Enum):
 
 
 class Outcome(Enum):
-    REDIRECT = "redirect"  # 302/303 で転送する
-    DESCRIBE = "describe"  # リゾルバ自身が記述を返す
+    REDIRECT = "redirect"  # redirect with 302 or 303
+    DESCRIBE = "describe"  # the resolver returns the description itself
     NOT_FOUND = "not_found"
-    FORWARD = "forward"  # 他所の NAAN / 未知 NAAN へ取り次ぐ
-    HELD = "held"  # 転送を一時停止している。**識別子は生きている**
+    FORWARD = "forward"  # hand on to another NAAN, or to one we do not know
+    HELD = "held"  # redirection is held. The identifier is alive
 
 
 @dataclass(frozen=True)
 class Hold:
-    """効いている保留。**転送だけを止める**（解決は止めない）。
+    """A hold in force. It stops redirection, not resolution.
 
-    `scope` は誰が止めているか——`ark` / `shoulder` / `naan`。止めた層が分かると、
-    「この 1 件が悪いのか、名前空間ごと止まっているのか」を外から見分けられる。
+    scope says which level holds it: ark, shoulder or naan. Knowing that, a reader can
+    tell whether this one ARK is the problem or a whole namespace is stopped.
     """
 
     scope: str
@@ -127,11 +133,11 @@ class Hold:
 
 
 def _aware(value):
-    """素の datetime を UTC とみなす。
+    """Treat a naive datetime as UTC.
 
-    **SQLite は tz を落として返す。** 素と aware を比べると `TypeError` になり、
-    保留の判定だけが例外で落ちる——**止めたつもりが転送され続ける**ほうが、
-    ここでは何倍も悪い。
+    SQLite drops the time zone, and comparing a naive value with an aware one raises
+    TypeError, so only the hold check would fail. Redirecting something that was meant
+    to be held is far worse than being lenient here.
     """
     if value is None or not isinstance(value, datetime):
         return None
@@ -139,10 +145,11 @@ def _aware(value):
 
 
 def hold_of(obj, scope: str, now: datetime) -> Hold | None:
-    """その行が今まさに保留中なら `Hold` を返す。
+    """Return a Hold if that row is held right now.
 
-    **期限切れをバッチで戻さない。** 解決のたびにここで時計を見るので、
-    戻し忘れが起きない——止め忘れは残るが、**戻し忘れは残らない**。
+    Nothing puts expired holds back. The clock is read here on each resolution, so
+    nobody has to remember to lift one: a hold may be forgotten, but an expiry is never
+    missed.
     """
     until = _aware(getattr(obj, "hold_until", None))
     if until is None or until <= now:
@@ -151,9 +158,10 @@ def hold_of(obj, scope: str, now: datetime) -> Hold | None:
 
 
 def effective_hold(now: datetime, *pairs) -> Hold | None:
-    """`(行, scope)` を狭い順に見て、最初に効いているものを返す。
+    """Look at each (row, scope) from the narrowest outwards and return the first hold
+    in force.
 
-    狭い順に見るのは、**その 1 件を止めた理由のほうが具体的**だから。
+    The narrowest comes first because the reason for holding one ARK is more specific.
     """
     for obj, scope in pairs:
         if obj is None:
@@ -169,56 +177,58 @@ class Resolution:
     outcome: Outcome
     status: int = 302
     location: str = ""
-    #: 記述を返すときの元になった Ark（祖先かもしれない）。
+    #: The Ark the description comes from, which may be an ancestor.
     ark: object | None = None
-    #: 要求された ARK（`naan/name`）。祖先から継承したときに名乗る名前。
+    #: The ARK that was asked for (naan/name): the name used when inheriting.
     requested: str = ""
-    #: 祖先から切り出した修飾子部分。
+    #: The qualifier, cut from the ancestor.
     suffix: str = ""
-    #: 祖先継承のとき、どの ARK から継承したか（C5）。
+    #: When inheriting, which ARK it was inherited from (C5).
     inherited_from: str = ""
     inflection: Inflection = Inflection.NONE
     reason: str = ""
-    #: 符号（`arkhe.errors.Code`）。**文面ではなくこれで判定させる。**
+    #: The code (arkhe.errors.Code). Callers branch on it rather than on the wording.
     code: object | None = None
     detail: dict = field(default_factory=dict)
-    #: 効いている保留。**転送を止めた理由**を応答に載せるために運ぶ。
+    #: The hold in force, carried so that the reason redirection stopped appears in
+    #: the response.
     hold: Hold | None = None
 
 
-#: `published_at` を持たない相手（テストの差し替え repo など）は**公開済みとみなす**。
-#: 公開前は台帳が明示するものであって、属性の有無で決まるものではない。
+#: Anything without a published_at, such as a fake repository in a test, counts as
+#: published. Being reserved is something the ledger states, not something the absence
+#: of an attribute decides.
 _ASSUME_PUBLIC = object()
 
 
 def is_public(ark) -> bool:
-    """**グローバルに公開した ARK か。**"""
+    """Whether this ARK has been published to the world."""
     return getattr(ark, "published_at", _ASSUME_PUBLIC) is not None
 
 
 def serves(ark, *, unpublished: bool) -> bool:
-    """**このリゾルバがこの行を答えてよいか。**
+    """Whether this resolver may answer for this row.
 
-    公開前の ARK を解決するかどうかは、**ARK の状態だけでは決まらない**
-    ——どのリゾルバが答えているかで決まる:
+    Whether a reserved ARK resolves does not follow from the state of the ARK alone; it
+    follows from which resolver is answering:
 
-      閉域のリゾルバ  … 自分の領域の ARK は公開前でも解決する（`unpublished=True`）
-      公開のリゾルバ  … 公開したものだけ。公開前は**未登録の名前と同じに扱う**
-                        （祖先としても使わない）
+      a closed resolver  serves its own reserved ARKs (unpublished=True)
+      a public resolver  serves only what is published, treating a reserved ARK as a
+                         name that does not exist, including as an ancestor
 
-    閉じた網の中で採番した ARK を、その網のリゾルバが解決できないなら、
-    **閉じた対象に PID を配る意味が無い**。一方で公開の口（`?info` / `??`）は
-    認証を要さないので、そちらで公開前が引けると、まだ公開していない対象の
-    存在・題名・行き先がそのまま外に出る。**同じ 1 つの判断を、置き場所で
-    分ける**のが正しい形である。
+    If ARKs minted inside a closed network do not resolve there, handing out identifiers
+    for closed objects is pointless. Meanwhile the public endpoints (?info and ??) need
+    no credentials, so serving a reserved ARK there would expose the existence, the
+    title and the target of something unpublished. One decision, placed differently.
     """
     return unpublished or is_public(ark)
 
 
 def base_name(name: str) -> str:
-    """修飾子より前の base name を返す。
+    """Return the base name, up to the qualifier.
 
-    N7: 検査桁は base compact name に対して計算され、**修飾子は含めない**。
+    N7: the check digit is computed over the base compact name and excludes any
+    qualifier.
     """
     for i, char in enumerate(name):
         if char in QUALIFIER_SEPARATORS and is_structural_at(name, i):
@@ -231,15 +241,16 @@ _STATUS_PREFIX = re.compile(r"^(30[1237])\s+")
 
 
 def expand_redirect(template: str, naan: str, name: str) -> tuple[int, str]:
-    """N2T 互換のテンプレートを展開する。
+    """Expand a template, compatible with n2t.
 
-    | 記法 | 置換 |
+    | notation | replaced with |
     | --- | --- |
-    | `$id` | `<naan>/<name>`（修飾子を含む） |
-    | `${blade}` | shoulder より後ろ |
-    | 先頭の `303 ` 等 | ステータスコード指定 |
+    | `$id` | `<naan>/<name>`, including any qualifier |
+    | `${blade}` | everything after the shoulder |
+    | a leading `303 ` and the like | the status code to use |
 
-    `${nlid}` は採らない（N2T 内部の正規化 ID で、対応する概念が無い）。
+    ${nlid} is not supported: it is n2t's internal normalised id, with nothing here
+    that corresponds to it.
     """
     status = 302
     m = _STATUS_PREFIX.match(template)
@@ -254,12 +265,13 @@ def expand_redirect(template: str, naan: str, name: str) -> tuple[int, str]:
 
 
 class ArkRepository:
-    """解決に必要な問い合わせだけを切り出した窓口。
+    """The few queries resolution needs, and nothing else.
 
-    テストでは差し替えられるようにし、**決定ロジックを Django から独立**させる。
+    It can be substituted in the tests, which keeps the decision logic independent of
+    any database.
     """
 
-    def get_ark(self, key: str):  # pragma: no cover - 実装は django_repo
+    def get_ark(self, key: str):  # pragma: no cover - implemented in db.repository
         raise NotImplementedError
 
     def get_arks(self, keys: list[str]) -> dict:  # pragma: no cover
@@ -282,38 +294,42 @@ def resolve(
     now: datetime | None = None,
     unpublished: bool = False,
 ) -> Resolution:
-    """ARK を解決する。
+    """Resolve an ARK.
 
-    `now` は保留（hold）の判定にだけ使う。**引数にしてあるのはテストのため**で、
-    渡さなければ現在時刻を見る。
+    now is used only to judge holds. It is an argument for the tests; without it, the
+    current time is read.
 
-    `unpublished` は**このリゾルバが閉域に置かれているか**（`serves` を見よ）。
-    既定は公開のリゾルバ——公開前の ARK は未登録の名前と同じに扱う。
+    unpublished says whether this resolver is inside a closed network (see serves). The
+    default is a public resolver, where a reserved ARK is treated as a name that does
+    not exist.
     """
     now = now or datetime.now(UTC)
-    # A4: **%-エンコードは復号しない。** 16 進の大小だけ揃える（手順5）。
-    # `%2F` は「ここに `/` はあるが成分の区切りではない」と言うための唯一の書き方で、
-    # 潰すと別の識別子になる（`x54%2Fc2` と `x54/c2` は別物）。
+    # A4: percent encoding is not decoded; only the hex case is normalised (step 5).
+    # %2F is the only way to write a slash that is not a separator, and decoding it
+    # would make a different identifier: x54%2Fc2 and x54/c2 are not the same.
     name = normalize_percent(name)
     name = normalize_structural(name)  # N4
     normalized = strip_hyphens(name)  # A2
     requested = ark_key(naan, name)
 
-    # --- 完全一致 -----------------------------------------------------------
-    # 保存済みの表記を先に当てる（ハイフンを含む旧レコードを生かすため）。
+    # --- An exact match ------------------------------------------------------
+    # Try the stored spelling first, so that older rows containing hyphens still
+    # match.
     for key in dict.fromkeys([ark_key(naan, name), ark_key(naan, normalized)]):
         ark = repo.get_ark(key)
-        # **公開のリゾルバでは、公開前は「まだ無い名前」。** 予約しただけの
-        # 番号で 200 を返すと、公開していない対象の存在と記述が外に出る。
-        # 閉域のリゾルバは答える——そこは配った先の内側だから。
+        # On a public resolver a reserved ARK is a name that does not exist yet.
+        # Answering 200 for a number that was only reserved would reveal that something
+        # unpublished exists, and describe it. A closed resolver does answer: it is
+        # inside the network the name was handed out in.
         if ark is not None and serves(ark, unpublished=unpublished):
             return _deliver(ark, requested=requested, inflection=inflection, now=now)
 
-    # --- 祖先 passthrough（D5: 最長一致） -----------------------------------
-    candidates = list(gen_prefixes(normalized))  # 長い順
+    # --- Inheriting from an ancestor (D5: the longest match) -----------------
+    candidates = list(gen_prefixes(normalized))  # longest first
     if candidates:
-        # SC1: **DB で関数ソートしない。** 候補は高々 name 長ぶんなので 1 回の
-        # IN で引き、`gen_prefixes` が返す長い順にアプリ側で最初の一致を採る。
+        # SC1: no sorting by a function in the database. There are at most as many
+        # candidates as the name is long, so they are fetched with one IN and the first
+        # match is taken here, in the order gen_prefixes returns them.
         found = repo.get_arks([ark_key(naan, c) for c in candidates])
         for cand in candidates:
             ancestor = found.get(ark_key(naan, cand))
@@ -329,11 +345,11 @@ def resolve(
                 now=now,
             )
 
-    # --- ここから未登録 -----------------------------------------------------
+    # --- From here on, nothing is registered ---------------------------------
     naan_obj = repo.get_naan(naan)
 
     if naan_obj is None:
-        # D2: 未知 NAAN はグローバルリゾルバへ取り次ぐ（SHOULD）。
+        # D2: an unknown NAAN is handed on to the global resolver (SHOULD).
         if inflection.wants_metadata:
             return Resolution(
                 Outcome.NOT_FOUND,
@@ -352,8 +368,8 @@ def resolve(
         )
 
     if naan_obj.is_authoritative:
-        # D1: **我々が権威を持つ NAAN のときだけ**検査桁を見る。他所の NAAN は
-        # チェックディジットを使っているとは限らないので判定しない。
+        # D1: the check digit is verified only for a NAAN we are authoritative for.
+        # Another NAAN does not necessarily use check digits at all.
         stem = base_name(normalized)
         if not verify_ark_check_digit(naan, stem):
             return Resolution(
@@ -366,13 +382,14 @@ def resolve(
                 detail={"base": stem},
             )
 
-        # shoulder 単位の解決委譲（N2T のデータモデル）。
+        # Resolution delegated per shoulder, as in n2t's data model.
         shoulder_part = split_shoulder(stem)[0]
         if shoulder_part:
             shoulder = repo.get_shoulder(naan, f"/{shoulder_part}")
             if shoulder is not None and shoulder.redirect:
-                # **委譲先を止められるのはここだけ。** この名前は我々の台帳に無い
-                # ので、止める判断は shoulder か NAAN の側にしか置けない。
+                # This is the only place a delegate can be stopped. The name is not
+                # in our ledger, so the decision can only live on the shoulder or the
+                # NAAN.
                 held = effective_hold(now, (shoulder, "shoulder"), (naan_obj, "naan"))
                 if held is not None:
                     return _held(requested, inflection, held)
@@ -385,7 +402,7 @@ def resolve(
                     reason="delegated by shoulder",
                 )
 
-        # D3: **自分が権威を持つ NAAN の未知の名前は 404。**「無い」と言える。
+        # D3: for a NAAN we are authoritative for, an unknown name really is absent.
         return Resolution(
             Outcome.NOT_FOUND,
             status=404,
@@ -395,7 +412,7 @@ def resolve(
             reason=errors.ARK_UNKNOWN_NAME.message,
         )
 
-    # 他所の NAAN は登録された委譲先へ。**その NAAN ごと止めることもできる。**
+    # Another NAAN goes to its registered delegate, and a whole NAAN can be held.
     held = effective_hold(now, (naan_obj, "naan"))
     if held is not None:
         return _held(requested, inflection, held)
@@ -409,9 +426,10 @@ def resolve(
 
 
 def _held(requested: str, inflection: Inflection, held: Hold) -> Resolution:
-    """台帳に行が無いまま止まっているとき（shoulder / NAAN 単位）の応答。
+    """The answer when something is held with no row in the ledger, at shoulder or
+    NAAN level.
 
-    **`404` にはしない。** その名前空間は存在していて、我々が今は転送しないだけ。
+    It is not a 404: the namespace exists, and we are simply not forwarding right now.
     """
     return Resolution(
         Outcome.HELD,
@@ -432,10 +450,11 @@ def _deliver(
     inherited_from: str = "",
     now: datetime | None = None,
 ) -> Resolution:
-    """見つかった ARK（本人または祖先）をどう返すか決める。"""
+    """Decide how to answer for the ARK that was found, itself or an ancestor."""
     now = now or datetime.now(UTC)
-    # ARK → その shoulder → その NAAN の順に見る（狭いほうの理由が具体的）。
-    # **関係は辿るだけで引かない。** repository が同じ 1 本の問い合わせで載せてくる。
+    # Look at the ARK, then its shoulder, then its NAAN: the narrower reason is more
+    # specific. The relationships are followed, not queried: the repository loaded them
+    # on the same query.
     shoulder = getattr(ark, "shoulder", None)
     held = effective_hold(
         now,
@@ -444,7 +463,8 @@ def _deliver(
         (getattr(shoulder, "naan_obj", None), "naan"),
     )
     if held is not None:
-        # **転送だけを止める。** 記述は返し続ける——識別子は生きている。
+        # Only redirection stops. The description keeps coming back: the identifier
+        # is alive.
         return Resolution(
             Outcome.DESCRIBE,
             status=200,
@@ -457,8 +477,8 @@ def _deliver(
             hold=held,
         )
     if inflection.wants_metadata:
-        # C5: **inflection は suffix passthrough でも失われない。** 最も近い
-        # 登録済み祖先のメタデータを、要求された ARK の名前で返す（FAIR A2）。
+        # C5: an inflection survives inheritance. The metadata of the nearest
+        # registered ancestor is returned under the name that was asked for (FAIR A2).
         return Resolution(
             Outcome.DESCRIBE,
             status=200,
@@ -469,8 +489,8 @@ def _deliver(
             inflection=inflection,
         )
     if not ark.url:
-        # D6: 転送先が無いなら**裸の suffix にリダイレクトせず**、記述を返す。
-        # 物理オブジェクトではこれが主たる応答になる。
+        # D6: with no target, do not redirect to a bare suffix; return the
+        # description. For a physical object this is the usual answer.
         return Resolution(
             Outcome.DESCRIBE,
             status=200,
