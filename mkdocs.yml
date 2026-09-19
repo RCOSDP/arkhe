@@ -83,6 +83,7 @@ plugins:
             Errors: エラー
             Project: プロジェクト
             Contributing: 参加する
+            How arkhe compares: ほかの実装との比較
             Versioning: バージョン
             Changelog: 変更履歴
 
@@ -161,5 +162,6 @@ nav:
       - Errors: reference/errors.md
   - Project:
       - Contributing: project/contributing.md
+      - How arkhe compares: project/comparison.md
       - Versioning: project/versioning.md
       - Changelog: project/changelog.md

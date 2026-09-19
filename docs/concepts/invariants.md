@@ -113,10 +113,11 @@ creating names in it that this ledger has never seen.
 
 ## Minting never becomes an update
 
-This was **the worst defect in arklet**: a primary key collision was absorbed by
-`save()` and silently became an `UPDATE`, quietly rewriting where an existing ARK
-pointed. arkhe confines minting to one code path where a collision fails, is counted,
-and is retried with a new name.
+This was **the worst defect in the arklet arkhe started from**: a primary key collision
+was absorbed by `save()` and silently became an `UPDATE`, quietly rewriting where an
+existing ARK pointed. (It has since been fixed upstream, which is one of the things
+[the comparison](../project/comparison.md) checked.) arkhe confines minting to one code
+path where a collision fails, is counted, and is retried with a new name.
 
 The collision count is returned rather than swallowed, because a rising collision
 rate is how you find out a namespace is filling up.

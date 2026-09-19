@@ -175,7 +175,7 @@ ER 図は形しか示さない。**arkhe の設計の中身は制約のほうに
 | **公開前の ARK は削除できる** | `published_at` が null のものだけ。まだ外に出していない名前は `NR` が縛る対象ではない——ただし名前は `WITHDRAWN_NAME` に移り、二度と採られない |
 | **shoulder も削除できない** | 乱数割当が同じ文字列を再び当てうる＝NR 違反の芽。`status=retired` にする |
 | **retired からは戻せない** | 引退した名前空間の再開は、その間に外部が同じ名前を使った可能性を否定できない |
-| **採番は UPDATE に化けない** | 主キー衝突は必ず失敗させる。arklet で最重大の欠陥がこれだった |
+| **採番は UPDATE に化けない** | 主キー衝突は必ず失敗させる。出発点にした arklet で最重大の欠陥がこれだった（本家では解消済み） |
 | **到達範囲は登録属性** | `authority` / `manager_id` / `shoulder_id` / `allowed_scopes` はクライアント登録の属性で、リクエストやトークン要求では広がらない |
 | **人と機械を分ける** | `subject_type=machine` は外部ログインで名乗れず、`person` は API キーを持てない |
 | **循環参照** | `manager.default_shoulder_id ⇄ shoulder.manager_id`。PostgreSQL は CREATE TABLE の時点で参照先を要求するので、`use_alter` で後付けにしてある |

@@ -178,7 +178,7 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 | **A reserved one can be** | Only while `published_at` is null. A name that never went out is not what NR binds — but the name still moves to `WITHDRAWN_NAME` and is never assigned again |
 | **A shoulder is never deleted either** | Random assignment could hand out the same string again — the seed of an NR violation. Set `status=retired` |
 | **`retired` is one-way** | Reviving a retired namespace cannot rule out that something outside used the name meanwhile |
-| **Minting never becomes an update** | A primary key collision must fail. This was the worst defect in arklet |
+| **Minting never becomes an update** | A primary key collision must fail. This was the worst defect in the arklet arkhe started from (fixed upstream since) |
 | **Reach is a registration attribute** | `authority`, `manager_id`, `shoulder_id` and `allowed_scopes` come from the client registration; no request or token grant widens them |
 | **People and machines are separate** | `machine` subjects cannot be named through external login; `person` subjects cannot hold API keys |
 | **A circular reference** | `manager.default_shoulder_id ⇄ shoulder.manager_id`. PostgreSQL wants the target to exist at `CREATE TABLE`, so the constraint is added afterwards with `use_alter` |

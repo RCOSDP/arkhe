@@ -9,6 +9,22 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **A page comparing arkhe with the other ARK software** (`docs/project/comparison.md`,
+  both languages). arklet, arklet-frick and EZID were installed, given their own
+  database and driven over HTTP rather than only read, and the page marks which findings
+  were measured that way. It records where arkhe is on its own (delegated minting
+  answered with 307, holding redirection, the idempotency key, reach in three tiers),
+  and where it followed — the publication lifecycle is EZID's status model in different
+  words, and `?info` / `?json` and suffix passthrough were in arklet-frick first.
+
+### Fixed
+
+- **The claim that arklet turns a minting collision into an update is now dated.** It
+  was true of the version arkhe started from and **has since been fixed upstream**; the
+  invariant and the data model page said it in the present tense.
+
 ## [0.13.0] — 2026-09-19
 
 **The release that gave arkhe a client.**
