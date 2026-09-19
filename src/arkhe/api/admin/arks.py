@@ -1,7 +1,7 @@
-"""発行した ARK と、その行き先が変わった記録。
+"""Minted ARKs and the record of their targets changing.
 
-**絞り込みは `domain.queries` に置く。** 画面と CLI で別々に書くと、片方だけ
-直したときに見える範囲がずれる。
+The filtering lives in domain.queries. Written separately for the screens and the CLI,
+fixing one would leave them showing different things.
 """
 
 from __future__ import annotations
@@ -29,10 +29,10 @@ from arkhe.domain import authz
 from arkhe.domain.queries import ARK_STATES, narrow_arks, selectable_orgs, visible_arks
 from arkhe.settings import get_settings
 
-# ------------------------------------------------------------ 発行した ARK
+# -------------------------------------------------------------- Minted ARKs
 #
-# 件数は増える一方なので、**最初からページ送りと検索を入れる**。後から足すと、
-# それまでの利用者は「全部出る」前提の画面に慣れてしまう。
+# The count only grows, so pagination and search are there from the start. Added
+# later, people would already be used to a page that shows everything.
 
 
 @router.get("/arks", response_class=HTMLResponse)
@@ -45,7 +45,7 @@ def arks(
     state: str = "",
     page: int = 1,
 ):
-    """発行した ARK の一覧。"""
+    """The list of minted ARKs."""
     stmt = narrow_arks(
         visible_arks(principal).options(selectinload(Ark.shoulder)),
         org=org, q=q, state=state,
@@ -57,8 +57,8 @@ def arks(
         )
     )
     more = len(rows) > PAGE
-    # **組織単位の管理者には選択肢を出さない**——自組織しか見えないので、
-    # 選択肢が 1 つの絞り込みは操作を増やすだけになる。
+    # An organisation-level administrator is not offered the filter: only one
+    # organisation is visible, so a filter with one choice adds work.
     orgs = list(session.scalars(selectable_orgs(principal))) if principal.is_naan_wide else []
     return _page(
         request, principal, "arks.html", "arks",
@@ -69,10 +69,10 @@ def arks(
 
 @router.get("/arks/{ark:path}", response_class=HTMLResponse)
 def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: str):
-    """1 本の ARK と、**その行き先が変わった記録**。
+    """One ARK, and the record of its target changing.
 
-    到達範囲の判定は一覧と同じ式を使う（`visible_arks`）——別に書くと、
-    一覧に出ないものが URL 直打ちで見える。
+    The reach uses the same query as the list (visible_arks). Written separately,
+    something absent from the list would be reachable by typing the URL.
     """
     key = ark.removeprefix("ark:/").removeprefix("ark:")
     row = session.scalar(
@@ -88,24 +88,26 @@ def ark_detail(request: Request, principal: AdminPrincipal, session: Db, ark: st
     return _page(
         request, principal, "ark_detail.html", "arks",
         ark=row, changes=changes, hold_max=get_settings().hold_max_days,
-        # **押せるものだけ見せる。** 状態と scope の両方を見る（判定は
-        # `admin_ops` 側と同じものが効く。出し分けは親切であって防御ではない）。
+        # Only show what can be used, looking at both the state and the scope. The
+        # same decision applies in admin_ops; hiding a control is a courtesy, not the
+        # guard.
         can_publish=row.published_at is None and principal.has("ark:mint"),
         can_unpublish=row.published_at is not None and principal.has("ark:unpublish"),
         can_withdraw=row.published_at is None and principal.has("ark:delete"),
         can_purge=row.published_at is not None and principal.has("ark:purge"),
-        # **一度でも外に出したか。** 理由と打ち直しを出すかがこれで決まる
-        # ——重さは主体の位ではなく、名前の履歴で決まる。
+        # Whether it was ever public. That decides whether a reason and a
+        # confirmation are asked for: the weight comes from the name's history, not
+        # from the caller's tier.
         was_exposed=row.first_published_at is not None,
     )
 
 
 @router.post("/arks/{ark:path}/publish")
 def ark_publish(request: Request, principal: AdminPrincipal, session: Db, ark: str):
-    """**グローバルに公開する。** 画面と CLI と API が同じ操作を呼ぶ。
+    """Publish it to the world. The screens, the CLI and the API call one operation.
 
-    scope の検査もここでする——ボタンを出し分けるだけでは、URL を直接叩く道が
-    残る（`_ctx` の出し分けと同じ判定を使うのはそのため）。
+    The scope is checked here as well: hiding a button leaves the URL, which is why the
+    same decision is used as in _ctx.
     """
     key = ark.removeprefix("ark:/").removeprefix("ark:")
     authz.require_scope(principal, "ark:mint")
@@ -123,10 +125,10 @@ def ark_unpublish(
     reason: Annotated[str, Form()] = "",
     confirm: Annotated[str, Form()] = "",
 ):
-    """**公開を取り下げる。** 行は残るので、戻り先は詳細のまま。
+    """Withdraw the publication. The row stays, so it returns to the detail page.
 
-    理由と打ち直しの入力は画面に置いてあるが、**弾くのは `admin_ops` 側**である
-    ——画面の required 属性は親切であって、防御ではない。
+    The reason and the confirmation are asked for on the screen, but admin_ops is what
+    refuses. A required attribute is a courtesy, not a guard.
     """
     key = ark.removeprefix("ark:/").removeprefix("ark:")
     authz.require_scope(principal, "ark:unpublish")
@@ -144,9 +146,9 @@ def ark_delete(
     reason: Annotated[str, Form()] = "",
     confirm: Annotated[str, Form()] = "",
 ):
-    """**公開していない ARK を消す。** 公開中なら `admin_ops` が 409 で断る。
+    """Delete an ARK that is not published. While it is, admin_ops answers 409.
 
-    戻り先は詳細ではなく一覧——**その詳細ページはもう無い**。
+    It returns to the list rather than the detail page, which no longer exists.
     """
     key = ark.removeprefix("ark:/").removeprefix("ark:")
     authz.require_scope(principal, "ark:delete")
@@ -164,10 +166,10 @@ def ark_purge(
     reason: Annotated[str, Form()] = "",
     confirm: Annotated[str, Form()] = "",
 ):
-    """**公開した ARK を一手で破棄する。** 届く範囲の内側だけ。
+    """Purge a published ARK in one step, within the caller's reach.
 
-    画面には確認の入力（ARK の打ち直し）と理由を置いてあるが、**弾くのは
-    `admin_ops` 側**である——画面の required 属性は親切であって、防御ではない。
+    The screen asks for the ARK again and for a reason, but admin_ops is what refuses. A
+    required attribute is a courtesy, not a guard.
     """
     key = ark.removeprefix("ark:/").removeprefix("ark:")
     authz.require_scope(principal, "ark:purge")
@@ -186,10 +188,11 @@ def ark_hold(
     reason: Annotated[str, Form()] = "",
     release: Annotated[str, Form()] = "",
 ):
-    """**画面と CLI に差を作らない。** `arkhe hold add/release` と同じ操作を呼ぶ。
+    """The screens and the CLI behave alike: this calls what arkhe hold add and release
+    call.
 
-    到達範囲の判定も `admin_ops` 側に任せる——ここで独自に書くと、ボタンは
-    出ないのに POST は通る、という穴になる。
+    The reach is decided in admin_ops as well. Written again here, it would leave the
+    hole where the button is hidden but the POST still works.
     """
     key = ark.removeprefix("ark:/").removeprefix("ark:")
     if release:

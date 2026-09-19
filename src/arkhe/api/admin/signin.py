@@ -1,7 +1,8 @@
-"""入り口——ログイン、認可サーバとの往復、ログアウト、そこへ戻す案内。
+"""The way in: signing in, the round trip to an authorisation server, signing out, and
+the pages that lead back here.
 
-**どの入口でも、行き着く先は API と同じ `Principal`。** 違うのは
-「誰であるかをどう確かめたか」だけ。
+Whichever entrance is used, it ends at the same Principal the API uses. Only how
+identity was established differs.
 """
 
 from __future__ import annotations
@@ -25,10 +26,10 @@ from arkhe.auth.deps import client_ip
 from arkhe.auth.errors import AuthError
 from arkhe.domain import authz
 
-# ------------------------------------------------------------------ ログイン
+# ---------------------------------------------------------------- Signing in
 #
-# **ここで arkhe がやるのは「クライアント（RP）になる」こと。** 認可サーバになる
-# こと——トークンを発行し、同意を預かる役目——とは別で、そちらは持たない。
+# What arkhe does here is act as a relying party. Being an authorisation server,
+# issuing tokens and holding consent, is a different job, and not one it has.
 
 
 def _redirect_uri(request: Request) -> str:
@@ -53,10 +54,10 @@ def _login_page(request: Request, cfg: Config, *, error: str = "", status: int =
 
 
 def _notice(request: Request, cfg, key: str, status: int, retry: str = "/admin/login", **fmt):
-    """ログインに戻す画面。**行き止まりを作らない。**
+    """A page that leads back to signing in, so that nothing is a dead end.
 
-    ここは未ログインの人が見る画面なので、管理画面の骨組み（`base.html`）は
-    使えない（`principal` が要る）。ログイン画面と同じ外枠を共有する。
+    Whoever sees it is not signed in, so the admin layout (base.html) cannot be used: it
+    needs a principal. This shares the frame with the login page.
     """
     lang = i18n.pick(request)
     tr = i18n.translator(lang)
@@ -78,10 +79,10 @@ def login_submit(
     password: Annotated[str, Form()] = "",
     next: Annotated[str, Form()] = "/admin/",  # noqa: A002
 ):
-    """ID とパスワードを確かめてセッションにする。
+    """Check a username and password, and start a session.
 
-    **失敗しても理由を分けない。** 「その ID は無い」と分かると、利用者の一覧を
-    総当たりで作れてしまう。
+    Failures are not broken down by reason. If "no such user" were distinguishable, the
+    list of users could be found by trying names.
     """
     if cfg.admin_login != "password":
         return _notice(request, cfg, "nologin", 404, retry="/admin/")
@@ -91,15 +92,16 @@ def login_submit(
     try:
         principal = pw.authenticate(session, username, password)
     except AuthError as exc:
-        # **失敗したログインこそ残す。** 打ち込まれた ID は残すが、パスワードは
-        # 当然残さない（`exc.detail` にも入らない）。
+        # A failed sign-in is the one worth recording. The username typed is kept;
+        # the password is not, and is not in exc.detail either.
         authz.record_sign_in(
             session, action="sign_in", client_id=username[:255], ip=ip,
             mechanism="password", ok=False, reason=str(exc.detail),
         )
-        session.commit()  # 失敗回数と施錠、そして記録
-        # **画面の言語で見せる。** `password.py` は語彙の鍵で投げる（あちらは
-        # 要求も言語も知らない層）。鍵でない文字列はそのまま返る。
+        session.commit()  # the failure count, the lock, and the record
+        # Show it in the language of the screen. password.py raises with a catalogue
+        # key, since that layer knows nothing about the request; anything that is not a
+        # key is returned unchanged.
         shown = i18n.translator(i18n.pick(request))(str(exc.detail))
         return _login_page(request, cfg, error=shown, status=401)
     authz.record_sign_in(
@@ -108,8 +110,8 @@ def login_submit(
     )
     session.commit()
 
-    # **入れ先は自分のところに限る。** 外部 URL を next に入れられると、
-    # ログイン直後に別サイトへ飛ばす踏み台になる（open redirect）。
+    # Only our own pages are allowed. An external URL in next would make this a
+    # stepping stone that sends people elsewhere right after signing in.
     target = next if next.startswith("/admin") else "/admin/"
     r = RedirectResponse(target, status_code=302)
     sess.set_cookie(
@@ -130,7 +132,8 @@ def login(request: Request, cfg: Config):
     next_url = request.query_params.get("next", "/admin/")
     url, payload = login_flow.start(cfg, redirect_uri=_redirect_uri(request), next_url=next_url)
     r = RedirectResponse(url, status_code=302)
-    # state と PKCE の検証子は**署名して預ける**。往復のあいだだけ持てばよい。
+    # The state and the PKCE verifier are signed and handed over; they only have to
+    # survive the round trip.
     r.set_cookie(
         login_flow.FLOW_COOKIE,
         sess.issue("flow", secret=cfg.session_secret, ttl=login_flow.FLOW_TTL,
@@ -149,7 +152,7 @@ def callback(request: Request, session: Db, cfg: Config):
     if not claims:
         return _notice(request, cfg, "expired", 400)
     flow = json.loads(claims["flow"])
-    # RFC 6749: **state を突き合わせる**（別の要求への応答を受け取らないため）。
+    # RFC 6749: match the state, so that a response to another request is not taken.
     if request.query_params.get("state") != flow["state"]:
         return _notice(request, cfg, "state", 400)
     if err := request.query_params.get("error"):
@@ -185,17 +188,17 @@ def callback(request: Request, session: Db, cfg: Config):
 
 @router.post("/logout", name="admin_logout")
 def logout(request: Request, session: Db, cfg: Config):
-    """ログアウト。**外部で認証しているなら、そちらのセッションも終わらせる。**
+    """Sign out, ending the session at the authorisation server too where one is used.
 
-    GET ではなく POST。`SameSite=Lax` は**トップレベルの GET 遷移では Cookie を
-    送る**ので、GET のままだと外部サイトから `<img src=".../logout">` で強制
-    ログアウトさせられる。実害は嫌がらせ程度だが、直す手間も同じくらい小さい。
+    POST rather than GET. SameSite=Lax still sends the cookie on a top-level GET, so as
+    a GET another site could sign people out with <img src=".../logout">. The harm is
+    only nuisance, and so is the cost of preventing it.
 
-    こちらの Cookie を消すだけでは足りない。次に `/admin/` を開くと認可サーバへ
-    送られ、そちらのセッションが生きているので何も訊かれずに戻ってくる——
-    利用者から見れば「ログアウトできない」。
+    Dropping our cookie is not enough. Opening /admin/ again goes to the authorisation
+    server, and with the session there still alive the person comes back without being
+    asked anything: from where they stand, signing out does not work.
     """
-    # **誰が出て行ったかも残す。** セッションから読める範囲で（読めなければ空）。
+    # Record who left, as far as the session says; empty when it cannot be read.
     claims = sess.read(request.cookies.get(sess.COOKIE, ""), secret=cfg.session_secret)
     authz.record_sign_in(
         session, action="sign_out", client_id=(claims or {}).get("sub", ""),

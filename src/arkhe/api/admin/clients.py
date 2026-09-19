@@ -1,7 +1,7 @@
-"""利用者と鍵。
+"""Principals and their credentials.
 
-**平文の資格情報はここでしか手に入らない。** 発行の直後に一度だけ返し、
-保存しているのはハッシュだけ。
+A plaintext credential exists only here. It is returned once, immediately after it is
+issued; what is stored is a hash.
 """
 
 from __future__ import annotations
@@ -39,18 +39,19 @@ from arkhe.db.models import (
 from arkhe.domain import admin_ops as ops
 from arkhe.domain import authz
 
-# ------------------------------------------------------------------ 主体
+# ---------------------------------------------------------------- Principals
 
 
 def _unknown_subjects(session: Session, principal: Principal) -> list[UnknownSubject]:
-    """登録の無いまま来た主体。**登録が済んだものは出さない。**
+    """Principals that arrived without a registration, excluding those since
+    registered.
 
-    照合はここで毎回やる。登録のたびに行を消して回る処理を持たないので、
-    **消し忘れが原因でいつまでも残る**ということが起きない。
+    The comparison is made on each request. Nothing sweeps the table when something is
+    registered, so nothing lingers because a sweep was missed.
 
-    見せるのは NAAN 以上に届く主体だけ。トークンからは**どの組織のものか
-    分からず**、推測もしないので、組織単位の管理者に見せると他組織の
-    client_id が混ざって出てしまう。
+    It is shown only to principals that reach NAAN level or above. A token does not say
+    which organisation it belongs to and nothing here guesses, so showing the list to an
+    organisation-level administrator would mix in another organisation's client ids.
     """
     if not principal.is_naan_wide:
         return []
@@ -95,7 +96,7 @@ def clients(
         elif c.manager is not None:
             c.scope_label = f"{c.naan} · {c.manager.name}"
         else:
-            c.scope_label = c.naan or "全 NAAN"
+            c.scope_label = c.naan or "every NAAN"
     return _remember_lang(
         request,
         templates.TemplateResponse(
@@ -109,17 +110,18 @@ def clients(
     )
 
 
-# ------------------------------------------------------- 利用者と資格情報
+# ------------------------------------------- Principals and their credentials
 #
-# **平文の資格情報はここでしか手に入らない。** 発行の直後に一度だけ返し、
-# 保存しているのはハッシュだけ。画面を再読み込みしても出てこない——だから
-# 発行は POST で受け、そのレスポンスに載せる（リダイレクトすると消える）。
+# A plaintext credential exists only here. It is returned once, immediately after it is
+# issued, and only a hash is stored, so reloading the page does not show it again. That
+# is why issuing is a POST whose own response carries it; a redirect would lose it.
 
 
 def _reachable_client(
     request: Request, session: Session, principal: Principal, client_id: int
 ) -> Client:
-    """届く範囲の利用者だけを返す。判定は `admin_ops` と同じものを使う。"""
+    """Return only the principals within reach, using the same decision as
+    admin_ops."""
     c = session.get(Client, client_id)
     if c is None:
         raise _refuse(request, "e.out_of_reach_client")
@@ -138,7 +140,7 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
         if not principal.is_system:
             stmt = stmt.where(Manager.naan == principal.naan)
         managers = list(session.scalars(stmt))
-    # **`_mintable` は表示用で id を持たない。** 紐づけには実体が要る。
+    # _mintable is for display and carries no id; binding needs the rows themselves.
     shoulders = _visible_shoulders(session, principal) if c is None else []
     return _page(
         request, principal, "client_form.html", "clients",
@@ -148,11 +150,11 @@ def _client_page(request: Request, principal: Principal, session: Db, cfg,
         kinds=_issuable_kinds(cfg), uses_oidc="oidc" in cfg.auth,
         entry=_entry_route(c, cfg) if c else "",
         prefill=prefill,
-        # 選べないなら**なぜ選べないか**まで出す（空欄を見せて終わらせない）。
+        # When nothing can be chosen, say why rather than showing an empty area.
         missing_mech=("oauth2" if "apikey" in cfg.auth else "apikey")
         if len(_issuable_kinds(cfg)) == 1 else "",
-        # **どこへ行けばよいかまで見せる。** 「認可サーバで作れ」だけでは、
-        # どの認可サーバのことか画面から分からない。
+        # Say where to go. "Create it at the authorisation server" does not tell the
+        # reader which one.
         issuer=cfg.oidc_issuer,
         **extra,
     )
@@ -163,11 +165,12 @@ def client_new(
     request: Request, principal: AdminPrincipal, session: Db, cfg: Config,
     client_id: str = "",
 ):
-    # 出し分けと同じ述語で閉じる。
+    # Closed with the same predicate the display uses.
     if not _may_register(session, principal):
         raise _refuse(request, "e.cannot_add_client")
-    # **未登録の一覧から渡ってきた識別子を初期値にする。** 認可サーバが署名した
-    # 値そのものなので、打ち直させると綴り違いを作る機会をわざわざ増やすことになる。
+    # The identifier carried over from the unregistered list becomes the default. It
+    # is exactly what the authorisation server signed, so retyping it would only create
+    # another chance to misspell it.
     return _client_page(request, principal, session, cfg, None, prefill=client_id.strip())
 
 
@@ -184,21 +187,23 @@ def client_create(
     label: Annotated[str, Form()] = "",
     person: Annotated[str, Form()] = "",
 ):
-    """利用者を登録する。**資格情報はここでは出さない。**
+    """Register a principal. No credential is issued here.
 
-    登録と鍵の発行を分けているのは、`--person` の主体には鍵を出さないから。
-    まず何者かを決め、機械であれば次の画面で鍵を出す。
+    Registration and issuing are separate because a person is issued none. First decide
+    what the principal is; if it is a machine, the next page issues a credential.
     """
     c = ops.register_client(
         session, principal, client_id=client_id.strip(),
         naan=naan or principal.naan,
-        # **自組織以外は選ばせない。** 選択肢を出していないので、値が来ても使わない。
+        # Only their own organisation can be chosen. Nothing else was offered, so a
+        # value that arrives anyway is not used.
         manager_id=(
             int(manager_id) if principal.is_naan_wide and manager_id.strip()
             else principal.manager_id
         ),
         shoulder_id=int(shoulder_id) if shoulder_id.strip() else None,
-        # **語彙の外は捨てる。** 画面に出していない値が送られてきても使わない。
+        # Anything outside the vocabulary is dropped: a value that was never offered
+        # is not used.
         scopes=" ".join(x for x in (scopes or []) if x in authz.SCOPES) or "ark:mint",
         label=label.strip(),
         subject_type="person" if person else "machine",
@@ -224,12 +229,14 @@ def client_issue_key(
     kind: Annotated[str, Form()] = "api_key",
     label: Annotated[str, Form()] = "",
 ):
-    """資格情報を発行する。**平文はこの応答にしか載らない。**
+    """Issue a credential. The plaintext appears in this response and nowhere else.
 
-    リダイレクトで一覧に戻さないのはそのため——戻した先では、もう取り出せない。
+    That is why it does not redirect back to the list: after a redirect it could not be
+    retrieved.
     """
     c = _reachable_client(request, session, principal, client_id)
-    # 出し分けと同じ述語で閉じる。**使えない鍵を作らせない。**
+    # Closed with the same predicate the display uses, so no unusable credential is
+    # created.
     if kind not in _issuable_kinds(cfg):
         raise _refuse(request, "e.mechanism_off")
     issued = ops.issue_credential(
@@ -249,7 +256,7 @@ def client_revoke_key(
     client_id: int,
     credential_id: Annotated[int, Form()],
 ):
-    """**行は消さない。** いつ失効したかが残る。"""
+    """The row is not deleted, so when it was revoked is still known."""
     _reachable_client(request, session, principal, client_id)
     ops.revoke_credential(session, principal, credential_id=credential_id)
     session.commit()
@@ -264,10 +271,10 @@ def client_toggle_active(
     client_id: int,
     active: Annotated[str, Form()] = "",
 ):
-    """主体を止める／戻す。
+    """Stop a principal, or start it again.
 
-    **認可サーバに寄せた構成では、これが arkhe 側の唯一の止め方。** 資格情報を
-    arkhe が持たないので、失効させるものが無い。
+    Where an authorisation server is used, this is the only lever arkhe has: it holds no
+    credential, so there is nothing to revoke.
     """
     c = _reachable_client(request, session, principal, client_id)
     ops.set_client_active(session, principal, client_pk=c.id, active=bool(active))
@@ -283,7 +290,7 @@ def client_set_password(
     client_id: int,
     password: Annotated[str, Form()],
 ):
-    """人の主体にパスワードを設定する（`ARKHE_ADMIN_LOGIN=password` の構成用）。"""
+    """Set a password on a person, for deployments with ARKHE_ADMIN_LOGIN=password."""
     c = _reachable_client(request, session, principal, client_id)
     ops.set_password(session, principal, client_pk=c.id, password=password)
     session.commit()

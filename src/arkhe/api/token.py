@@ -1,11 +1,12 @@
-"""トークン発行（`ARKHE_AUTH` に `oauth2` を含めたときだけ現れる）。
+"""The token endpoint, present only when ARKHE_AUTH includes oauth2.
 
-**arkhe が単体でトークンを配るための口。** Keycloak のような認可サーバを持たない
-組織でも、OAuth2 の作法で API を叩けるようにする。
+This is how arkhe issues tokens on its own, so that an organisation without an
+authorisation server such as Keycloak can still call the API the OAuth2 way.
 
-grant は **client_credentials だけ**。ARK の採番は組織のシステムからの M2M で、
-認可コードフローが解く「利用者が第三者アプリに代理を許可する」構図が無い。
-人のログインが要るなら `oidc` で外部に委譲する（`ARKHE_ADMIN_LOGIN` を見よ）。
+The only grant is client_credentials. Minting is machine to machine, from an
+organisation's own system, and nothing here involves a person letting a third-party
+application act for them. Where people have to sign in, that is delegated with oidc; see
+ARKHE_ADMIN_LOGIN.
 """
 
 from __future__ import annotations
@@ -26,16 +27,17 @@ from arkhe.domain import authz
 
 router = APIRouter(prefix="/oauth", tags=["oauth"])
 
-#: **仕様書にも「ここで取る」と書く。** これを依存に置いた口には `securitySchemes`
-#: の `oauth2` が載り、Swagger UI の Authorize からトークンを取れる。生成した
-#: クライアントも取得手順を持てる——エンドポイントの URL は README にしか無かった。
+#: This says in the document where a token comes from. Declaring it on a route puts
+#: oauth2 into securitySchemes, gives Swagger UI its Authorize button, and lets a
+#: generated client authenticate. The URL used to be in the README and nowhere else.
 #:
-#: **値は使わない**（`bearer_scheme` と同じで、載せるためだけの依存）。検証は
-#: `auth.deps` の 1 か所に集める。`auto_error=False` なのも同じ理由で、
-#: 公開情報の読取をここで 403 にしない。
+#: Its value is unused, as with bearer_scheme: it is declared to be documented.
+#: Verification happens in one place, auth.deps. auto_error=False for the same reason as
+#: there: a public read must not become a 403 here.
 #:
-#: scope の語彙は `authz.SCOPES`、その説明は管理画面と同じ語から起こす。
-#: **3 か所目を作らない**——増えると、登録できるのに説明の無い scope が生まれる。
+#: The vocabulary comes from authz.SCOPES and the wording from the same catalogue as the
+#: admin interface. There is no third copy; another one would mean a scope that can be
+#: registered with nothing explaining it.
 scheme = OAuth2(
     scheme_name="oauth2",
     description="Tokens arkhe issues itself (RFC 6749 §4.4 client_credentials).",
@@ -69,10 +71,10 @@ def token(
     client_secret: Annotated[str, Form()] = "",
     scope: Annotated[str, Form()] = "",
 ):
-    """RFC 6749 §4.4 の client_credentials。
+    """client_credentials, RFC 6749 4.4.
 
-    資格情報は **本文でも Basic 認証でも**受ける（§2.3.1 は Basic を推奨し、
-    本文も認めている。既存のクライアントライブラリはどちらも使う）。
+    Credentials are accepted in the body or by Basic authentication. 2.3.1 recommends
+    Basic and permits the body, and client libraries in the wild use both.
     """
     if "oauth2" not in cfg.auth:
         return JSONResponse(
@@ -82,7 +84,7 @@ def token(
             status_code=404,
         )
     if grant_type != "client_credentials":
-        # **他の grant は持たない。** 実装しないものを明示して返す。
+        # There is no other grant. What is not implemented is said plainly.
         return JSONResponse(
             {"error": "unsupported_grant_type",
              "error_description": errors.UNSUPPORTED_GRANT_TYPE.message,
@@ -105,8 +107,8 @@ def token(
         )
     except AuthError:
         session.commit()
-        # RFC 6749 §5.2: 資格情報が違うなら invalid_client。
-        # **理由は分けない**（存在するクライアント名を総当たりで探せてしまう）。
+        # RFC 6749 5.2: wrong credentials are invalid_client. The reason is not
+        # broken down, or client ids could be found by trying them.
         return JSONResponse(
             {"error": "invalid_client"},
             status_code=401,
@@ -116,7 +118,7 @@ def token(
         return JSONResponse(exc.detail, status_code=400)
 
     session.commit()
-    # §5.1: トークンの応答はキャッシュさせない。
+    # 5.1: a token response must not be cached.
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     return body
