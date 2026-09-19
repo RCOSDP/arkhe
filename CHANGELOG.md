@@ -9,6 +9,33 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- **The end-to-end suite went from 13 checks to 54** (`tests/e2e/`). Same shape as before
+  (PostgreSQL in docker, a minter and a resolver under `uvicorn`), **a much wider surface**:
+
+  | | what it watches |
+  | --- | --- |
+  | `test_shape` | the split of roles, `/healthz` and `/readyz`, `.well-known/ark`, the CLI and the API agreeing on the count |
+  | `test_resolution` | inherited qualifiers, label case, hyphens, `?info` and `??`, **a delegated NAAN going to its delegate and an unknown one to the global resolver**, the CSP on the public page |
+  | `test_lifecycle` | reserved → published → withdrawn → republished → deleted, update, bulk, an explicitly registered qualifier, hold, tombstone |
+  | `test_authz` | outside the scope, **no reach into another organisation**, a stopped principal, the daily quota, `client_credentials` |
+  | `test_admin_ui` | **signing in with a password and withdrawing, then republishing, from the form**; refusals that do not differ on whether the user exists |
+  | `test_hardening` | **`ARKHE_ALLOWED_HOSTS`**, a closed resolver (which resolves the unpublished) |
+  | `test_concurrency` | 32 simultaneous sends of one `request_id`, 32 simultaneous mints, simultaneous withdrawals |
+
+  **It was verified to bite.** Remove the `ARKHE_ALLOWED_HOSTS` middleware from
+  `create_app` and `test_許していない_Host_は断る` fails — **that setting was dead until
+  0.9.2** (declared, documented, read by nothing). The rest of the suite assembles the app
+  by hand, so **a missing middleware is invisible to it.**
+
+- **What did not reproduce is written down too.** Firing 32 resends of one `request_id`
+  from pre-opened sockets (1.3 ms of spread) does **not** open the `_commit_or_replay`
+  race — **the first commits before any other reaches `_replay`**, with four workers as
+  well. Reverting the fix does not fail the check, and the check says so, so that **nobody
+  reads it as the guard for that race**. A check that cannot fail is not counted as cover.
+
+
 ## [0.11.0] — 2026-09-19
 
 **The release that measured first, then ran what it had written down.**
