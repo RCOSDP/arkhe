@@ -86,6 +86,7 @@ alembic/       マイグレーション。**PostgreSQL で検証する**
 docs/          MkDocs。`page.md` が英語、`page.ja.md` が日本語
 compose/oidc/  Keycloak つきの体験環境。**見本であって手本ではない**
 scripts/       check.sh / deploy-docs.sh / release.sh（**CI の代わり**）、export_openapi.py、
+               seed_e2e.py（**通しの検査の台帳**。`tests/e2e/` が呼ぶので腐らない）、
                bench.py（**check.sh からは呼ばない**——機械とその日に左右される値は緑と赤で語れない）
 .github/       issue と PR のテンプレート、Dependabot。**ワークフローは持たない**
 AGENTS.md      これ。手順と罠

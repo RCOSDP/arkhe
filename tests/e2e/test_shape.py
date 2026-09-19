@@ -14,13 +14,13 @@ import json
 import httpx
 import pytest
 
-from tests.e2e.conftest import NAAN, SHOULDER, World
+from tests.e2e.conftest import World
 
 pytestmark = pytest.mark.e2e
 
 
-def test_採番できる(published):
-    assert published["ark"].startswith(f"ark:{NAAN}/{SHOULDER.lstrip('/')}")
+def test_採番できる(world: World, published):
+    assert published["ark"].startswith(f"ark:{world.naan}/{world.shoulder.lstrip('/')}")
     assert published["published_at"]
 
 
@@ -80,13 +80,11 @@ def test_well_known_は素で平文_JSON_は頼めば返る(world: World):
 
 def test_委譲した名前空間は_well_known_に出る(world: World):
     """**外形監視で見るべきものの一覧**でもある——消えればその名前空間が死ぬ。"""
-    from tests.e2e.conftest import DELEGATED_NAAN
-
     body = httpx.get(
         f"{world.resolver.url}/.well-known/ark",
         headers={"Accept": "application/json"}, timeout=30,
     ).json()
-    assert DELEGATED_NAAN in json.dumps(body, ensure_ascii=False)
+    assert world.delegated_naan in json.dumps(body, ensure_ascii=False)
 
 
 def test_台帳を数えられる(world: World, published):

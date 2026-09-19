@@ -33,11 +33,23 @@ side" appears, and before long nobody looks at the other side.
 uv run pytest -m e2e           # the end-to-end check on its own
 ```
 
-It is deselected from a plain `pytest` run because it takes about a minute: it starts
+It is deselected from a plain `pytest` run because it takes about 25 seconds: it starts
 PostgreSQL in docker, brings up **a minter and a resolver with `uvicorn`**, builds the
 ledger **through the CLI**, and drives the result over **plain HTTP**. The rest of the
 suite calls the app directly with `TestClient`, on SQLite, with authentication
 substituted — **what gets checked here is the assembled shape, not the parts.**
+
+The ledger is built by `scripts/seed_e2e.py`, and **the same thing serves for checking by
+hand**:
+
+```bash
+uv run python scripts/seed_e2e.py --migrate --arks 500
+```
+
+It creates the NAANs, organisations, principals and their keys and password, fills the
+ledger with **ARKs in mixed states** (published, reserved, held, tombstoned, qualified,
+withdrawn) and prints the credentials. **The suite calls it, so it cannot go stale on its
+own.**
 
 Two more, for publishing:
 

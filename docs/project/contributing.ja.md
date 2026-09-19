@@ -33,10 +33,20 @@ sync（`--frozen`）→ ruff → pytest → **使い捨ての PostgreSQL を立�
 uv run pytest -m e2e           # 通しの検査だけ
 ```
 
-素の `pytest` からは外してある——1 分ほどかかるからで、docker で PostgreSQL を立て、
+素の `pytest` からは外してある——25 秒ほどかかるからで、docker で PostgreSQL を立て、
 **minter と resolver を `uvicorn` で建て**、台帳を **CLI で組み**、**素の HTTP** で
 叩く。ほかの試験は `TestClient` で app を直に呼び、SQLite の上で、認証を差し替えて
 いる——**ここで見るのは部品ではなく、組み上がった形である。**
+
+台帳を組むのは `scripts/seed_e2e.py` で、**手で確かめるときも同じものが使える**:
+
+```bash
+uv run python scripts/seed_e2e.py --migrate --arks 500
+```
+
+NAAN・組織・主体と鍵・合言葉を作り、**状態の混ざった ARK**（公開・公開前・保留・
+墓碑・修飾子つき・取り下げ済み）を入れて、鍵を刷って見せる。**検査がこれを呼ぶので、
+この道具だけが古くなることはない。**
 
 出す側の 2 本:
 

@@ -9,17 +9,20 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
-### Fixed
-
-- **Three remaining `count(*)` calls are gone** (the minting quota, the check for part
-  references, the admin overview). **The counted column is named** — `count(*)` counts
-  rows, so an index alone cannot answer it, and it costs more as the ledger grows. When
-  `domain.stats` was fixed this way in 0.6.0, **these three were left behind.**
-
-  **A check now watches for it** (`test_数える列は必ず名指しする`). Fixing the three that
-  exist today is not enough; the next person writes `func.count()` again.
-
 ### Added
+
+- **A tool that builds the ledger for the end-to-end suite** (`scripts/seed_e2e.py`). It
+  creates the NAANs, organisations, principals with their keys and the admin password, and
+  `--arks N` fills the ledger with **ARKs in mixed states** (published, reserved, held,
+  tombstoned, qualified, withdrawn).
+
+  **`tests/e2e/` calls it.** Writing the same setup inside the suite would leave one of the
+  two stale — and **because the suite calls it, the tool cannot rot either**. Checking by
+  hand starts from the same ledger; the keys are printed as they are issued.
+
+  **The setup goes through the CLI** — a path operators do not use is not a check of
+  anything. **It can also top up a half-built ledger**, because a suite that fails stops
+  halfway and "the NAAN exists but no organisation does" is an ordinary state.
 
 - **The end-to-end suite went from 13 checks to 54** (`tests/e2e/`). Same shape as before
   (PostgreSQL in docker, a minter and a resolver under `uvicorn`), **a much wider surface**:
@@ -45,6 +48,15 @@ breaking in a system whose identifiers cannot be reissued.
   well. Reverting the fix does not fail the check, and the check says so, so that **nobody
   reads it as the guard for that race**. A check that cannot fail is not counted as cover.
 
+### Fixed
+
+- **Three remaining `count(*)` calls are gone** (the minting quota, the check for part
+  references, the admin overview). **The counted column is named** — `count(*)` counts
+  rows, so an index alone cannot answer it, and it costs more as the ledger grows. When
+  `domain.stats` was fixed this way in 0.6.0, **these three were left behind.**
+
+  **A check now watches for it** (`test_数える列は必ず名指しする`). Fixing the three that
+  exist today is not enough; the next person writes `func.count()` again.
 
 ## [0.11.0] — 2026-09-19
 

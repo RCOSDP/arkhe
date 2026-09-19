@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.e2e.conftest import NAAN, World
+from tests.e2e.conftest import World
 
 pytestmark = pytest.mark.e2e
 
@@ -84,7 +84,7 @@ def test_client_credentials_で取ったトークンで採番できる(world: Wo
     r = world.api("post", "/api/mint", key=token,
                   json={"url": "https://example.org/e2e/by-token"})
     assert r.status_code == 201, r.text
-    assert r.json()["ark"].startswith(f"ark:{NAAN}/")
+    assert r.json()["ark"].startswith(f"ark:{world.naan}/")
 
 
 def test_登録に無い_scope_を求めたら断る(world: World):

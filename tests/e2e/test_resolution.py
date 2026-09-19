@@ -9,14 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.e2e.conftest import (
-    DELEGATE,
-    DELEGATED_NAAN,
-    GLOBAL_RESOLVER,
-    NAAN,
-    UNKNOWN_NAAN,
-    World,
-)
+from tests.e2e.conftest import GLOBAL_RESOLVER, UNKNOWN_NAAN, World
 
 pytestmark = pytest.mark.e2e
 
@@ -38,7 +31,7 @@ def test_ark_のラベルは大文字でも通る(world: World, published):
 def test_名前の中のハイフンは無視される(world: World, published):
     """§2.5.2: ハイフンは**書き写しのための飾り**で、名前の一部ではない。"""
     name = published["ark"].split("/", 1)[1]
-    hyphenated = f"ark:{NAAN}/{name[:3]}-{name[3:]}"
+    hyphenated = f"ark:{world.naan}/{name[:3]}-{name[3:]}"
     r = world.resolve(hyphenated)
     assert r.status_code == 302
     assert r.headers["location"] == published["url"]
@@ -71,14 +64,14 @@ def test_公開ページで_script_を実行させない(world: World, published
 
 def test_知らない名前は404(world: World):
     """D3: **自分が権威を持つ NAAN の未知の名前は 404。**「無い」と言える。"""
-    assert world.resolve(f"ark:{NAAN}/e1zzzzzzzzz").status_code == 404
+    assert world.resolve(f"ark:{world.naan}/e1zzzzzzzzz").status_code == 404
 
 
 def test_委譲した_NAAN_は委譲先へ送る(world: World):
     """D2: 解決を委ねた NAAN は、**その先へ転送する**。台帳に行は無い。"""
-    r = world.resolve(f"ark:{DELEGATED_NAAN}/anything")
+    r = world.resolve(f"ark:{world.delegated_naan}/anything")
     assert r.status_code == 302
-    assert r.headers["location"].startswith(DELEGATE)
+    assert r.headers["location"].startswith(world.delegate)
 
 
 def test_知らない_NAAN_は全体リゾルバへ送る(world: World):

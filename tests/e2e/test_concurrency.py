@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 
 import pytest
 
-from tests.e2e.conftest import serve, stop
+from tests.e2e.conftest import TOKEN_SECRET, serve, stop
 
 pytestmark = pytest.mark.e2e
 
@@ -35,7 +35,7 @@ def racing(world, tmp_path_factory):
     logs = tmp_path_factory.mktemp("e2e-race")
     minter = serve(
         {**world.env, "ARKHE_AUTH": "apikey,oauth2",
-         "ARKHE_TOKEN_SECRET": "e2e-token-secret-0123456789abcdef"},
+         "ARKHE_TOKEN_SECRET": TOKEN_SECRET},
         logs / "racing.log", "racing minter", workers=WORKERS,
     )
     yield replace(world, minter=minter)

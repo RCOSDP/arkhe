@@ -10,7 +10,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from tests.e2e.conftest import ADMIN_PASSWORD, ADMIN_USER, World
+from tests.e2e.conftest import World
 
 pytestmark = pytest.mark.e2e
 
@@ -20,7 +20,8 @@ def signed_in(world: World) -> httpx.Client:
     """合言葉で入って、cookie を持ったままにする。"""
     client = httpx.Client(base_url=world.minter.url, follow_redirects=False, timeout=30)
     r = client.post("/admin/login",
-                    data={"username": ADMIN_USER, "password": ADMIN_PASSWORD})
+                    data={"username": world.admin["username"],
+                          "password": world.admin["password"]})
     assert r.status_code == 302, r.text
     assert client.cookies, "**cookie が発行されていない**"
     yield client
@@ -41,7 +42,7 @@ def _login(world: World, username: str, password: str) -> httpx.Response:
 
 
 def test_合言葉が違えば入れない(world: World):
-    r = _login(world, ADMIN_USER, "まちがい")
+    r = _login(world, world.admin["username"], "まちがい")
     assert r.status_code == 401
     assert not r.cookies, "**入れていないのに cookie が出ている**"
 
@@ -49,7 +50,7 @@ def test_合言葉が違えば入れない(world: World):
 def test_居ない利用者でも同じ断り方をする(world: World):
     """**理由を分けない。** 「その ID は無い」と分かると、利用者の一覧を
     総当たりで作れてしまう。**返る画面まで同じ**であることを見る。"""
-    wrong = _login(world, ADMIN_USER, "まちがい")
+    wrong = _login(world, world.admin["username"], "まちがい")
     missing = _login(world, "居ない人", "まちがい")
     assert missing.status_code == wrong.status_code == 401
     assert missing.text == wrong.text, "**断り方が分かれている**——ID の総当たりに使える"

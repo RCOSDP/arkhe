@@ -6,14 +6,17 @@
   minter       採番・管理画面・`/oauth/token`。**認証は本物**（apikey と client_credentials）
   resolver     解決だけ。**書き込み側はどこにも繋がらない先に向けてある**（`_BOGUS`）
 
-台帳は **CLI で組む**。API や ORM で組むと、運用で実際に使う道の検査にならない
-——**この形で ARKHE-1303（組織に結び付けない主体は採番できない）を踏んだ。**
+台帳は **`scripts/seed_e2e.py` が組む**（あちらは CLI を通す——運用で実際に使う道で
+なければ検査にならない。**この形で ARKHE-1303 を踏んだ**）。**検査の側に同じ組み立てを
+書かない**: 手で確かめるときも同じ台帳から始めたいし、2 か所に書けば片方が古くなる。
 
-**主体は用途ごとに分ける。** 1 つを使い回すと、止める検査が後続を巻き添えにする。
+どんな台帳かは `scripts/seed_e2e.py` の冒頭にある。ここで押さえておくのは 1 点
+——**主体は用途ごとに分けてある**。1 つを使い回すと、止める検査が後続を巻き添えにする。
 """
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import socket
@@ -28,27 +31,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 PG_NAME = "arkhe-e2e-pg"
 
-NAAN = "99999"
-#: 採番を外に委ねた NAAN。**解決はここへ送る**（D2）。
-DELEGATED_NAAN = "88888"
-DELEGATE = "https://delegate.example.org"
-#: 誰も知らない NAAN。**全体リゾルバへ送る**（D2）。
+#: 種として入れる ARK の本数。**状態が混ざっていることに意味がある**ので、
+#: 数は少なくてよい（種蒔きの側が 10 本に 1 本を公開前にする）。
+SEEDED_ARKS = 12
+
+#: **誰も知らない NAAN。** 種を蒔く側は知らないので、こちらに置く。
 UNKNOWN_NAAN = "12345"
 GLOBAL_RESOLVER = "https://n2t.example.net"
 
-SHOULDER = "/e1"
-OTHER_SHOULDER = "/b2"
-QUOTA_SHOULDER = "/q1"
-
-ADMIN_USER = "e2e-person"
-ADMIN_PASSWORD = "correct horse battery staple"
 SESSION_SECRET = "e2e-session-secret-0123456789abcdef"
 TOKEN_SECRET = "e2e-token-secret-0123456789abcdef"
-
-ALL_SCOPES = (
-    "ark:mint ark:update ark:read ark:tombstone ark:hold ark:import "
-    "ark:delete ark:unpublish ark:purge"
-)
 
 #: resolver の**書き込み側を、どこにも繋がらない先に向ける**。読みは本物に向ける。
 #: resolver が解決や `/readyz` で書き込み側を触ったら、**検査が落ちる**——実際
@@ -124,8 +116,32 @@ class World:
     minter: Server
     resolver: Server
     env: dict[str, str]
-    keys: dict[str, str] = field(default_factory=dict)
-    managers: dict[str, str] = field(default_factory=dict)
+    #: `scripts/seed_e2e.py --json` が返したもの。**台帳の形はあちらが決める。**
+    seed: dict = field(default_factory=dict)
+
+    @property
+    def keys(self) -> dict[str, str]:
+        return self.seed["keys"]
+
+    @property
+    def naan(self) -> str:
+        return self.seed["naan"]
+
+    @property
+    def shoulder(self) -> str:
+        return self.seed["shoulders"]["a"]
+
+    @property
+    def delegated_naan(self) -> str:
+        return self.seed["delegated_naan"]
+
+    @property
+    def delegate(self) -> str:
+        return self.seed["delegate"]
+
+    @property
+    def admin(self) -> dict[str, str]:
+        return self.seed["admin"]
 
     def api(self, method: str, path: str, *, key: str | None = "ops", **kw) -> httpx.Response:
         """minter を叩く。`key=None` なら**資格情報を付けない**。"""
@@ -145,55 +161,21 @@ class World:
         return run_cli(["uv", "run", "arkhe", *args], self.env)
 
 
-def _bootstrap(env: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
-    """台帳を **CLI で**組む。返すのは (鍵, 組織 id)。"""
-    run_cli(["uv", "run", "alembic", "upgrade", "head"], env)
-    cli = lambda *a: run_cli(["uv", "run", "arkhe", *a], env)  # noqa: E731
+def _bootstrap(env: dict[str, str]) -> dict:
+    """台帳を **`scripts/seed_e2e.py` で**組む。
 
-    cli("naan", "add", NAAN, "E2E RA", "--policy", "NP | NR, OP, CC | 2026")
-    # **採番も解決も外に委ねた NAAN。** 台帳に行は無く、解決はここへ送る。
-    cli("naan", "add", DELEGATED_NAAN, "E2E 委譲先", "--no-authoritative",
-        "--redirect", DELEGATE)
+    **検査の側に同じ組み立てを書かない。** 手で確かめるときも同じ台帳から始めたいし、
+    2 か所に書けば片方が必ず古くなる。**呼んでいるから、あちらも腐らない。**
 
-    cli("onboard", NAAN, "E2E org", "-s", SHOULDER)
-    cli("onboard", NAAN, "E2E 別組織", "-s", OTHER_SHOULDER)
-    cli("onboard", NAAN, "E2E 上限組織", "-s", QUOTA_SHOULDER, "--quota", "1")
-
-    # id は `manager list` の 1 列目——CLI が「ids are input to other commands」と
-    # 言っているとおりに読む。
-    listing = cli("manager", "list")
-    managers = {}
-    for line in listing.splitlines():
-        for tag, name in (("a", "E2E org"), ("b", "E2E 別組織"), ("q", "E2E 上限組織")):
-            if line.rstrip().endswith(name):
-                managers[tag] = line.split()[0]
-    assert set(managers) == {"a", "b", "q"}, listing
-
-    keys = {}
-    # **用途ごとに分ける。** `stop` は途中で止める、`quota` は 1 日 1 本しか採れない。
-    for tag, client_id, manager, scopes in (
-        ("ops", "e2e-ops", "a", ALL_SCOPES),
-        ("mint_only", "e2e-mint-only", "a", "ark:mint"),
-        ("other", "e2e-other", "b", "ark:mint ark:update ark:read"),
-        ("quota", "e2e-quota", "q", "ark:mint"),
-        ("stop", "e2e-stop", "a", "ark:mint ark:read"),
-    ):
-        cli("client", "add", client_id, NAAN, "--manager", managers[manager],
-            "--scopes", scopes)
-        # **鍵は刷った 1 度しか出ない。** 1 行目がその平文。
-        keys[tag] = cli("client", "key", client_id).splitlines()[0]
-        assert keys[tag].startswith("arkhe_"), keys[tag]
-
-    # client_credentials 用。**平文は `arkhes_` で始まる別の種類。**
-    cli("client", "add", "e2e-secret", NAAN, "--manager", managers["a"],
-        "--scopes", "ark:mint ark:read")
-    keys["secret"] = cli("client", "key", "e2e-secret", "--kind", "client_secret").splitlines()[0]
-
-    # 管理画面に入る人。**人は資格情報を持たない**——合言葉だけ。
-    cli("client", "add", ADMIN_USER, NAAN, "--person", "--authority", "naan",
-        "--scopes", ALL_SCOPES)
-    cli("client", "passwd", ADMIN_USER, "--password", ADMIN_PASSWORD)
-    return keys, managers
+    `--arks` で状態の混ざった ARK も入れる——公開・公開前・保留・墓碑・修飾子つき・
+    取り下げ済み。**全部が公開済みの台帳では、画面も統計も確かめられない。**
+    """
+    out = run_cli(
+        ["uv", "run", "python", "scripts/seed_e2e.py", "--migrate", "--json",
+         "--arks", str(SEEDED_ARKS)],
+        env,
+    )
+    return json.loads(out.splitlines()[-1])
 
 
 @pytest.fixture(scope="session")
@@ -226,7 +208,7 @@ def world(tmp_path_factory) -> World:
 
         url = f"postgresql+psycopg://arkhe:arkhe@127.0.0.1:{port}/arkhe"
         env = {"ARKHE_DATABASE_URL": url, "ARKHE_AUTH": "apikey", "ARKHE_RESOLVER": "0"}
-        keys, managers = _bootstrap(env)
+        seed = _bootstrap(env)
 
         minter = serve(
             {**env,
@@ -248,7 +230,7 @@ def world(tmp_path_factory) -> World:
             logs / "resolver.log", "resolver",
         )
         servers.append(resolver)
-        yield World(minter, resolver, env, keys, managers)
+        yield World(minter, resolver, env, seed)
     finally:
         for s in servers:
             stop(s)
