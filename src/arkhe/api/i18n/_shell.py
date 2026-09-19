@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 JA: dict[str, str] = {
-    # 骨格
+    # The frame
     "app.subtitle": "ARK 識別子基盤",
     "nav.ledger": "台帳",
     "nav.actions": "操作",
@@ -20,7 +20,7 @@ JA: dict[str, str] = {
     "nav.stats": "統計",
     "nav.holds": "保留中の転送",
     "lang.label": "言語",
-    # 状態
+    # States
     "st.active": "採番可",
     "st.reserved": "予約",
     "st.delegated": "委譲",
@@ -28,9 +28,10 @@ JA: dict[str, str] = {
     "au.system": "システム管理者",
     "au.naan": "NAAN 管理者",
     "au.manager": "組織管理者",
-    # ログイン
-    # 台帳を組む操作
-    # 用語を括弧で添えるときの括弧。**言語で形が違う**（全角と半角＋前スペース）。
+    # Signing in
+    # Building the ledger
+    # The brackets used when a term is added beside plain wording. Their shape
+    # differs by language.
     "f.paren_open": "（",
     "f.paren_close": "）",
     "f.save": "保存",
@@ -40,9 +41,10 @@ JA: dict[str, str] = {
     "f.optional": "任意",
     "f.readonly_here": "この画面からは変えられません",
 
-    # 断りの文面。**画面の言語で返す。** 直書きしていたので、英語で使っていても
-    # 日本語が返っていた——画面が切り替わるのに断りだけ切り替わらないのは、
-    # いちばん困るところで母語から落ちるということ。
+    # The wording of refusals, returned in the language of the screen. They used to
+    # be written inline, so an English session still got Japanese. A screen that
+    # switches languages while its refusals do not drops the reader out of their own
+    # language exactly when they are stuck.
     "e.naan_system_only": "NAAN の登録はシステム管理者のみ",
     "e.minter_system_only": "採番の案内先の変更はシステム管理者のみ",
     "e.manager_naan_wide": "組織のオンボードは NAAN 単位以上の権限が要る",

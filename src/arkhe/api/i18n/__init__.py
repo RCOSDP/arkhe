@@ -1,30 +1,32 @@
-"""画面の国際化。日本語と英語を既定で持つ。
+"""Localisation of the screens, with Japanese and English built in.
 
-管理画面と、解決結果を人に見せる `?info` の両方がここから語を採る。
+Both the admin interface and ?info, the page that shows a resolution to a person, take
+their wording from here.
 
-gettext ではなく辞書にしてある。理由は 2 つ:
-  - `.mo` のコンパイルがイメージのビルド手順に増える（この規模では割に合わない）
-  - 言語を足すのがモジュール 1 つで済み、翻訳の抜けが起動時に分かる
+These are dictionaries rather than gettext, for two reasons: compiling .mo files would
+add a step to the image build, which is not worth it at this size; and adding a language
+takes one module, with any gap failing at startup.
 
-将来 translator に渡す必要が出たら、この辞書から `.po` を吐けばよい。
+If they ever have to go to a translator, .po files can be produced from these
+dictionaries.
 
-言語の決め方は **`?lang=` → cookie → `Accept-Language` → 既定(ja)** の順。
-明示の選択を記憶するので、切り替えたら以降のページでも保たれる。
+The language is chosen as ?lang=, then the cookie, then Accept-Language, then the
+default. An explicit choice is remembered, so it holds on later pages.
 
-## 画面ごとに分けてある
+Split by screen
 
-1 ファイルに 288 件を並べると、直したい語を探すのに全体を読むことになる。
-**分ける単位は言語ではなく画面。** 日本語と英語を別ファイルにすると対が
-離れてしまい、片方だけ足したことが差分に出ない——起動時の検査に頼るのは
-最後の砦であって、最初の砦ではない。
+Several hundred entries in one file would mean reading all of it to find the wording to
+change. The split is by screen rather than by language: separate files per language
+would put a pair far apart, and adding to only one would not show in the diff. The check
+at startup is the last line of defence, not the first.
 
-  _shell    どの画面にも出る語（見出し・状態・フォームの共通語）
-  _ledger   組織と名前空間。委譲の構造と、それを組む操作
-  _clients  主体の登録、資格情報、入り方と scope
-  _arks     採番と、発行した ARK
-  _signin   ログイン画面と、戻すための案内
-  _audit    監査ログ
-  _info     `?info`——**管理画面ではなく公開の口**。解決結果を人に見せるページ
+  _shell    wording on every screen: headings, states, common form labels
+  _ledger   organisations and namespaces: the structure of delegation and building it
+  _clients  registering principals, credentials, how they get in, and scopes
+  _arks     minting, and the minted ARKs
+  _signin   the login page and the pages that lead back to it
+  _audit    the audit log
+  _info     ?info, which is public rather than part of the admin interface
 """
 
 from __future__ import annotations
@@ -37,8 +39,8 @@ DEFAULT = "ja"
 LANGS = {"ja": "日本語", "en": "English"}
 COOKIE = "arkhe_lang"
 
-#: 画面ごとの語彙を 1 つに束ねる。**同じキーが 2 か所にあれば起動時に落とす**
-#: ——後から入れたほうが黙って勝つと、直したはずの語が直らない。
+#: Merge the per-screen catalogues into one. A key in two places fails at startup: if
+#: the later one won silently, wording someone had fixed would stay unfixed.
 _PARTS = (_shell, _ledger, _clients, _arks, _signin, _audit, _info, _stats)
 
 
@@ -47,8 +49,8 @@ def _merge(attr: str) -> dict[str, str]:
     for part in _PARTS:
         cat = getattr(part, attr)
         clash = out.keys() & cat.keys()
-        if clash:  # pragma: no cover - 開発時にしか起きない
-            raise RuntimeError(f"{part.__name__} でキーが重複: {sorted(clash)}")
+        if clash:  # pragma: no cover - only happens during development
+            raise RuntimeError(f"duplicate keys in {part.__name__}: {sorted(clash)}")
         out |= cat
     return out
 
@@ -58,14 +60,15 @@ EN: dict[str, str] = _merge("EN")
 
 CATALOGS = {"ja": JA, "en": EN}
 
-#: 翻訳の抜けは**起動時に落とす**。片方だけ足して気づかない、を防ぐ。
+#: A missing translation fails at startup, so adding to one language only is noticed.
 _missing = {lang: sorted(set(JA) - set(cat)) for lang, cat in CATALOGS.items()}
-if any(_missing.values()):  # pragma: no cover - 開発時にしか起きない
-    raise RuntimeError(f"翻訳の抜け: { {k: v for k, v in _missing.items() if v} }")
+if any(_missing.values()):  # pragma: no cover - only happens during development
+    raise RuntimeError(f"missing translations: { {k: v for k, v in _missing.items() if v} }")
 
 
 def pick(request: Request) -> str:
-    """`?lang=` → cookie → `Accept-Language` → 既定 の順で決める。"""
+    """Choose a language: ?lang=, then the cookie, then Accept-Language, then the
+    default."""
     q = request.query_params.get("lang")
     if q in CATALOGS:
         return q

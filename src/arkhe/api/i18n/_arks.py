@@ -1,13 +1,13 @@
-"""ARKの文言。採番と、発行した ARK の一覧・詳細。
+"""Wording for ARKs: minting, and the list and detail pages.
 
-**訳の対を同じファイルに置く。** 片方だけ足したのが差分で見える
-——起動時の検査に頼るのは最後の砦であって、最初の砦ではない。
+Both languages live in one file, so that adding to only one shows up in the diff. The
+check at startup is the last line of defence, not the first.
 """
 
 from __future__ import annotations
 
 JA: dict[str, str] = {
-    # 採番
+    # Minting
     "mint.title": "ARK を採番",
     "mint.lede": "通常の採番は組織のシステムが API から行います。この画面は"
                  "<b>手作業で 1 本必要なとき</b>——移行時の個別対応、物理オブジェクト、"
@@ -39,7 +39,7 @@ JA: dict[str, str] = {
                          "公開してください。",
     "mint.reserved_note": "これは<b>公開前</b>の ARK です。まだ解決しません——"
                           "対象を公開するときに、あわせて公開してください。",
-    # 発行した ARK
+    # Minted ARKs
     "nav.arks": "発行した ARK",
     "ak.title": "発行した ARK",
     "ak.lede": "この画面に出るのは<b>あなたに届く範囲のもの</b>だけです"
@@ -106,7 +106,7 @@ JA: dict[str, str] = {
     "ak.shoulder": "名前空間",
     "ak.updated": "最終更新",
     "ak.resolve": "解決してみる",
-    # 公開と取り下げ
+    # Publishing and withdrawing
     "ak.state": "状態",
     "ak.state_all": "公開前も公開済みも",
     "ak.public": "公開済み",
@@ -146,7 +146,7 @@ JA: dict[str, str] = {
     "ak.withdraw_reason_hint": "消えた行について残る唯一の説明になります"
                                "（公開の口には出ません）。",
     "ak.withdrawn_flash": "を取り下げました",
-    # 破棄（届く範囲の内側だけ）
+    # Purging, within the caller's reach
     "ak.purge": "破棄する",
     "ak.purge_title": "公開した ARK の破棄",
     "ak.purge_lede": "<b>これは約束を破る操作です。</b>公開した ARK は解決し続ける"

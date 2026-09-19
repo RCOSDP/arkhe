@@ -7,12 +7,13 @@
 from __future__ import annotations
 
 JA: dict[str, str] = {
-    # 委譲の構造
+    # The structure of delegation
     "ov.title": "組織管理",
-    # **一般の読み手を想定する。** ここは台帳を初めて見る人が最初に開く画面なので、
-    # **用語は捨てず、括弧で残す。** 平易な言い方を先に置いて用語を添えると、
-    # 初めての人はそのまま読め、用語を知っている人は対応が取れる。
-    # 用語を消すと、この画面と仕様書・CLI・API の語が食い違ってしまう。
+    # Written for a general reader. This is the first screen someone new to the
+    # ledger opens, so the terms are kept, in brackets. Plain wording first with the
+    # term beside it reads straight through for a newcomer and still lines up for
+    # someone who knows the term. Dropping the terms would leave this screen using
+    # different words from the specification, the CLI and the API.
     "ov.lede": "<b>ARK を発行できる組織と、それぞれに渡した名前空間（shoulder）の"
                "一覧です。</b>ARK には、発行を取りまとめる中央の登録機関がありません。"
                "組織番号（NAAN）を預かった側が、その下に名前空間を渡し（委譲）、"
@@ -54,8 +55,8 @@ JA: dict[str, str] = {
     "naan.f.redirect": "委譲先",
     "manager.new.title": "組織を追加",
     "manager.edit.title": "組織の設定",
-    # **追加のときは、まず何が起きるかを述べる。** ここを開く人は、この操作が
-    # 名前空間の受け渡しでもあることをまだ知らない。
+    # When adding one, say what happens first. Whoever opens this does not yet know
+    # that the operation also hands over a namespace.
     "manager.new.lede": "組織を追加すると、<b>同時に名前空間（shoulder）を 1 つ渡します</b>。"
                         "この 2 つは分けられません——名前空間を持たない組織は識別子を"
                         "発行できないので、置いても意味がないからです。"
@@ -119,7 +120,7 @@ JA: dict[str, str] = {
     "shoulder.f.redirect": "解決の委譲先",
     "shoulder.f.redirect_hint": "<code>${blade}</code> が名前に置き換わります。",
     "shoulder.f.note": "運用の記録",
-    # 組織に何を任せ、何を制限するか
+    # What an organisation is trusted with, and what is limited
     "np.title": "この名前空間の決まり",
     "np.lede": "<b>配下の組織すべてにかかる既定です。</b>組織ごとの設定は"
                "ここから<b>狭めるだけ</b>で、広げられません。"

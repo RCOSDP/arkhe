@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 JA: dict[str, str] = {
-    # ログインに戻す画面
+    # The page that leads back to signing in
     "notice.retry": "ログインし直す",
     "notice.expired.h": "ログインの往復が失効しました",
     "notice.expired.m": "認証サーバへ送り出してから戻ってくるまでに時間が空きすぎました。"
@@ -30,7 +30,8 @@ JA: dict[str, str] = {
     "login.failed": "ID かパスワードが違います",
     "login.logout": "ログアウト",
 
-    # ログインの断り。**画面の言語で出す。**（`auth/password.py` が鍵で投げる）
+    # Refusals from signing in, in the language of the screen. auth/password.py
+    # raises with a catalogue key.
     "e.bad_credentials": "ID かパスワードが違います",
     "e.locked": "試行が続いたため一時的に受け付けません。しばらく待ってください",
     "e.password_expired": "パスワードの有効期限が切れています",

@@ -7,9 +7,9 @@
 from __future__ import annotations
 
 JA: dict[str, str] = {
-    # 認可サーバから来たが登録の無い主体
-    # **綴りが 1 文字違うだけで 401 になる。** その 1 文字を弾いた時点で
-    # 持っているので、打ち直させずに登録へ渡す。
+    # Principals that arrived from the authorisation server without a registration.
+    # One wrong character means 401, and at the moment of refusal that exact string is
+    # in hand, so it is carried into the form instead of being typed again.
     "uk.title": "認可サーバから来た、登録の無い主体",
     "uk.lede": "<b>トークンは正しいのに、この台帳に登録がなかった主体です。</b>"
                "登録が無ければ通りません——認可サーバで認証できることと、"
@@ -26,7 +26,7 @@ JA: dict[str, str] = {
                "推測もしないためです——この一覧が見えるのは NAAN 以上に届く"
                "主体だけにしてあります。",
     "uk.gone": "登録が済んだものは、この一覧から自動的に消えます。",
-    # 主体
+    # Principals
     "cl.title": "利用者と鍵",
     "cl.lede": "<b>ARK を発行できる利用者と、その鍵の一覧です。</b>"
                "利用者は 2 種類——組織のシステム（API キーで名乗る）と、"
@@ -47,7 +47,7 @@ JA: dict[str, str] = {
     "cl.disabled": "無効",
     "cl.all_naans": "全 NAAN",
     "cl.empty": "利用者がまだ登録されていません。",
-    # 利用者の登録と鍵の発行
+    # Registering a principal and issuing a credential
     "cu.new.title": "利用者を登録",
     "cu.edit.title": "利用者",
     "cu.new.lede": "<b>まず何者かを決めます。</b>鍵はここでは出しません——"
@@ -72,7 +72,7 @@ JA: dict[str, str] = {
     "cu.person": "人",
     "cu.reach": "届く範囲",
     "cu.scopes": "できること",
-    # 鍵
+    # Credentials
     "cu.keys": "鍵",
     "cu.key.issue": "鍵を発行",
     "cu.key.kind": "種別",
@@ -91,11 +91,11 @@ JA: dict[str, str] = {
     "cu.key.revoked": "失効",
     "cu.key.revoke_note": "<b>行は消しません。</b>いつ失効したかを残します。"
                           "入れ替えるときは、新しい鍵を配ってから古い方を失効させてください。",
-    # パスワード
+    # Passwords
     "cu.pw.title": "パスワード",
     "cu.pw.lede": "<code>ARKHE_ADMIN_LOGIN=password</code> の構成でだけ使います。12 文字以上。",
     "cu.pw.set": "設定する",
-    # 認可サーバに寄せた構成での説明
+    # Wording for a deployment that uses an authorisation server
     "cu.key.oidc": "<b>この構成では、トークンは認可サーバが出します。</b>"
                    "arkhe が持っているのは、上の識別子と<b>どこまで届くか</b>の"
                    "対応だけです。秘密は認可サーバ側で作り、そこで失効させます——"
@@ -108,7 +108,7 @@ JA: dict[str, str] = {
                         "<code>ARKHE_ADMIN_LOGIN</code> ではなく "
                         "<code>ARKHE_AUTH</code> に <code>apikey</code> か "
                         "<code>oauth2</code> を入れると、ここから発行できるようになります。",
-    # 認可サーバに寄せた構成での「登録」の意味
+    # What registering means in such a deployment
     "cu.new.lede_oidc": "<b>ここでの登録が、認可サーバの主体と arkhe の到達範囲を"
                         "結びつけます。</b>鍵はこの構成では出しません——秘密は認可"
                         "サーバが持っています。<b>登録が無ければ、正しいトークンを"
@@ -134,7 +134,7 @@ JA: dict[str, str] = {
                        "もう一方も選べるようにするには <code>ARKHE_AUTH</code> に "
                        "<code>{missing}</code> を足してください——足さずに出した鍵は"
                        "どこからも通りません。",
-    # 入り方（どの経路で入ってくるか）
+    # How a principal gets in
     "cl.search": "検索",
     "cl.search_ph": "識別子・ラベル（repo / jc2-web-api）",
     "au.search": "検索",
@@ -150,7 +150,7 @@ JA: dict[str, str] = {
     "en.none_hint": "<b>まだ入れません。</b>鍵を発行するか、"
                     "<code>ARKHE_AUTH</code> に <code>oidc</code> を足して"
                     "認可サーバに任せてください。",
-    # scope（できること）
+    # Scopes: what a principal may do
     "sc.ark:mint": "採番する",
     "sc.ark:mint.d": "新しい ARK を発行する。<b>取り消せない。</b>",
     "sc.ark:update": "転送先を変える",

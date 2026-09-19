@@ -29,7 +29,7 @@ JA: dict[str, str] = {
     "in.na_policy": "名前空間の方針",
     "in.fine": "ARK では、永続性は識別子の性質ではなく<b>提供者が続けるサービス</b>です。"
                "ここに書かれているのは、その提供者が自ら宣言した約束の水準です。",
-    # 永続性の水準。**`CommitmentLevel` の値と 1 対 1。**
+    # Commitment levels, one for each value of CommitmentLevel.
     "ci.not-guaranteed": "保証なし（検証・開発系）",
     "ci.permanent-dynamic": "恒久・内容は更新されうる",
     "ci.permanent-stable": "恒久・内容は実質不変",

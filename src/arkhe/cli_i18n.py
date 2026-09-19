@@ -1,19 +1,19 @@
-"""コマンドの国際化。日本語と英語を既定で持つ。
+"""Localisation of the command line, with Japanese and English built in.
 
-管理画面（`api/i18n/`）と同じく **gettext ではなく辞書**にしてある。理由も同じで、
-`.mo` のコンパイルをビルド手順に増やさずに済み、翻訳の抜けが起動時に分かる。
+As in api/i18n, these are dictionaries rather than gettext, for the same reasons: no .mo
+compilation in the build, and a gap fails at startup.
 
-## 画面と違うのは、言語を決める時点
+What differs from the screens is when the language is chosen
 
-画面は要求ごとに決められるが、**Typer は import の時点で help を組み立てる**
-（デコレータが評価されるのがそこだから）。だから言語は環境から一度だけ決める。
-`arkhe --lang en` のような実行時の切り替えは作れない——作っても、その値が読まれる
-頃には help 文字列が確定している。
+A screen can choose per request, but Typer builds its help at import time, where the
+decorators are evaluated, so the language is taken from the environment once. There can
+be no arkhe --lang en: by the time such a value was read, the help strings would already
+be fixed.
 
-順序は **`ARKHE_LANG` → `LC_ALL` → `LC_MESSAGES` → `LANG` → 既定(ja)**。
-POSIX の変数を見るのは、この種の道具に期待される作法だから。`C` と `POSIX` は
-「言語の情報が無い」の意味なので飛ばす。既定を `ja` にしてあるのは管理画面と
-揃えるため（`api/i18n/` の `DEFAULT`）。
+The order is ARKHE_LANG, then LC_ALL, LC_MESSAGES and LANG, then the default. Reading
+the POSIX variables is what a tool like this is expected to do. C and POSIX mean that no
+language was stated, so they are skipped. The default is ja, matching the screens (see
+DEFAULT in api/i18n).
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ ENV = "ARKHE_LANG"
 
 
 def pick(environ: dict[str, str] | None = None) -> str:
-    """環境から言語を決める。**引数を取るのはテストのため。**"""
+    """Choose a language from the environment. The argument exists for the tests."""
     env = os.environ if environ is None else environ
     explicit = env.get(ENV, "").strip().lower()
     if explicit in LANGS:
@@ -34,7 +34,7 @@ def pick(environ: dict[str, str] | None = None) -> str:
     for var in ("LC_ALL", "LC_MESSAGES", "LANG"):
         raw = env.get(var, "").strip()
         if not raw or raw.upper() in {"C", "POSIX", "C.UTF-8"}:
-            # 「言語の情報が無い」であって「英語」ではない。次の変数を見る。
+            # This means no language was stated, not English. Try the next variable.
             continue
         tag = raw.split(".")[0].split("_")[0].lower()
         if tag in LANGS:
@@ -43,13 +43,13 @@ def pick(environ: dict[str, str] | None = None) -> str:
 
 
 JA: dict[str, str] = {
-    # 骨格
+    # The frame
     "app.help": "arkhe — ARK 識別子基盤の運用コマンド",
     "naan.help": "NAAN",
     "shoulder.help": "shoulder",
     "manager.help": "組織。迎え入れは onboard、以後の手当てはここ",
     "client.help": "主体と資格情報",
-    # 共通の語
+    # Common wording
     "opt.manager_id": "組織 id",
     "opt.note": "運用の記録",
     "opt.only_naan": "この NAAN のものだけ",
@@ -488,12 +488,13 @@ EN: dict[str, str] = {
 
 CATALOGS = {"ja": JA, "en": EN}
 
-#: 翻訳の抜けは**起動時に落とす**（`api/i18n/` と同じ）。片方だけ足して気づかない、を防ぐ。
+#: A missing translation fails at startup, as in api/i18n, so adding to one language
+#: only is noticed.
 _missing = {lang: sorted(set(JA) - set(cat)) for lang, cat in CATALOGS.items()}
-if any(_missing.values()):  # pragma: no cover - 開発時にしか起きない
-    raise RuntimeError(f"翻訳の抜け: { {k: v for k, v in _missing.items() if v} }")
+if any(_missing.values()):  # pragma: no cover - only happens during development
+    raise RuntimeError(f"missing translations: { {k: v for k, v in _missing.items() if v} }")
 
-#: **import の時点で確定する。** Typer が help を組み立てるのがここだから。
+#: Fixed at import time, because that is when Typer builds its help.
 LANG = pick()
 
 

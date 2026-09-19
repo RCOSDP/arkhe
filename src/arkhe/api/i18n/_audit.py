@@ -1,13 +1,13 @@
-"""監査ログの文言。誰が何をしたかの記録。
+"""Wording for the audit log: the record of who did what.
 
-**訳の対を同じファイルに置く。** 片方だけ足したのが差分で見える
-——起動時の検査に頼るのは最後の砦であって、最初の砦ではない。
+Both languages live in one file, so that adding to only one shows up in the diff. The
+check at startup is the last line of defence, not the first.
 """
 
 from __future__ import annotations
 
 JA: dict[str, str] = {
-    # 監査
+    # Audit
     "au.title": "監査ログ",
     "au.lede": "<b>NAAN 以上に届く操作は全件記録します。</b>"
                "届く範囲が広いほど、後から誰が何をしたかを辿れる必要が高いためです。",
