@@ -1,6 +1,7 @@
-"""解決。**resolver プロセスの唯一の口。** 採番も管理もここには無い。
+"""Resolution: the only route a resolver process has. There is no minting and no admin
+interface here.
 
-決定は `domain.resolution.resolve()` が行い、ここは HTTP の形に写すだけ。
+domain.resolution.resolve() makes the decisions; this module shapes them into HTTP.
 """
 
 from __future__ import annotations
@@ -26,27 +27,28 @@ from arkhe.domain.resolution import Inflection, Outcome, is_followable, resolve
 router = APIRouter(tags=["resolve"])
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
-#: ERC が定める「値が無いときの符号」。**空欄で済ませてはいけない。**
-#: draft-kunze-erc-01: 値を得られなかったときは、その理由を示す標準値を置くこと。
-#: 空にすると「まだ入れていない」と「そもそも無い」が区別できなくなる。我々は
-#: どちらか判別できないので一律 `(:unav)` を使う——`(:unas)`（未割当）や
-#: `(:none)`（元から無い）を騙るより正直。
+#: The ERC code for a missing value. A blank is not acceptable: draft-kunze-erc-01
+#: says to put a standard value that gives the reason. Left blank, "not filled in yet"
+#: and "there is none" cannot be told apart. We cannot tell which it is, so (:unav) is
+#: used throughout, which is more honest than claiming (:unas) or (:none).
 UNAVAILABLE = "(:unav)"
 
 DC_FIELDS = ("type", "identifier", "format", "relation", "source")
 
-#: 生の URI を渡すヘッダ名（`?` の判定に使う）。前段で立てているときだけ設定する。
+#: The header carrying the raw URI, used to detect a bare ?. Set it only when
+#: something in front provides one.
 RAW_URI_HEADER = os.environ.get("ARKHE_RAW_URI_HEADER", "")
 
-#: 永続性の水準の表示名は `api/i18n` の `ci.*` から採る。**画面の言語で出す**
-#: ——`?info` は公開の口で、ARK は世界中から引かれる。
+#: The display name of a commitment level comes from ci.* in api/i18n, in the reader's
+#: language: ?info is public, and ARKs are followed from anywhere.
 
 
 
-# --------------------------------------------------------------- 仕様書の文面
+# ------------------------------------------------ The wording in the document
 #
-# **公開する OpenAPI は英語**——読者はこの台帳の外にいる。docstring は日本語の
-# まま残す（実装を読む人のためのもの）。FastAPI は `description` を優先する。
+# The published document and the docstrings have different readers: one is for whoever
+# calls the API, the other for whoever reads the implementation. FastAPI prefers
+# description over a docstring.
 
 E_WELL_KNOWN = """\
 **Tells a client that this host has an ARK resolver** (draft-kunze-ark-42 §5.6).
@@ -99,26 +101,27 @@ Every answer this resolver gives about an identifier carries the THUMP headers o
 
 
 def _inflection(request: Request) -> Inflection:
-    """inflection を判定する。
+    """Decide which inflection was asked for.
 
-    | 記法 | クエリ文字列 | 返すもの |
+    | notation | query string | what is returned |
     | --- | --- | --- |
-    | `?` | `""`（**生の URI で見分ける**） | ERC/ANVL の簡潔な記述 |
-    | `??` | `"?"` | 永続性宣言（C4） |
-    | `?info` | `"info"` | 人間可読の記述（**仕様上の必須**） |
-    | `?json` | `"json"` | 機械可読 |
+    | `?` | `""`, told apart by the raw URI | a brief description in ERC/ANVL |
+    | `??` | `"?"` | the persistence statement (C4) |
+    | `?info` | `"info"` | a description for people, which the specification requires |
+    | `?json` | `"json"` | machine readable |
 
-    **裸の `?` はクエリ文字列だけでは見分けられない。** `…/name?` も `…/name` も
-    `query_string` は空になる。これは ASGI でも同じで、生の URI を渡すサーバ
-    （gunicorn の `RAW_URI` 相当）が無い限り復元できない。**仕様上 `?` は
-    optional** なので、見分けられない環境では inflection 無しとして扱う——
-    そこで壊れるものは無い（`??` は `query_string` が `"?"` になるので効く）。
+    A bare ? cannot be told from nothing by the query string alone: .../name? and
+    .../name both leave it empty. ASGI is no different, and it cannot be recovered
+    without a server that passes the raw URI, as gunicorn does with RAW_URI. The
+    specification makes ? optional, so where it cannot be told apart it is treated as no
+    inflection, and nothing breaks: ?? still works, because its query string is "?".
 
-    生 URI を渡すサーバの下では `ARKHE_RAW_URI_HEADER` にヘッダ名を設定すると
-    `?` も拾える（例: nginx で `X-Raw-URI` を立てる）。
+    Behind a server that does pass the raw URI, setting ARKHE_RAW_URI_HEADER to the
+    header name picks ? up as well; with nginx, for instance, by setting X-Raw-URI.
     """
-    # **先頭の要素だけを見る。** `?info` はクエリ文字列そのものが inflection なので、
-    # 言語の切り替えは `?info&lang=en` と書くしかない——`&` の手前で切って読む。
+    # Only the first element counts. For ?info the query string itself is the
+    # inflection, so switching language has to be written ?info&lang=en, and this reads
+    # up to the &.
     qs = request.url.query.split("&", 1)[0]
     if qs == "?":
         return Inflection.POLICY
@@ -134,47 +137,50 @@ def _inflection(request: Request) -> Inflection:
 
 
 def _raw_ark_path(request: Request) -> str:
-    """**%-エンコードを保ったままの経路**を返す。
+    """Return the path with its percent encoding intact.
 
-    A4。`request.url.path`（＝ ASGI の `scope["path"]`）は**サーバが先に復号して
-    いる**ので、`%2F` が `/` に、`%7D` が `}` になって届く。これを鵜呑みにすると:
+    A4. request.url.path, which is ASGI's scope["path"], has already been decoded by the
+    server, so %2F arrives as / and %7D as }. Taking that at face value means:
 
-    - `x54%2Fc2`（区切りではない `/` を隠した 1 つの名前）が `x54/c2`
-      （`x54` に含まれる `c2`）に化ける——**別の識別子**になり、祖先 passthrough が
-      別レコードの行き先を継ぐ
-    - `}` は §3.1 の文字集合に無い。`%7D` は `}` を運ぶ唯一の合法な形なので、
-      復号した文字列は**そもそも ARK として成立しない**
-    - 他所へ取り次ぐときは、**書き換わった ARK を転送先に渡す**ことになる
+    - x54%2Fc2, one name hiding a slash that is not a separator, becomes x54/c2, meaning
+      c2 inside x54. That is a different identifier, and inheritance then follows another
+      row's target
+    - } is not in the character set of 3.1. %7D is the only legal way to carry it, so the
+      decoded string is not a valid ARK at all
+    - when handing on to another resolver, the rewritten ARK is what gets passed along
 
-    仕様（draft-kunze-ark-42 §3.2）は "no %-encoded character should ever appear in
-    an ARK in its decoded form" と、これを名指しで禁じている。
+    draft-kunze-ark-42, 3.2 forbids exactly this: "no %-encoded character should ever
+    appear in an ARK in its decoded form".
 
-    ASGI は生の経路を `scope["raw_path"]` に残しているので、そちらを優先する。
-    **前段が潰す構成では戻せない**——nginx なら `proxy_pass` にパスを書かない
-    （書くと再エンコードされる）、Apache なら `AllowEncodedSlashes NoDecode` が要る。
+    ASGI keeps the raw path in scope["raw_path"], which is preferred here. Where
+    something in front flattens it, it cannot be recovered: with nginx, do not write a
+    path in proxy_pass, which re-encodes it; with Apache, AllowEncodedSlashes NoDecode
+    is needed.
     """
     raw = request.scope.get("raw_path")
     if not raw:
         return request.url.path
-    # サーバによっては query も入る。`?` は名前の中では `%3F` なので、素の `?` で切れる。
+    # Some servers include the query. Inside a name a ? is written %3F, so cutting at
+    # a bare ? is safe.
     raw = raw.split(b"?", 1)[0]
     try:
         return raw.decode("utf-8")
     except UnicodeDecodeError:
-        # 生バイトが UTF-8 でない。**捏造せず**、復号済みの経路に落とす。
+        # The raw bytes are not UTF-8. Nothing is invented; it falls back to the
+        # decoded path.
         return request.url.path
 
 
 def _anvl(pairs) -> str:
-    """ERC/ANVL 形式。**ARK が伝統的に `?` / `??` で返してきた形。**
+    """The ERC/ANVL form, which is what ARKs have traditionally returned for ? and ??.
 
-    実測: `n2t.net/ark:/13030/m5s75pdz??` は `text/plain` で `erc.who:` /
-    `erc.what:` / `erc.when:` を返す。JSON ではない。
+    Measured: n2t.net/ark:/13030/m5s75pdz?? answers text/plain with erc.who, erc.what
+    and erc.when. It is not JSON.
 
-    **空文字を渡した要素は `(:unav)` で必ず出し、`None` を渡した要素は行ごと省く。**
-    符号を義務づけられているのは **kernel の 4 要素（who / what / when / where）だけ**
-    で、任意ラベルまで `(:unav)` で埋めると、別のところで分かっている事実を
-    「不明」と偽ることになる。
+    An element passed as an empty string is always printed as (:unav); one passed as
+    None is left out entirely. Only the four kernel elements, who, what, when and where,
+    require a code, and filling optional labels with (:unav) would claim ignorance about
+    something that is known elsewhere.
     """
     lines = ["erc:"]
     for key, value in pairs:
@@ -185,42 +191,43 @@ def _anvl(pairs) -> str:
     return "\n".join(lines) + "\n"
 
 
-#: C7: THUMP の版。仕様（draft-kunze-ark-42 §5.2）の応答例が `THUMP-Status: 0.6
-#: 200 OK` を示しており、[THUMP] は draft-kunze-thump-03 を指している。
+#: C7: the THUMP version. The example response in draft-kunze-ark-42, 5.2 shows
+#: THUMP-Status: 0.6 200 OK, and [THUMP] there refers to draft-kunze-thump-03.
 THUMP_VERSION = "0.6"
 
 
 def _thump(status: int, requested: str = "") -> dict[str, str]:
-    """THUMP の応答ヘッダ（§5.2）。
+    """The THUMP response headers (5.2).
 
-    C7。仕様の応答例:
+    C7. The example in the specification:
 
         S: THUMP-Status: 0.6 200 OK
         S: Link: </ark:67531/metadc107835> rel="describes";
 
-    `Link` の役目は仕様に書いてある——**inflection を知らない受信者に対して、
-    この応答が「修飾の付いていない ARK」を記述したものだと示す**。これが無いと、
-    `?info` の応答は「その URL 自体の表現」と読まれる。
+    The specification explains what Link is for: telling a recipient that does not know
+    about inflections that this response describes the unqualified ARK. Without it, the
+    answer to ?info reads as a representation of that URL itself.
 
-    **`rel` の書き方は仕様の例に従わない。** 例は `<…> rel="describes";` だが、
-    RFC 8288 のリンク値は `<URI>; rel="…"` で、区切りのセミコロンが前に要る
-    ——例のほうが誤りで、そのまま出すと標準の Link パーサが読めない。
-    **通じないものを出すより、通じる形で同じことを言う。**
+    The rel is not written as the example shows. The example has <...> rel="describes";
+    while a link value in RFC 8288 is <URI>; rel="...", with the semicolon before it.
+    The example is wrong, and emitting it would leave a standard Link parser unable to
+    read it. Saying the same thing in a form that is understood is better than saying it
+    in one that is not.
     """
     headers = {"THUMP-Status": f"{THUMP_VERSION} {status} {HTTPStatus(status).phrase}"}
     if requested:
-        # 相対参照。解決の経路そのものなので、ホストを書かずに済む（NMA は
+        # A relative reference. It is the resolution path itself, so no host is needed (the NMA is
         # identity inert。§2.1）。
         headers["Link"] = f'</{compact_ark(requested)}>; rel="describes"'
     return headers
 
 
 def _negotiate(accept: str, offers: tuple[str, ...]) -> str:
-    """`Accept` から出す媒体を 1 つ選ぶ。**同点なら `offers` の先頭**。
+    """Choose one media type from Accept. A tie goes to the first of offers.
 
-    q 値と限定の強さ（`text/plain` > `text/*` > `*/*`）を見る。ヘッダが無い、
-    空、`*/*` のいずれでも先頭の申し出に落ちる——**仕様が定める表現を既定に
-    したいので、呼ぶ側はそれを先頭に置くこと**。
+    It looks at the q value and at how specific the type is (text/plain over text/* over
+    */*). With no header, an empty one, or */*, it falls back to the first offer, so the
+    caller puts the representation the specification defines first.
     """
     best = dict.fromkeys(offers, 0.0)
     for part in accept.split(","):
@@ -240,35 +247,39 @@ def _negotiate(accept: str, offers: tuple[str, ...]) -> str:
             kind = offer.split("/")[0]
             if media in (offer, f"{kind}/*", "*/*"):
                 best[offer] = max(best[offer], q)
-    # `max` は同点なら先に見たものを残すので、`offers` の順がそのまま優先順になる。
+    # max keeps the first of equals, so the order of offers is the order of
+    # preference.
     chosen = max(offers, key=lambda o: best[o])
     return chosen if best[chosen] > 0 else offers[0]
 
 
-#: `/.well-known/ark` で出せる表現。**text/plain が先頭**——仕様が定めるのは
-#: そちらで、`Accept` を送らない相手（curl、発見クライアント）はこれを受け取る。
+#: What /.well-known/ark can return, with text/plain first: that is what the
+#: specification defines, and it is what a caller sending no Accept, such as curl or a
+#: discovery client, receives.
 WELL_KNOWN_OFFERS = ("text/plain", "application/json")
 
-#: `?info` で出せる表現。**html が先頭**——`?info` は人に見せる口で、`Accept` を
-#: 送らない相手（ブラウザ、curl）はこれを受け取る。
+#: What ?info can return, with html first: ?info is for people, and it is what a
+#: browser or curl receives when no Accept is sent.
 #:
-#: 仕様（draft-kunze-ark-42 §5.2）: "THUMP is designed so that the response
+#: draft-kunze-ark-42, 5.2: "THUMP is designed so that the response
 #: (**indicated by the returned HTTP content type**) is normally displayed, whether the
 #: output is structured for machine processing (text/plain) or formatted for human
-#: consumption (text/html)." ——**媒体で出し分けるのは仕様の想定どおり**である。
+#: consumption (text/html)." Varying by media type is what the specification
+#: intends.
 #:
-#: 中身はどれも同じ「記述＋永続性宣言」（§5「`?info` は記述と permanence を 1 回で
-#: 返す」）。`?json` はこの json を名指しする別名として残す。
+#: The content is the same each time, a description with the persistence statement
+#: (5: ?info returns the description and the permanence together). ?json remains as
+#: another way of naming that JSON.
 INFO_OFFERS = ("text/html", "application/json", "text/plain")
 
 
 def _resolver_path(request: Request) -> str:
-    """このホスト上での ARK リゾルバのルートパス。**必ず `/` で終える。**
+    """The root path of the ARK resolver on this host. It always ends in a slash.
 
-    ARK ルートは app の直下（`/ark:…`）に生やしてあるので、前段でパスを
-    切っていなければ `/`。プレフィクス付きでマウントするなら ASGI の
-    `root_path`（uvicorn なら `--root-path`）を設定すること——**その値を
-    そのまま答える**ので、設定し忘れると案内先が実際の口とずれる。
+    The ARK routes sit directly under the app (/ark:...), so with nothing stripping a
+    prefix in front this is /. When mounted under a prefix, set the ASGI root_path
+    (--root-path with uvicorn): that value is what this answers, so forgetting it points
+    callers at the wrong place.
     """
     root = "/" + (request.scope.get("root_path") or "").strip("/")
     return root if root.endswith("/") else root + "/"
@@ -285,33 +296,35 @@ def _erc(session, res, t) -> dict:
         "who": ark.who,
         "what": ark.title,
         "when": ark.when,
-        # C6: **`where` は ARK であって、転送先ではない。**
+        # C6: where is the ARK, not the target.
         #
-        # 仕様（draft-kunze-ark-42 §5.1.2）: "A description must at a minimum answer
+        # draft-kunze-ark-42, 5.1.2: "A description must at a minimum answer
         # the who, what, when, and where questions (**"where" being the long-term
         # identifier as opposed to a transient redirect target**)".
         #
-        # 以前はここに転送先の URL を入れ、ARK は URL が空のときの代替にしていた
-        # ——**逆である**。記述は「この識別子は何を指すか」を答えるものなので、
-        # 行き先が変わっても変わらない値が入っていなければ、記述として引用できない。
+        # This used to hold the target URL, with the ARK as a fallback when there was
+        # none, which is the wrong way round. A description answers what this identifier
+        # names, so unless the value survives a change of target it cannot be cited.
         #
-        # ホスト付きの mapping ARK にはしない。前段の書き換え次第で**内部ホスト名を
-        # 公開の記述に焼き付ける**ことになるし、compact ARK だけで長期識別子として
-        # 完結している（NMA は identity inert。§2.1）。
+        # Not a mapping ARK with a host. Depending on what rewrites requests in front,
+        # that could burn an internal host name into a public description, and the
+        # compact ARK is a complete long-term identifier on its own (the NMA is identity
+        # inert, 2.1).
         "where": compact_ark(res.requested),
-        # 転送先は捨てずに別の要素で出す。**kernel の外**に置くのは、これが
-        # 「今どこにあるか」であって「何であるか」ではないため。
+        # The target is not thrown away; it goes in its own element, outside the
+        # kernel, because it says where something is now rather than what it is.
         "redirect": ark.url + res.suffix if ark.url else "",
-        # **リンクにしてよいかは、値と一緒に運ぶ。** テンプレートで判定させると、
-        # 別の画面を足したときに付け忘れる。
-        # リンクにしてよいか。**登録は妨げないが、開かせるかは別。**
+        # Whether it may be linked travels with the value. Deciding that in a template
+        # would be forgotten the next time a page is added. Registering it is not
+        # prevented; whether a browser is sent there is another question.
         "redirect_safe": is_followable(ark.url),
         **{f: getattr(ark, f) for f in DC_FIELDS},
         "commitment_level": manager.commitment_level if manager else "",
-        # `permanent-dynamic` だけ見せられても意味が伝わらないので、人が読む名も渡す。
-        # **画面の言語で出す**（`ci.*`）。未知の値なら翻訳器がそのまま返す。
+        # permanent-dynamic on its own means nothing to a reader, so a readable name
+        # goes with it, in the reader's language (ci.*). An unknown value is returned
+        # unchanged by the translator.
         "commitment_label": t(f"ci.{manager.commitment_level}") if manager else "",
-        "na_policy": naan.na_policy if naan else "",  # NAA ポリシー（NAAN 単位）
+        "na_policy": naan.na_policy if naan else "",  # the NAA policy, per NAAN
         "inherited_from": compact_ark(res.inherited_from) if res.inherited_from else "",
         "suffix": res.suffix,
         "created_at": ark.created_at.isoformat() if ark.created_at else "",
@@ -336,29 +349,30 @@ _WELL_KNOWN_RESPONSES = {
 
 @router.get("/.well-known/ark", responses=_WELL_KNOWN_RESPONSES, description=E_WELL_KNOWN)
 def well_known_ark(request: Request, session: Db, cfg: Config):
-    """**このホストに ARK リゾルバがあることを知らせる口**（draft-kunze-ark-42 §5.6）。
+    """The endpoint that says an ARK resolver lives on this host
+    (draft-kunze-ark-42, 5.6).
 
-    42 は `ark` を Well-Known URIs レジストリ（RFC 8615）に登録し、このパスの
-    応答を「**リゾルバのルートパスを含む plain text**、末尾は `/`」と定めた。
-    **`Accept` を送らない相手にはそれを返す**——`*/*` で JSON を返すと、
-    仕様どおりに読む発見クライアントからは「ARK リゾルバではない」に見える。
+    Version 42 registers ark in the Well-Known URIs registry (RFC 8615) and defines the
+    answer as plain text containing the resolver's root path, ending in a slash. A caller
+    that sends no Accept gets exactly that: answering */* with JSON makes a discovery
+    client that follows the specification conclude this is not an ARK resolver.
 
-    `Accept: application/json` のときだけ、arkhe 独自の在庫を返す:
-    **採番を外に委ねている NAAN があるとき、クライアントがどこへ行けばよいか**
-    （`Naan.minter` / `Shoulder.minter`）、**解決を委ねた先**（`redirect`）、
-    止まっている名前空間。
+    Only with Accept: application/json does it return arkhe's own inventory: where a
+    client should go when minting for a NAAN is delegated (Naan.minter and
+    Shoulder.minter), where resolution is delegated to (redirect), and which namespaces
+    are held.
 
-    **この一覧は、外形監視で見るべきものの一覧でもある。** `minter` が消えれば
-    その名前空間の採番が止まる——困るが、生き延びられる。**`redirect` が消えれば、
-    その下の ARK が 1 本残らず引けなくなる**。しかも arkhe はそれを知らない
-    ——転送を返すだけで、**行き先を取りに行っていない**からである。
+    That list is also the list of things to watch from outside. If a minter disappears,
+    minting for that namespace stops, which is bad but survivable. If a redirect
+    disappears, every ARK under it stops resolving, and arkhe does not know: it returns
+    a redirect without ever fetching the target.
 
-    同じ URL が 2 つの表現を持つので、どちらにも `Vary: Accept` を付ける。
+    One URL with two representations, so both carry Vary: Accept.
     """
     vary = {"Vary": "Accept"}
     if _negotiate(request.headers.get("accept", ""), WELL_KNOWN_OFFERS) == "text/plain":
-        # **末尾に改行を置く。** 仕様の言う "plain text file" であり、応答例も
-        # 1 行として書かれている。読む側は前後の空白を落として使うこと。
+        # It ends with a newline: the specification calls it a plain text file and
+        # writes the example as one line. Readers should strip surrounding whitespace.
         return PlainTextResponse(
             _resolver_path(request) + "\n",
             media_type="text/plain; charset=utf-8",
@@ -369,7 +383,8 @@ def well_known_ark(request: Request, session: Db, cfg: Config):
     return JSONResponse(
         headers=vary,
         content={
-            # 仕様が定める値も JSON に入れておく。**片方だけ見て済ませられる。**
+            # The value the specification defines is in the JSON too, so one of the
+            # two is enough.
             "resolver_path": _resolver_path(request),
             "resolver": "arkhe",
             "global_resolver": cfg.global_resolver,
@@ -383,16 +398,17 @@ def well_known_ark(request: Request, session: Db, cfg: Config):
                 }
                 for n in naans
             ],
-            # **`minter` は「叩ける口」だけ。** 人向けの案内は `about` に分ける
-            # ——同じ鍵に混ぜると、読む側が API とページを見分けられない。
+            # minter holds only an endpoint a machine can call; guidance for people
+            # goes in about. Under one key, a reader could not tell them apart.
             #
-            # **`redirect`（解決の委譲先）も出す。** 壊れたときの重さが逆だから
-            # ——`minter` が死んでも止まるのは採番だけだが、**`redirect` が死ねば
-            # その shoulder の ARK が 1 本残らず引けなくなる**。外形監視で真っ先に
-            # 見るべきものが、載っていなければ見られない。
+            # redirect, where resolution is delegated, is listed too, because the
+            # consequences are the other way round: if a minter dies only minting
+            # stops, while if a redirect dies every ARK in that shoulder stops
+            # resolving. What monitoring should watch first cannot be watched if it is
+            # not listed.
             #
-            # **`status` も出す。** 委譲した shoulder の `redirect` と、まだ自分で
-            # 採っている shoulder の `redirect` では、止まったときの意味が違う。
+            # status is included: a redirect on a delegated shoulder and one on a
+            # shoulder we still mint from mean different things when they fail.
             "delegated_shoulders": [
                 {
                     "shoulder": f"{s.naan}{s.shoulder}",
@@ -402,16 +418,18 @@ def well_known_ark(request: Request, session: Db, cfg: Config):
                     "redirect": s.redirect or None,
                 }
                 for s in session.scalars(
-                    # **委譲したものと、解決を委ねたものの両方。** `redirect` は
-                    # `status` と独立に設定できるので、`delegated` だけを見ると
-                    # **自分で採りながら解決だけ外へ出している shoulder が落ちる。**
+                    # Both the delegated ones and those whose resolution is
+                    # delegated. redirect can be set independently of status, so
+                    # listing only the delegated ones would drop a shoulder that still
+                    # mints here while resolving elsewhere.
                     select(Shoulder)
                     .where((Shoulder.status == "delegated") | (Shoulder.redirect != ""))
                     .order_by(Shoulder.naan, Shoulder.shoulder)
                 ).all()
             ],
-            # **転送を止めている名前空間を公開する。** 分散構成では、上位が止めた
-            # ことを下位が（その逆も）機械的に確かめられる必要がある。
+            # Namespaces whose redirection is held are published. In a federated
+            # setup, each level has to be able to check mechanically what the other
+            # has stopped.
             "held": [
                 {
                     "scope": scope,
@@ -433,13 +451,14 @@ def well_known_ark(request: Request, session: Db, cfg: Config):
 
 _TEXT = {"text/plain": {"schema": {"type": "string"}}}
 
-#: **転送だけの口ではない。** 宣言しておかないと、生成クライアントは 200 の JSON だけを
-#: 想定して組まれ、転送も記述も 404 も異常として扱う。
+#: This route does more than redirect. Without saying so, a generated client is built
+#: expecting only a 200 with JSON and treats a redirect, a description and a 404 as
+#: errors.
 #:
-#: **媒体も 1 つではない。** 同じ 200 でも、`?json` と NAAN だけの ARK は JSON、
-#: `?` と `??` と保留は ANVL（text/plain）、`?info` は人が読む HTML を返す。
-#: 3xx が 4 通りあるのは、shoulder の委譲テンプレートが先頭に符号を書けるため
-#: （`_STATUS_PREFIX`。N2T に合わせて 301 / 302 / 303 / 307 だけ受ける）。
+#: There is more than one media type, too. Within the same 200, ?json and a NAAN-only
+#: ARK return JSON, ? and ?? and a hold return ANVL (text/plain), and ?info returns HTML
+#: for people. There are four 3xx codes because a shoulder's delegation template can
+#: name one (_STATUS_PREFIX; following n2t, only 301, 302, 303 and 307 are accepted).
 _RESOLVE_RESPONSES = {
     200: {
         "description": (
@@ -464,33 +483,37 @@ _RESOLVE_RESPONSES = {
 @router.get("/ark:/{rest:path}", responses=_RESOLVE_RESPONSES, description=E_RESOLVE)
 @router.get("/ark:{rest:path}", responses=_RESOLVE_RESPONSES, description=E_RESOLVE)
 def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
-    """**ARK を解決する。認証は要らない。** `ark:/99999/x9tn1qkq2g7` と `ark:99999/x9tn1qkq2g7` の
-    どちらの表記でも受ける。
+    """Resolve an ARK. No credentials are needed, and both ark:/99999/x9tn1qkq2g7 and
+    ark:99999/x9tn1qkq2g7 are accepted.
 
-    返し方は 1 つではない——**識別子を殺さないことを、どの経路でも優先する**:
+    There is more than one way to answer, and every path puts keeping the identifier
+    alive first:
 
-      302  行き先へ転送する（通常。shoulder の委譲テンプレートが先頭に符号を
-           書いていれば **301 / 303 / 307** にもなる）
-      200  記述を返す。`?info` / `??` を付けたとき、行き先がブラウザで開けない
-           とき（`urn:isbn:…` など）、行き先が空のとき、墓碑のとき、保留中のとき
-      404  この台帳に無く、取次先も無いとき。**`?info` でも 404 は 404**
-           ——知らない名前について述べられることは無い
-      400  ARK として読めない文字列
+      302  redirect to the target (the usual case; 301, 303 or 307 when a shoulder's
+           delegation template names one)
+      200  return a description: with ?info or ??, when the target is something a
+           browser cannot open such as urn:isbn:..., when there is no target, for a
+           tombstone, and while a hold is in force
+      404  not in this ledger and nothing to hand it on to. ?info does not change that:
+           there is nothing to say about a name we do not know
+      400  a string that cannot be read as an ARK
 
-    **保留（hold）でも 404 にしない。** その識別子は存在していて、我々が今は転送
-    しないだけなので、理由と期限を添えて 200 で返す。**墓碑（tombstone）も同じ**
-    ——「失われた」と述べることと、「無かった」と言うことは違う。
+    A hold is not a 404. The identifier exists and we are simply not redirecting right
+    now, so it answers 200 with the reason and the expiry. A tombstone is the same:
+    saying something is gone is not the same as saying it never existed.
 
-    NAAN だけの ARK（`ark:12345`）には、その NAAN について答えられることを返す。
-    知らない NAAN は上位のリゾルバ（`ARKHE_GLOBAL_RESOLVER`、既定 n2t.net）へ取り次ぐ。
+    An ARK that is only a NAAN (ark:12345) is answered with what can be said about that
+    NAAN. One we do not know is handed on to the resolver above (ARKHE_GLOBAL_RESOLVER,
+    n2t.net by default).
     """
-    # A4: **復号済みの経路を使わない。** `%2F` が `/` に化けると別の識別子になる。
+    # A4: the decoded path is not used. %2F turning into / makes a different
+    # identifier.
     raw = _raw_ark_path(request)
     try:
         parsed = parse_ark(raw.lstrip("/"), allow_naan_only=True)  # D4
     except ArkParseError as exc:
-        # **符号を先頭に置く。** 解決の口は text/plain を返す（人も読む）ので、
-        # 機械に判定させるなら行頭が読みやすい。
+        # The code goes first. Resolution answers in text/plain, which people read
+        # too, and the start of the line is the easiest place for a machine to find.
         return PlainTextResponse(
             f"{errors.ARK_UNREADABLE.number} {errors.ARK_UNREADABLE.say(reason=exc)}\n",
             status_code=400,
@@ -498,7 +521,7 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
         )
 
     if not parsed.name:
-        # D4: NAAN だけの ARK。**その NAAN について答えられることを返す。**
+        # D4: an ARK that is only a NAAN. Answer with what can be said about it.
         naan = session.get(Naan, parsed.naan)
         if naan is None:
             return RedirectResponse(
@@ -515,26 +538,28 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
         parsed.name,
         _inflection(request),
         global_resolver=cfg.global_resolver,
-        # **閉域のリゾルバは公開前の ARK も解決する**（`ARKHE_RESOLVE_UNPUBLISHED`）。
-        # 絞りを repository と決定ロジックの両方に渡すのは、どちらか一方だけを
-        # 見ていると、差し替えた repo で判断が変わるため。
+        # A closed resolver serves reserved ARKs too (ARKHE_RESOLVE_UNPUBLISHED). The
+        # flag goes to both the repository and the decision logic: with it in only one,
+        # substituting the repository would change the decision.
         unpublished=cfg.resolve_unpublished,
     )
 
-    # **ブラウザを転送してよい先だけ転送する。** `urn:isbn:…` のような正当な
-    # 行き先は開けないので、転送せず記述を返す——これは制限ではなく、`?info` が
-    # 最初から担っている役目。`FORWARD`（他所のリゾルバへの取次）は常に http。
+    # A browser is only sent somewhere it can open. A valid target such as
+    # urn:isbn:... is described instead of redirected to, which is not a restriction but
+    # what ?info has always been for. FORWARD, handing on to another resolver, is always
+    # http.
     if res.outcome is Outcome.REDIRECT and not is_followable(res.location):
         res = replace(res, outcome=Outcome.DESCRIBE, status=200)
 
     if res.outcome in (Outcome.REDIRECT, Outcome.FORWARD):
-        # C2: **`??` を転送先 URL に付けて渡さない。** 転送はあくまで対象への
-        # 誘導で、inflection はこのリゾルバへの問い合わせだから。
+        # C2: ?? is not appended to the target URL. A redirect leads to the object,
+        # while an inflection is a question asked of this resolver.
         return RedirectResponse(res.location, status_code=res.status)
 
     if res.outcome is Outcome.HELD:
-        # **404 にしない。** その名前空間は存在していて、我々が今は転送しないだけ。
-        # 行が無いので記述は出せないが、**理由と期限は出す**——黙って止まるより良い。
+        # Not a 404: the namespace exists and we are simply not forwarding right now.
+        # With no row there is no description, but the reason and the expiry are given,
+        # which beats stopping silently.
         return PlainTextResponse(
             _anvl(
                 [
@@ -556,8 +581,8 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
             headers=_thump(404, res.requested),
         )
 
-    # 記述に添える語は**画面の言語**で。`?info` は公開の口なので、`Accept-Language`
-    # と `?info&lang=` を見る（管理画面と同じ順序）。
+    # The wording around a description follows the reader's language. ?info is public,
+    # so Accept-Language and ?info&lang= are read, in the same order as the screens.
     lang = i18n.pick(request)
     erc = _erc(session, res, i18n.translator(lang))
     kernel = [
@@ -568,8 +593,9 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
     ]
 
     if res.inflection is Inflection.BRIEF:
-        # `?` — ERC の 4 要素だけを簡潔に返す。**対象に到達できなくても、これは
-        # 答えられる**（FAIR A2）。転送先は kernel の外に、あるときだけ添える。
+        # ? returns the four ERC elements briefly. It can be answered even when the
+        # object cannot be reached (FAIR A2). The target goes outside the kernel, and
+        # only when there is one.
         return PlainTextResponse(
             _anvl([*kernel, ("redirect", erc["redirect"] or None)]),
             media_type="text/plain; charset=utf-8",
@@ -582,29 +608,31 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
             content={
                 **erc,
                 "commitment": res.ark.commitment,
-                # **止まっていることは隠さない。** 機械にも分かる形で出す。
+                # A hold is not hidden, and it is given in a form a machine reads.
                 "hold": res.hold.as_dict() if res.hold else None,
             },
         )
 
     def _as_anvl():
-        # `??` の中身。**`?info` の text/plain もこれ**——どちらも「記述＋永続性宣言」
-        # で、違うのは媒体だけである（§5）。
+        # What ?? contains. The text/plain of ?info is the same thing: a description
+        # with the persistence statement, differing only in media type (5).
         return PlainTextResponse(
             _anvl(
                 [
                     *kernel,
                     ("redirect", erc["redirect"] or None),
                     ("about", erc["ark"]),
-                    # NAA ポリシー（NAAN 単位・名前空間に対して負う約束）
+                    # The NAA policy: what is promised about the namespace, per NAAN
                     ("policy", erc["na_policy"]),
-                    # NMA コミットメント（対象単位・この対象をどう保つか）。
-                    # **空なら行ごと省く。** `(:unav)` を置くと「我々の約束が不明」に
-                    # 読めるが、約束は下の commitment-level で分かっている。
+                    # The NMA commitment: what is promised about this object. When it
+                    # is empty the line is left out; (:unav) would read as "our promise
+                    # is unknown", while the promise is stated below in
+                    # commitment-level.
                     ("commitment", res.ark.commitment or None),
                     ("commitment-level", erc["commitment_level"]),
-                    # 保留は**約束の一部として**出す。`??` は「この識別子をどう
-                    # 保つか」を答える口なので、今転送していない事実はここに要る。
+                    # A hold belongs to the promise. ?? answers how this identifier
+                    # is kept, so the fact that it is not being redirected right now
+                    # belongs here.
                     ("hold", res.hold.reason if res.hold else None),
                     ("hold-until", res.hold.until.isoformat() if res.hold else None),
                     ("inherited-from", erc["inherited_from"] or None),
@@ -627,20 +655,23 @@ def resolve_ark(rest: str, request: Request, session: Db, cfg: Config):
         )
 
     if res.inflection is Inflection.JSON:
-        # `?json` は `?info` の JSON を**名指しする別名**。仕様の語彙ではないので
-        # 消しはしないが、`?info` に `Accept: application/json` を送っても同じものが返る。
+        # ?json is another way of naming the JSON that ?info returns. It is not part
+        # of the specification's vocabulary, so it is kept, and sending ?info with
+        # Accept: application/json returns the same thing.
         return _as_json()
 
     if res.inflection is Inflection.POLICY:
-        # `??` は **`?` の内容 ＋ 永続性宣言**（C4）。
+        # ?? is what ? returns plus the persistence statement (C4).
         #   draft-kunze-ark-42        … "'?' (brief metadata) and '??' (more metadata)"
         #   arks.org/about/ark-features … "a maintenance commitment from the current server"
-        # **「more」の中身が commitment**、と読めば両立する。形式も ANVL に揃える。
+        # Reading "more" as the commitment reconciles the two, and the form follows
+        # ANVL as well.
         return _as_anvl()
 
-    # `?info` と、inflection の無い記述（墓碑・保留・行き先なし）。**媒体で出し分ける**
-    # ——仕様が「応答の形は content type が示す」と書いているとおりで、中身はどれも
-    # 同じ「記述＋永続性宣言」である。`Accept` を送らない相手には人が読む html。
+    # ?info, and a description with no inflection (a tombstone, a hold, no target).
+    # It varies by media type, as the specification says the shape of the response is
+    # indicated by the content type, while the content is the same description with the
+    # persistence statement. A caller that sends no Accept gets the HTML for people.
     chosen = _negotiate(request.headers.get("accept", ""), INFO_OFFERS)
     if chosen == "application/json":
         return _as_json()
