@@ -1,4 +1,4 @@
-"""HTTP の口。**認証だけ差し替え、認可は本物を通す。**"""
+"""The HTTP endpoints. Authentication is substituted; authorisation is real."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from arkhe.auth.deps import Db
 from arkhe.db.models import Authority
 
 
-def test_採番して解決できる(world, principal_of, as_principal):
+def test_an_ark_can_be_minted_and_resolved(world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/api/mint", json={"url": "https://example.org/1", "title": "A"})
     assert r.status_code == 201
@@ -16,9 +16,9 @@ def test_採番して解決できる(world, principal_of, as_principal):
     assert c.get(f"/ark:/{key}").headers["location"] == "https://example.org/1"
 
 
-def test_F4_同じrequest_idの再送は採番しない(world, principal_of, as_principal):
-    """**応答が失われただけのときに番号を増やさない。** ARK は再割当てしないので、
-    死んだ番号が増えるのは取り返しがつかない。"""
+def test_f4_a_resend_of_one_request_id_mints_nothing(world, principal_of, as_principal):
+    """A lost response must not add a number. ARKs are never reassigned, so a dead
+    number cannot be taken back."""
     c = as_principal(principal_of(manager=world["a"]))
     a = c.post("/api/mint", json={"request_id": "job-1"})
     b = c.post("/api/mint", json={"request_id": "job-1"})
@@ -26,8 +26,9 @@ def test_F4_同じrequest_idの再送は採番しない(world, principal_of, as_
     assert a.json()["ark"] == b.json()["ark"]
 
 
-def test_F4_request_idは主体ごとに独立(world, principal_of, as_principal):
-    """他組織の request_id と衝突しないし、鍵の推測で他組織の ARK を引けない。"""
+def test_f4_request_ids_are_per_principal(world, principal_of, as_principal):
+    """They do not collide across organisations, and guessing one does not reveal
+    another organisation's ARK."""
     a = as_principal(principal_of(manager=world["a"], client_id="a")).post(
         "/api/mint", json={"request_id": "same"}
     )
@@ -37,12 +38,12 @@ def test_F4_request_idは主体ごとに独立(world, principal_of, as_principal
     assert a.json()["ark"] != b.json()["ark"]
 
 
-def test_F4_同じrequest_idが一塊のなかで重複しても壊れない(world, principal_of, as_principal):
-    """**控えは (client, request_id) で一意。** 同じ `request_id` が 1 回の要求に
-    2 行あると、控えを 2 度書こうとして IntegrityError になり 500 で落ちていた。
+def test_f4_a_repeated_request_id_inside_one_batch_is_handled(world, principal_of, as_principal):
+    """The receipt is unique per (client, request_id). Two rows in one request sharing
+    a request_id meant writing the receipt twice, an IntegrityError and a 500.
 
-    同じ `request_id` は「同じ 1 つの依頼」という意味なので、**1 件だけ採番して
-    両方の行に同じ ARK を返す**——再送の扱いと同じ約束を、塊の内側にも通す。
+    One request_id means one request, so a single ARK is minted and returned for both
+    rows: the same promise as a resend, applied inside a batch.
     """
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/api/mint/bulk", json={"data": [
@@ -52,13 +53,14 @@ def test_F4_同じrequest_idが一塊のなかで重複しても壊れない(wor
     ]})
     assert r.status_code == 201
     body = r.json()
-    assert body["minted"][0]["ark"] == body["minted"][1]["ark"]   # 同じ番号
-    assert body["minted"][2]["ark"] != body["minted"][0]["ark"]   # 無印は独立
+    assert body["minted"][0]["ark"] == body["minted"][1]["ark"]   # one ARK
+    assert body["minted"][2]["ark"] != body["minted"][0]["ark"]   # unmarked rows differ
     assert (body["created"], body["replayed"]) == (2, 1)
 
 
-def test_一括採番は入力の順序で返す(world, principal_of, as_principal):
-    """再送ぶんと新規ぶんが混ざるので、呼び出し側が突き合わせられるように並びを保つ。"""
+def test_bulk_minting_answers_in_the_order_it_was_asked(world, principal_of, as_principal):
+    """Resends and new mints are mixed together, so the order is kept for the caller
+    to line them up."""
     c = as_principal(principal_of(manager=world["a"]))
     c.post("/api/mint", json={"request_id": "r2"})
     r = c.post(
@@ -71,13 +73,13 @@ def test_一括採番は入力の順序で返す(world, principal_of, as_princip
     assert len(body["minted"]) == 3
 
 
-def test_一括採番は一件でも範囲外なら何も作らない(world, principal_of, as_principal):
+def test_one_row_out_of_reach_mints_nothing(world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/api/mint/bulk", json={"data": [{}, {"shoulder": "/b2"}]})
     assert r.status_code == 403
 
 
-def test_M4_他組織のARKは読めない(db, world, principal_of, as_principal):
+def test_m4_another_organisations_ark_cannot_be_read(db, world, principal_of, as_principal):
     from arkhe.domain import minting
 
     theirs, _ = minting.mint(db, shoulder=world["sh_b"], created_by="b")
@@ -87,28 +89,28 @@ def test_M4_他組織のARKは読めない(db, world, principal_of, as_principal
     assert r.json()["data"] == []
 
 
-def test_tombstone_は削除ではない(world, principal_of, as_principal):
-    """**識別子とメタデータは残る。** 消せるのは対象への到達性だけ。"""
+def test_a_tombstone_is_not_a_deletion(world, principal_of, as_principal):
+    """The identifier and its metadata stay; only reachability goes."""
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://x/1", "title": "T"}).json()["ark"]
-    r = c.put("/api/tombstone", json={"ark": key, "commitment": "対象は失われた"})
+    r = c.put("/api/tombstone", json={"ark": key, "commitment": "the object is gone"})
     assert r.status_code == 200 and r.json()["url"] == ""
-    assert r.json()["title"] == "T"  # メタデータは残る
-    # D6: 転送先が無いので、裸の suffix に飛ばさず記述を返す
+    assert r.json()["title"] == "T"  # the metadata stays
+    # D6: with no target, describe it instead of redirecting to a bare suffix
     assert c.get(f"/{key}").status_code == 200
 
 
-def test_tombstoneはupdateとscopeが別(world, principal_of, as_principal):
-    """墓碑化は「どこにあるか」ではなく「もう無い」という宣言。投入バッチのような
-    日常の書き手には渡さない。"""
+def test_tombstone_has_its_own_scope(world, principal_of, as_principal):
+    """A tombstone declares that something is gone, not where it is, so it is not
+    handed to an everyday writer such as a loading batch."""
     c = as_principal(principal_of(manager=world["a"], scopes={"ark:mint", "ark:update"}))
     key = c.post("/api/mint", json={}).json()["ark"]
     assert c.put("/api/tombstone", json={"ark": key}).status_code == 403
 
 
-def test_委譲されたshoulderへの採番は307で案内する(db, world, root, principal_of, as_principal):
-    """**プロキシしない。** 代理で呼ぶと、応答が失われたとき「向こうでは採番された
-    がこちらは知らない ARK」が生まれる。"""
+def test_minting_into_a_delegated_shoulder_answers_307(db, world, root, principal_of, as_principal):
+    """Nothing is proxied. Calling on someone's behalf means that a lost response
+    leaves an ARK minted over there that we know nothing about."""
     from arkhe.domain import admin_ops as ops
 
     ops.set_shoulder_status(
@@ -122,24 +124,24 @@ def test_委譲されたshoulderへの採番は307で案内する(db, world, roo
     assert r.headers["location"] == "https://mint.example.org"
 
 
-def test_ark表記のゆれを吸収する(world, principal_of, as_principal):
-    """`ark:/x` でも `x` でも受け、解決側と同じ正規化を通す。
+def test_variations_in_ark_spelling_are_absorbed(world, principal_of, as_principal):
+    """Both ark:/x and x are accepted, through the same normalisation as resolution.
 
-    **ハイフンが無視できるのは name 部だけ。** NAAN は文字列そのもの（N2）なので、
-    `9999-9` は別の NAAN であり 400 になるのが正しい。
+    Only the name ignores hyphens. A NAAN is the string itself (N2), so 9999-9 is a
+    different NAAN and 400 is the right answer.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
     naan, name = key.split("/", 1)
-    hyphenated = f"{naan}/{name[:3]}-{name[3:]}"  # name 部に入れる
-    # §2.2: 新旧どちらのラベルも**永久に**受ける。生成が新形式になっても受理は減らさない。
+    hyphenated = f"{naan}/{name[:3]}-{name[3:]}"  # inside the name
+    # 2.2: both label forms are recognised in perpetuity. Generating the new form
+    # does not narrow what is accepted.
     for form in (f"ark:{key}", f"ark:/{key}", key, hyphenated):
         assert c.put(
             "/api/update", json={"ark": form, "url": "https://x/2"}
         ).status_code == 200, form
-    # NAAN にハイフンを入れたものは別の NAAN。**受け付けてはいけない。**
-    # url は正しい値にする——ここで見たいのは **NAAN の綴り**であって、
-    # 転送先の検証ではない。
+    # A hyphen inside the NAAN makes a different NAAN, which must not be accepted.
+    # The url is valid here: what is being checked is the NAAN, not the target.
     bad = c.put(
         "/api/update",
         json={"ark": f"{naan[:4]}-{naan[4:]}/{name}", "url": "https://x/3"},
@@ -147,20 +149,22 @@ def test_ark表記のゆれを吸収する(world, principal_of, as_principal):
     assert bad.status_code in (400, 404)
 
 
-def test_F1_仕様が要求する長さのNAANで採番して解決できる(db, root, principal_of, as_principal):
-    """§2.3「受け取る実装は NAAN 16 オクテットまで対応しなければならない」。
+def test_f1_a_naan_as_long_as_the_specification_requires_works_end_to_end(
+    db, root, principal_of, as_principal
+):
+    """2.3: receiving implementations must support NAANs of up to 16 octets.
 
-    **10 で弾いていたのは arklet の `int()` を守るための定数**で、N2（NAAN を
-    整数化しない）を決めた時点で理由は消えていた。**端から端まで通ることを見る**
-    ——解析だけ通っても、列が狭ければ採番で落ちる。
+    The limit of 10 existed to protect arklet's int(), and the reason disappeared once
+    N2 settled that NAANs are strings. This goes end to end: parsing alone is not
+    enough, because a narrow column fails at minting.
     """
     from arkhe.domain import admin_ops as ops
 
-    long_naan = "bcdfghjkmnpqrstv"  # 16 オクテットの betanumeric
+    long_naan = "bcdfghjkmnpqrstv"  # 16 betanumeric octets
     assert len(long_naan) == 16
-    ops.create_naan(db, root, naan=long_naan, name="長い NAAN の RA")
+    ops.create_naan(db, root, naan=long_naan, name="an RA with a long NAAN")
     db.flush()
-    manager, _ = ops.onboard_manager(db, root, naan=long_naan, name="D組織", shoulder="/d4")
+    manager, _ = ops.onboard_manager(db, root, naan=long_naan, name="org D", shoulder="/d4")
     db.commit()
 
     c = as_principal(principal_of(naan=long_naan, manager=manager))
@@ -171,23 +175,25 @@ def test_F1_仕様が要求する長さのNAANで採番して解決できる(db,
     assert c.get(f"/ark:/{key}").headers["location"] == "https://long.example.org/1"
 
 
-def test_F1_名前は仕様の下限まで受け_超えたら理由を返す(world, principal_of, as_principal):
-    """§3.1「Base Name ＋ Qualifier は 255 オクテットまで対応しなければならない」。
+def test_f1_names_are_accepted_to_the_specified_length_and_refused_beyond_it(
+    world, principal_of, as_principal
+):
+    """3.1: a base name plus qualifier must be supported up to 255 octets.
 
-    **超えたぶんは DB のエラーで落とさない。** 索引できないという我々の事情なので、
-    そう言って 400 を返す（仕様も「長い文字列を作る側は、受け取る実装が索引でき
-    ないかもしれないと理解すべき」と書いている）。
+    Beyond that we do not fail with a database error. The limit is ours, about what we
+    can index, so we say so and answer 400. The specification also warns whoever makes
+    long strings that receiving implementations may not index them.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"]
     base = key.removeprefix("ark:").split("/", 1)[1]
 
-    fits = "/" + "z" * (255 - len(base) - 1)      # base + 修飾子でちょうど 255
+    fits = "/" + "z" * (255 - len(base) - 1)      # base plus qualifier is exactly 255
     r = c.post("/api/register", json={"ark": key, "qualifier": fits, "url": "https://x/2"})
     assert r.status_code == 201
     assert len(r.json()["ark"].removeprefix("ark:").split("/", 1)[1]) == 255
 
-    over = fits + "z"                              # 1 オクテット超える
+    over = fits + "z"                              # one octet too many
     bad = c.post("/api/register", json={"ark": key, "qualifier": over, "url": "https://x/3"})
     assert bad.status_code == 400
     assert bad.json()["code"] == "ARKHE-1004"
@@ -195,7 +201,7 @@ def test_F1_名前は仕様の下限まで受け_超えたら理由を返す(wor
 
 
 def _delegate(db, root, shoulder):
-    """shoulder を委譲状態にする（取り込みの前提）。"""
+    """Put the shoulder into the delegated state, which import requires."""
     from arkhe.domain import admin_ops as ops
 
     ops.set_shoulder_status(
@@ -206,21 +212,24 @@ def _delegate(db, root, shoulder):
 
 
 def _valid_name(naan: str, stem: str) -> str:
-    """検査桁の正しい名前を組む（外の minter が採ったつもりの名前）。"""
+    """Build a name with a correct check digit, as an outside minter would have."""
     from arkhe.arkspec.betanumeric import check_digit_base, noid_check_digit
 
     return stem + noid_check_digit(check_digit_base(naan, stem))
 
 
-def test_到達できない委譲は403と案内を返す(db, world, root, principal_of, as_principal):
-    """**`Location` は「同じ要求をここへ出し直せ」という意味。**
+def test_a_delegation_with_no_endpoint_answers_403_with_guidance(
+    db, world, root, principal_of, as_principal
+):
+    """Location means "send the same request there".
 
-    人が読むページをそこに載せると、クライアントはそこへ `POST` しにいく。叩ける口が
-    無い委譲（閉域など）は、`307` ではなく **403 と本文の案内**で答える。
+    Putting a page for people in it makes clients POST to that page. A delegation with
+    no endpoint, on a closed network for instance, answers 403 with guidance in the body
+    rather than 307.
     """
     from arkhe.domain import admin_ops as ops
 
-    # ① 叩ける口がある委譲 → 307 で機械が追える
+    # With an endpoint, 307 lets a machine follow it
     ops.set_shoulder_status(
         db, root, shoulder_id=world["sh_a"].id, status="delegated",
         minter="https://mint.example.org",
@@ -232,7 +241,7 @@ def test_到達できない委譲は403と案内を返す(db, world, root, princ
     assert r.headers["location"] == "https://mint.example.org"
     assert r.json()["code"] == "ARKHE-1306"
 
-    # ② 叩ける口が無く、人向けの案内だけ → 403。**Location は付けない**
+    # With only a page for people, 403 and no Location
     ops.set_shoulder_status(
         db, root, shoulder_id=world["sh_b"].id, status="delegated",
         about="https://ark.example.ac.jp/closed/99999",
@@ -246,11 +255,12 @@ def test_到達できない委譲は403と案内を返す(db, world, root, princ
     assert r2.json()["detail"]["about"] == "https://ark.example.ac.jp/closed/99999"
 
 
-def test_行き先の無い委譲は_ここでは採番しないとだけ答える(db, world, root,
+def test_a_delegation_with_no_target_just_says_we_do_not_mint_here(db, world, root,
                                                              principal_of, as_principal):
-    """**行き先を書かない委譲も正当。** 案内できることと、委譲できることは別。
+    """A delegation with nothing to point at is still valid: being able to give
+    directions and being able to delegate are different things.
 
-    書くものが無いのに書けと強いると、**制約を満たすためだけの嘘の値**が入る。
+    Demanding a URL where there is none only produces invented values.
     """
     from arkhe.domain import admin_ops as ops
 
@@ -260,13 +270,16 @@ def test_行き先の無い委譲は_ここでは採番しないとだけ答え�
     r = c.post("/api/mint", json={})
     assert r.status_code == 403
     assert r.json()["code"] == "ARKHE-1309"
-    # **URL を騙らない。** 無いものは detail にも出さない。
+    # No invented URL: what does not exist does not appear in detail either.
     assert "about" not in r.json().get("detail", {})
     assert "location" not in r.headers
 
 
-def test_well_knownはminterと案内を分けて出す(db, world, root, principal_of, as_principal):
-    """**同じ鍵に混ぜない。** 読む側が API と人向けのページを見分けられなくなる。"""
+def test_well_known_separates_the_minter_from_the_guidance(
+    db, world, root, principal_of, as_principal
+):
+    """Not under one key: a reader could no longer tell the API from a page for
+    people."""
     from arkhe.domain import admin_ops as ops
 
     ops.set_shoulder_status(
@@ -288,64 +301,70 @@ def test_well_knownはminterと案内を分けて出す(db, world, root, princip
     assert rows["99999/b2"]["about"] == "https://ark.example.ac.jp/closed/99999"
 
 
-def test_取り込みは委譲した名前空間にしか入らない(db, world, root, principal_of, as_principal):
-    """**閉じた側で採番した名前を、あとから公開側に出すための口**（C-2 → C-1）。
+def test_import_only_accepts_a_delegated_namespace(db, world, root, principal_of, as_principal):
+    """The endpoint for bringing a name minted on a closed network into the public
+    ledger (C-2 to C-1).
 
-    採番と分けてあるのは、**名前を呼び出し側が選ぶ**から——`mint` が構造で守って
-    いた「衝突しない」「検査桁が正しい」「自分の名前空間の内側」が、全部検査に移る。
+    It is separate from minting because the caller brings the name. Everything mint
+    guaranteed structurally, no collision, a correct check digit, inside our own
+    namespace, becomes a check here.
     """
     _delegate(db, root, world["sh_a"])
     c = as_principal(principal_of(manager=world["a"], scopes={"ark:import"}))
     name = _valid_name("99999", "a1closed01")
 
     r = c.post("/api/import", json={
-        "ark": f"ark:99999/{name}", "title": "閉域で採番したもの",
+        "ark": f"ark:99999/{name}", "title": "minted on a closed network",
         "url": "https://repo.example/records/9",
     })
     assert r.status_code == 201 and r.json()["ark"] == f"ark:99999/{name}"
 
-    # **二度は入らない。** 採番と同じで、既に在るものを黙って上書きしない（E1）。
+    # Not twice: as with minting, nothing existing is overwritten silently (E1).
     again = c.post("/api/import", json={"ark": f"ark:99999/{name}"})
     assert again.status_code == 400 and again.json()["code"] == "ARKHE-1005"
 
-    # 検査桁が合わなければ入らない——**外から来た名前を信じる唯一の手立て**。
+    # A wrong check digit is refused: it is the only way to trust a name from outside.
     bad = c.post("/api/import", json={"ark": f"ark:99999/{name[:-1]}z"})
     assert bad.status_code == 400 and bad.json()["code"] == "ARKHE-1012"
 
-    # 委譲していない shoulder には入らない（自分の採番と衝突しうる）。
+    # A shoulder that is not delegated is refused: it could collide with our minting.
     other = _valid_name("99999", "b2closed01")
     r2 = c.post("/api/import", json={"ark": f"ark:99999/{other}"})
     assert r2.status_code in (400, 403)
 
 
-def test_取り込みの範囲は上位が下位を覆う(db, world, root, principal_of, as_principal):
-    """**上位の権威は下位を覆い、下位は上位に届かない。** 採番の到達範囲と同じ判定。"""
+def test_import_reach_follows_the_tiers(db, world, root, principal_of, as_principal):
+    """A wider authority covers a narrower one and not the other way round, the same
+    decision minting uses."""
     _delegate(db, root, world["sh_a"])
     _delegate(db, root, world["sh_b"])
     n_a = _valid_name("99999", "a1reach001")
     n_b = _valid_name("99999", "b2reach001")
 
-    # 組織 A の主体は、B の shoulder には届かない。
+    # A principal of organisation A does not reach B's shoulder.
     a = as_principal(principal_of(manager=world["a"], scopes={"ark:import"}))
     assert a.post("/api/import", json={"ark": f"ark:99999/{n_b}"}).status_code == 403
     assert a.post("/api/import", json={"ark": f"ark:99999/{n_a}"}).status_code == 201
 
-    # NAAN 単位の主体は、その NAAN の下ならどの shoulder にも届く（上位が下位を覆う）。
+    # A NAAN-level principal reaches every shoulder under that NAAN.
     naan_wide = as_principal(
         principal_of(authority=Authority.NAAN, naan="99999", scopes={"ark:import"})
     )
     assert naan_wide.post("/api/import", json={"ark": f"ark:99999/{n_b}"}).status_code == 201
 
-    # 他 NAAN には届かない。
+    # It does not reach another NAAN.
     n_c = _valid_name("88888", "c3reach001")
     assert naan_wide.post("/api/import", json={"ark": f"ark:88888/{n_c}"}).status_code == 403
 
 
-def test_取り込みは権威を持たないNAANには入らない(db, world, root, principal_of, as_principal):
-    """**取り次いでいるだけの NAAN の保管者を名乗らない。** 主体の到達範囲とは別の話。"""
+def test_import_is_refused_for_a_naan_we_are_not_authoritative_for(
+    db, world, root, principal_of, as_principal
+):
+    """We do not claim to hold a NAAN we merely forward, which is separate from the
+    principal's reach."""
     from arkhe.db.models import Naan
 
-    # 権威を持たない（取り次ぐだけの）NAAN にする
+    # Make it a NAAN we only forward for
     naan = db.get(Naan, "88888")
     naan.is_authoritative = False
     naan.redirect = "https://elsewhere.example"
@@ -359,8 +378,9 @@ def test_取り込みは権威を持たないNAANには入らない(db, world, r
     assert r.status_code == 403 and r.json()["code"] == "ARKHE-1308"
 
 
-def test_一括の取り込みは一件でも落ちれば何も作らない(db, world, root, principal_of, as_principal):
-    """**中途半端に入った名前は引っ込められない。** 部分適用は採番より重い事故になる。"""
+def test_one_bad_row_imports_nothing(db, world, root, principal_of, as_principal):
+    """Half-imported names cannot be taken back, which makes a partial apply worse
+    here than in minting."""
     _delegate(db, root, world["sh_a"])
     c = as_principal(principal_of(manager=world["a"], scopes={"ark:import", "ark:read"}))
     ok1 = _valid_name("99999", "a1bulk0001")
@@ -368,7 +388,7 @@ def test_一括の取り込みは一件でも落ちれば何も作らない(db, 
 
     bad = c.post("/api/import/bulk", json={"data": [
         {"ark": f"ark:99999/{ok1}"},
-        {"ark": f"ark:99999/{ok2[:-1]}z"},   # 検査桁が壊れている
+        {"ark": f"ark:99999/{ok2[:-1]}z"},   # broken check digit
     ]})
     assert bad.status_code == 400
     assert c.post("/api/query", json={"data": [f"ark:99999/{ok1}"]}).json()["data"] == []
@@ -380,17 +400,20 @@ def test_一括の取り込みは一件でも落ちれば何も作らない(db, 
     assert good.status_code == 201 and good.json()["count"] == 2
 
 
-def test_取り込んだARKは同じ名前のまま公開できる(db, world, root, principal_of, as_principal):
-    """**これが口を足した理由。** 閉じた期間に配った名前が、そのまま公開に使える。"""
+def test_an_imported_ark_is_published_under_the_same_name(
+    db, world, root, principal_of, as_principal
+):
+    """This is why the endpoint exists: a name handed out while closed can be
+    published unchanged."""
     _delegate(db, root, world["sh_a"])
     c = as_principal(principal_of(manager=world["a"], scopes={"ark:import", "ark:update"}))
     name = _valid_name("99999", "a1embargo1")
 
-    # 記述だけ（行き先なし）で取り込む＝「存在は言えるが、対象には行けない」
-    c.post("/api/import", json={"ark": f"ark:99999/{name}", "title": "禁輸中"})
+    # Import with a description and no target: it exists, but cannot be reached
+    c.post("/api/import", json={"ark": f"ark:99999/{name}", "title": "under embargo"})
     assert c.get(f"/ark:99999/{name}", follow_redirects=False).status_code == 200
 
-    # 禁輸が明けたら url を入れるだけ。**識別子は変わらない。**
+    # When the embargo lifts, only the url is set. The identifier does not change.
     c.patch("/api/update", json={
         "ark": f"ark:99999/{name}", "url": "https://repo.example/records/9",
     })
@@ -399,41 +422,44 @@ def test_取り込んだARKは同じ名前のまま公開できる(db, world, ro
     assert moved.headers["location"] == "https://repo.example/records/9"
 
 
-def test_PATCHは送った項目だけ書き換える(world, principal_of, as_principal):
-    """**`PUT` は置き換え、`PATCH` は差分。** 実際に多いのは「行き先だけ動かす」で、
-    そこで `PUT` を使うと記述が既定値で消える。
+def test_patch_changes_only_the_fields_that_were_sent(world, principal_of, as_principal):
+    """PUT replaces and PATCH amends. The common case is moving only the target, and
+    doing that with PUT wipes the description back to defaults.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={
-        "url": "https://one.example/1", "title": "題", "who": "山田", "when": "2026",
+        "url": "https://one.example/1", "title": "a title", "who": "an author",
+        "when": "2026",
     }).json()["ark"]
 
     moved = c.patch("/api/update", json={"ark": key, "url": "https://two.example/2"}).json()
     assert moved["url"] == "https://two.example/2"
-    assert (moved["title"], moved["who"], moved["when"]) == ("題", "山田", "2026")
+    assert (moved["title"], moved["who"], moved["when"]) == ("a title", "an author", "2026")
 
-    # **空文字は「消す」。** 送らないことと区別できないと、値を消す手段が無くなる。
+    # An empty string clears the field. Without that distinction there would be no
+    # way to remove a value at all.
     cleared = c.patch("/api/update", json={"ark": key, "title": ""}).json()
-    assert cleared["title"] == "" and cleared["who"] == "山田"
+    assert cleared["title"] == "" and cleared["who"] == "an author"
 
-    # `PUT` は今までどおり置き換える（挙動を変えていない）。
+    # PUT still replaces, unchanged.
     replaced = c.put("/api/update", json={"ark": key, "url": "https://three.example/3"}).json()
     assert replaced["who"] == "" and replaced["url"] == "https://three.example/3"
 
-    # 権限も範囲も `PUT` と同じ経路を通る。
+    # Permissions and reach go through the same path as PUT.
     thin = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
     assert thin.patch("/api/update", json={"ark": key, "url": "https://x/9"}).status_code == 403
 
 
-def test_infoは媒体で出し分ける(world, principal_of, as_principal):
-    """§5.2「応答の形は**返す content type が示す**」。中身はどれも同じ
-    「記述＋永続性宣言」で、違うのは媒体だけ。
+def test_info_varies_by_media_type(world, principal_of, as_principal):
+    """5.2: the shape of the response is indicated by the content type returned. The
+    content is the same description and persistence statement each time; only the media
+    type differs.
 
-    `?json` は残す——**その JSON を名指しする別名**であって、別の内容ではない。
+    ?json stays as another way of naming that JSON, not as different content.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={
-        "url": "https://x/1", "title": "題", "who": "山田", "when": "2026",
+        "url": "https://x/1", "title": "a title", "who": "an author", "when": "2026",
     }).json()["ark"].removeprefix("ark:")
 
     html = c.get(f"/ark:{key}?info")
@@ -442,74 +468,82 @@ def test_infoは媒体で出し分ける(world, principal_of, as_principal):
     js = c.get(f"/ark:{key}?info", headers={"Accept": "application/json"})
     assert js.headers["content-type"].startswith("application/json")
     assert js.json()["where"] == f"ark:{key}"
-    # **`?json` と同じもの**が返る。
+    # The same thing ?json returns.
     assert js.json() == c.get(f"/ark:{key}?json").json()
 
     anvl = c.get(f"/ark:{key}?info", headers={"Accept": "text/plain"})
     assert anvl.headers["content-type"].startswith("text/plain")
-    assert anvl.text == c.get(f"/ark:{key}??").text   # `??` と同じ「記述＋宣言」
+    assert anvl.text == c.get(f"/ark:{key}??").text   # the same as ??
 
-    # どれにも THUMP のヘッダが付き、`Vary` で表現が分かれることを言う。
+    # All of them carry the THUMP headers and say through Vary that they differ.
     for r in (html, js):
         assert r.headers["thump-status"] == "0.6 200 OK"
         assert "Accept" in r.headers["vary"]
 
 
-def test_infoは画面の言語で答える(world, principal_of, as_principal):
-    """**`?info` は公開の口。** ARK は世界中から引かれるので、日本語しか話さないと
-    「識別子は届いたのに説明が読めない」で落ちる。
+def test_info_answers_in_the_readers_language(world, principal_of, as_principal):
+    """?info is public, and ARKs are followed from anywhere. Speaking only one
+    language means the identifier arrives but the description cannot be read.
 
-    `?lang=` は使えない——クエリ文字列そのものが inflection だから。`?info&lang=en`。
+    ?lang= on its own will not do, because the query string is the inflection. It is
+    written ?info&lang=en.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
 
     ja = c.get(f"/ark:{key}?info")
     en = c.get(f"/ark:{key}?info&lang=en")
-    assert "永続性について" in ja.text and 'lang="ja"' in ja.text
+    # The Japanese heading is written as an escape: it comes from the Japanese UI.
+    assert "\u6c38\u7d9a\u6027\u306b\u3064\u3044\u3066" in ja.text \
+        and 'lang="ja"' in ja.text
     assert "On persistence" in en.text and 'lang="en"' in en.text
 
-    # Accept-Language でも切り替わる。
+    # Accept-Language switches it too.
     hdr = c.get(f"/ark:{key}?info", headers={"Accept-Language": "en-GB,en;q=0.9"})
     assert "On persistence" in hdr.text
 
-    # 永続性の水準の表示名も catalogue から来る（`?json` にも出る）。
+    # The name of the commitment level comes from the catalogue too, and appears
+    # in ?json as well.
     js = c.get(f"/ark:{key}?info&lang=en", headers={"Accept": "application/json"}).json()
     assert js["commitment_label"] == "permanent; the content may be revised"
 
 
-def test_A5_生成は新形式_受理は旧形式も永久に(world, principal_of, as_principal):
-    """§2.2: 「新形式 `ark:` と旧形式 `ark:/` は**どちらも永久に**認識しなければ
-    ならない。実装は**新しい ARK を新形式で生成すべき**」。
+def test_a5_the_new_form_is_generated_and_the_old_one_still_accepted(
+    world, principal_of, as_principal
+):
+    """2.2: both ark: and ark:/ must be recognised in perpetuity, and implementations
+    should generate new ARKs in the new form.
 
-    **受理と生成で非対称**にする。受けるほうを狭めると既存の参照が死ぬが、
-    出すほうを旧形式のままにすると、我々が配った文字列がそのまま次の実装の
-    入力になって**旧形式が減らない**。
+    Accepting and generating are deliberately asymmetric. Narrowing what is accepted
+    kills existing references; keeping the old form on the way out means the strings we
+    hand round become someone else's input and the old form never shrinks.
     """
     c = as_principal(principal_of(manager=world["a"]))
     ark = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"]
     assert ark.startswith("ark:") and not ark.startswith("ark:/")
     key = ark.removeprefix("ark:")
 
-    # **出す口はすべて新形式。** 1 か所でも旧形式が残ると、そこから漏れ続ける。
+    # Everything we emit uses the new form. One place left behind keeps leaking it.
     assert c.get(f"/ark:{key}?json").json()["ark"] == f"ark:{key}"
     assert f"ark:{key}" in c.get(f"/ark:{key}??").text
     missing = c.get(f"/ark:{key}zz-not-registered")
     assert missing.status_code == 404 and "ark:/" not in missing.text
 
-    # **受けるほうは減らさない。** 旧形式でも大文字ラベルでも同じ ARK に当たる。
+    # What is accepted does not shrink: the old form and an upper-case label both hit
+    # the same ARK.
     for path in (f"/ark:{key}", f"/ark:/{key}", f"/ARK:/{key}", f"/Ark:{key}"):
         assert c.get(path, follow_redirects=False).headers["location"] == "https://x/1", path
 
 
-def test_誤りは符号と英語の文面で返る(world, principal_of, as_principal):
-    """**文面ではなく符号で判定させる。** 文面は直る（訳も語調も変わる）。
+def test_errors_come_back_with_a_code_and_english_wording(world, principal_of, as_principal):
+    """Callers branch on the code, not the wording, which changes with translation and
+    tone.
 
-    `detail` は文面を埋めた値を**構造化したまま**返す——数字を文から切り出す
-    クライアントを作らせない。
+    detail returns the values that were interpolated, still structured, so that nobody
+    has to pull numbers out of a sentence.
     """
-    # **他組織の ARK を先に用意する。** `as_principal` は同じ app の差し替えを
-    # 上書きするので、あとから作った主体が有効になる（最後に A を作る）。
+    # Create the other organisation's ARK first. as_principal overrides the same app,
+    # so the principal created last is the one in force.
     theirs = as_principal(principal_of(manager=world["b"], client_id="b")).post(
         "/api/mint", json={}
     ).json()["ark"]
@@ -524,16 +558,16 @@ def test_誤りは符号と英語の文面で返る(world, principal_of, as_prin
         "detail": {"limit": 1000},
     }
 
-    # 他組織の ARK には触れない。**符号が「範囲の話だ」と言っている。**
+    # Another organisation's ARK is out of reach, and the code says it is about reach.
     denied = c.put("/api/update", json={"ark": theirs, "url": "https://x/1"})
     assert denied.status_code in (403, 404)
     assert denied.json()["code"].startswith("ARKHE-1")
 
-    # 読めない ARK は 400。
+    # An ARK that cannot be parsed is 400.
     bad = c.put("/api/update", json={"ark": "not-an-ark", "url": "https://x/1"})
     assert bad.status_code == 400 and bad.json()["code"] == "ARKHE-1001"
 
-    # scope が足りなければ、**足りない scope を名指しする**（最後に差し替える）。
+    # A missing scope is named in the answer.
     thin = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
     short = thin.post("/api/mint", json={})
     assert short.status_code == 403
@@ -541,29 +575,30 @@ def test_誤りは符号と英語の文面で返る(world, principal_of, as_prin
     assert short.json()["detail"]["scope"] == "ark:mint"
 
 
-def test_解決の符号は本文の行頭に出る(world, principal_of, as_principal):
-    """解決は `text/plain` を返す（人も読む）ので、**符号を行頭に置く**。"""
+def test_the_resolution_code_is_at_the_start_of_the_body(world, principal_of, as_principal):
+    """Resolution answers in text/plain, which people read, so the code goes
+    first."""
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
     naan = key.split("/")[0]
 
-    # 検査桁の合わない名前は「転記ミス」だと言う。
+    # A name whose check digit fails is reported as a transcription error.
     mistyped = c.get(f"/ark:{naan}/x9zzzzzzzz")
     assert mistyped.status_code == 404
     assert mistyped.text.startswith("ARKHE-1403 ")
 
-    # ARK として読めないもの。
+    # Not readable as an ARK at all.
     unreadable = c.get("/ark:/")
     assert unreadable.status_code == 400 and unreadable.text.startswith("ARKHE-1001 ")
 
 
-def test_A1_ラベルの大小は経路でも無視する(world, principal_of, as_principal):
-    """§3.2 手順3「**大小非依存で** 'ark:/' または 'ark:' に最初に一致した箇所を
-    'ark:' に直す」。
+def test_a1_the_label_ignores_case_in_the_route_too(world, principal_of, as_principal):
+    """3.2, step 3: case-insensitively, replace the first match of ark:/ or ark: with
+    ark:.
 
-    `parse_ark` は最初から大小非依存だったが、**経路照合は大小を見る**ので
-    `/ARK:/…` はルータに届かず 404 になっていた。**直すのはラベルの 5 文字だけ**
-    ——名前の大小は識別子の一部なので触らない（手順5）。
+    parse_ark ignored case from the start, but route matching does not, so /ARK:/...
+    never reached the router and answered 404. Only the five characters of the label are
+    changed; the case of the name is part of the identifier (step 5).
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
@@ -571,144 +606,149 @@ def test_A1_ラベルの大小は経路でも無視する(world, principal_of, a
         r = c.get(f"/{label}{key}", follow_redirects=False)
         assert r.headers.get("location") == "https://x/1", label
 
-    # **名前の大小は直さない。** 直すと別の識別子に当ててしまう。
+    # The case of the name is left alone: changing it would hit another identifier.
     assert c.get(f"/ARK:{key.upper()}", follow_redirects=False).status_code == 404
 
 
-def test_C7_THUMPのヘッダを付ける(world, principal_of, as_principal):
-    """§5.2。`Link` の役目は仕様が説明している——**inflection を知らない受信者に、
-    この応答が「修飾の付いていない ARK」を記述したものだと示す**。
+def test_c7_the_thump_headers_are_sent(world, principal_of, as_principal):
+    """5.2. The specification explains what Link is for: telling a recipient that does
+    not know about inflections that this response describes the unqualified ARK.
 
-    `rel` の綴りは仕様の応答例（`<…> rel="describes";`）ではなく RFC 8288 に従う。
-    例のほうが誤りで、そのまま出すと標準の Link パーサが読めない。
+    The rel is spelled as RFC 8288 requires, not as the example in the specification
+    shows. The example is wrong, and a standard Link parser cannot read it.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://x/1"}).json()["ark"].removeprefix("ark:")
 
-    # 裸の `?` は入れない——クエリ文字列だけでは区別できず、この経路では
-    # inflection 無し（＝転送）になる（`ARKHE_RAW_URI_HEADER` の項を見よ）。
+    # A bare ? is not included: the query string alone cannot be told apart, and on
+    # this path it means no inflection, so a redirect. See ARKHE_RAW_URI_HEADER.
     for q in ("??", "?info", "?json"):
         h = c.get(f"/ark:{key}{q}").headers
         assert h["thump-status"] == "0.6 200 OK", q
         assert h["link"] == f'</ark:{key}>; rel="describes"', q
 
-    # 見つからないときも THUMP の応答である（符号は写す）。
+    # Not found is a THUMP response too.
     missing = c.get(f"/ark:{key}zz-not-registered?info")
     assert missing.status_code == 404
     assert missing.headers["thump-status"] == "0.6 404 Not Found"
 
-    # **転送には付けない。** それは THUMP の答えではなく、対象への誘導。
+    # Not on a redirect: that is not a THUMP answer but a way to the object.
     assert "thump-status" not in c.get(f"/ark:{key}", follow_redirects=False).headers
 
 
-def test_C6_whereは転送先ではなくARK(world, principal_of, as_principal):
-    """§5.1.2「**"where" は長期的な識別子であって、一時的な転送先ではない**」。
+def test_c6_where_is_the_ark_not_the_target(world, principal_of, as_principal):
+    """5.1.2: where is the long-term identifier, not the temporary target.
 
-    以前は逆で、`where` に転送先の URL を入れ、ARK は URL が空のときの代替だった。
-    記述は「この識別子は何を指すか」を答えるものなので、**行き先が変わっても
-    変わらない値**が入っていなければ、記述として引用できない。
+    It used to be the other way round: where held the target URL and the ARK was the
+    fallback when there was none. A description answers what this identifier names, so
+    unless the value survives a change of target it cannot be cited.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={
-        "url": "https://one.example/1", "title": "題", "who": "山田", "when": "2026",
+        "url": "https://one.example/1", "title": "a title", "who": "an author",
+        "when": "2026",
     }).json()["ark"].removeprefix("ark:")
 
     body = c.get(f"/ark:{key}??").text
     assert f"where: ark:{key}" in body
-    # **転送先は捨てない。** kernel の外に、あるときだけ出す。
+    # The target is not thrown away: it appears outside the kernel when there is one.
     assert "redirect: https://one.example/1" in body
 
     j = c.get(f"/ark:{key}?json").json()
     assert j["where"] == f"ark:{key}" and j["redirect"] == "https://one.example/1"
 
-    # 行き先を変えても `where` は動かない。**それがこの要素の意味である。**
+    # Changing the target does not move where, which is what the element means.
     c.put("/api/update", json={"ark": f"ark:{key}", "url": "https://two.example/2"})
     j2 = c.get(f"/ark:{key}?json").json()
     assert j2["where"] == j["where"] and j2["redirect"] == "https://two.example/2"
 
-    # 行き先が無い ARK でも `where` は答えられる（FAIR A2）。
-    c.put("/api/tombstone", json={"ark": f"ark:{key}", "commitment": "失われた"})
+    # An ARK with no target can still answer where (FAIR A2).
+    c.put("/api/tombstone", json={"ark": f"ark:{key}", "commitment": "lost"})
     assert f"where: ark:{key}" in c.get(f"/ark:{key}??").text
 
 
-def test_A4_エンコードされたスラッシュは区切りにならない(world, principal_of, as_principal):
-    """draft-kunze-ark-42 §3.2「%-エンコードされた文字を復号形で現してはならない」。
+def test_a4_an_encoded_slash_is_not_a_separator(world, principal_of, as_principal):
+    """draft-kunze-ark-42, 3.2: a percent-encoded character must not be shown decoded.
 
-    `%2F` は**「ここに `/` はあるが成分の区切りではない」と書く唯一の方法**
-    （§3.2「予約文字を %-エンコードしてよいのは、その予約された意味を隠すときだけ」）。
-    復号すると `base/a%2Fb`（1 つの名前）が `base/a/b`（`base/a` に含まれる `b`）に
-    化け、**祖先 passthrough が base の行き先を継いでしまう**——別の識別子に
-    別の答えを返すことになる。
+    %2F is the only way to write a slash that is not a separator; 3.2 permits encoding a
+    reserved character exactly to hide its reserved meaning. Decoded, base/a%2Fb, which
+    is one name, becomes base/a/b, meaning b inside base/a, and inheritance then follows
+    the base's target: a different identifier answered with something else.
 
-    ASGI は経路を先に復号するので、`scope["raw_path"]` から取り直している。
+    ASGI decodes the path first, so it is read again from scope["raw_path"].
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://base.example.org/1"}).json()["ark"]
     base = key.removeprefix("ark:")
 
-    # 隠した `/` を含む修飾子を、別の行き先で登録する。
+    # Register a qualifier containing the hidden slash, with its own target.
     r = c.post("/api/register", json={"ark": key, "qualifier": "/a%2fb",
                                       "url": "https://other.example.org/2"})
     assert r.status_code == 201
-    # 手順5: 保存されるのは大文字に揃えた形。
+    # Step 5: what is stored is the upper-case form.
     assert r.json()["ark"] == f"ark:{base}/a%2Fb"
 
-    # **その行に当たる。** base の行き先＋`/a/b` ではない。
+    # It hits that row, not the base target with /a/b appended.
     hit = c.get(f"/ark:/{base}/a%2Fb", follow_redirects=False)
     assert hit.status_code == 302
     assert hit.headers["location"] == "https://other.example.org/2"
 
-    # 小文字で来ても同じ行に当たる（手順5 は受け取り側でも効く）。
+    # Lower case hits the same row; step 5 applies on the way in too.
     assert c.get(f"/ark:/{base}/a%2fb", follow_redirects=False).headers["location"] == (
         "https://other.example.org/2"
     )
 
-    # 素の `/` は別の識別子。**こちらは登録が無いので base から継ぐ。**
+    # A plain slash is a different identifier, and with nothing registered it
+    # inherits from the base.
     passthrough = c.get(f"/ark:/{base}/a/b", follow_redirects=False)
     assert passthrough.status_code == 302
     assert passthrough.headers["location"] == "https://base.example.org/1/a/b"
 
 
-def test_A4_raw_pathが無い環境では復号済みの経路に落ちる():
-    """**生の経路を渡さないサーバでも動く。** 落ちる先は今までと同じ挙動。"""
+def test_a4_without_raw_path_the_decoded_route_is_used():
+    """It works on a server that does not pass the raw path, falling back to the
+    previous behaviour."""
     from types import SimpleNamespace
 
     from arkhe.api.resolve import _raw_ark_path
 
     url = SimpleNamespace(path="/ark:/99999/x54/c2")
     assert _raw_ark_path(SimpleNamespace(scope={}, url=url)) == "/ark:/99999/x54/c2"
-    # query が混ざって渡るサーバがあるので、素の `?` で切る。
+    # Some servers include the query, so it is cut at the first ?.
     req = SimpleNamespace(scope={"raw_path": b"/ark:/99999/x54%2Fc2?info"}, url=url)
     assert _raw_ark_path(req) == "/ark:/99999/x54%2Fc2"
-    # UTF-8 でない生バイトは**捏造せず**復号済みへ落とす。
+    # Raw bytes that are not UTF-8 fall back rather than being invented.
     bad = SimpleNamespace(scope={"raw_path": b"/ark:/99999/x\xff"}, url=url)
     assert _raw_ark_path(bad) == "/ark:/99999/x54/c2"
 
 
-def test_well_known_arkは既定で仕様どおりのtext_plainを返す(world, principal_of, as_principal):
-    """draft-kunze-ark-42 §5.6。**`Accept` を送らない相手には仕様の表現を返す。**
+def test_well_known_ark_answers_text_plain_by_default(world, principal_of, as_principal):
+    """draft-kunze-ark-42, 5.6: a client that sends no Accept gets the representation
+    the specification defines.
 
-    `*/*` で独自の JSON を返すと、仕様どおりに読む発見クライアントからは
-    「このホストは ARK リゾルバではない」に見える。
+    Answering */* with our own JSON makes a discovery client that follows the
+    specification conclude that this host is not an ARK resolver.
     """
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/.well-known/ark")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("text/plain")
-    # 本文はリゾルバのルートパス 1 行。**末尾は `/`**——ここに Compact ARK を
-    # 継ぎ足すと解決の経路になる、というのが仕様の定め。
+    # The body is one line, the resolver root path, ending in a slash: appending a
+    # compact ARK to it gives the resolution path, as the specification says.
     assert r.text.strip() == "/"
     assert c.get(f"{r.text.strip()}ark:/99999/x9abc").status_code in (200, 302, 404)
-    # 同じ URL が 2 つの表現を持つので、間に挟まる cache のために要る。
+    # One URL with two representations, so caches in between need this.
     assert r.headers["vary"] == "Accept"
 
 
-def test_well_known_arkはjsonを求められたときだけ在庫を返す(world, principal_of, as_principal):
+def test_well_known_ark_returns_the_inventory_only_when_json_is_asked_for(
+    world, principal_of, as_principal
+):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/.well-known/ark", headers={"Accept": "application/json"})
     assert r.status_code == 200
     assert {n["naan"] for n in r.json()["naans"]} == {"99999", "88888"}
-    # **仕様が定める値も JSON 側に入れる。** 片方だけ見て済ませられるように。
+    # The value the specification defines is in the JSON too, so one is enough.
     assert r.json()["resolver_path"] == "/"
     assert r.headers["vary"] == "Accept"
 
@@ -716,17 +756,17 @@ def test_well_known_arkはjsonを求められたときだけ在庫を返す(worl
 @pytest.mark.parametrize(
     ("accept", "want"),
     [
-        ("", "text/plain"),                                   # ヘッダ無し
-        ("*/*", "text/plain"),                                # curl の既定
+        ("", "text/plain"),                                   # no header
+        ("*/*", "text/plain"),                                # what curl sends
         ("application/json", "application/json"),
         ("application/json, text/plain;q=0.9", "application/json"),
-        ("text/plain, application/json", "text/plain"),       # 同点は仕様の側へ
-        ("text/html,application/xhtml+xml,*/*;q=0.8", "text/plain"),  # ブラウザ
+        ("text/plain, application/json", "text/plain"),       # a tie goes to the spec
+        ("text/html,application/xhtml+xml,*/*;q=0.8", "text/plain"),  # a browser
         ("application/*", "application/json"),
-        ("application/xml", "text/plain"),                    # どちらも出せない
+        ("application/xml", "text/plain"),                    # neither is available
     ],
 )
-def test_well_known_arkの媒体の選び方(accept, want, world, principal_of, as_principal):
+def test_how_well_known_ark_chooses_a_media_type(accept, want, world, principal_of, as_principal):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/.well-known/ark", headers={"Accept": accept} if accept else {})
     assert r.headers["content-type"].startswith(want)
@@ -736,11 +776,11 @@ def test_well_known_arkの媒体の選び方(accept, want, world, principal_of, 
     ("root_path", "want"),
     [("", "/"), ("/", "/"), ("/pid", "/pid/"), ("/pid/", "/pid/"), (None, "/")],
 )
-def test_well_known_arkはマウント位置を答える(root_path, want):
-    """**前段でパスを切っているなら、その値を答える。**
+def test_well_known_ark_reports_where_it_is_mounted(root_path, want):
+    """When a proxy strips a prefix, that is what is reported.
 
-    仕様は「そのパスに Compact ARK を継ぎ足すと解決の要求になる」と定めている
-    ので、`/` 決め打ちにするとプレフィクス付きの構成で案内先が実際の口とずれる。
+    The specification says appending a compact ARK to the path gives a resolution
+    request, so hard-coding / would point at the wrong place behind a prefix.
     """
     from types import SimpleNamespace
 
@@ -750,11 +790,11 @@ def test_well_known_arkはマウント位置を答える(root_path, want):
 
 
 @pytest.mark.parametrize("resolver", [False, True], ids=["minter", "resolver"])
-def test_healthzはどのモードでも応える(factory, resolver):
-    """**probe の口はモードによらず要る。**
+def test_healthz_answers_in_every_mode(factory, resolver):
+    """A probe endpoint is needed whatever the role.
 
-    以前は resolve ルータにしか載っておらず、minter と admin は liveness probe に
-    404 を返し続けて kubelet に殺されていた。
+    It used to live only on the resolve router, so the minter and the admin interface
+    answered 404 to the liveness probe and kubelet kept killing them.
     """
     from fastapi.testclient import TestClient
 
@@ -770,36 +810,39 @@ def test_healthzはどのモードでも応える(factory, resolver):
     assert TestClient(app).get("/healthz").json() == {"ok": True}
 
 
-def test_公開ページに保護ヘッダが付く(world, principal_of, as_principal):
-    """**転送先の検証が破れても、スクリプトは実行させない。**
+def test_the_public_page_carries_protective_headers(world, principal_of, as_principal):
+    """Even if target validation is bypassed, no script runs.
 
-    `?info` は認証を要さない公開ページで、載る文字列を決めるのは採番した側。
-    多層で守る。
+    ?info is public and needs no credentials, and whoever minted the ARK decides the
+    text on it, so it is guarded in layers.
     """
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/api/mint", json={"url": "https://example.org/1", "title": "x"})
     key = r.json()["ark"].removeprefix("ark:")
-    # **200 を返す経路で見る。** 404 でもヘッダは付くので、それでは
-    # 「公開ページに付いている」ことの確認にならない。
+    # Check on a path that answers 200. The headers are present on a 404 too, which
+    # would not show that the public page carries them.
     info = c.get(f"/ark:/{key}?info")
     assert info.status_code == 200
     h = info.headers
     assert "script-src 'none'" in h["content-security-policy"]
     assert h["x-content-type-options"] == "nosniff"
-    # **API ドキュメントだけは緩める。** Swagger UI は CDN から script を読むので、
-    # 素の CSP を当てると真っ白になる（読み込み先は限る）。
+    # The API documentation is the exception. Swagger UI loads script from a CDN, so
+    # the plain CSP would leave a blank page. The sources are restricted.
     docs = c.get("/api/docs").headers["content-security-policy"]
     assert "script-src 'none'" not in docs
     assert "cdn.jsdelivr.net" in docs
 
 
-# ------------------------------------------- 行き先が変わった記録
+# --------------------------------------- Recording a change of target
 
 
-def test_付け替えは組織が行っても残る(db, world, principal_of, as_principal):
-    """**監査は NAAN 単位以上しか残さない。**
+def test_a_change_of_target_is_recorded_even_at_organisation_level(
+    db, world, principal_of, as_principal
+):
+    """The audit log only keeps NAAN level and above.
 
-    採番も付け替えも組織が行うので、監査だけでは肝心の変更が落ちる。
+    Minting and repointing are done by organisations, so the audit log alone would miss
+    the changes that matter most.
     """
     from arkhe.db.models import ArkChange
 
@@ -814,29 +857,30 @@ def test_付け替えは組織が行っても残る(db, world, principal_of, as_
     assert rows[0].action == "update"
 
 
-def test_行き先が変わらなければ残さない(db, world, principal_of, as_principal):
-    """題名だけ直したときにまで履歴を積まない（読めなくなる）。"""
+def test_nothing_is_recorded_when_the_target_does_not_change(db, world, principal_of, as_principal):
+    """Fixing only a title should not add history, which would bury the rest."""
     from arkhe.db.models import ArkChange
 
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://same.example/1"}).json()["ark"]
-    c.put("/api/update", json={"ark": key, "url": "https://same.example/1", "title": "改題"})
+    c.put("/api/update", json={"ark": key, "url": "https://same.example/1", "title": "a new title"})
     assert db.scalars(db.query(ArkChange).statement).all() == []
 
 
-def test_墓碑化も残る(db, world, principal_of, as_principal):
-    """**転送先の付け替えとは意味が違う**ので、action で区別して残す。"""
+def test_a_tombstone_is_recorded_too(db, world, principal_of, as_principal):
+    """It means something different from repointing, so the action tells them
+    apart."""
     from arkhe.db.models import ArkChange
 
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post("/api/mint", json={"url": "https://gone.example/1"}).json()["ark"]
-    c.put("/api/tombstone", json={"ark": key, "commitment": "取り下げ"})
+    c.put("/api/tombstone", json={"ark": key, "commitment": "withdrawn"})
     rows = db.scalars(db.query(ArkChange).statement).all()
     assert [r.action for r in rows] == ["tombstone"]
     assert rows[0].before_url == "https://gone.example/1"
 
 
-def test_一括の付け替えも一件ずつ残る(db, world, principal_of, as_principal):
+def test_a_bulk_change_is_recorded_row_by_row(db, world, principal_of, as_principal):
     from arkhe.db.models import ArkChange
 
     c = as_principal(principal_of(manager=world["a"]))
@@ -848,7 +892,7 @@ def test_一括の付け替えも一件ずつ残る(db, world, principal_of, as_
     assert len(db.scalars(db.query(ArkChange).statement).all()) == 3
 
 
-def test_誰が変えたかが残る(db, world, principal_of, as_principal):
+def test_who_made_the_change_is_recorded(db, world, principal_of, as_principal):
     from arkhe.db.models import ArkChange
 
     c = as_principal(principal_of(manager=world["a"], client_id="repo-1"))
@@ -857,23 +901,23 @@ def test_誰が変えたかが残る(db, world, principal_of, as_principal):
     assert db.scalars(db.query(ArkChange).statement).all()[0].by == "repo-1"
 
 
-def test_開けない行き先は転送せず記述を返す(world, principal_of, as_principal):
-    """**登録できることと、ブラウザを送ってよいことは別。**
+def test_a_target_a_browser_cannot_open_is_described(world, principal_of, as_principal):
+    """Being registrable and being safe to send a browser to are different things.
 
-    `urn:` は正当な行き先だがブラウザは開けない。302 で渡すと、利用者には
-    「壊れたリンク」に見える——記述を返すほうが答えになっている。
+    A urn: is a valid target that a browser cannot open. Handing it over in a 302 looks
+    like a broken link; a description is the better answer.
     """
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post(
-        "/api/mint", json={"url": "urn:isbn:0451450523", "title": "紙の本"}
+        "/api/mint", json={"url": "urn:isbn:0451450523", "title": "a printed book"}
     ).json()["ark"].removeprefix("ark:")
     r = c.get(f"/ark:/{key}")
-    assert r.status_code == 200                     # 302 ではない
-    assert "urn:isbn:0451450523" in r.text          # 行き先は見せる
-    assert '<a href="urn:' not in r.text            # ただしリンクにはしない
+    assert r.status_code == 200                     # not a redirect
+    assert "urn:isbn:0451450523" in r.text          # the target is shown
+    assert '<a href="urn:' not in r.text            # but not as a link
 
 
-def test_開ける行き先は転送する(world, principal_of, as_principal):
+def test_a_target_a_browser_can_open_is_redirected_to(world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     key = c.post(
         "/api/mint", json={"url": "https://ok.example/1"}
@@ -883,12 +927,12 @@ def test_開ける行き先は転送する(world, principal_of, as_principal):
 
 
 @pytest.mark.parametrize("resolver", [False, True], ids=["minter", "resolver"])
-def test_内部のつまみがクエリに漏れない(resolver):
-    """**FastAPI は依存の引数をクエリパラメータとして公開する。**
+def test_internal_knobs_do_not_leak_into_the_query(resolver):
+    """FastAPI exposes a dependency's arguments as query parameters.
 
-    `get_session(*, read_only=…)` を依存に置いていたころ、`?read_only=true` が
-    **全パスに生えていた**——`POST /api/mint?read_only=true` で、採番の書き込みを
-    外からレプリカへ向けられる。接続先を決めるのは役割であって、要求ではない。
+    While get_session took read_only as an argument, ?read_only=true appeared on every
+    path, so POST /api/mint?read_only=true could aim a write at a replica from outside.
+    The role decides which database is used, not the request.
     """
     from arkhe.app import create_app
     from arkhe.settings import Settings
@@ -913,14 +957,15 @@ def test_内部のつまみがクエリに漏れない(resolver):
 @pytest.mark.parametrize(
     "resolver,want", [(True, "replica"), (False, "primary")], ids=["resolver", "minter"]
 )
-def test_接続先はこのappの設定で決まる(resolver, want):
-    """**`ARKHE_READ_DATABASE_URL` を効かせる。** 設定は読まれるだけで誰も使って
-    おらず、resolver は書き込みエンジンから読んでいた——レプリカを立てても向かない。
+def test_the_database_follows_this_apps_settings(resolver, want):
+    """ARKHE_READ_DATABASE_URL has to take effect. The setting was read and used by
+    nothing, so a resolver read from the write engine and never reached a replica.
 
-    **見るのは `create_app` に渡した設定のほう。** 役割を `get_settings()`（環境変数の
-    キャッシュ）から引くと、`create_app(settings=…)` で建てた app とは別の設定を
-    見ることになり、**ルータの出し分けと接続先が食い違う**。ここで渡す URL は環境変数に
-    無いので、環境から引いていれば下の照合は通らない。
+    What counts is the settings passed to create_app. Taking the role from
+    get_settings(), which caches the environment, means looking at different settings
+    from the app that was built with create_app(settings=...), and then the routes and
+    the database disagree. The URL used here is not in the environment, so reading from
+    the environment would fail the comparison below.
     """
     from fastapi.testclient import TestClient
 
@@ -935,9 +980,10 @@ def test_接続先はこのappの設定で決まる(resolver, want):
         )
     )
 
-    # **本物の依存をそのまま通す。** 差し替えると、確かめたい配線が消える。
-    # `Db` を冒頭で import してあるのは、`from __future__ import annotations` の下では
-    # 注釈が文字列になり、関数内 import だと FastAPI が解決できないため。
+    # The real dependency is used: substituting it would remove the wiring under test.
+    # Db is imported at the top because, under from __future__ import annotations, the
+    # annotation is a string and FastAPI cannot resolve an import made inside the
+    # function.
     @app.get("/_bind", include_in_schema=False)
     def _bind(session: Db):
         return {"url": str(session.get_bind().url)}
@@ -947,8 +993,9 @@ def test_接続先はこのappの設定で決まる(resolver, want):
 
 
 def _spec(**over):
-    """その構成の OpenAPI を起こす。**本番と同じ `create_app` を通す**
-    ——仕様書は口の出し分けの結果なので、app を組まずに確かめても意味がない。"""
+    """Build the OpenAPI document for that configuration through the real create_app.
+    The document is the result of which routes are installed, so checking it without
+    building the app would prove nothing."""
     from arkhe.app import create_app
     from arkhe.settings import Settings
 
@@ -956,26 +1003,26 @@ def _spec(**over):
     return create_app(Settings(**(base | over))).openapi()
 
 
-def test_トークンの取り方が仕様書に載る():
-    """**「どこで取るか」を機械可読で言う。** URL は README にしかなく、OpenAPI
-    からクライアントを起こすと認証の取得手順が落ちていた。
+def test_the_specification_says_where_to_get_a_token():
+    """Say where to get one in a machine-readable way. The URL was only in the README,
+    so a client generated from the OpenAPI document had no way to authenticate.
 
-    広告した URL が実在することまで見る——prefix を変えたときに、仕様書だけが
-    古い場所を指し続けるのを防ぐ。
+    The advertised URL is checked to exist, so that changing a prefix cannot leave the
+    document pointing at the old place.
     """
     from arkhe.domain import authz
 
     spec = _spec(auth=["apikey", "oauth2"])
     flow = spec["components"]["securitySchemes"]["oauth2"]["flows"]["clientCredentials"]
 
-    assert flow["tokenUrl"] in spec["paths"]              # 実在する口を指している
-    assert set(flow["scopes"]) == set(authz.SCOPES)       # 語彙は 1 か所から
-    assert "security" not in spec["paths"][flow["tokenUrl"]]["post"]  # 取る口自体は素通し
+    assert flow["tokenUrl"] in spec["paths"]              # it points at a real route
+    assert set(flow["scopes"]) == set(authz.SCOPES)       # one vocabulary
+    assert "security" not in spec["paths"][flow["tokenUrl"]]["post"]  # the route is open
 
-    # **bearer と並ぶ**（どちらでもよい）。片方に寄せると、apikey での利用が
-    # 仕様書の上では通らないことになる。
+    # It sits alongside bearer, either being acceptable. Listing only one would make
+    # using an API key look unsupported in the document.
     security = spec["paths"]["/api/mint"]["post"]["security"]
-    assert {"oauth2": ["ark:mint"]} in security   # 何が要るかも書く
+    assert {"oauth2": ["ark:mint"]} in security   # and what it requires
     assert {"bearer": []} in security
 
 
@@ -983,16 +1030,18 @@ def test_トークンの取り方が仕様書に載る():
     "over", [{"auth": ["apikey"]}, {"resolver": True, "auth": ["apikey"]}],
     ids=["minter-apikey", "resolver"],
 )
-def test_口の無い構成では取り方を広告しない(over):
-    """**無い口を指さない。** 広告だけ残ると、生成したクライアントが 404 を踏む。"""
+def test_a_configuration_without_the_route_does_not_advertise_it(over):
+    """Do not point at a route that is not there: a generated client would meet a
+    404."""
     spec = _spec(**over)
     assert "oauth2" not in spec.get("components", {}).get("securitySchemes", {})
     assert "/oauth/token" not in spec["paths"]
 
 
-def test_解決の3xxは委譲テンプレートが出せるものと一致する():
-    """**宣言と実装を突き合わせる。** 仕様書に並べた 3xx は、`expand_redirect` が
-    実際に出せる符号（`_STATUS_PREFIX`）と同じでなければ、契約として嘘になる。
+def test_the_documented_3xx_codes_match_what_can_be_produced():
+    """Compare what is declared with what is implemented. The 3xx codes in the
+    document have to be the ones expand_redirect can produce, or the contract is
+    untrue.
     """
     from arkhe.api.resolve import _RESOLVE_RESPONSES
     from arkhe.domain.resolution import expand_redirect
@@ -1000,13 +1049,16 @@ def test_解決の3xxは委譲テンプレートが出せるものと一致す�
     declared = {c for c in _RESOLVE_RESPONSES if 300 <= c < 400}
     produced = {expand_redirect(f"{c} https://x/$id", "99999", "abc")[0] for c in declared}
     assert produced == declared
-    # 受けない符号は既定に落ちる。**宣言を増やす理由にはならない。**
+    # An unsupported code falls back to the default, which is no reason to declare
+    # more of them.
     assert expand_redirect("308 https://x/$id", "99999", "abc")[0] == 302
 
 
-def test_解決の200は宣言した3つの媒体で返る(world, principal_of, as_principal):
-    """**同じ 200 でも媒体が違う。** `application/json` だけを宣言していたので、
-    仕様書から起こしたクライアントは ANVL と HTML を「知らない応答」として扱う。
+def test_a_200_from_resolution_uses_the_three_declared_media_types(
+    world, principal_of, as_principal
+):
+    """The same 200 comes in different media types. With only application/json
+    declared, a client generated from the document treats ANVL and HTML as unknown.
     """
     from arkhe.api.resolve import _RESOLVE_RESPONSES
 
@@ -1022,13 +1074,14 @@ def test_解決の200は宣言した3つの媒体で返る(world, principal_of, 
     assert got == set(_RESOLVE_RESPONSES[200]["content"])
 
 
-def test_宣言したscopeと検査するscopeが一致する():
-    """**宣言と検査が 2 か所に分かれている。** 仕様書に出るのは口の `needs(…)`、
-    実際に弾くのは本体の `require_scope(…)`——ずれれば仕様書が嘘になる。
+def test_the_declared_scope_matches_the_enforced_one():
+    """The declaration and the check live in two places: needs(...) on the route is
+    what appears in the document, and require_scope(...) in the body is what refuses.
+    If they drift, the document lies.
 
-    束ねなかったのは、束ねると scope が `bearer` にも付くため。OpenAPI は
-    **oauth2 以外のスキームに scope を書くことを許さない**（空配列でなければ
-    ならない）ので、`Security` に包む対象は oauth2 だけに限っている。
+    They were not merged because merging would attach the scope to bearer as well.
+    OpenAPI does not allow scopes on any scheme other than oauth2 and openIdConnect,
+    where the array must be empty, so only oauth2 is wrapped in Security.
     """
     import ast
     import pathlib
@@ -1049,14 +1102,14 @@ def test_宣言したscopeと検査するscopeが一致する():
             if isinstance(x, ast.Call)
             and ast.unparse(x.func) == "authz.require_scope"
         ]
-        assert declared == enforced, f"{fn.name}: 宣言 {declared} / 検査 {enforced}"
+        assert declared == enforced, f"{fn.name}: declared {declared}, enforced {enforced}"
         if fn.name != "_apply":
-            assert not enforced or declared, f"{fn.name}: 検査はあるのに宣言が無い"
+            assert not enforced or declared, f"{fn.name}: enforced but not declared"
 
 
-def test_scopeはoauth2にしか付かない():
-    """OpenAPI 3.1 §4.8.30: **oauth2 と openIdConnect 以外は空配列でなければならない。**
-    `bearer` は `type: http` なので、ここに scope を書くと仕様として不正になる。
+def test_scopes_appear_only_under_oauth2():
+    """OpenAPI 3.1, 4.8.30: for anything other than oauth2 and openIdConnect the array
+    must be empty. bearer is type: http, so a scope there makes the document invalid.
     """
     spec = _spec(auth=["apikey", "oauth2"])
     for path, methods in spec["paths"].items():
@@ -1064,28 +1117,28 @@ def test_scopeはoauth2にしか付かない():
             for requirement in op.get("security", []):
                 for name, scopes in requirement.items():
                     if name != "oauth2":
-                        assert scopes == [], f"{method.upper()} {path}: {name} に {scopes}"
+                        assert scopes == [], f"{method.upper()} {path}: {name} has {scopes}"
 
 
-# ------------------------------------- 冗長構成: 同じ依頼が同時に 2 つ届く
+# ------------------- Redundancy: one request arriving twice at the same time
 
 
-def test_控えが先に書かれていたら勝ったほうのARKを返す(db, world, principal_of):
-    """**冗長化すると起きる形の、回復の側を決定的に試す。**
+def test_when_the_receipt_was_written_first_the_winners_ark_is_returned(db, world, principal_of):
+    """The recovery side of something redundancy makes possible, tested
+    deterministically.
 
-    負荷分散の再送や、応答を待てなくなった呼び出し側の投げ直しが、**別の
-    minter に同時に届く**。再送の判定と控えの書き込みのあいだには隙があるので、
-    どちらも「まだ無い」と見てから、どちらも書きにいく。
+    A retry from a load balancer, or a caller that gave up waiting, can reach two
+    minters at once. Between checking for a resend and writing the receipt there is a
+    gap, so both see nothing and both write.
 
-    守り自体は DB に在る（`one_ark_per_request_id`）ので**台帳は壊れない**。
-    問題は負けたほうの応答で、素通しすると `500` になる——呼び出し側から見て
-    「採番できたか分からない」がいちばん困り、**別の `request_id` で投げ直せば
-    二重採番になる。**
+    The guard is in the database (one_ark_per_request_id), so the ledger is safe. The
+    problem is the answer to the loser: left alone it is a 500, which tells the caller
+    nothing about whether an ARK was minted, and retrying with a new request_id would
+    mint a second one.
 
-    ここでは「先に書かれていた」状態を作って、`_commit_or_replay` が
-    **勝ったほうの ARK を返す**ことを見る。スレッドを使わないのは、競合の
-    **結果**を試したいのであって、競合そのものを再現したいのではないため
-    （実際の同時到着は PostgreSQL で確かめた）。
+    Here the receipt is written first, and _commit_or_replay has to return the winner's
+    ARK. No threads are used, because what is being tested is the outcome of the race
+    rather than the race itself.
     """
     from arkhe.api.mint import _commit_or_replay
     from arkhe.db.models import MintReceipt
@@ -1096,23 +1149,24 @@ def test_控えが先に書かれていたら勝ったほうのARKを返す(db, 
     db.add(MintReceipt(client_id="racer", request_id="same", ark=winner.ark))
     db.commit()
 
-    # 負けたほう——同じ request_id で採り、同じ控えを書こうとする。
+    # The loser: mints with the same request_id and tries to write the same receipt.
     loser, _ = mint(db, shoulder=world["sh_a"], created_by="loser")
     db.add(MintReceipt(client_id="racer", request_id="same", ark=loser.ark))
 
     got = _commit_or_replay(db, p, "same", loser)
-    assert got.ark == winner.ark, "負けたほうに、勝ったほうの ARK を返していない"
+    assert got.ark == winner.ark, "the loser did not get the winner's ARK"
     assert db.query(MintReceipt).filter(MintReceipt.request_id == "same").count() == 1
 
 
-# ------------------------------------------------- Host を検める（設定が効くこと）
+# ------------------------------------------ Checking the Host header actually works
 
 
-def test_ALLOWED_HOSTSが実際に効く():
-    """**宣言され、参照ページにも載っているのに効かない設定は、無いより悪い。**
+def test_allowed_hosts_really_takes_effect():
+    """A setting that is declared and documented but does nothing is worse than no
+    setting.
 
-    絞ったつもりの運用者が、絞れていないまま「対処済み」と数えてしまう
-    ——実際、この設定は前から在ったが**どこからも使われていなかった**。
+    An operator who set it counts the problem as handled while nothing is restricted.
+    This one existed for a while and was read by nothing.
     """
     from fastapi.testclient import TestClient
 
@@ -1127,19 +1181,19 @@ def test_ALLOWED_HOSTSが実際に効く():
     narrow = app(["ark.example.org"])
     assert TestClient(narrow, base_url="http://ark.example.org").get("/healthz").status_code == 200
     assert TestClient(narrow, base_url="http://evil.example.net").get("/healthz").status_code == 400
-    # **既定では挟まない。** 前段で終端している構成では前段が見ているのが普通で、
-    # 二重に弾くと切り分けが難しくなる。
+    # Not installed by default: where a proxy terminates the connection it usually
+    # checks this, and refusing twice makes problems harder to place.
     wide = app(["*"])
     assert TestClient(wide, base_url="http://anything.example").get("/healthz").status_code == 200
 
 
-def test_接続プールの大きさが設定で変わる():
-    """**プールの大きさは worker 数と掛け算になる。**
+def test_the_pool_size_follows_the_settings():
+    """Pool size multiplies by the number of workers.
 
-    既定のままだと 1 プロセスで最大 15 接続、**resolver 2 台 × 4 worker で 120**
-    ——PostgreSQL の既定 `max_connections = 100`（予約を除くと 97）を超える。
-    推奨の形のまま既定で動かすと、そこで詰まる。**摘みが無ければ、運用者は
-    worker を減らすしかない。**
+    On the defaults that is up to 15 connections per process, so two resolvers with four
+    workers each reach 120, past PostgreSQL's default max_connections of 100, or 97 once
+    the reserve is taken out. The recommended shape jams there on the defaults, and
+    without a knob the only remedy is fewer workers.
     """
     from arkhe.db.session import engines
     from arkhe.settings import Settings
@@ -1151,16 +1205,17 @@ def test_接続プールの大きさが設定で変わる():
         ))
         return w.pool.size() + w.pool._max_overflow
 
-    assert cap(5, 10) == 15, "既定の上限が変わっている"
-    assert cap(2, 2) == 4, "設定が効いていない"
+    assert cap(5, 10) == 15, "the default ceiling has changed"
+    assert cap(2, 2) == 4, "the setting had no effect"
 
 
-def test_pre_pingは設定で切れる():
-    """**切ると解決 1 件あたりの DB 往復がほぼ半分になる**（実測 1.60 → 0.82）。
+def test_pre_ping_can_be_turned_off():
+    """Turning it off roughly halves the database round trips per resolution: 1.60
+    against 0.82 when measured.
 
-    解決はもともと索引 1 回しか引かないので、**生存確認の 1 往復が相対的に
-    重い**。既定は入れたまま——切ってよいのは、DB が近く、切られた接続が
-    そのまま例外として出ても構わない構成である。
+    Resolution only reads one index, so the liveness check costs a lot in relative
+    terms. It stays on by default; turning it off suits a deployment where the database
+    is close and a dropped connection surfacing as an exception is acceptable.
     """
     from arkhe.db.session import engines
     from arkhe.settings import Settings
@@ -1171,5 +1226,5 @@ def test_pre_pingは設定で切れる():
         ))
         return w.pool._pre_ping
 
-    assert ping(True) is True, "既定で確かめなくなっている"
-    assert ping(False) is False, "設定が効いていない"
+    assert ping(True) is True, "the default no longer checks"
+    assert ping(False) is False, "the setting had no effect"
