@@ -1467,6 +1467,11 @@
 <td><code>0</code></td>
 <td>接続を作り直すまでの秒数。<code>0</code> で作り直さない。<strong>接続を黙って切る前段の下では、その保持時間より短く</strong></td>
 </tr>
+<tr>
+<td><code>ARKHE_DB_PRE_PING</code></td>
+<td><code>true</code></td>
+<td>接続を貸す前に生きているか確かめる。<strong>切ると解決 1 件あたりの DB 往復がほぼ半分</strong>（実測 1.60 → 0.82）。切るのは DB が近く、切られた接続が例外として出てよい構成だけ</td>
+</tr>
 </tbody>
 </table>
 <div class="admonition warning">

@@ -1467,6 +1467,11 @@ ships to production unnoticed.</p>
 <td><code>0</code></td>
 <td>Seconds before a connection is remade; <code>0</code> never remakes it. <strong>Behind anything that drops idle connections, set it below that idle timeout</strong></td>
 </tr>
+<tr>
+<td><code>ARKHE_DB_PRE_PING</code></td>
+<td><code>true</code></td>
+<td>Check a connection is alive before lending it. <strong>Turning it off roughly halves the database round trips per resolution</strong> (measured 1.60 → 0.82). Only turn it off where the database is close and a dropped connection may surface as an error</td>
+</tr>
 </tbody>
 </table>
 <div class="admonition warning">

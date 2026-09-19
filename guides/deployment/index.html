@@ -1005,6 +1005,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#re-measured-on-the-recommended-settings-2026-09-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-measured on the recommended settings (2026-09-18)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-scales-out-and-what-jams-first-2026-09-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it scales out, and what jams first (2026-09-18)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#measuring-your-own" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1820,6 +1842,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#re-measured-on-the-recommended-settings-2026-09-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-measured on the recommended settings (2026-09-18)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-scales-out-and-what-jams-first-2026-09-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it scales out, and what jams first (2026-09-18)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#measuring-your-own" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2437,8 +2481,8 @@ spends a round trip every time it does</strong>.</p>
 </tr>
 <tr>
 <td><code>shared_buffers</code></td>
-<td><strong>25% of RAM</strong></td>
-<td>Default 128 MB. <strong>A million ARKs index in 39 MB</strong>, so size it to hold the indexes</td>
+<td><strong>Enough to hold the indexes</strong></td>
+<td>The default 128 MB already gives <strong>99.95% cache hits</strong>, and raising it changed nothing (see "what did nothing" below) — the general "25% of RAM" buys nothing on this workload</td>
 </tr>
 <tr>
 <td><code>effective_cache_size</code></td>
@@ -2541,16 +2585,427 @@ memory, and <strong>this ledger needs few of them at once.</strong></p>
 <li>If the admin interface should not be reachable from outside, <code>ARKHE_ADMIN_LOGIN=bearer</code>
   removes the login screen altogether.</li>
 </ul>
+<h3 id="re-measured-on-the-recommended-settings-2026-09-18">Re-measured on the recommended settings (2026-09-18)<a class="headerlink" href="#re-measured-on-the-recommended-settings-2026-09-18" title="Permanent link">&para;</a></h3>
+<p><strong>Built exactly as recommended above, and run.</strong> A ledger of one million ARKs,
+PostgreSQL 17 (<code>max_connections=200</code>, <code>shared_buffers=512MB</code>), four resolver workers,
+<code>ARKHE_DB_POOL_SIZE=3</code> and <code>ARKHE_DB_MAX_OVERFLOW=2</code>, all on one 20-core host.</p>
+<table>
+<thead>
+<tr>
+<th>Resolution (302)</th>
+<th>Concurrency</th>
+<th>rps</th>
+<th>p50</th>
+<th>p95</th>
+<th>p99</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>1</td>
+<td>278</td>
+<td>3.5</td>
+<td>4.9</td>
+<td>5.6 ms</td>
+</tr>
+<tr>
+<td></td>
+<td>4</td>
+<td>777</td>
+<td>4.1</td>
+<td>6.4</td>
+<td>7.5 ms</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>8</strong></td>
+<td><strong>938</strong></td>
+<td><strong>6.5</strong></td>
+<td>10.5</td>
+<td>18.9 ms</td>
+</tr>
+<tr>
+<td></td>
+<td>16</td>
+<td>938</td>
+<td>10.6</td>
+<td>20.5</td>
+<td>37.7 ms</td>
+</tr>
+</tbody>
+</table>
+<p><strong>It flattens at a concurrency of eight</strong> for four workers. Beyond that the rps does not
+move and <strong>only the latency grows</strong> — more parallelism does not make it faster.</p>
+<table>
+<thead>
+<tr>
+<th>Other paths (concurrency 8)</th>
+<th>rps</th>
+<th>p50</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>?info</code></td>
+<td>789</td>
+<td>6.5 ms</td>
+</tr>
+<tr>
+<td><code>?json</code></td>
+<td>784</td>
+<td>6.8 ms</td>
+</tr>
+<tr>
+<td><code>??</code></td>
+<td>784</td>
+<td>8.0 ms</td>
+</tr>
+<tr>
+<td>Forwarding an unknown NAAN</td>
+<td>689</td>
+<td>8.7 ms</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Checking that the server is what was measured</strong>: <code>/healthz</code> (no database, no
+authentication) reached <strong>2,192 rps</strong> under the same conditions. Resolution at 938 is well
+under half of that, so <strong>the server is what the numbers describe.</strong></p>
+<p><strong>Only 16 connections were ever open</strong> (<code>pool_size 3 + overflow 2</code> × 4 workers = 20
+available; 179 still free of <code>max_connections=200</code>). <strong>The recommended pool is not too
+tight.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Minting (2 minter workers)</th>
+<th>Concurrency</th>
+<th>rps</th>
+<th>p50</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One at a time</td>
+<td>1</td>
+<td>17</td>
+<td><strong>59.7 ms</strong></td>
+</tr>
+<tr>
+<td></td>
+<td>4</td>
+<td>53</td>
+<td>70.3 ms</td>
+</tr>
+<tr>
+<td></td>
+<td>8</td>
+<td>77</td>
+<td>94.4 ms</td>
+</tr>
+<tr>
+<td><strong>1000 in one request</strong></td>
+<td>—</td>
+<td><strong>918 a second</strong></td>
+<td>1,089 ms</td>
+</tr>
+</tbody>
+</table>
+<p><strong>That 59.7 ms is almost entirely Argon2</strong> (about 53 ms per verification); the database
+does not spend half a millisecond. <strong>Bulk is 55 times faster</strong> — not because the database
+is quick, but because <strong>one authentication is divided across a thousand rows.</strong></p>
+<p><strong>These numbers say nothing beyond "on this machine".</strong> Everything shared one host, so a
+split deployment adds a round trip. Take your own with the tool below.</p>
+<h3 id="how-it-scales-out-and-what-jams-first-2026-09-18">How it scales out, and what jams first (2026-09-18)<a class="headerlink" href="#how-it-scales-out-and-what-jams-first-2026-09-18" title="Permanent link">&para;</a></h3>
+<p><strong>Swept the knobs to see which ones move the number.</strong> One million ARKs, PostgreSQL 17
+(<code>max_connections=300</code>, <code>shared_buffers=512MB</code>), everything on one 20-core host.</p>
+<h4 id="1-first-make-sure-you-are-measuring-the-server">1. First make sure you are measuring the server<a class="headerlink" href="#1-first-make-sure-you-are-measuring-the-server" title="Permanent link">&para;</a></h4>
+<p><strong><code>bench.py</code> tops out near 2,200 rps per process</strong> (Python's GIL), and raising the
+concurrency does not change that:</p>
+<table>
+<thead>
+<tr>
+<th><code>/healthz</code>, one process</th>
+<th>c=8</th>
+<th>c=16</th>
+<th>c=32</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rps</td>
+<td>2,236</td>
+<td>2,121</td>
+<td>2,094</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Adding processes does</strong> — two reach 4,218, four reach 9,017 rps. <strong>So any figure above
+about 1,500 rps taken with a single process is describing the client, not the server.</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Four in parallel, then add them up (more concurrency alone will not lift the ceiling)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="m">4</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>python<span class="w"> </span>scripts/bench.py<span class="w"> </span><span class="s2">"</span><span class="nv">$URL</span><span class="s2">"</span><span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="p">&amp;</span><span class="w"> </span><span class="k">done</span><span class="p">;</span><span class="w"> </span><span class="nb">wait</span>
+</code></pre></div>
+<h4 id="2-workers-double-up-to-four-then-stop-paying">2. Workers double up to four, then stop paying<a class="headerlink" href="#2-workers-double-up-to-four-then-stop-paying" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Workers</th>
+<th>rps</th>
+<th>Gain over the previous row</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>352</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td>718</td>
+<td><strong>2.0×</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>1,413</strong></td>
+<td><strong>2.0×</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>1,682</td>
+<td>1.2×</td>
+</tr>
+<tr>
+<td>16</td>
+<td>1,845</td>
+<td>1.1×</td>
+</tr>
+</tbody>
+</table>
+<p><strong>One to two to four doubles cleanly</strong>; past that another worker buys about ten per cent.
+<strong>Add workers up to four; beyond that, something else is the limit.</strong></p>
+<h4 id="3-the-pool-sets-the-connection-count-not-the-speed">3. The pool sets the connection count, not the speed<a class="headerlink" href="#3-the-pool-sets-the-connection-count-not-the-speed" title="Permanent link">&para;</a></h4>
+<p>Swept at four workers, concurrency 32:</p>
+<table>
+<thead>
+<tr>
+<th>Pool</th>
+<th>Theoretical max</th>
+<th>Connections actually open</th>
+<th>rps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1+0</code></td>
+<td>4</td>
+<td><strong>5</strong></td>
+<td>~1,700–2,000</td>
+</tr>
+<tr>
+<td><code>3+2</code></td>
+<td>20</td>
+<td><strong>17</strong></td>
+<td>~1,400–1,900</td>
+</tr>
+<tr>
+<td><code>10+20</code></td>
+<td>120</td>
+<td><strong>40</strong></td>
+<td>~1,500–2,100</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A thirtyfold range moves nothing</strong> (the spread is inside the run-to-run variance below).
+What it moves is <strong>how many connections you hold</strong> — resolution is one short query that
+returns immediately, so <strong>there is nothing to hoard</strong>. Set the pool to <strong>the smallest that
+does not stall.</strong></p>
+<h4 id="4-what-jams-next-is-postgresqls-cpu">4. What jams next is PostgreSQL's CPU<a class="headerlink" href="#4-what-jams-next-is-postgresqls-cpu" title="Permanent link">&para;</a></h4>
+<p>Measured mid-load with eight workers:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>CPU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uvicorn (8 workers, ~60% each)</td>
+<td><strong>~470%</strong></td>
+</tr>
+<tr>
+<td>PostgreSQL</td>
+<td><strong>~330%</strong></td>
+</tr>
+<tr>
+<td>the measuring client</td>
+<td>~200%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The app and the database burn CPU at roughly 1.4 : 1.</strong> Scaling the app alone therefore
+<strong>demands the same proportion from the database</strong> — once more workers stop helping, the
+next thing to look at is PostgreSQL (add a replica; point the resolver at it).</p>
+<h4 id="the-order-to-scale">The order to scale<a class="headerlink" href="#the-order-to-scale" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Prove the client is not the ceiling</strong> — skip this and every later number is a lie.</li>
+<li><strong>Workers up to four</strong> — that far, it doubles honestly.</li>
+<li><strong>Leave the pool at 2–3</strong> — raising it buys no speed and <strong>costs connections</strong>.</li>
+<li><strong>Then PostgreSQL</strong> — add a replica and send the resolver to it.</li>
+<li><strong>Hosts last</strong> — resolvers hold no state, so spreading them out is always available.</li>
+</ol>
+<h4 id="5-what-was-tried-and-did-nothing">5. What was tried and did nothing<a class="headerlink" href="#5-what-was-tried-and-did-nothing" title="Permanent link">&para;</a></h4>
+<p><strong>Knowing what does not help is the more useful half.</strong> Everything below was swept on the
+same host:</p>
+<table>
+<thead>
+<tr>
+<th>Tried</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Switching to <code>uvloop</code> / <code>httptools</code></td>
+<td><strong>No difference</strong> (1,280 → 1,400 → 1,275 rps; inside the noise)</td>
+</tr>
+<tr>
+<td><code>shared_buffers</code> at 128MB / 512MB / 2GB</td>
+<td><strong>No difference.</strong> All three hit <strong>99.95% cache hits</strong></td>
+</tr>
+<tr>
+<td>Sweeping the connection pool thirtyfold</td>
+<td><strong>No difference</strong> (section 3 above)</td>
+</tr>
+<tr>
+<td><code>synchronous_commit=off</code> for minting</td>
+<td><strong>No difference</strong> (51.3 → 51.7 rps)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why <code>shared_buffers</code> does not matter here</strong> — a resolution touches <strong>one index and one
+row</strong>, so the working set is tiny and the rest lives in the OS page cache. Giving
+PostgreSQL more of it <strong>changes nothing about where the data comes from</strong>. "25% of RAM" is
+sound general advice, but <strong>there is nothing to buy with it on this workload</strong>. What is
+needed is only that <strong>the index fits</strong> (39 MB at a million ARKs), which even the default
+128 MB does.</p>
+<p><strong>Why <code>synchronous_commit</code> does not matter</strong> — one mint takes <strong>about 60 ms at p50, of
+which 53 ms is Argon2</strong>. <strong>The disk sync is nowhere near the measurable part.</strong> If giving
+up durability buys nothing, there is no reason to give it up.</p>
+<h4 id="6-the-one-thing-that-did-help--pre_ping">6. The one thing that did help — <code>pre_ping</code><a class="headerlink" href="#6-the-one-thing-that-did-help--pre_ping" title="Permanent link">&para;</a></h4>
+<p><strong>Checking a connection is alive before lending it (<code>SELECT 1</code>) was roughly doubling the
+database round trips per resolution.</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Transactions per 500 requests (<code>xact_commit + xact_rollback</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ARKHE_DB_PRE_PING=true</code> (default)</td>
+<td><strong>802</strong> (1.60 each)</td>
+</tr>
+<tr>
+<td><code>ARKHE_DB_PRE_PING=false</code></td>
+<td><strong>411</strong> (0.82 each)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The rps never showed it</strong> — it drowned in the noise. <strong>Counting made it decisive</strong>: a
+resolution reads one index, so <strong>the extra verification round trip is heavy in relative
+terms.</strong></p>
+<p><strong>The default stays on.</strong> Turn it off where <strong>the database is close and a dropped
+connection may surface to the caller as an error</strong>. If something upstream silently drops
+idle connections, set <code>ARKHE_DB_POOL_RECYCLE</code> before turning this off.</p>
+<p><strong>The point of this section</strong>: there are many knobs, and <strong>exactly one of them measured</strong>.
+Everything else can stay at its default — <strong>time spent on adjustments that do nothing is
+time not spent putting workers at four and, past that, widening the database.</strong></p>
+<h4 id="7-what-widening-the-database-actually-does">7. What widening the database actually does<a class="headerlink" href="#7-what-widening-the-database-actually-does" title="Permanent link">&para;</a></h4>
+<p><strong>Built a replica and measured it</strong> (streaming replication, the resolver pointed at it
+through <code>ARKHE_READ_DATABASE_URL</code>).</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>rps</th>
+<th>Primary CPU under load</th>
+<th>Replica CPU under load</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reads on the primary</td>
+<td>1,433</td>
+<td><strong>136%</strong></td>
+<td>0%</td>
+</tr>
+<tr>
+<td>Reads on the replica</td>
+<td>1,307</td>
+<td><strong>0%</strong></td>
+<td>135%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The rps does not go up.</strong> On one host that is unsurprising — <strong>a replica adds no CPU</strong>.
+Throughput grows only once the replica is on its own machine.</p>
+<p><strong>What grows is the primary's headroom.</strong> The read load leaves it <strong>entirely</strong> (136% → 0%).
+So a replica does not buy speed; it buys <strong>minting and administration not being dragged
+down when reads get rough</strong>. That is the asymmetry — resolution must not stop, minting may
+— <strong>protecting the half that is allowed to stop.</strong></p>
+<p><strong>Resolution survives the primary going down</strong> (tested by stopping it: <code>302</code>, <code>?info</code>
+still <code>200</code>, <code>/readyz</code> still <code>200</code>). A hot standby is readable, so <strong>only minting stops.</strong></p>
+<h4 id="how-far-behind-is-the-replica">How far behind is the replica?<a class="headerlink" href="#how-far-behind-is-the-replica" title="Permanent link">&para;</a></h4>
+<p><strong>Measured from minting to being resolvable on the replica:</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Median</th>
+<th>Max</th>
+<th>Resolved on the very first request</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Idle (30 runs)</td>
+<td><strong>4.8 ms</strong></td>
+<td>74 ms</td>
+<td><strong>30 / 30</strong></td>
+</tr>
+<tr>
+<td>Under write load (20 runs)</td>
+<td><strong>3.4 ms</strong></td>
+<td>6.3 ms</td>
+<td><strong>20 / 20</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>replay_lag</code> in <code>pg_stat_replication</code> stayed at <strong>1.3 milliseconds</strong> even under load.</p>
+<p><strong>So in a healthy, co-located setup this hazard does not appear.</strong> The
+<a href="#here-replication-lag-is-a-correctness-problem">monitoring section</a> warns that an ARK
+resolved right after minting can answer <code>404</code> — <strong>in these measurements it never once did.</strong></p>
+<p><strong>The reason to monitor it remains.</strong> Lag grows <strong>when the replica is on another machine
+and a round trip is added, when the replica is busy with reads, when a large ingest
+outruns replay</strong> — none of which is reproduced here. <strong>This is not proof that it cannot
+happen; only that it did not happen under these conditions.</strong></p>
+<h4 id="about-the-variance">About the variance<a class="headerlink" href="#about-the-variance" title="Permanent link">&para;</a></h4>
+<p><strong>Repeating the same configuration gave anywhere from 1,413 to 2,078 rps (±20%).</strong>
+Everything shares one host, so other load bleeds in. <strong>A difference smaller than that band
+is not a difference</strong> — the doubling from one to four workers sits outside it; the 1.1×
+from eight to sixteen sits inside it.</p>
 <h3 id="measuring-your-own">Measuring your own<a class="headerlink" href="#measuring-your-own" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># One endpoint, 3000 requests, 8 at a time</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># The ceiling of the stack: no database, no authentication.</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># If your other numbers approach this, you are measuring the client</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/healthz<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Minting (the Argon2 cost is per request)</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span>--post<span class="w"> </span>--auth<span class="w"> </span><span class="s2">"</span><span class="nv">$KEY</span><span class="s2">"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># One endpoint, 3000 requests, 8 at a time</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/ark:99999/x9tn1qkq2g7<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># The ceiling of the stack: no database, no authentication.</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># If your other numbers approach this, you are measuring the client</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/healthz<span class="w"> </span>-n<span class="w"> </span><span class="m">3000</span><span class="w"> </span>-c<span class="w"> </span><span class="m">8</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># Minting (the Argon2 cost is per request)</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>python<span class="w"> </span>scripts/bench.py<span class="w"> </span>http://127.0.0.1:8000/api/mint<span class="w"> </span>-n<span class="w"> </span><span class="m">200</span><span class="w"> </span>-c<span class="w"> </span><span class="m">4</span><span class="w"> </span>--post<span class="w"> </span>--auth<span class="w"> </span><span class="s2">"</span><span class="nv">$KEY</span><span class="s2">"</span>
 </code></pre></div>
 <p>Capacity in bytes, and how to measure it against your own ledger, is in
 <a href="../../reference/data-model/#on-capacity">the data model</a>.</p>
@@ -2656,9 +3111,9 @@ that is a strength, not an oversight).</p>
 <p><strong>arkhe publishes the list to watch.</strong> Ask <code>/.well-known/ark</code> with
 <code>Accept: application/json</code> and you get the delegated shoulders, where resolution was
 delegated, and the redirect of any NAAN it is not authoritative for:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span>https://ark.example.org/.well-known/ark<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.delegated_shoulders[] | select(.redirect) | .redirect,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="s1">           .naans[] | select(.redirect) | .redirect'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s1">'Accept: application/json'</span><span class="w"> </span>https://ark.example.org/.well-known/ark<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.delegated_shoulders[] | select(.redirect) | .redirect,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="s1">           .naans[] | select(.redirect) | .redirect'</span>
 </code></pre></div>
 <p><strong>Feed that into your monitoring</strong> — re-read the list on a schedule and probe the URLs
 from outside. <strong>Do not make arkhe do the probing.</strong> As it stands this ledger makes <strong>no
@@ -2682,17 +3137,17 @@ primary.</p>
 <h3 id="daily-and-monthly">Daily and monthly<a class="headerlink" href="#daily-and-monthly" title="Permanent link">&para;</a></h3>
 <p>Take the dump in <code>pg_dump</code>'s custom format (<code>-Fc</code>): it is compressed, and <code>pg_restore</code>
 can pick tables out of it.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Daily. **Put it on another machine** — what sits on the same one dies in the same accident.</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pg_dump<span class="w"> </span>-Fc<span class="w"> </span>-d<span class="w"> </span><span class="s2">"</span><span class="nv">$ARKHE_DATABASE_URL</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"arkhe-</span><span class="k">$(</span>date<span class="w"> </span>+%Y%m%d<span class="k">)</span><span class="s2">.dump"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Daily. **Put it on another machine** — what sits on the same one dies in the same accident.</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pg_dump<span class="w"> </span>-Fc<span class="w"> </span>-d<span class="w"> </span><span class="s2">"</span><span class="nv">$ARKHE_DATABASE_URL</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span><span class="s2">"arkhe-</span><span class="k">$(</span>date<span class="w"> </span>+%Y%m%d<span class="k">)</span><span class="s2">.dump"</span>
 </code></pre></div>
 <p>Start from <strong>14 daily and 12 monthly</strong>. A monthly copy is just the daily one taken on the
 first of the month, so there is no second job to run. <strong>A ledger only grows</strong> — ARKs do
 not go away — so plan for linear growth: around 40 GB at a hundred million, as an upper
 marker (see <a href="../../reference/data-model/#capacity">Data model</a>).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># 03:15 every day. Do not silence failures — discard the output and you never learn it stopped.
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>15 3 * * *  pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f /backup/arkhe-$(date +\%Y\%m\%d).dump
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>20 3 1 * *  cp /backup/arkhe-$(date +\%Y\%m01).dump /backup/monthly/
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>30 3 * * *  find /backup -name 'arkhe-*.dump' -mtime +14 -delete
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a># 03:15 every day. Do not silence failures — discard the output and you never learn it stopped.
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>15 3 * * *  pg_dump -Fc -d "$ARKHE_DATABASE_URL" -f /backup/arkhe-$(date +\%Y\%m\%d).dump
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>20 3 1 * *  cp /backup/arkhe-$(date +\%Y\%m01).dump /backup/monthly/
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>30 3 * * *  find /backup -name 'arkhe-*.dump' -mtime +14 -delete
 </code></pre></div>
 <h3 id="a-nightly-dump-is-not-enough-here">A nightly dump is not enough here<a class="headerlink" href="#a-nightly-dump-is-not-enough-here" title="Permanent link">&para;</a></h3>
 <p><strong>Once a day means losing up to 24 hours of identifiers.</strong> In most systems that is an
@@ -2700,25 +3155,25 @@ ingest you re-run. <strong>Not in this one</strong>: minting the lost ARKs again
 indistinguishable from breaking <code>NR</code>. <strong>The names you handed out are already in the world,
 whatever your database thinks.</strong></p>
 <p>So for this ledger, continuous archiving is not a luxury:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># postgresql.conf</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">wal_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>replica
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nv">archive_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>on
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nv">archive_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'test ! -f /archive/%f &amp;&amp; cp %p /archive/%f'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># postgresql.conf</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nv">wal_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>replica
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nv">archive_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>on
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="nv">archive_command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'test ! -f /archive/%f &amp;&amp; cp %p /archive/%f'</span>
 </code></pre></div>
 <p>A base backup (<code>pg_basebackup</code>) plus continuous WAL gets you <strong>back to any point in time</strong>.
 Keep the daily dump underneath it as the floor — PITR cannot recover across a broken chain,
 while a dump stands on its own.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pg_basebackup<span class="w"> </span>-D<span class="w"> </span>/backup/base<span class="w"> </span>-Fp<span class="w"> </span>-Xstream<span class="w"> </span>-c<span class="w"> </span>fast
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>pg_basebackup<span class="w"> </span>-D<span class="w"> </span>/backup/base<span class="w"> </span>-Fp<span class="w"> </span>-Xstream<span class="w"> </span>-c<span class="w"> </span>fast
 </code></pre></div>
 <p>To come back, put the base backup in place, <strong>write the recovery settings, drop
 <code>recovery.signal</code> and start</strong>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>cp<span class="w"> </span>-a<span class="w"> </span>/backup/base<span class="w"> </span>/var/lib/postgresql/data
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/lib/postgresql/data/postgresql.conf<span class="w"> </span><span class="s">&lt;&lt;'CONF'</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="s">restore_command = 'cp /archive/%f %p'</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s">recovery_target_action = 'promote'</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="s">CONF</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>touch<span class="w"> </span>/var/lib/postgresql/data/recovery.signal
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>pg_ctl<span class="w"> </span>-D<span class="w"> </span>/var/lib/postgresql/data<span class="w"> </span>start
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>cp<span class="w"> </span>-a<span class="w"> </span>/backup/base<span class="w"> </span>/var/lib/postgresql/data
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>/var/lib/postgresql/data/postgresql.conf<span class="w"> </span><span class="s">&lt;&lt;'CONF'</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="s">restore_command = 'cp /archive/%f %p'</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="s">recovery_target_action = 'promote'</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="s">CONF</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>touch<span class="w"> </span>/var/lib/postgresql/data/recovery.signal
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>pg_ctl<span class="w"> </span>-D<span class="w"> </span>/var/lib/postgresql/data<span class="w"> </span>start
 </code></pre></div>
 <p><strong>Naming no target is the default, and the right one.</strong> With nothing set, recovery replays
 to the end of the WAL — <strong>the fewest identifiers lost</strong>. <code>recovery_target_time</code> is for
@@ -2771,37 +3226,37 @@ even tombstone it: there is nothing left to tombstone.</p>
 <h3 id="restoring">Restoring<a class="headerlink" href="#restoring" title="Permanent link">&para;</a></h3>
 <p><strong>You only know it comes back when you bring it back.</strong> These steps are <strong>exercised</strong>, on
 PostgreSQL 17 with <code>pg_dump -Fc</code> and <code>pg_restore</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>createdb<span class="w"> </span>arkhe
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span>arkhe-YYYYMMDD.dump
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>createdb<span class="w"> </span>arkhe
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span>arkhe-YYYYMMDD.dump
 </code></pre></div>
 <p><code>--no-owner --no-privileges</code> is there because <strong>the role names on the far side are usually
 not the ones you dumped from</strong>; without it the restore stops trying to reassign ownership.</p>
 <h3 id="proving-the-restore-worked">Proving the restore worked<a class="headerlink" href="#proving-the-restore-worked" title="Permanent link">&para;</a></h3>
 <p><strong>Matching row counts prove nothing.</strong> The counts can agree while every target has moved,
 and then every identifier is broken. Check <strong>four</strong> things:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># 1. The schema version agrees (upgrade if you restored an older dump)</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT version_num FROM alembic_version"</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>uv<span class="w"> </span>run<span class="w"> </span>alembic<span class="w"> </span>check
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1"># 2. **The fingerprint.** If it matches, the identifiers survived.</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1">#    (Do not paste SQL — **a mis-paste still reads as "they match".**)</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>arkhe<span class="w"> </span>fingerprint
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="c1"># 3. **It actually resolves.** Start a resolver and ask it.</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="c1">#    (The default process is the minter and **has no resolution endpoint** — do not read</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1">#     that 404 as a failed restore.)</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:app<span class="w">   </span><span class="c1"># then: curl -sI localhost:8000/ark:/…</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="c1"># 4. **It can still be written to.** If the sequences did not come back, the next mint</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="c1">#    collides on the primary key.</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>arkhe<span class="w"> </span>stat<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT last_value FROM shoulder_id_seq"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># 1. The schema version agrees (upgrade if you restored an older dump)</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT version_num FROM alembic_version"</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>uv<span class="w"> </span>run<span class="w"> </span>alembic<span class="w"> </span>check
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="c1"># 2. **The fingerprint.** If it matches, the identifiers survived.</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="c1">#    (Do not paste SQL — **a mis-paste still reads as "they match".**)</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>arkhe<span class="w"> </span>fingerprint
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="c1"># 3. **It actually resolves.** Start a resolver and ask it.</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="c1">#    (The default process is the minter and **has no resolution endpoint** — do not read</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="c1">#     that 404 as a failed restore.)</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="nv">ARKHE_RESOLVER</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uvicorn<span class="w"> </span>arkhe.app:create_app<span class="w"> </span>--factory<span class="w">   </span><span class="c1"># then: curl -sI localhost:8000/ark:/…</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="c1"># 4. **It can still be written to.** If the sequences did not come back, the next mint</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="c1">#    collides on the primary key.</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>arkhe<span class="w"> </span>stat<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>psql<span class="w"> </span>-d<span class="w"> </span>arkhe<span class="w"> </span>-tAc<span class="w"> </span><span class="s2">"SELECT last_value FROM shoulder_id_seq"</span>
 </code></pre></div>
 <p><strong>Two and four are the real ones.</strong> One and three announce themselves when they fail; <strong>a
 drifted fingerprint and a reset sequence pass quietly</strong> — you find out after an identifier
 has pointed at something else.</p>
 <p><code>arkhe fingerprint</code> prints two lines:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>arks       c5e54e5af778420832800a7dc9104eee  53 rows
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>arks       c5e54e5af778420832800a7dc9104eee  53 rows
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>withdrawn  e3b0c44298fc1c149afbf4c8996fb924  0 rows
 </code></pre></div>
 <p><strong>They are separate because blending them hides where the difference is.</strong> In particular,
 losing <code>withdrawn</code> (the names never to be assigned again) <strong>does not stop minting</strong>: with
@@ -2811,21 +3266,21 @@ everything appeared to work.</p>
 difference would not mean "broken" — <strong>an alarm that is always ringing stops being read.</strong></p>
 <h3 id="prove-every-month-that-it-comes-back">Prove every month that it comes back<a class="headerlink" href="#prove-every-month-that-it-comes-back" title="Permanent link">&para;</a></h3>
 <p><strong>A runbook that says "verify a restore" is never acted on.</strong> Make the verification a job:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Restore last night's dump into a throwaway database and compare fingerprints</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>createdb<span class="w"> </span>arkhe_verify
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe_verify<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span><span class="s2">"</span><span class="nv">$LATEST_DUMP</span><span class="s2">"</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span>postgresql://…/arkhe_verify<span class="w"> </span>arkhe<span class="w"> </span>fingerprint<span class="w"> </span>&gt;<span class="w"> </span>restored.txt
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>diff<span class="w"> </span>expected.txt<span class="w"> </span>restored.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>OK<span class="w">    </span><span class="c1"># it rings when it fails</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>dropdb<span class="w"> </span>arkhe_verify
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Restore last night's dump into a throwaway database and compare fingerprints</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>createdb<span class="w"> </span>arkhe_verify
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>arkhe_verify<span class="w"> </span>--no-owner<span class="w"> </span>--no-privileges<span class="w"> </span><span class="s2">"</span><span class="nv">$LATEST_DUMP</span><span class="s2">"</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nv">ARKHE_DATABASE_URL</span><span class="o">=</span>postgresql://…/arkhe_verify<span class="w"> </span>arkhe<span class="w"> </span>fingerprint<span class="w"> </span>&gt;<span class="w"> </span>restored.txt
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>diff<span class="w"> </span>expected.txt<span class="w"> </span>restored.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span>OK<span class="w">    </span><span class="c1"># it rings when it fails</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>dropdb<span class="w"> </span>arkhe_verify
 </code></pre></div>
 <p>Write <code>expected.txt</code> <strong>on production at the moment the dump is taken</strong> (the daily job can
 leave it beside the dump). <strong>Comparing anything other than "at dump time" against "after
 restore" proves nothing.</strong></p>
 <h3 id="noticing-that-backups-have-stopped">Noticing that backups have stopped<a class="headerlink" href="#noticing-that-backups-have-stopped" title="Permanent link">&para;</a></h3>
 <p><strong>Not noticing is worse than failing.</strong> Watch <strong>age</strong>, not success:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1">-- PostgreSQL keeps this itself; nothing to build</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">last_archived_time</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_time</span><span class="p">,</span><span class="w"> </span><span class="n">failed_count</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_wal</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_archiver</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">-- PostgreSQL keeps this itself; nothing to build</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">last_archived_time</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_time</span><span class="p">,</span><span class="w"> </span><span class="n">failed_count</span><span class="p">,</span><span class="w"> </span><span class="n">last_failed_wal</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_archiver</span><span class="p">;</span>
 </code></pre></div>
 <ul>
 <li><code>last_archived_time</code> older than <strong>N minutes</strong> → alert</li>
@@ -2844,8 +3299,8 @@ string at all. That is a protocol-level limitation, not an implementation one.</
 <code>pyproject.toml</code> carry only lower bounds, so without the lock <strong>the same commit builds
 into something different</strong> each time — the image changes under a rebuild, and "when did
 this break" becomes unanswerable.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># install exactly what the lock says</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># update it, deliberately</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>uv<span class="w"> </span>sync<span class="w"> </span>--frozen<span class="w"> </span>--extra<span class="w"> </span>app<span class="w"> </span>--extra<span class="w"> </span>dev<span class="w">   </span><span class="c1"># install exactly what the lock says</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>uv<span class="w"> </span>lock<span class="w">                                    </span><span class="c1"># update it, deliberately</span>
 </code></pre></div>
 <p><code>--frozen</code> <strong>fails if the lock and <code>pyproject.toml</code> disagree</strong>, which is what you want:
 passing while they disagree is worse. The checks (<code>scripts/check.sh</code>) and the image
