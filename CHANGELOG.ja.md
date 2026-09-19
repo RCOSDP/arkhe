@@ -8,6 +8,14 @@
 
 ## [未リリース]
 
+## [0.12.1] — 2026-09-19
+
+**README の日英が揃っていなかったのを直した版。**
+
+英語は `README.md`、日本語は `README.ja.md` という分け方は前からのものだが、
+**片方にしか無い節があった**——日本語版に「壊さないもの」とライセンスが無い。
+入口の文書でずれているのがいちばん困る。
+
 ### 変更
 
 - **README の日英を揃えた。** `README.md` は英語、`README.ja.md` は日本語という
@@ -1549,7 +1557,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.12.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.1
 [0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0
 [0.11.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.11.0
 [0.10.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.10.0

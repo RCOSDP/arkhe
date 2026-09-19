@@ -9,6 +9,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.12.1] — 2026-09-19
+
+**The release that made the two READMEs match.**
+
+The split was already there, English in `README.md` and Japanese in `README.ja.md`, but
+some sections existed in only one of them: the Japanese one had neither what the
+invariants protect nor the licence. Of all the places to disagree, the front door is the
+worst.
+
 ### Changed
 
 - **The two READMEs line up again.** The split is unchanged, English in `README.md` and
@@ -1677,7 +1686,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.1
 [0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0
 [0.11.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.11.0
 [0.10.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.10.0

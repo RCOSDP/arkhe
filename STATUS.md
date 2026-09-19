@@ -15,7 +15,7 @@
 
 | | |
 | --- | --- |
-| 版 | **0.12.0**（2026-09-19 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
+| 版 | **0.12.1**（2026-09-19 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
 | テスト | **すべて green**（`uv run pytest -q`）。**通しの検査は別枠**（`uv run pytest -m e2e`——docker で PostgreSQL を立て、minter と resolver を `uvicorn` で建てて HTTP で叩く。`check.sh` の手順 5） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語 |
