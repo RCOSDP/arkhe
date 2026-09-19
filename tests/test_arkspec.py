@@ -1,10 +1,10 @@
-"""純関数層の単体テスト。
+"""Unit tests for the pure functions.
 
-各テストは `ark_acceptance_criteria.md` の受け入れ条件 ID に対応する。
-**Django も DB も使わない。** ARK 仕様の難所をここだけで固める。
+Each test matches an acceptance criterion in ark_acceptance_criteria.md. Nothing here
+touches a database. The hard parts of the ARK specification are pinned down here.
 
-> arklet 側のテストは `tests/ark/views_tests.py` の 41 件で**すべて HTTP レベル**
-> であり、純関数の単体テストは存在しなかった。ここは新規に書いている。
+arklet's tests were 41 cases in tests/ark/views_tests.py, all at the HTTP level; there
+were no unit tests of the pure functions. These are new.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ from arkhe.arkspec.shoulder import (
 )
 
 # --------------------------------------------------------------------------
-# betanumeric / チェックディジット
+# betanumeric and check digits
 # --------------------------------------------------------------------------
 
 
@@ -53,14 +53,15 @@ def test_betanumeric_charset_excludes_vowels_and_ell():
 
 
 def test_check_digit_is_stable():
-    """N7: 計算範囲を変えない（適合を維持する）。"""
+    """N7: the range the digit is computed over never changes, so it stays
+    interoperable."""
     assert noid_check_digit("99999/kb1d191j10d") == noid_check_digit("99999/kb1d191j10d")
     assert len(noid_check_digit("99999kb1d191j10d")) == 1
     assert noid_check_digit("99999kb1d191j10d") in BETANUMERIC
 
 
 def test_check_digit_detects_single_character_error():
-    """NCDA が保証する「単一文字誤りの検出」。"""
+    """NCDA guarantees that a single wrong character is detected."""
     base = "99999kb1d191j10d"
     digit = noid_check_digit(base)
     misses = 0
@@ -71,22 +72,22 @@ def test_check_digit_detects_single_character_error():
             corrupted = base[:i] + replacement + base[i + 1 :]
             if noid_check_digit(corrupted) == digit:
                 misses += 1
-    assert misses == 0, f"{misses} 件の単一文字誤りが検出できていない"
+    assert misses == 0, f"{misses} single-character errors went undetected"
 
 
 def test_check_digit_detects_adjacent_transposition():
-    """NCDA が保証する「隣接転置の検出」。"""
+    """NCDA guarantees that swapping two neighbours is detected."""
     base = "99999kb1d191j10d"
     digit = noid_check_digit(base)
     for i in range(len(base) - 1):
         if base[i] == base[i + 1]:
             continue
         swapped = base[:i] + base[i + 1] + base[i] + base[i + 2 :]
-        assert noid_check_digit(swapped) != digit, f"位置 {i} の転置が検出できない"
+        assert noid_check_digit(swapped) != digit, f"a swap at {i} went undetected"
 
 
 def test_verify_check_digit_roundtrip():
-    """D1: 未登録 ARK はチェックディジットを検証してから 404 を返す。"""
+    """D1: an unregistered ARK has its check digit verified before we answer 404."""
     body = "99999kb1d191j10d"
     assert verify_check_digit(body + noid_check_digit(body))
     assert not verify_check_digit(body + "z" if noid_check_digit(body) != "z" else body + "b")
@@ -94,31 +95,32 @@ def test_verify_check_digit_roundtrip():
 
 
 def test_verify_ark_check_digit_takes_naan_and_name():
-    """検査桁は **naan + "/" + shoulder + noid** に対して計算される（N7）。
+    """N7: the digit is computed over naan + "/" + shoulder + noid.
 
-    blade だけを渡すと合わない——この API の誤用は実際に踏んだので固定する。
+    Passing only the blade does not match. That misuse actually happened, so it is
+    pinned down here.
     """
     naan, shoulder, noid = "99999", "kb1", "d191j10d"
     base = check_digit_base(naan, f"{shoulder}{noid}")
     name = f"{shoulder}{noid}{noid_check_digit(base)}"
     assert verify_ark_check_digit(naan, name)
-    assert not verify_ark_check_digit("99998", name)  # NAAN 違いは弾く
-    assert not verify_check_digit(name)  # name だけでは合わない
+    assert not verify_ark_check_digit("99998", name)  # a different NAAN fails
+    assert not verify_check_digit(name)  # the name alone does not match
 
 
 def test_check_digit_base_includes_the_slash():
-    """**NAAN と name のあいだの `/` を含める。**
+    """The / between the NAAN and the name is included.
 
-    `/` は betanumeric に無いのでスコアには入らないが、以降の文字の位置を 1 つ
-    ずらすため、含めるかどうかで検査桁が変わる。arklet と揃えないと相互に検証
-    できなくなる。
+    It is not in the betanumeric set, so it scores nothing, but it shifts every later
+    character by one position, which changes the digit. Without matching arklet here,
+    neither side could verify the other's names.
     """
     naan, name = "99999", "kb1d191j10d"
     assert check_digit_base(naan, name) == "99999/kb1d191j10d"
     with_slash = noid_check_digit(f"{naan}/{name}")
     without_slash = noid_check_digit(f"{naan}{name}")
-    assert with_slash != without_slash, "スラッシュの有無で値が変わることを固定する"
-    # arklet の採番と同じ組み立て（shoulder に先頭スラッシュを含む形）と一致する
+    assert with_slash != without_slash, "the slash has to change the value"
+    # The same assembly arklet used, with the leading slash inside the shoulder
     assert noid_check_digit(f"{naan}{'/kb1'}{'d191j10d'}") == with_slash
 
 
@@ -131,7 +133,7 @@ def test_generate_noid_uses_only_betanumeric():
 
 
 # --------------------------------------------------------------------------
-# A1  ラベルの大小非依存 / NAAN は小文字化・name は大小保持
+# A1  the label ignores case; the NAAN is lowercased and the name keeps its case
 # --------------------------------------------------------------------------
 
 
@@ -144,8 +146,8 @@ def test_a1_label_is_case_insensitive(label):
 
 def test_a1_naan_is_lowercased_but_name_keeps_case():
     parsed = parse_ark("ark:/BCD12/Kb1D191J10ds")
-    assert parsed.naan == "bcd12"  # NAAN は小文字化
-    assert parsed.name == "Kb1D191J10ds"  # name の大小は保持
+    assert parsed.naan == "bcd12"  # the NAAN is lowercased
+    assert parsed.name == "Kb1D191J10ds"  # the name keeps its case
 
 
 def test_a1_slash_after_label_is_optional():
@@ -160,12 +162,12 @@ def test_a1_nma_prefix_is_returned():
 
 
 # --------------------------------------------------------------------------
-# N2  NAAN は文字列。先頭ゼロは別の NAAN
+# N2  a NAAN is a string, and a leading zero makes a different one
 # --------------------------------------------------------------------------
 
 
 def test_n2_leading_zero_is_a_different_naan():
-    """**arklet の最重要バグ。** `int(naan)` で `099999` と `99999` が潰れていた。"""
+    """arklet's most serious bug: int(naan) collapsed 099999 and 99999."""
     a = parse_ark("ark:/99999/xyz")
     b = parse_ark("ark:/099999/xyz")
     assert a.naan == "99999"
@@ -179,7 +181,7 @@ def test_n2_naan_is_str_not_int():
 
 
 # --------------------------------------------------------------------------
-# N3  betanumeric NAAN（歴史的 NAAN）
+# N3  betanumeric NAANs, which exist for historical reasons
 # --------------------------------------------------------------------------
 
 
@@ -194,15 +196,15 @@ def test_n3_naan_rejects_non_betanumeric():
 
 
 # --------------------------------------------------------------------------
-# F1  NAAN の長さ制限
+# F1  how long a NAAN may be
 # --------------------------------------------------------------------------
 
 
 def test_f1_naan_up_to_the_spec_minimum_is_accepted():
-    """§2.3: "implementations **must support a minimum NAAN length of 16 octets**".
+    """2.3: implementations must support a minimum NAAN length of 16 octets.
 
-    **以前は 10 で弾いていた。** arklet が NAAN を `int()` に通すための防御を
-    そのまま持っていたもので、N2（整数化しない）を決めた時点で理由は消えていた。
+    This used to refuse anything over 10, a guard arklet needed because it passed NAANs
+    through int(). Once N2 settled that they are strings, the reason was gone.
     """
     assert parse_ark("ark:/" + "9" * 16 + "/xyz").naan == "9" * 16
     assert parse_ark("ark:/" + "bcd" * 5 + "1" + "/xyz").naan == "bcd" * 5 + "1"
@@ -217,7 +219,7 @@ def test_malformed_arks_are_rejected():
 
 
 # --------------------------------------------------------------------------
-# A2  ハイフンは無意味
+# A2  hyphens carry no meaning
 # --------------------------------------------------------------------------
 
 
@@ -229,11 +231,11 @@ def test_a2_hyphens_are_insignificant():
 def test_a2_split_measures_head_without_hyphens_but_keeps_tail_verbatim():
     head, tail = split_after_normalized("kb1d-191j10ds/a-b/c", len("kb1d191j10ds"))
     assert strip_hyphens(head) == "kb1d191j10ds"
-    assert tail == "/a-b/c"  # tail のハイフンは意味を持つので保持
+    assert tail == "/a-b/c"  # hyphens in the tail do mean something, so they stay
 
 
 # --------------------------------------------------------------------------
-# N4  構造文字の正規化 / `.` は両側に非構造文字が要る
+# N4  normalising structural characters; a . needs ordinary characters on both sides
 # --------------------------------------------------------------------------
 
 
@@ -244,19 +246,19 @@ def test_n4_consecutive_slashes_are_collapsed():
 
 def test_n4_period_needs_non_structural_on_both_sides():
     assert is_structural_at("a.b", 1)
-    assert not is_structural_at("a..b", 1)  # 右が構造文字
-    assert not is_structural_at("a..b", 2)  # 左が構造文字
-    assert not is_structural_at(".ab", 0)  # 先頭
-    assert not is_structural_at("ab.", 2)  # 末尾
+    assert not is_structural_at("a..b", 1)  # structural on the right
+    assert not is_structural_at("a..b", 2)  # structural on the left
+    assert not is_structural_at(".ab", 0)  # at the start
+    assert not is_structural_at("ab.", 2)  # at the end
 
 
 def test_n4_no_impossible_ancestor_from_double_period():
-    """`abc..def` から `abc.` という存在しえない祖先候補を作らない。"""
+    """abc..def must not produce abc., an ancestor that cannot exist."""
     assert "abc." not in list(gen_prefixes("abc..def"))
 
 
 # --------------------------------------------------------------------------
-# D5 / B3  祖先は最長一致。`.`（変種）も走査対象
+# D5 / B3  the longest ancestor wins, and . for variants is scanned too
 # --------------------------------------------------------------------------
 
 
@@ -270,7 +272,7 @@ def test_d5_ancestors_are_yielded_longest_first():
 
 
 def test_b3_variant_separator_is_scanned():
-    """mzML ↔ mzMLb のような「同一対象の別形態」は `.` で表す。"""
+    """Another form of the same object, such as mzML against mzMLb, uses a dot."""
     assert "mz3kfj02c3wm" in list(gen_prefixes("mz3kfj02c3wm.mzml"))
 
 
@@ -285,7 +287,7 @@ def test_no_ancestors_for_a_bare_name():
 
 
 # --------------------------------------------------------------------------
-# B2 / N5  shoulder の規約と不透明性
+# B2 / N5  the shoulder convention, and keeping it opaque
 # --------------------------------------------------------------------------
 
 
@@ -307,31 +309,31 @@ def test_n5_generated_shoulders_are_opaque_and_valid():
     for _ in range(200):
         s = generate_shoulder()
         validate_shoulder(s)
-        assert len(s) == 4  # '/' + 2 子音 + 1 数字
-        assert s[-1].isdigit()  # first-digit 規約の末尾
+        assert len(s) == 4  # a slash, two consonants and a digit
+        assert s[-1].isdigit()  # the digit that ends a shoulder
 
 
 def test_shoulder_capacity_matches_the_design():
-    assert shoulder_capacity(3) == 3610  # 800 組織で使用率 22.2%
+    assert shoulder_capacity(3) == 3610  # 800 organisations would use 22.2%
     assert shoulder_capacity(2) == 190
 
 
 def test_generated_shoulders_do_not_leak_join_order():
-    """連番だと加入順が漏れる。乱数なので隣接値が連続しないことを確かめる。"""
+    """Sequential shoulders would leak the order organisations joined in."""
     seq = [generate_shoulder() for _ in range(50)]
-    assert len(set(seq)) > 40  # 衝突だらけでないこと
-    assert seq != sorted(seq)  # 生成順に並んでいない
+    assert len(set(seq)) > 40  # not full of collisions
+    assert seq != sorted(seq)  # not in generation order
 
 
 def test_first_digit_convention_splits_without_a_separator():
-    """**区切り文字なしで shoulder と blade の境界が判定できる。**"""
+    """The boundary between shoulder and blade is found without a separator."""
     assert split_shoulder("kb1k4m2p9x") == ("kb1", "k4m2p9x")
     assert split_shoulder("bb1z93ht2dv2") == ("bb1", "z93ht2dv2")
     assert split_shoulder("nodigits") == ("", "nodigits")
 
 
 # --------------------------------------------------------------------------
-# N4  構造文字の正規化（draft-kunze-ark-42 §3.2）
+# N4  normalising structural characters (draft-kunze-ark-42, 3.2)
 # --------------------------------------------------------------------------
 
 
@@ -351,7 +353,7 @@ def test_first_digit_convention_splits_without_a_separator():
         ("/abc", "abc"),
         (".abc", "abc"),
         ("/abc/", "abc"),
-        # 触らないもの
+        # left alone
         ("abc/def", "abc/def"),
         ("abc.def", "abc.def"),
         ("abc", "abc"),
@@ -362,23 +364,23 @@ def test_n4_structural_normalization_follows_the_spec(src, want):
 
 
 def test_n4_normalization_converges_in_one_pass():
-    """「収束するまで反復」を 1 回の sub で満たせること。
-
-    正規表現が走り全体を貪欲に取るので、結果に構造文字の隣接は残らない。
+    """One substitution is enough for what the specification calls repeating until it
+    converges, because the pattern takes each run greedily.
     """
     got = normalize_structural("a/././/./b")
     assert got == "a/b"
-    assert normalize_structural(got) == got  # 冪等
+    assert normalize_structural(got) == got  # idempotent
 
 
 def test_n4_a_name_of_only_structural_characters_collapses_to_nothing():
-    """病的な入力。**空になっても落ちない**こと（呼び出し側で未登録として扱う）。"""
+    """A pathological input must not raise; the caller treats the empty result as an
+    unregistered name."""
     assert normalize_structural("...") == ""
     assert normalize_structural("/") == ""
 
 
 # --------------------------------------------------------------------------
-# A3  非 ASCII のハイフン様文字
+# A3  hyphen-like characters that are not ASCII
 # --------------------------------------------------------------------------
 
 
@@ -397,29 +399,30 @@ def test_n4_a_name_of_only_structural_characters_collapses_to_nothing():
     ],
 )
 def test_a3_hyphen_like_characters_are_removed(char, name):
-    """**Word や PDF から貼られた ARK が落ちないこと。**
+    """An ARK pasted out of a word processor or a PDF still works.
 
-    仕様: "non-ASCII hyphen-like characters (eg, U+2010 to U+2015) may arrive in
-    the place of hyphens"。`-` が `–` に自動置換されるのは日本語の文書で実際に起きる。
+    The specification says non-ASCII hyphen-like characters, for example U+2010 to
+    U+2015, may arrive in place of hyphens. Editors really do replace - with an en dash.
     """
     assert strip_hyphens(f"kb1d{char}191j{char}10ds") == "kb1d191j10ds", name
 
 
 def test_a3_the_prolonged_sound_mark_is_not_a_hyphen():
-    """`ー`（U+30FC）は落とさない。**punctuation ではなく修飾文字。**
+    """U+30FC is a letter modifier, not punctuation, so it is kept.
 
-    見た目が似ているからと落とすと、日本語として意味のある文字を黙って消すことに
-    なる。ARK の名前は betanumeric なので、混入していれば結局は未登録になる——
-    識別子を書き換えてしまうよりよい。
+    Dropping it because it looks similar would silently delete a meaningful character.
+    ARK names are betanumeric, so a name containing it ends up unregistered anyway,
+    which is better than rewriting an identifier.
     """
-    assert strip_hyphens("kb1dー191j") == "kb1dー191j"
+    mark = "\u30fc"  # KATAKANA-HIRAGANA PROLONGED SOUND MARK
+    assert strip_hyphens(f"kb1d{mark}191j") == f"kb1d{mark}191j"
 
 
 def test_a3_split_counts_past_every_hyphen_flavour():
-    """**head/tail の分割位置がずれないこと。**
+    """The split between head and tail must not drift.
 
-    数える側が ASCII だけ飛ばしていると、非 ASCII のハイフンぶん位置がずれて
-    修飾子の切り出しを間違える。
+    If only ASCII hyphens were skipped while counting, every other kind would shift the
+    position and the qualifier would be cut in the wrong place.
     """
     head, tail = split_after_normalized("kb1d–191j－10ds/entry", 12)
     assert strip_hyphens(head) == "kb1d191j10ds"
@@ -427,21 +430,22 @@ def test_a3_split_counts_past_every_hyphen_flavour():
 
 
 # --------------------------------------------------------------------------
-# A4  %-エンコード（draft-kunze-ark-42 §3.1・§3.2 手順5）
+# A4  percent encoding (draft-kunze-ark-42, 3.1 and step 5 of 3.2)
 # --------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
     "src,want",
     [
-        # 手順5: "the two characters following every occurrence of '%' are
+        # Step 5: "the two characters following every occurrence of '%' are
         # converted to uppercase"
         ("x54%2fc2", "x54%2Fc2"),
         ("x54%7d", "x54%7D"),
         ("%2f%2e%2d", "%2F%2E%2D"),
         # "The case of all other letters in the ARK string must be preserved."
         ("Ab%2fCd", "Ab%2FCd"),
-        # 三つ組として成立しないものは触らない（**壊れた入力を別の文字列にしない**）
+        # Anything that is not a valid triplet is left alone, so broken input does
+        # not silently become a different string
         ("50%off", "50%off"),
         ("x%zz", "x%zz"),
         ("x%2", "x%2"),
@@ -453,40 +457,43 @@ def test_a4_percent_hex_is_uppercased_and_nothing_else(src, want):
 
 
 def test_a4_encoded_slash_is_not_a_structural_character():
-    """**`%2F` は「区切りではない `/`」を書く唯一の方法**（§3.2「隠す目的なら可」）。
+    """%2F is the only way to write a / that is not a separator, which 3.2 permits for
+    exactly that purpose.
 
-    復号すると `x54%2Fc2`（1 つの名前）が `x54/c2`（`x54` に含まれる `c2`）に化ける
-    ——別の識別子であり、祖先も変わる。
+    Decoding it would turn x54%2Fc2, one name, into x54/c2, meaning c2 inside x54. That
+    is a different identifier with a different ancestor.
     """
     name = normalize_percent("x54%2fc2")
     assert name == "x54%2Fc2"
-    assert normalize_structural(name) == name  # 構造文字として畳まれない
-    assert list(gen_prefixes(name)) == []      # 祖先を生やさない
-    assert list(gen_prefixes("x54/c2")) == ["x54"]  # 素の `/` はこちら
+    assert normalize_structural(name) == name  # not folded as a structural character
+    assert list(gen_prefixes(name)) == []      # it has no ancestors
+    assert list(gen_prefixes("x54/c2")) == ["x54"]  # a plain slash does
 
 
 def test_a4_encoded_hyphen_survives_hyphen_removal():
-    """`%2D` は落とさない。**ハイフンは予約文字で、隠す目的の %-エンコードは合法。**
+    """%2D is kept. A hyphen is reserved, and encoding it to hide it is allowed.
 
-    落とすと「無意味だから無視される `-`」と「意味を持たせるために隠した `-`」の
-    区別が消える。
+    Dropping it would erase the difference between a hyphen that is ignored because it
+    means nothing and one that was encoded to mean something.
     """
     assert strip_hyphens("kb1-d%2D191j") == "kb1d%2D191j"
 
 
 # --------------------------------------------------------------------------
-# A5  ラベルの新旧（draft-kunze-ark-42 §2.2）
+# A5  the old and new label forms (draft-kunze-ark-42, 2.2)
 # --------------------------------------------------------------------------
 
 
 def test_a5_generation_uses_the_new_label_form():
-    """生成は新形式。**表記を決める場所を 1 つにしてある**ので、ここで固定できる。"""
+    """We generate the new form. One place decides the spelling, so it can be pinned
+    down here."""
     assert compact_ark("99999/x9abc") == "ark:99999/x9abc"
-    assert compact_ark("99999") == "ark:99999"  # NAAN だけの ARK も同じ
+    assert compact_ark("99999") == "ark:99999"  # an ARK that is only a NAAN, too
 
 
 @pytest.mark.parametrize("src", ["ark:99999/x9abc", "ark:/99999/x9abc", "ARK:/99999/x9abc"])
 def test_a5_both_label_forms_are_still_accepted(src):
-    """受理は両形式。**"must be recognized in perpetuity"** なので、狭めない。"""
+    """Both forms are accepted: the specification says they must be recognised in
+    perpetuity."""
     p = parse_ark(src)
     assert (p.naan, p.name) == ("99999", "x9abc")
