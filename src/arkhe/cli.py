@@ -1,7 +1,7 @@
-"""運用コマンド。**画面と同じ `domain.admin_ops` を呼ぶ。**
+"""The operator commands. They call the same domain.admin_ops as the screens.
 
-CLI にしかできないこと・画面にしかできないことを作らない。どちらから入っても
-同じ不変条件を通る。監査にも同じ形で残る。
+Nothing can be done only from the CLI, and nothing only from a screen. Either entrance
+goes through the same invariants and leaves the same record in the audit log.
 """
 
 from __future__ import annotations
@@ -46,10 +46,11 @@ app.add_typer(hold_app, name="hold")
 
 
 def _root() -> Principal:
-    """**CLI はシステム管理者として動く。**
+    """The CLI runs as the system administrator.
 
-    サーバのシェルに入れる時点で DB に届くので、ここで権限を絞っても意味の
-    ある防御にはならない。**代わりに、操作は必ず監査に残る。**
+    Anyone with a shell on the server can reach the database anyway, so narrowing
+    permissions here would not be a real guard. Instead, every operation is recorded in
+    the audit log.
     """
     return Principal(client_id="cli", naan="", authority=Authority.SYSTEM, mechanism="cli")
 
@@ -100,8 +101,8 @@ def onboard(
             commitment_level=commitment,
         )
         s.commit()
-        # **id をここで言う。** 以降の `shoulder status` / `redirect` / `hold` は
-        # すべて id を入力に取るのに、作った瞬間に分からないと `list` を引く手間が要る。
+        # Print the id. shoulder status, redirect and hold all take one as input, and
+        # without it here the next step is a list command.
         typer.echo(t("onboard.done", name=m.name, naan=sh.naan, shoulder=sh.shoulder, id=sh.id))
         typer.echo(t("onboard.level", level=m.commitment_level))
         if not commitment:
@@ -122,7 +123,7 @@ def shoulder_add(
             status="reserved" if reserve else "active", note=note,
         )
         s.commit()
-        # **id をここで言う**（作った当人が、次に使う値を知らないのはおかしい）。
+        # Print the id: whoever just created it should not have to look it up.
         typer.echo(t("shoulder.add.done", naan=sh.naan, shoulder=sh.shoulder, id=sh.id))
 
 
@@ -148,11 +149,11 @@ def shoulder_redirect(
     shoulder_id: int,
     redirect: str = typer.Argument("", help=t("shoulder.redirect.arg")),
 ):
-    """**画面にしかなかった操作を CLI にも置く。**
+    """An operation that used to exist only on a screen.
 
-    委譲の設定は分散構成を組むときにいちばん自動化したいところで、そこだけ
-    画面を開かせるのは「画面と CLI に差を作らない」に反していた。
-    空文字を渡せば委譲を外す。
+    Setting up delegation is the first thing anyone automates when building a federated
+    setup, and making that one step go through a screen went against the screens and the
+    CLI behaving alike. An empty string removes the delegation.
     """
     with _session() as s:
         sh = ops.set_shoulder_redirect(
@@ -353,29 +354,31 @@ def ark_list(
     limit: int = typer.Option(50, help=t("ark.list.limit")),
     offset: int = typer.Option(0, help=t("ark.list.offset")),
 ):
-    """発行した ARK を並べる。**絞り込みは画面と同じ式を通る**（`domain.queries`）。
+    """List minted ARKs, filtered by the same queries as the screens
+    (domain.queries).
 
-    **既定で打ち切る。** ARK は消えないので台帳は増える一方で、全件を黙って
-    流すと運用の端末で止まらなくなる。打ち切ったことは標準エラーに出す
-    ——出さなければ「これで全部」と読まれる。
+    It truncates by default. ARKs are never deleted, so the ledger only grows, and
+    printing everything would run away in a terminal. That it truncated is written to
+    standard error; without that, the list reads as complete.
 
-    題名は出さない。長さに上限が無く、行き先の URL を押し出してしまうため
-    ——**行き先は目で追って写す列**なので、そこを崩さない。題名で引きたい
-    ときは `-q` が見ている（画面と同じ 3 項目）。
+    The title is not printed. It has no length limit and would push the target URL off
+    the line, and the target is the column people read off. To search by title, -q looks
+    at it, as the screens do.
     """
     with _session() as s:
         stmt = narrow_arks(visible_arks(_root()), naan=naan, org=org or "", q=q, state=state,
                            older_than_days=older_than)
-        # 1 件多く取って、続きがあるかを**数えずに**知る。件数の COUNT は
-        # 台帳が大きくなるほど重く、ここで欲しいのは有無だけ。
+        # Fetch one extra to learn whether there is more, without counting. A count
+        # gets heavier as the ledger grows, and all that is needed here is yes or no.
         rows = list(
             s.scalars(
                 stmt.order_by(Ark.created_at.desc()).offset(max(0, offset)).limit(limit + 1)
             )
         )
         for a in rows[:limit]:
-            # **公開前だけ印を付ける。** 行の形は変えない——今まで出ていた行は
-            # すべて公開済みなので、読んでいるスクリプトの見え方は変わらない。
+            # Only reserved rows are marked. The shape of a line does not change:
+            # everything printed before was published, so scripts reading this see no
+            # difference.
             mark = "" if a.published_at else f"  [{t('ark.mark.reserved')}]"
             typer.echo(
                 f"{compact_ark(a.ark):<28}  {a.created_at:%Y-%m-%d}  "
@@ -389,7 +392,8 @@ def ark_list(
 
 @ark_app.command("publish", help=t("ark.publish.help"))
 def ark_publish(ark: str):
-    """**グローバルに公開する。** 取り下げたものを出し直すのも同じ口。"""
+    """Publish it to the world. Republishing something withdrawn uses the same
+    command."""
     with _session() as s:
         key = ark_key_from_input(ark)
         before = s.get(Ark, key)
@@ -406,11 +410,11 @@ def ark_unpublish(
     reason: str = typer.Option(..., help=t("ark.unpublish.reason")),
     yes: bool = typer.Option(False, "--yes", "-y", help=t("ark.unpublish.yes")),
 ):
-    """**公開を取り下げる。** 行は残るので `ark publish` で出し直せる。
+    """Withdraw the publication. The row stays, so ark publish puts it back.
 
-    **確かめてから引っ込める。** 外に出た名前が解決しなくなる操作なので、
-    `--yes` が無ければ一度訊く——`admin_ops` 側の `confirm` はこの入力から
-    埋める（**打ち直しの照合は 1 か所**にしておく）。
+    It asks first. A name that went out stops resolving, so without --yes it asks once,
+    and the confirm that admin_ops requires is filled from that answer: the comparison
+    lives in one place.
     """
     key = ark_key_from_input(ark)
     if not yes and not typer.confirm(t("ark.unpublish.confirm", ark=compact_ark(key))):
@@ -429,11 +433,12 @@ def ark_delete(
     reason: str = typer.Option("", help=t("ark.delete.reason")),
     yes: bool = typer.Option(False, "--yes", "-y", help=t("ark.delete.yes")),
 ):
-    """**公開していない ARK を消す。** 公開中なら `admin_ops` が断る。
+    """Delete an ARK that is not published. While it is, admin_ops refuses.
 
-    **一度でも公開した名前なら訊く。** そのときは `admin_ops` が理由と打ち直しを
-    要求するので、`confirm` はこの入力から埋める。一度も出していない予約は
-    今までどおり黙って消える——**訊く回数は、消えるものの重さに合わせる。**
+    If the name was ever published it asks, because admin_ops then requires a reason and
+    a confirmation, which are filled from that answer. A reservation that was never
+    published is still deleted without ceremony: how much is asked matches what is being
+    lost.
     """
     key = ark_key_from_input(ark)
     with _session() as s:
@@ -455,11 +460,11 @@ def ark_purge(
     reason: str = typer.Option(..., help=t("ark.purge.reason")),
     yes: bool = typer.Option(False, "--yes", "-y", help=t("ark.purge.yes")),
 ):
-    """**公開した ARK を破棄する。** 画面・API と同じ `admin_ops` を通る。
+    """Purge a published ARK, through the same admin_ops as the screens and the API.
 
-    **確かめてから消す。** CLI はシステム管理者として動くので、ここでの誤打は
-    そのまま通ってしまう——`--yes` を付けないかぎり一度訊く（`admin_ops` 側の
-    `confirm` はこの入力から埋める。**打ち直しの照合は 1 か所**にしておく）。
+    It asks first. The CLI runs as the system administrator, so a mistyped command here
+    would simply go through; without --yes it asks once, and the confirm admin_ops
+    requires is filled from that answer, keeping the comparison in one place.
     """
     key = ark_key_from_input(ark)
     if not yes and not typer.confirm(t("ark.purge.confirm", ark=compact_ark(key))):
@@ -472,15 +477,15 @@ def ark_purge(
         typer.echo(t("ark.purge.done", ark=name))
 
 
-# ------------------------------------------------------------------ 転送の保留
+# ---------------------------------------------------------- Holding redirection
 
 
 def _hold_key(kind: str, key: str):
-    """CLI の入力を台帳の鍵に直す。
+    """Turn what was typed into the key used in the ledger.
 
-    **ARK は API と同じ正規化を通す**（`ark:` でも `ark:/` でも付けなくても、
-    ハイフン入りでも同じ行に当たる）。ここだけ素通しにすると、画面や API で
-    止められる ARK が CLI では 404 になる。
+    An ARK goes through the same normalisation as the API: ark:, ark:/ or neither, with
+    or without hyphens, all reach the same row. Skipping it here would mean an ARK that
+    the screens and the API accept answering 404 in the CLI.
     """
     if kind == "ark":
         return ark_key_from_input(key)
@@ -568,10 +573,10 @@ def depart_cmd(
 
 
 def _width(text: str) -> int:
-    """**端末での表示幅。** 日本語は 1 文字で 2 桁を食う。
+    """How wide a string is in a terminal. Some characters take two columns.
 
-    `f"{label:<22}"` は**文字数**で詰めるので、見出しが日本語だと列が崩れる
-    ——数字を縦に読ませるための表で、それでは意味が無い。
+    f"{label:<22}" pads by character count, so a label made of wide characters breaks
+    the alignment, and this is a table meant to be read as a column of numbers.
     """
     import unicodedata
 
@@ -589,11 +594,11 @@ def stat(
     as_json: bool = typer.Option(False, "--json", help=t("stat.json")),
     by_shoulder: bool = typer.Option(True, help=t("stat.by_shoulder")),
 ):
-    """**台帳を数える。** 画面・API と同じ `domain.stats` を通る。
+    """Count the ledger, through the same domain.stats as the screens and the API.
 
-    **数えるのは行数に比例して重い。** 一覧が `COUNT` を避けているのと違って、
-    ここは数そのものが目的なので避けようがない——100 万件で数百 ms を見込む。
-    **繰り返し叩く用途には向かない。**
+    Counting costs time in proportion to the number of rows. The list screens avoid it,
+    but here the count is the point, so it cannot be avoided: expect a few hundred
+    milliseconds over a million rows. It is not made for polling.
     """
     import json as _json
 
@@ -630,8 +635,9 @@ def stat(
         row(t("stat.first"), st.first_mint.strftime("%Y-%m-%d"))
         row(t("stat.last"), st.last_mint.strftime("%Y-%m-%d"))
     if st.reserved_oldest:
-        # **件数の隣ではなく、日付として出す。** 溜まっていることは数ではなく
-        # 古さに出る——10 件でも昨日なら普通、1 件でも 3 年前なら放置である。
+        # Printed as a date rather than beside a count. A backlog shows in age, not
+        # in number: ten reserved yesterday is ordinary, one reserved three years ago
+        # is forgotten.
         age = (datetime.now(UTC) - st.reserved_oldest).days
         row(t("stat.reserved_oldest"), st.reserved_oldest.strftime("%Y-%m-%d"),
             t("stat.days_ago", n=age))
@@ -650,14 +656,15 @@ def stat(
 
 @app.command("fingerprint", help=t("fp.help"))
 def fingerprint(as_json: bool = typer.Option(False, "--json", help=t("stat.json"))):
-    """**復元できたことを、件数ではなく中身で確かめる。**
+    """Confirm a restore by its contents rather than by its row count.
 
-    バックアップから戻した台帳でこれを出し、**戻す前の値と突き合わせる**。
-    件数が合っていても行き先が入れ替わっていれば、識別子は全部壊れている。
+    Run it on the restored ledger and compare with the value taken before. The counts
+    can agree while every target has moved, in which case all the identifiers are
+    broken.
 
-    出力は 2 行に分けてある。**1 つに潰すと「どこが違うか」が消える**
-    ——とくに `withdrawn`（二度と採らない名前）が落ちても採番は動き続けるので、
-    合わせて出さなければ黙って通る。
+    The output is two lines. Collapsed into one, it would no longer say where the
+    difference is, and losing the withdrawn names in particular is silent, because
+    minting keeps working without them.
     """
     import json as _json
     from dataclasses import asdict
