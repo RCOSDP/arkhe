@@ -1,11 +1,12 @@
-"""FastAPI の依存。**設定された機構を順に試し、最初に成功したものを採る。**
+"""FastAPI dependencies. Each configured mechanism is tried in turn and the first that
+succeeds wins.
 
-順序は `ARKHE_AUTH` の並び。`apikey,oidc` なら API キーとして解釈し、駄目なら
-OIDC の JWT として解釈する。**失敗の理由は返さない**——どの機構で弾かれたかを
-教えると、資格情報の形を総当たりで探る手掛かりになる。
+The order is the order of ARKHE_AUTH: with apikey,oidc a token is read as an API key
+first and as an OIDC JWT second. No reason is returned, because saying which mechanism
+refused it helps in guessing the shape of a credential.
 
-`WWW-Authenticate` には有効な機構だけを載せる。クライアントが「何を出せばよいか」
-を発見できるようにするためで、これは仕様上も SHOULD。
+WWW-Authenticate advertises only the mechanisms that are live, so that a client can
+discover what to send. The specification recommends this too.
 """
 
 from __future__ import annotations
@@ -38,10 +39,10 @@ def oidc_verifier(settings: Settings) -> OidcVerifier:
     return _oidc_verifier
 
 
-#: **抽出と文書化を兼ねる。** これを依存に置くことで OpenAPI に
-#: `securitySchemes` が載り、Swagger UI に Authorize ボタンが出る。
-#: `auto_error=False` なのは、公開情報の読取を未認証で通すため——ここで 403 を
-#: 返してしまうと、その方針が壊れる。
+#: This both extracts the token and documents it: declaring it as a dependency puts
+#: securitySchemes into the OpenAPI document and gives Swagger UI an Authorize button.
+#: auto_error=False keeps public reads open to anonymous callers; answering 403 here
+#: would break that.
 bearer_scheme = HTTPBearer(
     scheme_name="bearer",
     description=(
@@ -61,7 +62,7 @@ def bearer(request: Request) -> str:
 
 
 def challenge_for(settings: Settings) -> str:
-    """有効な機構を `WWW-Authenticate` で広告する。"""
+    """Advertise the live mechanisms in WWW-Authenticate."""
     parts = ['Bearer realm="arkhe"']
     if "oidc" in settings.auth and settings.oidc_issuer:
         parts.append(f'authorization_uri="{settings.oidc_issuer}"')
@@ -73,7 +74,7 @@ def challenge_for(settings: Settings) -> str:
 def authenticate(
     token: str, session: Session, settings: Settings, ip: str = ""
 ) -> Principal:
-    """機構を順に試す。**どれも通らなければ 401。**"""
+    """Try each mechanism in turn; 401 if none of them succeeds."""
     if not token:
         raise AuthError(errors.NO_CREDENTIALS, challenge=challenge_for(settings))
 
@@ -93,17 +94,17 @@ def authenticate(
             if mechanism == "oidc":
                 return oidc_verifier(settings).authenticate(session, token)
         except UnregisteredSubject as exc:
-            # **署名は通ったが台帳に無い。** 弾いた文字列を捨てずに残す
-            # ——`client_id` の綴り違いは、この構成でいちばん多い詰まりどころで、
-            # 運用者はこれを見て打ち直さずに登録できる。
+            # The signature verified but the principal is not in the ledger. The
+            # string is kept: a misspelt client_id is the most common way this setup
+            # gets stuck, and an operator can register it without retyping.
             unregistered = exc
             tried.append(f"{mechanism}: {exc.detail}")
             continue
         except AuthError as exc:
-            # **理由は利用者に返さないが、ここには残す。** 「鍵が期限切れ」なのか
-            # 「組織が停止中」なのかを運用者が知る手段が無いと、切り分けられない。
+            # The reason is not returned to the caller but it is kept here. Without
+            # it, nobody can tell an expired credential from a stopped organisation.
             tried.append(f"{mechanism}: {exc.detail}")
-            continue  # 次の機構を試す
+            continue  # try the next mechanism
     observability.log("auth failed", mechanisms=tried)
     if unregistered is not None:
         _remember(session, unregistered, ip)
@@ -111,34 +112,35 @@ def authenticate(
 
 
 def _remember(session: Session, exc: UnregisteredSubject, ip: str) -> None:
-    """未登録の主体を残す。**ここで失敗しても 401 は 401 のまま返す。**
+    """Record an unregistered principal. A failure here still answers 401.
 
-    記録は運用者の便宜であって、認証の判断ではない。読み取り専用の DB に
-    向いている構成もありうるので、書けなかったことで 500 に化けさせない。
+    The record is a convenience for operators, not part of the decision. A deployment
+    may point at a read-only database, and failing to write must not turn into a 500.
 
-    **その場で commit する。** この後 `AuthError` が上がり、要求のセッションは
-    巻き戻される（`db/session.py`）——commit しておかないと、残したはずの記録が
-    一緒に消える。
+    It commits immediately. An AuthError follows and the request session is rolled back
+    (db/session.py), so without the commit the record would be rolled back with it.
     """
     try:
         authz.record_unknown_subject(
             session, subject=exc.subject, issuer=exc.issuer, ip=ip
         )
         session.commit()
-    except Exception as err:  # pragma: no cover - DB 側の事情でしか起きない
+    except Exception as err:  # pragma: no cover - only happens on the database side
         session.rollback()
         observability.log("could not record unknown subject", error=str(err))
 
 
 def client_ip(request: Request, settings: Settings) -> str:
-    """接続元のアドレス。**前段を信じる段数を設定で決める。**
+    """The caller's address. How many proxies to trust is a setting.
 
-    `X-Forwarded-For` は誰でも付けられるヘッダである。無条件に左端を採ると、
-    **監査ログに攻撃者の書いた文字列が並ぶ**——直接の接続元を記録するより悪い。
+    Anyone can set X-Forwarded-For. Taking the leftmost entry unconditionally fills the
+    audit log with strings an attacker chose, which is worse than recording the direct
+    peer.
 
-    だから既定（`trusted_proxies=0`）では見ない。前段が n 段あるなら、
-    **右から n 番目**を採る。右端は自分の直前の前段が書いた値で、そこは信じられる。
-    ヘッダが短ければ、詐称の疑いがあるので直接の接続元に落とす。
+    So by default (trusted_proxies=0) the header is ignored. With n proxies in front,
+    the nth entry from the right is used: the rightmost was written by the proxy
+    immediately in front, which can be trusted. A shorter header is suspect, so it falls
+    back to the direct peer.
     """
     peer = request.client.host if request.client else ""
     n = settings.trusted_proxies
@@ -147,7 +149,8 @@ def client_ip(request: Request, settings: Settings) -> str:
     raw = request.headers.get("x-forwarded-for", "")
     chain = [x.strip() for x in raw.split(",") if x.strip()]
     if len(chain) < n:
-        # 前段より短い＝経路が想定と違う。**足りない分を client の申告で埋めない。**
+        # Shorter than expected means the route is not what we assumed. What is
+        # missing is never filled in from what the client claims.
         return peer
     return chain[-n]
 
@@ -158,10 +161,13 @@ def current_principal(
     settings: Annotated[Settings, Depends(get_settings)],
     _cred: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
 ) -> Principal:
-    # トークンは `bearer()` で取る。`_cred` は OpenAPI に載せるためだけの依存で、
-    # **値は使わない**——`ark:…` のようにヘッダ以外から来る経路と扱いを揃えるため。
-    # **接続元は要求の層でだけ分かる。** 監査に残すために運ぶ——
-    # 未登録の主体を残すときにも要るので、認証より先に求める。
+    # The token is read by bearer(). _cred is declared only so that it appears in the
+    # OpenAPI document; its value is unused, which keeps this the same as the paths
+    # where the credential does not come from a header.
+    #
+    # The caller address is known only at the request layer. It is carried for the audit
+    # log, and it is needed when recording an unregistered principal, so it is taken
+    # before authentication.
     ip = client_ip(request, settings)
     return replace(authenticate(bearer(request), session, settings, ip), ip=ip)
 

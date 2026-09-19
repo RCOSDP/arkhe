@@ -1,16 +1,17 @@
-"""管理画面へのローカルログイン。**外部 IdP を持たない構成のための入口。**
+"""Local sign-in to the admin interface, for deployments with no identity provider.
 
-`oidc` や `proxy` が使えるならそちらがよい——身元の管理が 1 か所に集まり、
-退職や異動が組織側の操作だけで効くから。ここは**それが無い組織でも単体で建てられる**
-ようにするためのもの。
+Where oidc or proxy is available they are better: identities stay in one place, and
+someone leaving is handled entirely on that side. This exists so that an organisation
+without one can still run arkhe on its own.
 
-守っていること:
+What it guards:
 
-  * 平文は保存しない（Argon2）
-  * **利用者の存在を漏らさない。** 未登録でも誤ったパスワードでも同じ応答・同じ所要時間
-  * **総当たりを止める。** 連続失敗で一時的に施錠する。ログイン画面を出す以上、
-    これが無いと辞書攻撃に素で晒される
-  * 人の主体にしか設定できない（機械はパスワードを覚えない）
+  * nothing is stored in plaintext (Argon2)
+  * it does not reveal who exists: an unknown user and a wrong password give the same
+    answer, after about the same time
+  * it stops guessing: repeated failures lock the account for a while. Offering a login
+    page without that leaves it open
+  * only a person can have a password; machines do not remember one
 """
 
 from __future__ import annotations
@@ -29,13 +30,14 @@ from arkhe.db.models import Client, Credential, CredentialKind, Subject
 
 _ph = PasswordHasher()
 
-#: 連続失敗の上限と施錠の長さ。**利用者を締め出しすぎない範囲**で、
-#: 総当たりが現実的でなくなればよい。
+#: How many failures are allowed and how long the lock lasts. Enough to make guessing
+#: impractical without shutting people out for long.
 MAX_ATTEMPTS = 5
 LOCK_MINUTES = 15
 MIN_LENGTH = 12
 
-#: 存在しない利用者でも同じだけ時間を使うためのダミー。**応答時間で存在を漏らさない。**
+#: A dummy hash, so that an unknown user costs the same time and timing reveals
+#: nothing about who exists.
 _DUMMY_HASH = _ph.hash("arkhe-timing-equalizer")
 
 
@@ -44,10 +46,10 @@ class WeakPassword(ValueError):
 
 
 def check_strength(password: str) -> None:
-    """**長さだけ見る。** 記号や大文字を強いる規則は、覚えられない文字列を
-    生んで結局どこかに書き留められるので採らない（NIST SP 800-63B の方針）。"""
+    """Only the length is checked. Demanding symbols and capitals produces strings
+    nobody remembers, which end up written down somewhere, as NIST SP 800-63B says."""
     if len(password) < MIN_LENGTH:
-        raise WeakPassword(f"パスワードは {MIN_LENGTH} 文字以上にしてください")
+        raise WeakPassword(f"the password must be at least {MIN_LENGTH} characters")
 
 
 def hash_password(password: str) -> str:
@@ -65,7 +67,7 @@ def _locked(cred: Credential) -> bool:
 
 
 def authenticate(session: Session, subject: str, password: str) -> Principal:
-    """ID とパスワードで主体を引く。**失敗の理由は返さない。**"""
+    """Find the principal for a username and password. No reason is returned."""
     cred = None
     if subject:
         cred = session.scalar(
@@ -80,11 +82,11 @@ def authenticate(session: Session, subject: str, password: str) -> Principal:
         )
 
     if cred is None:
-        # **存在しない利用者でも同じだけ時間を使う。** ここを省くと、応答の速さで
-        # 「その ID は無い」と分かってしまう。
+        # An unknown user costs the same time. Without this, the speed of the answer
+        # says that no such user exists.
         try:
             _ph.verify(_DUMMY_HASH, password or "x")
-        except Exception:  # noqa: BLE001 - 常に失敗する。時間を使うのが目的
+        except Exception:  # noqa: BLE001 - always fails; spending the time is the point
             pass
         raise AuthError("e.bad_credentials")
 
@@ -104,7 +106,7 @@ def authenticate(session: Session, subject: str, password: str) -> Principal:
     if client is None or not client.active or _expired(client.expires_at):
         raise AuthError("e.bad_credentials")
     if client.subject_type != Subject.PERSON:
-        # 機械にパスワードは無いはずだが、経路として塞いでおく。
+        # A machine should have no password, but the path is closed anyway.
         raise AuthError("e.bad_credentials")
     if _expired(cred.expires_at):
         raise AuthError("e.password_expired")

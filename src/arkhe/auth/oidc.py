@@ -1,12 +1,13 @@
-"""外部の認可サーバ（Keycloak 等）が発行した JWT を検証する。**arkhe は資源側に徹する。**
+"""Verifying a JWT issued by an external authorisation server, such as Keycloak. arkhe
+is purely the resource side.
 
-トークン発行・利用者管理・同意・認可コードフローはすべて向こうの仕事で、ここは
-JWKS で署名を確かめ、`iss` / `aud` / `exp` を見るだけ。認可サーバのコードを
-1 行も持たない。
+Issuing tokens, managing users, consent and the authorization code flow all belong over
+there. Here the signature is checked against the JWKS and iss, aud and exp are read.
+There is no authorisation server code in this file.
 
-**主体の到達範囲は依然として Client 表から引く。** 外部トークンのクレームに
-naan や shoulder が入っていても信用しない——認可サーバは「誰か」を保証するが、
-「その人がどの名前空間を触ってよいか」は arkhe の台帳が決めることだから。
+The principal's reach still comes from the Client table. A naan or a shoulder in the
+token's claims is not trusted: the authorisation server vouches for who someone is,
+while which namespace they may touch is decided by this ledger.
 """
 
 from __future__ import annotations
@@ -25,13 +26,15 @@ from arkhe.auth.errors import AuthError, UnregisteredSubject
 from arkhe.auth.principal import Principal
 from arkhe.db.models import Client
 
-#: JWKS の再取得間隔。鍵の回転に追随しつつ、毎回取りに行かない。
+#: How often the JWKS is fetched again: often enough to follow key rotation, not on
+#: every request.
 JWKS_TTL = 300
 
 
 class JwksCache:
-    """JWKS を TTL つきで持つ。**取得失敗時に古い鍵で凌ぐ**（認可サーバの一時停止で
-    解決まで巻き添えにしない）。"""
+    """Holds the JWKS with a TTL, falling back to the old keys when a fetch fails, so
+    that a brief outage at the authorisation server does not take resolution with
+    it."""
 
     def __init__(self, url: str, ttl: int = JWKS_TTL):
         self.url = url
@@ -53,14 +56,14 @@ class JwksCache:
 
 
 def discover_jwks_url(issuer: str, *, verify: bool | str = True) -> str:
-    """issuer の OIDC discovery から JWKS の場所を引く。"""
+    """Find the JWKS location through the issuer's OIDC discovery document."""
     url = f"{issuer.rstrip('/')}/.well-known/openid-configuration"
     with httpx.Client(verify=verify, timeout=10) as c:
         r = c.get(url)
     r.raise_for_status()
     jwks = r.json().get("jwks_uri")
     if not jwks:
-        raise RuntimeError(f"{url} に jwks_uri がありません")
+        raise RuntimeError(f"{url} has no jwks_uri")
     return jwks
 
 
@@ -98,8 +101,9 @@ class OidcVerifier:
         except Exception as exc:
             raise AuthError(errors.INVALID_CREDENTIALS, reason=str(exc)) from exc
 
-        # 外部の主体を arkhe の台帳に突き合わせる。**登録が無ければ通さない。**
-        # 認可サーバで認証できることと、この ARK 名前空間を触ってよいことは別。
+        # Match the external principal against this ledger. Without a registration it
+        # does not get in: authenticating at the authorisation server and being allowed
+        # to touch this namespace are different things.
         subject = claims.get("azp") or claims.get("client_id") or claims["sub"]
         client = session.scalar(
             select(Client)
@@ -107,16 +111,18 @@ class OidcVerifier:
             .options(selectinload(Client.manager))
         )
         if client is None:
-            # **弾いた文字列を捨てない。** 呼び出し側がこれを記録し、運用者は
-            # 打ち直さずに登録できる（`domain.authz.record_unknown_subject`）。
+            # Keep the string that was refused. The caller records it, and an
+            # operator can register it without retyping
+            # (domain.authz.record_unknown_subject).
             raise UnregisteredSubject(subject, self.issuer)
-        # **止めた主体は「登録が無い」ではない。** 意図して止めたものを
-        # 「登録し忘れ」として画面に並べると、消すために登録し直すことになる
-        # ——止めた意味が消える。返す答え（401）は同じでも、区別して扱う。
+        # A stopped principal is not an unregistered one. Listing something stopped
+        # on purpose as forgotten would mean registering it again to clear the list,
+        # which undoes the stopping. The answer is 401 either way; the record differs.
         if not client.active or _expired(client.expires_at):
             raise AuthError(errors.INVALID_CREDENTIALS,
                             reason=f"subject {subject} is registered but not usable")
-        # **組織に許されていない機構では通さない**（apikey / oauth2 と同じ）。
+        # A mechanism the organisation may not use is refused, as for apikey and
+        # oauth2.
         if not _mechanism_allowed(session, client, "oidc"):
             raise AuthError(errors.INVALID_CREDENTIALS,
                             reason="this mechanism is not allowed for the organisation")
@@ -126,15 +132,16 @@ class OidcVerifier:
 
 
 def _granted(claims: dict, principal: Principal) -> frozenset[str]:
-    """トークンの scope で**絞る**（広げはしない）。
+    """Narrow the reach by the token's scope; never widen it.
 
-    認可サーバが arkhe の語彙（`ark:*`）を持っているなら、それが権限の表明なので
-    登録済みの範囲との積を採る。**持っていないなら登録済みの範囲をそのまま使う。**
+    If the authorisation server knows our vocabulary (ark:*), that is a statement of
+    permission, so it is intersected with what was registered. If it does not, the
+    registered reach is used as it stands.
 
-    後者を素通しにしても危なくないのは、`aud` の検証が先に効いているから——
-    このリゾルバ宛でないトークンはここに届かない。逆に、無関係な語彙
-    （`profile` `email` など）と積を採ると必ず空集合になり、「認証は通ったのに
-    何もできない」という分かりにくい 403 を生むだけになる。
+    Passing the second case through is safe because aud has already been verified: a
+    token not meant for this resolver never reaches here. Intersecting with an unrelated
+    vocabulary such as profile or email would always give the empty set, and produce a
+    confusing 403 where authentication succeeded but nothing is permitted.
     """
     raw = claims.get("scope") or " ".join(claims.get("scp") or [])
     asked = {s for s in raw.split() if s.startswith("ark:")}

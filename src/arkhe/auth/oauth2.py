@@ -1,17 +1,17 @@
-"""OAuth2 の自前発行。**client_credentials グラント 1 本だけ。**
+"""Issuing our own OAuth2 tokens, with the client_credentials grant and nothing else.
 
-なぜ 1 本か。ARK の採番を叩くのは組織のリポジトリシステムで、夜間バッチのことも
-ある。そこに利用者もブラウザもいない。認可コードフローが解くのは「**利用者が
-第三者アプリに自分の代理を許可する**」問題で、この構図が発生しない。
+Minting is called by an organisation's repository system, sometimes from a nightly
+batch. There is no person and no browser. The authorization code flow solves the problem
+of a person letting a third-party application act for them, which does not arise here.
 
-実装しないものを明記しておく（後から「無い」と驚かないように）:
+What is not implemented, said plainly so that nobody discovers it later:
 
-  authorization_code / PKCE  … 利用者の同意が要る場面が無い。要るなら `oidc` で委譲する
-  refresh_token              … client_secret があれば再取得できる。回転の複雑さを持ち込まない
-  introspection / revocation … トークンは自己完結の JWT で短命。失効は Client を無効にする
+  authorization_code and PKCE  nothing here needs a person's consent; delegate with oidc
+  refresh_token                a client secret can fetch another token, without rotation
+  introspection and revocation tokens are short-lived JWTs; disable the Client instead
 
-これらが要るようになったら、その時点で外部の認可サーバ（Keycloak 等）に寄せる。
-中途半端な認可サーバを育てるより、そのほうが安全。
+If any of these become necessary, that is the moment to move to an external
+authorisation server such as Keycloak, rather than growing half of one here.
 """
 
 from __future__ import annotations
@@ -73,10 +73,10 @@ def issue_token(
     ttl: int = 3600,
     issuer: str = "",
 ) -> dict:
-    """client_credentials でアクセストークンを発行する。
+    """Issue an access token with client_credentials.
 
-    **要求された scope は、登録済みの `allowed_scopes` との積しか出さない。**
-    登録に無い scope をトークン要求で取れてしまうのは、権限昇格そのもの。
+    A requested scope is intersected with the registered allowed_scopes. Obtaining a
+    scope that was never registered, just by asking, would be privilege escalation.
     """
     client = _verify_secret(session, client_id, client_secret)
 
@@ -85,12 +85,13 @@ def issue_token(
         asked = set(requested_scope.split())
         unknown = asked - allowed
         if unknown:
-            # RFC 6749 §5.2 の invalid_scope。**黙って削らない**——クライアントが
-            # 「取れたつもり」で動いて後段の 403 に驚くのを避ける。
+            # invalid_scope, as RFC 6749 5.2 defines it. The scope is not trimmed
+            # silently, or the client would act as though it held the permission and
+            # meet a 403 later.
             #
-            # **ここだけ本文の形が違う。** トークンの口の誤りは `error` で読むと
-            # 決まっており（§5.2）、既存のクライアントライブラリもそう読む。
-            # 我々の符号はその形を崩さずに併記する。
+            # The body is shaped differently here. Errors from a token endpoint are
+            # read from error, as 5.2 requires and as client libraries expect, so our
+            # own code is carried alongside without disturbing that shape.
             raise Forbidden(
                 {
                     "error": "invalid_scope",
@@ -125,11 +126,11 @@ def issue_token(
 
 
 def authenticate(session: Session, token: str, *, secret_key: str, issuer: str = "") -> Principal:
-    """自前発行のトークンを検証して主体を引く。
+    """Verify a token we issued and find the principal.
 
-    **scope はトークンから、到達範囲は Client から**取る。トークンに naan や
-    shoulder を載せないのは、載せると失効させにくい情報が外に出るため
-    （組織の統廃合で manager が変わっても、次のトークンから自然に反映される）。
+    The scope comes from the token and the reach from the Client. Putting the naan or
+    the shoulder in the token would put hard-to-revoke information outside; read from
+    the Client, a merger takes effect from the next token.
     """
     try:
         options = {"require": ["exp", "iat", "sub"]}
@@ -150,12 +151,12 @@ def authenticate(session: Session, token: str, *, secret_key: str, issuer: str =
     )
     if client is None or _expired(client.expires_at):
         raise AuthError(errors.INVALID_CREDENTIALS, reason="client is no longer active")
-    # **組織に許されていない機構では通さない**（apikey と同じ）。
+    # A mechanism the organisation is not allowed to use is refused, as for API keys.
     if not _mechanism_allowed(session, client, "oauth2"):
         raise AuthError(errors.INVALID_CREDENTIALS,
                         reason="this mechanism is not allowed for the organisation")
 
     principal = _to_principal(client, mechanism="oauth2")
-    # トークンに載った scope で**絞る**（広げはしない）。
+    # The scope in the token narrows the reach and never widens it.
     granted = frozenset(claims.get("scope", "").split()) & principal.scopes
     return Principal(**{**principal.__dict__, "scopes": granted})
