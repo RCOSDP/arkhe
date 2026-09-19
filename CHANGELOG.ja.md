@@ -17,6 +17,11 @@
   サイクルは EZID の status モデルの言い換え、`?info` / `?json` と suffix passthrough は
   arklet-frick が先）を両方書いた。
 
+  **機能単位の対応表**を載せた——解決／採番と書き込み／識別子の一生／認可と運用の 4 つの表
+  で arkhe・arklet・arklet-frick・EZID を並べ、**動かして確かめたセルには剣印**を付けた。
+  AMS・greens・arks-service・NOID 系・N2T はより粗い表に。**見当たらなかっただけのものは
+  ✗ ではなく「—」**にしてある（無いことを確かめたわけではないため）。
+
 ### 修正
 
 - **「arklet は採番の衝突を更新に化けさせる」という記述を、時点つきに直した。** arkhe が

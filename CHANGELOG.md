@@ -19,6 +19,13 @@ breaking in a system whose identifiers cannot be reissued.
   and where it followed — the publication lifecycle is EZID's status model in different
   words, and `?info` / `?json` and suffix passthrough were in arklet-frick first.
 
+  It carries **a feature matrix**: four tables (resolution, minting and writing, the life
+  of an identifier, authorisation and operation) across arkhe, arklet, arklet-frick and
+  EZID, with a dagger on every cell that was measured by running the software, and a
+  coarser table for AMS, greens, arks-service, the NOID family and N2T. A cell is left
+  at "—" where nothing was found and nothing was confirmed, rather than reading absence
+  as a ✗.
+
 ### Fixed
 
 - **The claim that arklet turns a minting collision into an update is now dated.** It

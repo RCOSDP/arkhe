@@ -17,6 +17,93 @@ Each implementation was installed, given its own throwaway PostgreSQL, and drive
 through its own views over HTTP. Reading source is how the bugs were suspected; running
 it is how they were confirmed.
 
+## Feature by feature
+
+The four columns below were examined closely: **arklet and arklet-frick were run**, and
+EZID was read. A dagger (†) marks a cell measured by running the software rather than by
+reading it.
+
+**✓** has it · **✗** does not · **▲** has it with a condition · **—** nothing found, and
+not confirmed either way.
+
+### Resolution
+
+| | arkhe | arklet | arklet-frick | EZID |
+| --- | :-: | :-: | :-: | :-: |
+| `ark:` matched whatever its case (A1) | ✓ | ✗† | ✗† | ▲ |
+| hyphens ignored (A2) | ✓ | ✗† | ✗† | ▲ |
+| suffix passthrough | ✓ | ✗† | ✓ | ✓ |
+| the longest registered ancestor wins (D5) | ✓ | ✗ | ✗† | — |
+| `?info` | ✓ | ✗† | ✓ | ✓ |
+| `?json` | ✓ | ✗ | ✓ | — |
+| `??`, the persistence statement | ✓ | ✗ | ✗† | ✓ |
+| a wrong check digit told from a 404 | ✓ | ✗ | ✗† | — |
+| an unknown NAAN handed on | ✓ | ✓† | ✓† | — |
+
+EZID's own comment says its normalisation "follows the rules given in the specification"
+with exceptions made for shadow ARKs, which is why those two cells are ▲ rather than ✓.
+
+### Minting and writing
+
+| | arkhe | arklet | arklet-frick | EZID |
+| --- | :-: | :-: | :-: | :-: |
+| a minting API | ✓ | ✓† | ✓† | ✓ |
+| bulk minting | ✓ | ✗ | ✓ | ✗ |
+| bulk update that cannot cross rows | ✓ | — | ✗† | — |
+| an idempotency key on minting | ✓ | ✗ | ✗ | ✗ |
+| taking in an ARK minted elsewhere | ✓ | ✗ | ✗ | ✓ |
+| partial update, leaving the rest alone | ✓ | ✗ | ✓ | ✓ |
+| full replace, clearing what is left out | ✓ | ✓ | ✗ | ✓ |
+
+arklet-frick drops the fields a request does not mention, so every update is partial and
+there is no way to clear one. arkhe has both, on the same endpoint: `PUT` replaces and
+`PATCH` does not.
+
+### The life of an identifier
+
+| | arkhe | arklet | arklet-frick | EZID |
+| --- | :-: | :-: | :-: | :-: |
+| minting without publishing (reserved) | ✓ | ✗ | ✗ | ✓ |
+| taking a publication down again | ✓ | ✗ | ✗ | ✓ |
+| deletion refused once published | ✓ | — | — | ✓ |
+| a tombstone | ✓ | ✗ | ✗ | ✓ |
+| holding redirection, with an expiry | ✓ | ✗ | ✗ | ✗ |
+| a withdrawn name never assigned again | ✓ | ✗ | ✗ | — |
+
+Neither arklet nor arklet-frick has a delete endpoint at all, which is why those two
+cells are — rather than ✓: nothing can be deleted through the API, and nothing states
+what happens if it is deleted another way.
+
+### Authorisation and operation
+
+| | arkhe | arklet | arklet-frick | EZID |
+| --- | :-: | :-: | :-: | :-: |
+| how far a credential reaches | NAAN, organisation, shoulder | NAAN | NAAN | account and group, with co-owners |
+| how credentials are stored | Argon2, found by prefix, hashed once | SHA256 once, **plus a model that keeps the key in plaintext** | Argon2, but **every key of the NAAN is tried** | Django password hashing |
+| minting delegated to another minter (307) | ✓ | ✗ | ✗ | ✗ |
+| minter and resolver deployed separately | ✓ | ✗ | ✓ | ▲ |
+| an audit log | ✓ | ✗ | ✗ | ▲ |
+| an admin interface | ✓ | ✓ (Django admin) | ✓ (Django admin) | ✓ |
+| two languages, in the screens and the CLI | ✓ | ✗ | ✗ | ✗ |
+| OpenAPI generated from the implementation | ✓ | ✗ | ✗ | ✗ |
+| a client library from the same project | ✓ | ▲ (an import CLI) | ▲ (a CLI) | — |
+
+### The rest of the field, more coarsely
+
+These were read at the surface — routes, models, README — and not run, so the cells say
+less.
+
+| | AMS | greens | arks-service | NOID family | N2T |
+| --- | :-: | :-: | :-: | :-: | :-: |
+| resolution | ✓ | ✓ | ✓ | ✗ | ✓ |
+| `ark:` matched whatever its case | ✓ | — | — | — | ✓ |
+| `?info` / `??` | ✓ (ERC text) | — | — | ✗ | ▲ |
+| suffix passthrough | ✓ (per NAAN) | — | — | ✗ | ✓ |
+| a minting API for machines | ✗ (screens and CSV) | ✓ | ▲ (an admin endpoint) | ✗ (a library) | ✗ |
+| more than one NAAN in one install | ✓ | ✗ | ✓ | n/a | ✓ |
+| a state that stops resolution | ✓ (an HTTP status per ARK) | — | — | ✗ | ✗ |
+| deletion refused once published | — | ✗ (`DELETE` removes it) | — | n/a | n/a |
+
 ## arklet (Internet Archive)
 
 Django, about 1,500 lines. Three operations: mint, update, resolve. arkhe's specification
