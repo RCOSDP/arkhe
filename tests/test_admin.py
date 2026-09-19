@@ -1,7 +1,8 @@
-"""管理画面と管理操作。
+"""The admin interface and the operations behind it.
 
-**画面の出し分けと実際の認可に同じ判定を使う**ことを固定する。別々にすると
-「ボタンは出ないが URL を直接叩けば通る」穴ができる。
+What the screens show and what is actually authorised go through the same decision.
+Keeping them apart creates the hole where the button is hidden but the URL still
+works.
 """
 
 from __future__ import annotations
@@ -13,12 +14,12 @@ from arkhe.db.models import Authority, Client, ShoulderStatus
 from arkhe.domain import admin_ops as ops
 from arkhe.domain.authz import Invalid
 
-# ------------------------------------------------------------- 遷移の禁則
+# ------------------------------------------------------- Transitions that are refused
 
 
-def test_retiredからは戻せない(db, world, root):
-    """**引退した名前空間の再開は NR 違反の芽。** その間に外部が同じ名前を使って
-    いる可能性を否定できない。"""
+def test_a_retired_namespace_cannot_be_reopened(db, world, root):
+    """Reopening a retired namespace is how an NR violation starts: we cannot rule out
+    that the same name was used elsewhere in the meantime."""
     ops.set_shoulder_status(db, root, shoulder_id=world["sh_a"].id, status="retired")
     db.commit()
     with pytest.raises(Invalid) as e:
@@ -26,19 +27,20 @@ def test_retiredからは戻せない(db, world, root):
     assert "retired" in e.value.detail["reason"]
 
 
-def test_委譲に行き先は要らない(db, world, root):
-    """**委譲とは「ここでは採番しない」と刻むこと**で、どこで採るかの公示ではない。
+def test_delegation_does_not_require_a_minter_url(db, world, root):
+    """Delegating records that we do not mint here; it does not announce where minting
+    happens.
 
-    閉域なら公示しようがない。それを禁じると、**制約を満たすためだけに嘘の値**
-    ——内部ホスト名や人向けのページ——を `minter` に入れることになる（実際、
-    文書はしばらくそう案内していた）。
+    In a closed network there is nothing to announce. Requiring a URL would only produce
+    invented values, an internal host name or a page for people, put there to satisfy
+    the constraint. The guide suggested exactly that for a while.
     """
     sh = ops.set_shoulder_status(db, root, shoulder_id=world["sh_a"].id, status="delegated")
     db.commit()
     assert sh.status == ShoulderStatus.DELEGATED
     assert sh.minter == "" and sh.about == ""
 
-    # 叩ける口があるなら書く。あとから足せる。
+    # Record it when there is an endpoint to call. It can be added later.
     ops.set_shoulder_status(
         db, root, shoulder_id=world["sh_a"].id, status="delegated",
         minter="https://mint.example.org",
@@ -47,20 +49,20 @@ def test_委譲に行き先は要らない(db, world, root):
     assert world["sh_a"].minter == "https://mint.example.org"
 
 
-def test_組織と名前空間は対で生まれる(db, world):
-    """片方だけでは意味がない（採番できない組織を作るだけ）。"""
+def test_an_organisation_and_its_namespace_are_created_together(db, world):
+    """One without the other is useless: an organisation that cannot mint."""
     assert world["a"].default_shoulder_id == world["sh_a"].id
 
 
-# ------------------------------------------------------------- 権限の階層
+# --------------------------------------------------------- The tiers of authority
 
 
-def test_NAANを配れるのはシステム管理者だけ(db, world, principal_of):
+def test_only_the_system_administrator_creates_naans(db, world, principal_of):
     with pytest.raises(Forbidden):
         ops.create_naan(db, principal_of(authority=Authority.NAAN), naan="77777", name="x")
 
 
-def test_自分より広い到達範囲は与えられない(db, world, principal_of):
+def test_nobody_grants_a_wider_reach_than_their_own(db, world, principal_of):
     p = principal_of(manager=world["a"])
     with pytest.raises(Forbidden):
         ops.register_client(
@@ -68,7 +70,7 @@ def test_自分より広い到達範囲は与えられない(db, world, principa
         )
 
 
-def test_他組織の主体は作れない(db, world, principal_of):
+def test_a_principal_cannot_be_created_for_another_organisation(db, world, principal_of):
     p = principal_of(manager=world["a"])
     with pytest.raises(Forbidden):
         ops.register_client(
@@ -76,79 +78,83 @@ def test_他組織の主体は作れない(db, world, principal_of):
         )
 
 
-# ------------------------------------------------------------- 画面
+# ------------------------------------------------------------------- The screens
 
 
-def test_組織管理者には自分の範囲しか見えない(db, world, principal_of, as_principal):
+def test_an_organisation_admin_sees_only_its_own_reach(db, world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     body = c.get("/admin/").text
     assert "org A" in body
-    assert "org B" not in body  # 同じ NAAN の他組織も見えない
+    assert "org B" not in body  # another organisation under the same NAAN is hidden
     assert "88888" not in body
 
 
-def test_監査ログは組織管理者には見せない(db, world, principal_of, as_principal):
-    """誰がいつ何をしたかは、その名前空間を預かる側の情報。"""
+def test_the_audit_log_is_not_shown_to_an_organisation_admin(db, world, principal_of, as_principal):
+    """Who did what and when belongs to whoever holds the namespace."""
     c = as_principal(principal_of(manager=world["a"]))
     assert c.get("/admin/audit").status_code == 403
     c2 = as_principal(principal_of(authority=Authority.NAAN))
     assert c2.get("/admin/audit").status_code == 200
 
 
-def test_画面から採番できる(db, world, principal_of, as_principal):
-    """**API と同じ経路**（authz → minting）を通る。画面専用の抜け道を作らない。"""
+def test_minting_works_from_the_screen(db, world, principal_of, as_principal):
+    """It goes through the same path as the API, authz then minting. No shortcut exists
+    for the screens."""
     c = as_principal(principal_of(manager=world["a"]))
     r = c.post("/admin/mint", data={"url": "https://example.org/manual"})
     assert r.status_code == 200 and "ark:99999/a1" in r.text
 
 
-def test_画面からでも他組織には採番できない(db, world, principal_of, as_principal):
+def test_the_screen_cannot_mint_into_another_organisation(db, world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     assert c.post("/admin/mint", data={"shoulder": "/b2"}).status_code == 403
 
 
-def test_採番権限が無ければ画面も開けない(db, world, principal_of, as_principal):
+def test_without_the_minting_scope_the_page_does_not_open(db, world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"], scopes={"ark:read"}))
     assert c.get("/admin/mint").status_code == 403
 
 
-# ------------------------------------------------------------- 国際化
+# ------------------------------------------------------------------ Localisation
 
 
 @pytest.mark.parametrize(
-    "lang,needle", [("ja", "組織管理"), ("en", "Organisations")]
+    # The Japanese needle is written as an escape: it is text from the Japanese UI.
+    "lang,needle", [("ja", "\u7d44\u7e54\u7ba1\u7406"), ("en", "Organisations")]
 )
-def test_日英を切り替えられる(db, world, principal_of, as_principal, lang, needle):
+def test_the_language_can_be_switched(db, world, principal_of, as_principal, lang, needle):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     assert needle in c.get("/admin/", params={"lang": lang}).text
 
 
-def test_言語の選択は記憶される(db, world, principal_of, as_principal):
+def test_the_chosen_language_is_remembered(db, world, principal_of, as_principal):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/admin/", params={"lang": "en"})
     assert r.cookies.get("arkhe_lang") == "en"
 
 
-def test_Accept_Languageを見る(db, world, principal_of, as_principal):
+def test_accept_language_is_honoured(db, world, principal_of, as_principal):
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     r = c.get("/admin/", headers={"accept-language": "en-US,en;q=0.9"})
     assert "Organisations" in r.text
 
 
-def test_翻訳に抜けが無い():
+def test_no_translation_is_missing():
     from arkhe.api import i18n
 
     for lang, cat in i18n.CATALOGS.items():
-        assert set(cat) == set(i18n.JA), f"{lang} に抜けがある"
+        assert set(cat) == set(i18n.JA), f"{lang} is missing keys"
 
 
-def test_scopeにはすべて説明がある():
-    """**語彙が増えたら訳も増える。** 言語間の抜けは既存の検査で見つかるが、
-    `SCOPES` に足して**どの言語にも入れ忘れる**と、対が揃ってしまうので通る
-    ——実際 `ark:hold` は、画面に `sc.ark:hold` という生のキーが出ていた。
+def test_every_scope_has_a_description():
+    """A new scope needs new wording in every language.
 
-    OpenAPI の `clientCredentials.scopes` もここから起こすので、抜けると
-    仕様書にキーが漏れる。
+    A key missing from one language is caught by the check above, but adding to SCOPES
+    and forgetting all languages leaves them consistent and passes. That happened:
+    ark:hold showed the raw key sc.ark:hold on the screen.
+
+    The OpenAPI clientCredentials scopes come from here too, so a gap leaks a key into
+    the specification.
     """
     from arkhe.api import i18n
     from arkhe.domain import authz
@@ -156,12 +162,12 @@ def test_scopeにはすべて説明がある():
     for lang, cat in i18n.CATALOGS.items():
         missing = [f"sc.{s}{sfx}" for s in authz.SCOPES for sfx in ("", ".d")
                    if f"sc.{s}{sfx}" not in cat]
-        assert not missing, f"{lang} に無い scope の語: {missing}"
+        assert not missing, f"scope wording missing from {lang}: {missing}"
 
 
-def test_予約は作成時にしか指定できない(db, world, root):
-    """**active から reserved へは戻せない。** 一度採番できる状態にした名前空間を
-    後から「未使用扱い」にはできない。"""
+def test_reserved_can_only_be_set_when_the_shoulder_is_created(db, world, root):
+    """There is no way back from active to reserved: a namespace that has been
+    mintable cannot later be called unused."""
     sh = ops.add_shoulder(db, root, naan="99999", shoulder="/rv", status="reserved")
     db.commit()
     assert sh.status == ShoulderStatus.RESERVED
@@ -169,22 +175,22 @@ def test_予約は作成時にしか指定できない(db, world, root):
         ops.add_shoulder(db, root, naan="99999", shoulder="/bad", status="retired")
 
 
-def test_予約枠は採番できるようにできる(db, world, root):
+def test_a_reserved_shoulder_can_be_made_mintable(db, world, root):
     sh = ops.add_shoulder(db, root, naan="99999", shoulder="/rv", status="reserved")
     db.commit()
     ops.set_shoulder_status(db, root, shoulder_id=sh.id, status="active")
     assert sh.status == ShoulderStatus.ACTIVE
 
 
-def test_言語切替のUIが常に出る(db, world, principal_of, as_principal):
-    """**横並びのセグメントにしない。** 言語が増えると横に伸びて破綻するため、
-    アイコンから開く一覧にしてある。開閉は Popover API に任せる（外側クリックと
-    Esc が標準で効くので JS が要らない）。"""
+def test_the_language_switcher_is_always_present(db, world, principal_of, as_principal):
+    """Not a row of segments: more languages would stretch it until it breaks, so it
+    is a list opened from an icon. The Popover API handles opening and closing, which
+    gives clicking outside and Esc for free, with no JavaScript."""
     c = as_principal(principal_of(authority=Authority.SYSTEM, naan=""))
     body = c.get("/admin/").text
     assert 'popovertarget="lang-menu"' in body
     assert 'id="lang-menu" popover' in body
-    # 選べる言語がすべて並び、現在の言語に印が付く
+    # Every available language is listed and the current one is marked
     from arkhe.api import i18n
 
     for code, label in i18n.LANGS.items():
@@ -192,15 +198,15 @@ def test_言語切替のUIが常に出る(db, world, principal_of, as_principal)
     assert 'class="menu-i on"' in body
 
 
-# ------------------------------------------------------- 管理画面への入口
+# ------------------------------------------------ Ways in to the admin interface
 #
-# **ブラウザは Authorization ヘッダを付けられない。** API は Bearer で足りるが、
-# 人が管理画面に入る経路は別に要る。3 つの入口を設定で選ぶ。
+# A browser cannot set an Authorization header. Bearer is enough for the API, but
+# people need another way in, so there are three, chosen by configuration.
 
 
 @pytest.fixture
 def raw_app(factory):
-    """認証を差し替えない素のアプリ。**入口そのものを試す。**"""
+    """A plain app with authentication left alone, so the entrance itself is tested."""
     from fastapi import FastAPI
 
     from arkhe import observability
@@ -240,8 +246,9 @@ def _settings(**kw):
     )
 
 
-def test_bearer_モードにログイン画面は無い(db, world, raw_app):
-    """自動化・curl 専用の構成。**401 を返す**（ブラウザ向けの導線は持たない）。"""
+def test_bearer_mode_has_no_login_page(db, world, raw_app):
+    """A setup meant for automation and curl. It answers 401 and offers nothing for a
+    browser."""
     from fastapi.testclient import TestClient
 
     c = TestClient(raw_app(_settings(admin_login="bearer")), follow_redirects=False)
@@ -249,9 +256,9 @@ def test_bearer_モードにログイン画面は無い(db, world, raw_app):
     assert c.get("/admin/login").status_code == 404
 
 
-def test_oidc_モードは未ログインならログインへ送る(db, world, raw_app):
-    """**401 を返さない。** ブラウザにヘッダは付けられないので、401 を見せても
-    人には何もできない。"""
+def test_oidc_mode_sends_anonymous_callers_to_the_login_page(db, world, raw_app):
+    """Not 401. A browser cannot add the header, so a 401 leaves the person with
+    nothing to do."""
     from fastapi.testclient import TestClient
 
     cfg = _settings(admin_login="oidc", oidc_issuer="https://kc.example.org",
@@ -261,30 +268,31 @@ def test_oidc_モードは未ログインならログインへ送る(db, world, 
     assert r.status_code == 302 and r.headers["location"].startswith("/admin/login")
 
 
-def test_proxy_モードは前段のヘッダを信じる(db, world, root, raw_app):
+def test_proxy_mode_trusts_the_header_from_the_proxy(db, world, root, raw_app):
     from fastapi.testclient import TestClient
 
-    # **人の主体として登録する。** 機械用の主体は外部ログインでは名乗れない。
+    # Register a person. A machine principal cannot sign in from outside.
     ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
                         manager_id=world["a"].id, scopes="ark:mint", subject_type="person")
     db.commit()
     cli = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False)
-    # ヘッダが無ければログインへ（この構成に画面は無いので 404 になる）
+    # With no header it goes to the login page, which this setup does not have
     assert cli.get("/admin/").status_code == 302
     r = cli.get("/admin/", headers={"X-Forwarded-User": "alice@example.ac.jp"})
     assert r.status_code == 200 and "org A" in r.text
 
 
-def test_proxy_モードでも台帳に無い身元は通さない(db, world, raw_app):
-    """認可サーバで認証できることと、この名前空間を触ってよいことは別。"""
+def test_proxy_mode_refuses_an_identity_that_is_not_in_the_ledger(db, world, raw_app):
+    """Authenticating at the authorisation server and being allowed to touch this
+    namespace are different things."""
     from fastapi.testclient import TestClient
 
     cli = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False)
     r = cli.get("/admin/", headers={"X-Forwarded-User": "stranger@example.com"})
-    assert r.status_code == 302  # ログインへ送られる（＝入れない）
+    assert r.status_code == 302  # sent to the login page, which means kept out
 
 
-def test_セッションは署名され改竄できない(db, world, root, raw_app):
+def test_the_session_is_signed_and_cannot_be_forged(db, world, root, raw_app):
     from fastapi.testclient import TestClient
 
     from arkhe.auth import session as sess
@@ -299,29 +307,32 @@ def test_セッションは署名され改竄できない(db, world, root, raw_a
     cli.cookies.set(sess.COOKIE, good)
     assert cli.get("/admin/").status_code == 200
 
-    # 別の鍵で署名したものは通らない
+    # Signed with a different key, so it is refused
     forged = sess.issue("bob", secret="x" * 48, ttl=600)
     cli.cookies.set(sess.COOKIE, forged)
     assert cli.get("/admin/").status_code == 302
 
 
-def test_機械の主体は外部ログインで名乗れない(db, world, root, raw_app):
-    """**前段の設定が緩んでヘッダが外から通っても、一括投入バッチには化けられない。**
+def test_a_machine_principal_cannot_sign_in_from_outside(db, world, root, raw_app):
+    """Even if the proxy is misconfigured and the header arrives from outside, nobody
+    can become the bulk-loading batch.
 
-    プロキシを正しく置けば防げる話だが、設定 1 つの誤りが「全件書き換え」に化ける
-    のは脆い。人と機械を型で分けて、経路そのものを塞ぐ。
+    Placing the proxy correctly would prevent it, but one wrong setting turning into
+    "rewrite everything" is too fragile. People and machines are different kinds, which
+    closes the path itself.
     """
     from fastapi.testclient import TestClient
 
     ops.register_client(db, root, client_id="batch", naan="99999",
-                        manager_id=world["a"].id, scopes="ark:mint")  # 既定は machine
+                        manager_id=world["a"].id, scopes="ark:mint")  # machine by default
     db.commit()
     cli = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False)
     assert cli.get("/admin/", headers={"X-Forwarded-User": "batch"}).status_code == 302
 
 
-def test_人の主体は資格情報を持てない(db, world, root):
-    """身元は外部が保証する。arkhe に鍵を持たせると、外部で失効させても入れてしまう。"""
+def test_a_person_holds_no_credentials(db, world, root):
+    """Identity is vouched for elsewhere. A key held here would still work after the
+    account was disabled there."""
     c = ops.register_client(db, root, client_id="carol@example.ac.jp", naan="99999",
                             manager_id=world["a"].id, subject_type="person")
     db.commit()
@@ -329,8 +340,9 @@ def test_人の主体は資格情報を持てない(db, world, root):
         ops.issue_credential(db, root, client_pk=c.id)
 
 
-def test_人の主体はAPIキーで認証できない(db, world, root):
-    """逆向きも塞ぐ。鍵が何らかの経路で作られても、認証は通さない。"""
+def test_a_person_cannot_authenticate_with_an_api_key(db, world, root):
+    """The other direction is closed too: even if a key were created somehow, it does
+    not authenticate."""
     from arkhe.auth import apikey
     from arkhe.db.models import Credential, CredentialKind
 
@@ -347,15 +359,15 @@ def test_人の主体はAPIキーで認証できない(db, world, root):
         apikey.authenticate(db, raw)
 
 
-# ------------------------------------------------------- ID とパスワード
+# ----------------------------------------------------- Usernames and passwords
 #
-# 外部 IdP を持たない組織でも単体で建てられるようにするための入口。
-# oidc / proxy が使えるならそちらがよい（身元の管理が 1 か所に集まる）。
+# A way in for organisations with no identity provider of their own. Where oidc or
+# proxy is available, they are better: identities stay in one place.
 
 
 @pytest.fixture
 def with_password(db, world, root):
-    """人の主体を 1 つ作り、パスワードを設定する。"""
+    """Create one person and give them a password."""
     c = ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
                             manager_id=world["a"].id, scopes="ark:mint",
                             subject_type="person")
@@ -371,9 +383,9 @@ def _pw_client(raw_app):
     return TestClient(raw_app(_settings(admin_login="password")), follow_redirects=False)
 
 
-def test_パスワードでログインできる(db, world, with_password, raw_app):
+def test_a_password_signs_you_in(db, world, with_password, raw_app):
     cli = _pw_client(raw_app)
-    assert cli.get("/admin/").status_code == 302  # 未ログインはログインへ
+    assert cli.get("/admin/").status_code == 302  # anonymous goes to the login page
     assert cli.get("/admin/login").status_code == 200
     r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
                                        "password": "correct-horse-battery"})
@@ -381,15 +393,16 @@ def test_パスワードでログインできる(db, world, with_password, raw_a
     assert "org A" in cli.get("/admin/").text
 
 
-def test_誤ったパスワードは入れない(db, world, with_password, raw_app):
+def test_a_wrong_password_does_not_sign_you_in(db, world, with_password, raw_app):
     cli = _pw_client(raw_app)
     r = cli.post("/admin/login", data={"username": "alice@example.ac.jp", "password": "wrong"})
     assert r.status_code == 401
     assert cli.get("/admin/").status_code == 302
 
 
-def test_存在しないIDと誤ったパスワードを区別しない(db, world, with_password, raw_app):
-    """**「その ID は無い」と分かると、利用者の一覧を総当たりで作れる。**"""
+def test_an_unknown_user_and_a_wrong_password_look_the_same(db, world, with_password, raw_app):
+    """If "no such user" were distinguishable, the list of users could be found by
+    trying names."""
     cli = _pw_client(raw_app)
     a = cli.post("/admin/login", data={"username": "alice@example.ac.jp", "password": "wrong"})
     b = cli.post("/admin/login", data={"username": "nobody@example.ac.jp", "password": "wrong"})
@@ -399,20 +412,20 @@ def test_存在しないIDと誤ったパスワードを区別しない(db, worl
     assert i18n.JA["login.failed"] in a.text and i18n.JA["login.failed"] in b.text
 
 
-def test_連続失敗で一時的に施錠される(db, world, with_password, raw_app):
-    """**ログイン画面を出す以上、これが無いと辞書攻撃に素で晒される。**"""
+def test_repeated_failures_lock_the_account_for_a_while(db, world, with_password, raw_app):
+    """Offering a login page without this leaves it open to guessing."""
     from arkhe.auth import password as pw
 
     cli = _pw_client(raw_app)
     for _ in range(pw.MAX_ATTEMPTS):
         cli.post("/admin/login", data={"username": "alice@example.ac.jp", "password": "wrong"})
-    # 正しいパスワードでも受け付けない
+    # Even the correct password is refused
     r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
                                        "password": "correct-horse-battery"})
     assert r.status_code == 401
 
 
-def test_短いパスワードは設定できない(db, world, root):
+def test_a_short_password_is_refused(db, world, root):
     c = ops.register_client(db, root, client_id="bob@example.ac.jp", naan="99999",
                             manager_id=world["a"].id, subject_type="person")
     db.flush()
@@ -420,8 +433,9 @@ def test_短いパスワードは設定できない(db, world, root):
         ops.set_password(db, root, client_pk=c.id, password="short")
 
 
-def test_機械の主体にパスワードは設定できない(db, world, root):
-    """機械はパスワードを覚えない。持たせると書き留められた鍵が増えるだけ。"""
+def test_a_machine_principal_gets_no_password(db, world, root):
+    """A machine does not remember a password; giving it one just adds another secret
+    written down somewhere."""
     c = ops.register_client(db, root, client_id="batch2", naan="99999",
                             manager_id=world["a"].id)
     db.flush()
@@ -429,8 +443,9 @@ def test_機械の主体にパスワードは設定できない(db, world, root)
         ops.set_password(db, root, client_pk=c.id, password="long-enough-password")
 
 
-def test_パスワードの変更で古いものは通らなくなる(db, world, root, with_password, raw_app):
-    """**古い行は消さずに無効化する**（いつ変えたかが残る）。"""
+def test_changing_the_password_stops_the_old_one(db, world, root, with_password, raw_app):
+    """The old row is disabled rather than deleted, so when it changed is still
+    known."""
     ops.set_password(db, root, client_pk=with_password.id, password="a-brand-new-secret")
     db.commit()
     cli = _pw_client(raw_app)
@@ -442,8 +457,9 @@ def test_パスワードの変更で古いものは通らなくなる(db, world,
     assert new.status_code == 302
 
 
-def test_外部URLへのリダイレクトに使えない(db, world, with_password, raw_app):
-    """next に外部 URL を入れられると、ログイン直後に別サイトへ飛ばす踏み台になる。"""
+def test_the_login_page_cannot_redirect_to_another_site(db, world, with_password, raw_app):
+    """An external URL in next would make this a stepping stone that sends people
+    elsewhere right after they sign in."""
     cli = _pw_client(raw_app)
     r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
                                        "password": "correct-horse-battery",
@@ -451,11 +467,12 @@ def test_外部URLへのリダイレクトに使えない(db, world, with_passwo
     assert r.headers["location"] == "/admin/"
 
 
-def test_shoulder固定の主体は組織を継ぐ(db, world, root):
-    """**shoulder は既に組織を決めている。**
+def test_a_shoulder_pinned_principal_inherits_the_organisation(db, world, root):
+    """A shoulder already determines the organisation.
 
-    別々に渡させると、manager を書き忘れた主体ができ、認可の入口で必ず弾かれる
-    ——しかも「shoulder は合っているのに通らない」という分かりにくい形で。
+    Requiring both separately produces principals with the manager left out, which are
+    refused at the door, in the confusing form of "the shoulder is right but it still
+    does not work".
     """
     sh = world["a"].default_shoulder
     c = ops.register_client(
@@ -466,8 +483,8 @@ def test_shoulder固定の主体は組織を継ぐ(db, world, root):
     assert c.manager_id == sh.manager_id
 
 
-def test_shoulderと組織の食い違いは拒む(db, world, root):
-    """黙って片方を優先しない。どちらが正しいかは呼び出し側しか知らない。"""
+def test_a_shoulder_that_disagrees_with_the_organisation_is_refused(db, world, root):
+    """Neither one wins silently: only the caller knows which was intended."""
     from arkhe.domain.authz import Invalid
 
     sh = world["a"].default_shoulder
@@ -478,11 +495,11 @@ def test_shoulderと組織の食い違いは拒む(db, world, root):
         )
 
 
-def test_約束の水準は言い直せる(db, world, root):
-    """**既定のまま放置させないための口。**
+def test_the_commitment_level_can_be_restated(db, world, root):
+    """So that nobody is left on the default.
 
-    これが無いと全組織が `permanent-dynamic` を名乗ったまま動き、`??` は
-    ソフトウェアの既定値を組織の宣言として公開してしまう。
+    Without this, every organisation runs as permanent-dynamic and ?? publishes a
+    software default as if the organisation had declared it.
     """
     m = world["a"]
     ops.set_commitment(db, root, manager_id=m.id, level="permanent-unchanging")
@@ -490,25 +507,25 @@ def test_約束の水準は言い直せる(db, world, root):
     assert m.commitment_level == "permanent-unchanging"
 
 
-def test_約束の水準は下げられる(db, world, root):
-    """守れない約束を掲げ続けるより、言い直せるほうが誠実。"""
+def test_the_commitment_level_can_be_lowered(db, world, root):
+    """Restating it is more honest than keeping a promise that cannot be kept."""
     m = world["a"]
     ops.set_commitment(db, root, manager_id=m.id, level="not-guaranteed")
     db.commit()
     assert m.commitment_level == "not-guaranteed"
 
 
-def test_知らない水準は通さない(db, world, root):
-    """`??` でそのまま公開される値なので、綴り間違いを通すと、組織が述べて
-    いない水準を組織の名前で名乗ることになる。"""
+def test_an_unknown_commitment_level_is_refused(db, world, root):
+    """The value is published as it stands by ??, so a typo would announce, in the
+    organisation's name, a level it never stated."""
     from arkhe.domain.authz import Invalid
 
     with pytest.raises(Invalid):
         ops.set_commitment(db, root, manager_id=world["a"].id, level="permanent")
 
 
-def test_他組織の約束は変えられない(db, world, principal_of):
-    """約束はその組織のもの。"""
+def test_another_organisations_commitment_cannot_be_changed(db, world, principal_of):
+    """The promise belongs to that organisation."""
     from arkhe.auth.errors import Forbidden
 
     p = principal_of(manager=world["a"])
@@ -516,24 +533,25 @@ def test_他組織の約束は変えられない(db, world, principal_of):
         ops.set_commitment(db, p, manager_id=world["b"].id, level="not-guaranteed")
 
 
-def test_onboard時に水準を述べられる(db, world, root):
-    """迎え入れる時点で確かめる——後から直す運用にすると必ず既定が残る。"""
+def test_the_commitment_can_be_stated_while_onboarding(db, world, root):
+    """Settle it while onboarding. Fixing it later always leaves defaults behind."""
     m, _ = ops.onboard_manager(
-        db, root, naan="99999", name="約束を述べた組織", shoulder="/c1",
+        db, root, naan="99999", name="org that stated a commitment", shoulder="/c1",
         commitment_level="permanent-stable",
     )
     db.commit()
     assert m.commitment_level == "permanent-stable"
 
 
-# ----------------------------------------------------------------- ログアウト
+# ------------------------------------------------------------------ Signing out
 
 
-def test_oidcのログアウトは認可サーバのセッションも終わらせる(db, world, raw_app, monkeypatch):
-    """**こちらの Cookie を消すだけでは、ログアウトしたことにならない。**
+def test_signing_out_of_oidc_ends_the_session_at_the_server_too(db, world, raw_app, monkeypatch):
+    """Dropping our cookie is not signing out.
 
-    次に `/admin/` を開くと認可サーバへ送られ、そちらのセッションが生きていれば
-    何も訊かれずに戻ってくる——利用者から見れば「ログアウトできない」。
+    Opening /admin/ again goes to the authorisation server, and if the session there is
+    alive the person comes straight back without being asked anything. From where they
+    stand, signing out does not work.
     """
     from fastapi.testclient import TestClient
 
@@ -550,15 +568,16 @@ def test_oidcのログアウトは認可サーバのセッションも終わら�
     loc = r.headers["location"]
     assert loc.startswith("https://kc.example.org/realms/arkhe/logout")
     assert "client_id=arkhe-admin" in loc
-    # **戻り先も渡す。** 渡さないと認可サーバの画面で行き止まりになる。
+    # Send where to return to, or the person is stranded on the server's page.
     assert "post_logout_redirect_uri=" in loc
-    # **ID トークンは渡さない**——渡すには Cookie に抱えることになり、claim の多い
-    # 環境で 4 KB を超えてブラウザに黙って捨てられる。
+    # The ID token is not sent: holding it would mean keeping it in the cookie, which
+    # passes 4 KB where claims are many, and browsers drop it without a word.
     assert "id_token_hint" not in loc
 
 
-def test_end_sessionが無い認可サーバならこちらだけで終える(db, world, raw_app, monkeypatch):
-    """RP からのログアウトに対応していない認可サーバもある。**落とさない。**"""
+def test_a_server_without_end_session_is_handled_locally(db, world, raw_app, monkeypatch):
+    """Some authorisation servers do not support logout initiated by the relying
+    party. Do not fail."""
     from fastapi.testclient import TestClient
 
     from arkhe.auth import login as login_flow
@@ -570,8 +589,8 @@ def test_end_sessionが無い認可サーバならこちらだけで終える(db
     assert r.status_code == 302 and r.headers["location"] == "/admin/"
 
 
-def test_パスワードのログアウトは外に出ない(db, world, raw_app):
-    """外部の認可サーバを使っていないので、終わらせるセッションはこちらだけ。"""
+def test_password_sign_out_stays_local(db, world, raw_app):
+    """No external server is involved, so there is only one session to end."""
     from fastapi.testclient import TestClient
 
     r = TestClient(
@@ -582,13 +601,13 @@ def test_パスワードのログアウトは外に出ない(db, world, raw_app)
            "Max-Age=0" in r.headers.get("set-cookie", "")
 
 
-# ------------------------------------------------- ログインに戻す画面
+# ------------------------------------------- Getting back to the login page
 
 
-def test_往復が失効したらログインへ戻れる(db, world, raw_app):
-    """**行き止まりを作らない。**
+def test_an_expired_round_trip_leads_back_to_the_login_page(db, world, raw_app):
+    """Never leave a dead end.
 
-    素のテキストを返していたので、利用者は URL を手で直すしかなかった。
+    This used to return plain text, leaving the person to edit the URL by hand.
     """
     from fastapi.testclient import TestClient
 
@@ -596,11 +615,11 @@ def test_往復が失効したらログインへ戻れる(db, world, raw_app):
                     admin_client_id="arkhe-admin")
     r = TestClient(raw_app(cfg), follow_redirects=False).get("/admin/callback?code=x&state=y")
     assert r.status_code == 400
-    assert 'href="/admin/login"' in r.text        # 戻り道がある
-    assert "arkhe" in r.text and "<style" in r.text  # ログイン画面と同じ体裁
+    assert 'href="/admin/login"' in r.text        # there is a way back
+    assert "arkhe" in r.text and "<style" in r.text  # styled like the login page
 
 
-def test_認可サーバの拒否も同じ画面で返す(db, world, raw_app, monkeypatch):
+def test_a_refusal_from_the_server_uses_the_same_page(db, world, raw_app, monkeypatch):
     from fastapi.testclient import TestClient
 
     from arkhe.auth import session as sess
@@ -616,8 +635,8 @@ def test_認可サーバの拒否も同じ画面で返す(db, world, raw_app, mo
     assert "access_denied" in r.text and 'href="/admin/login"' in r.text
 
 
-def test_ログイン画面の無い構成でも案内を出す(db, world, raw_app):
-    """404 を素のテキストで返すと、何が起きたのか分からない。"""
+def test_a_setup_without_a_login_page_still_explains_itself(db, world, raw_app):
+    """A plain 404 leaves the person with no idea what happened."""
     from fastapi.testclient import TestClient
 
     r = TestClient(raw_app(_settings(admin_login="proxy")), follow_redirects=False).get(
@@ -626,12 +645,12 @@ def test_ログイン画面の無い構成でも案内を出す(db, world, raw_a
     assert r.status_code == 404 and 'href="/admin/"' in r.text
 
 
-def test_接続元を刻んでから渡す(db, world, root, raw_app):
-    """**要求の層でしか分からないものを、そこで刻む。**
+def test_the_caller_address_is_recorded_before_anything_else(db, world, root, raw_app):
+    """What only the request layer knows is recorded there.
 
-    ここが抜けると監査には空の接続元が並ぶ（画面は動くので気づきにくい）。
-    前段 1 段の構成に長い `X-Forwarded-For` を投げ、**client の書いた左端では
-    なく右端**が残ることまで見る。
+    Without it the audit log fills with empty addresses, which is easy to miss because
+    the screens keep working. A long X-Forwarded-For is sent to a one-proxy setup, and
+    the entry kept is the rightmost, not the one the client wrote.
     """
     from datetime import UTC, datetime, timedelta
 
@@ -639,7 +658,7 @@ def test_接続元を刻んでから渡す(db, world, root, raw_app):
 
     from arkhe.db.models import AuditEvent
 
-    # 監査は NAAN 単位以上の操作だけ残すので、その範囲の人として入る。
+    # The audit log keeps NAAN level and above, so sign in with that reach.
     ops.register_client(db, root, client_id="alice@example.ac.jp", naan="99999",
                         scopes="ark:mint", subject_type="person",
                         authority="naan",
@@ -658,11 +677,10 @@ def test_接続元を刻んでから渡す(db, world, root, raw_app):
     assert ev and ev[-1].ip == "10.0.0.9"
 
 
-def test_ログアウトはGETでは通らない(db, world, raw_app):
-    """**`SameSite=Lax` はトップレベルの GET 遷移では Cookie を送る。**
+def test_signing_out_does_not_work_over_get(db, world, raw_app):
+    """SameSite=Lax still sends the cookie on a top-level GET.
 
-    GET のままだと、外部サイトから `<img src=".../logout">` で強制ログアウト
-    させられる。
+    Left as GET, another site could sign people out with <img src=".../logout">.
     """
     from fastapi.testclient import TestClient
 
@@ -672,8 +690,9 @@ def test_ログアウトはGETでは通らない(db, world, raw_app):
     assert r.status_code == 405
 
 
-def test_readyzはDBを見る(db, world, raw_app):
-    """`/healthz` と兼ねていたので、**DB が落ちても Ready のままだった。**"""
+def test_readyz_probes_the_database(db, world, raw_app):
+    """It used to share /healthz, so it kept answering Ready with the database
+    down."""
     from fastapi.testclient import TestClient
 
     from arkhe.app import create_app
@@ -685,32 +704,33 @@ def test_readyzはDBを見る(db, world, raw_app):
     c = TestClient(app, follow_redirects=False)
     assert c.get("/healthz").status_code == 200
 
-    # 届かない DB を指した構成で見る（依存を壊すのではなく、実際の失敗の形）。
+    # Point it at a database that is not reachable: the real shape of the failure,
+    # rather than a broken dependency.
     bad = _settings()
     bad = bad.model_copy(update={"database_url": "postgresql+psycopg://x@127.0.0.1:1/none"})
     gone = create_app(bad)
     g = TestClient(gone, follow_redirects=False)
-    # **生存は変わらない**（プロセスは生きている）が、可用は落ちる。
+    # Liveness is unchanged, since the process is alive, but readiness is not.
     assert g.get("/healthz").status_code == 200
     assert g.get("/readyz").status_code == 503
 
 
-def test_要求IDが応答に返る(db, world, raw_app):
-    """利用者が「この ID で調べてほしい」と言えるようにする。"""
+def test_the_request_id_comes_back_in_the_response(db, world, raw_app):
+    """So that someone can say "look up this id" when reporting a problem."""
     from fastapi.testclient import TestClient
 
     c = TestClient(raw_app(_settings()), follow_redirects=False)
     r = c.get("/healthz", headers={"X-Request-Id": "abc123"})
     assert r.headers["x-request-id"] == "abc123"
-    # 前段が付けていなければ、こちらで作る
+    # If the proxy did not set one, make one here
     assert TestClient(raw_app(_settings())).get("/healthz").headers.get("x-request-id")
 
 
-# --------------------------------------------------- 入退室の記録
+# ------------------------------------------- Recording who came and went
 
 
-def test_ログインの成功が残る(db, world, root, raw_app):
-    """**入退室は誰のものでも残す。** 到達範囲で間引かない。"""
+def test_a_successful_sign_in_is_recorded(db, world, root, raw_app):
+    """Sign-ins are recorded whoever they belong to; reach does not thin them out."""
     from fastapi.testclient import TestClient
 
     from arkhe.db.models import AuditEvent
@@ -726,14 +746,14 @@ def test_ログインの成功が残る(db, world, root, raw_app):
                                        "password": "correct-horse-battery"})
     assert r.status_code == 302
     ev = db.scalars(db.query(AuditEvent).filter_by(action="sign_in").statement).all()
-    # 組織単位の人でも残る（`audit()` なら間引かれる）
+    # Recorded even for an organisation-level person, which audit() would skip
     assert len(ev) == 1 and ev[0].client_id == "alice" and ev[0].detail["ok"] is True
 
 
-def test_ログインの失敗こそ残す(db, world, root, raw_app):
-    """**成功したものより先に見たい記録。**
+def test_a_failed_sign_in_is_recorded_above_all(db, world, root, raw_app):
+    """The record people want to read before the successful ones.
 
-    打ち込まれた ID は残すが、パスワードは当然残さない。
+    The username that was typed is kept; the password, of course, is not.
     """
     from fastapi.testclient import TestClient
 
@@ -745,10 +765,10 @@ def test_ログインの失敗こそ残す(db, world, root, raw_app):
     ev = db.scalars(db.query(AuditEvent).filter_by(action="sign_in").statement).all()
     assert len(ev) == 1
     assert ev[0].client_id == "mallory" and ev[0].detail["ok"] is False
-    assert "hunter2" not in str(ev[0].detail), "パスワードが記録に残っている"
+    assert "hunter2" not in str(ev[0].detail), "the password was recorded"
 
 
-def test_ログアウトも残る(db, world, root, raw_app):
+def test_signing_out_is_recorded_too(db, world, root, raw_app):
     from fastapi.testclient import TestClient
 
     from arkhe.db.models import AuditEvent
