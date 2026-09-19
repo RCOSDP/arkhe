@@ -13,6 +13,8 @@ from sqlalchemy.exc import IntegrityError
 from arkhe import errors
 from arkhe.api.schemas import (
     ArkOut,
+    BulkDeleteIn,
+    BulkDeleteOut,
     BulkImportIn,
     BulkImportOut,
     BulkMintIn,
@@ -215,6 +217,23 @@ qualified names under it: withdraw those first.
 **The name is not freed.** It is kept in the ledger of withdrawn names and never
 assigned again, because a reserved identifier has usually already been handed to
 someone — re-using it would be indistinguishable, from the outside, from breaking NR.
+"""
+
+E_BULK_DELETE = """\
+**Delete several ARKs that were never published, in one request.** Requires
+`ark:delete`, and one request holds at most `ARKHE_BULK_LIMIT` rows.
+
+Reserving in bulk is a real way of working: numbers are handed to objects that are still
+under review, sometimes for years. When such a batch is abandoned, **throwing it away has
+to be as cheap as minting it was** — one row at a time is not that.
+
+What makes it safe to be cheap is that **none of these names has ever been seen**. A row
+that is published, or that has ever been published, **fails the whole request** with
+`409`: that name goes through `/api/delete` on its own, which asks for a reason and the
+ARK typed again. **The weight follows the name's history, not the size of the request.**
+
+Nothing is deleted in part — every row is checked first — and each name is kept in the
+ledger of withdrawn names and never assigned again.
 """
 
 E_STATS = """\
@@ -886,6 +905,34 @@ def delete_ark(body: DeleteIn, principal: CurrentPrincipal, session: Db):
     out = DeleteOut(
         ark=compact_ark(gone.ark), withdrawn_at=gone.withdrawn_at, reason=gone.reason
     )
+    session.commit()
+    return out
+
+
+@router.post(
+    "/delete/bulk",
+    dependencies=needs("ark:delete"),
+    response_model=BulkDeleteOut,
+    description=E_BULK_DELETE,
+)
+def bulk_delete(body: BulkDeleteIn, principal: CurrentPrincipal, session: Db, cfg: Config):
+    """Delete a batch of ARKs that were never published.
+
+    The counterpart of bulk minting. Minting a thousand reservations is one request, and
+    until now throwing them away was a thousand; the asymmetry pushed people towards
+    leaving abandoned numbers in the ledger, which is the outcome the reservation rule
+    exists to avoid.
+
+    The cheapness is bounded by what is being lost: every row must be unpublished now and
+    never have been published. One that has been out fails the whole request, and goes
+    through /api/delete on its own with a reason and the ARK typed again.
+    """
+    authz.require_scope(principal, "ark:delete")
+    keys = [_key(a) for a in body.data]
+    if len(keys) > cfg.bulk_limit:
+        raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
+    gone = admin_ops.withdraw_arks(session, principal, arks=keys, reason=body.reason)
+    out = BulkDeleteOut(withdrawn=[compact_ark(g.ark) for g in gone], count=len(gone))
     session.commit()
     return out
 

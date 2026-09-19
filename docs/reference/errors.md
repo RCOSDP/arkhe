@@ -67,4 +67,5 @@ alongside. **The admin interface** answers from its own catalogue, in the langua
 | `ARKHE-1501` | 409 | {ark} is published; unpublish it first (or purge it in one step). |
 | `ARKHE-1502` | 409 | {ark} has {count} qualified name(s) under it; withdraw those first. |
 | `ARKHE-1503` | 409 | {ark} is not published; there is nothing to withdraw from publication. |
+| `ARKHE-1504` | 409 | {ark} has been published; a name that has been out is deleted on its own, not in a batch. |
 | `ARKHE-1601` | 429 | Daily quota exhausted: {used} of {quota} used in the last 24 hours. |

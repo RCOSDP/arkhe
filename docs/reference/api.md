@@ -60,6 +60,12 @@ administrator inside its NAAN. Because the name has been out in the world, unpub
 needs a `reason` and `confirm` repeating the ARK, and so does deleting anything that has
 ever been published. **The weight follows the name's history, not the caller's rank.**
 
+**An abandoned batch goes in one request.** `POST /api/delete/bulk` (`ark:delete`)
+deletes several ARKs that were **never published** — reserving in bulk is a way of
+working, so throwing the batch away has to be as cheap as minting it was. **One row that
+is published, or that has ever been published, fails the whole request** (`409`); that
+name goes through `POST /api/delete` on its own, with a reason and the ARK typed again.
+
 **`POST /api/purge` does both steps at once** (`ark:purge`, within your reach) — for a
 removal order, or data that should never have been published — because **without a way
 out someone deletes rows straight from the database**. It requires a reason, `confirm`

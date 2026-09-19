@@ -38,11 +38,32 @@ def _run(factory, *args):
         cli._session = orig
 
 
-def _mint(db, shoulder, n, *, by="minter", url="https://example.org/{i}", title=""):
+def _run_with_input(factory, text, *args):
+    """Run a command with something on standard input."""
+    from contextlib import contextmanager
+
+    @contextmanager
+    def session():
+        s = factory()
+        try:
+            yield s
+        finally:
+            s.close()
+
+    orig, cli._session = cli._session, session
+    try:
+        return runner.invoke(cli.app, list(args), input=text)
+    finally:
+        cli._session = orig
+
+
+def _mint(db, shoulder, n, *, by="minter", url="https://example.org/{i}", title="",
+          reserve=False):
     out = []
     for i in range(n):
         ark, _ = minting.mint(
-            db, shoulder=shoulder, created_by=by, url=url.format(i=i), title=title
+            db, shoulder=shoulder, created_by=by, url=url.format(i=i), title=title,
+            reserve=reserve
         )
         out.append(ark)
     db.commit()
@@ -125,3 +146,43 @@ def test_filtering_cannot_widen_the_reach(db, world):
     )
     stmt = narrow_arks(visible_arks(only_a), org=str(world["b"].id))
     assert db.scalars(stmt).all() == []
+
+
+def test_deleting_several_arks_asks_once(db, factory, world):
+    """Asking per ARK is what makes a batch of reservations unthrowable in practice,
+    and they end up left in the ledger."""
+    from sqlalchemy import select
+
+    from arkhe.db.models import Ark
+
+    arks = [a.ark for a in _mint(db, world["sh_a"], 3, reserve=True)]
+    r = _run(factory, "ark", "delete", *(f"ark:{a}" for a in arks), "--yes")
+    assert r.exit_code == 0, r.stdout
+    assert "3" in r.stdout
+    assert db.scalars(select(Ark.ark).where(Ark.ark.in_(arks))).all() == []
+
+
+def test_a_batch_that_holds_a_published_ark_deletes_nothing(db, factory, world):
+    """The cheap path is only for names nobody has seen."""
+    from sqlalchemy import select
+
+    from arkhe.db.models import Ark
+
+    spare = _mint(db, world["sh_a"], 1, reserve=True)[0].ark
+    public = _mint(db, world["sh_a"], 1)[0].ark
+    r = _run(factory, "ark", "delete", f"ark:{spare}", f"ark:{public}", "--yes")
+    assert r.exit_code != 0
+    assert db.scalars(select(Ark.ark).where(Ark.ark.in_([spare, public]))).all() != []
+
+
+def test_the_arks_to_delete_can_be_piped_in(db, factory, world):
+    """A list produced by `arkhe ark list` or a query goes straight in."""
+    from sqlalchemy import select
+
+    from arkhe.db.models import Ark
+
+    arks = [a.ark for a in _mint(db, world["sh_a"], 2, reserve=True)]
+    r = _run_with_input(factory, "\n".join(f"ark:{a}" for a in arks) + "\n",
+                        "ark", "delete", "-", "--yes")
+    assert r.exit_code == 0, r.stdout
+    assert db.scalars(select(Ark.ark).where(Ark.ark.in_(arks))).all() == []

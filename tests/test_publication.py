@@ -480,6 +480,11 @@ def test_a_public_resolver_does_not_serve_reserved_arks(api, db, reserved, setti
 # ================================================================ HTTP
 
 
+def _key_of(ark: str) -> str:
+    """The ledger key for an ARK the API returned (it answers the compact form)."""
+    return ark.removeprefix("ark:")
+
+
 def test_publishing_works_through_the_api(as_principal, principal_of, db, world):
     org = principal_of(manager=world["a"], scopes={"ark:mint"})
     client = as_principal(org)
@@ -520,6 +525,72 @@ def test_without_the_delete_scope_nothing_is_withdrawn(as_principal, principal_o
     client = as_principal(org)
     ark = client.post("/api/mint", json={"reserve": True}).json()["ark"]
     assert client.post("/api/delete", json={"ark": ark}).status_code == 403
+
+
+def test_a_batch_of_reservations_is_withdrawn_through_the_api(
+    as_principal, principal_of, world
+):
+    org = principal_of(manager=world["a"], scopes={"ark:mint", "ark:delete"})
+    client = as_principal(org)
+    arks = [client.post("/api/mint", json={"reserve": True}).json()["ark"] for _ in range(3)]
+
+    r = client.post("/api/delete/bulk", json={"data": arks, "reason": "abandoned"})
+    assert r.status_code == 200, r.text
+    assert r.json() == {"withdrawn": arks, "count": 3}
+    assert client.post("/api/query", json={"data": arks}).status_code in (200, 403)
+
+
+def test_a_batch_holding_a_published_ark_is_409_and_deletes_nothing(
+    as_principal, principal_of, db, world
+):
+    """The cheap path is only for names nobody has seen, and it is all or nothing."""
+    org = principal_of(manager=world["a"], scopes={"ark:mint", "ark:delete"})
+    client = as_principal(org)
+    spare = client.post("/api/mint", json={"reserve": True}).json()["ark"]
+    public = client.post("/api/mint", json={}).json()["ark"]
+
+    r = client.post("/api/delete/bulk", json={"data": [spare, public]})
+    assert r.status_code == 409, r.text
+    assert r.json()["code"] == "ARKHE-1501"
+    assert db.get(Ark, _key_of(spare)) is not None, "the batch was applied in part"
+
+
+def test_a_batch_holding_a_name_that_was_public_is_refused(
+    as_principal, principal_of, db, world
+):
+    """Withdrawn from publication is not the same as never published: the name has
+    been out, so it is deleted on its own, with a reason and the ARK typed again."""
+    org = principal_of(manager=world["a"],
+                       scopes={"ark:mint", "ark:delete", "ark:unpublish"})
+    client = as_principal(org)
+    spare = client.post("/api/mint", json={"reserve": True}).json()["ark"]
+    was_public = client.post("/api/mint", json={}).json()["ark"]
+    client.post("/api/unpublish",
+                json={"ark": was_public, "reason": "a mistake", "confirm": was_public})
+
+    r = client.post("/api/delete/bulk", json={"data": [spare, was_public]})
+    assert r.status_code == 409, r.text
+    assert r.json()["code"] == "ARKHE-1504"
+    assert db.get(Ark, _key_of(spare)) is not None
+
+
+def test_a_batch_cannot_be_deleted_without_the_delete_scope(
+    as_principal, principal_of, world
+):
+    org = principal_of(manager=world["a"], scopes={"ark:mint", "ark:update"})
+    client = as_principal(org)
+    ark = client.post("/api/mint", json={"reserve": True}).json()["ark"]
+    assert client.post("/api/delete/bulk", json={"data": [ark]}).status_code == 403
+
+
+def test_another_organisations_ark_cannot_be_withdrawn_in_a_batch(
+    as_principal, principal_of, db, world, reserved
+):
+    """Reach binds a batch exactly as it binds one row."""
+    other = principal_of(manager=world["b"], scopes={"ark:delete"})
+    r = as_principal(other).post("/api/delete/bulk", json={"data": [f"ark:{reserved.ark}"]})
+    assert r.status_code in (403, 404)
+    assert db.get(Ark, reserved.ark) is not None
 
 
 def test_another_organisations_ark_cannot_be_withdrawn_through_the_api(
@@ -667,6 +738,47 @@ def test_a_reserved_ark_that_was_never_published_stays_easy_to_delete(db, root, 
     ops.withdraw_ark(db, root, ark=reserved.ark)
     db.commit()
     assert db.scalars(select(Ark.ark).where(Ark.ark == reserved.ark)).all() == []
+
+
+def test_a_batch_of_reservations_goes_in_one_request(db, root, world):
+    """Reserving in bulk is one request, so abandoning a batch has to be one too.
+
+    One at a time, a thousand reservations are never thrown away in practice: they are
+    left in the ledger, which is what the reservation rule exists to avoid.
+    """
+    arks = [mint(db, shoulder=world["sh_a"], created_by="test", reserve=True)[0]
+            for _ in range(5)]
+    db.commit()
+    keys = [a.ark for a in arks]
+
+    gone = ops.withdraw_arks(db, root, arks=keys, reason="the deposit was abandoned")
+    db.commit()
+    assert len(gone) == 5
+    assert db.scalars(select(Ark.ark).where(Ark.ark.in_(keys))).all() == []
+    # Every name is still burned: a reserved string may already be in someone's hands.
+    assert all(db.get(WithdrawnName, k) is not None for k in keys)
+
+
+def test_one_name_that_was_public_fails_the_whole_batch(db, root, world, published):
+    """The cheap path is only for names nobody has seen. Nothing is deleted in part,
+    so a batch cannot be half gone before the refusal."""
+    spare, _ = mint(db, shoulder=world["sh_a"], created_by="test", reserve=True)
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
+    db.commit()
+
+    with pytest.raises(Conflict):
+        ops.withdraw_arks(db, root, arks=[spare.ark, published.ark])
+    db.rollback()
+    assert db.get(Ark, spare.ark) is not None, "the batch was applied in part"
+    assert db.get(Ark, published.ark) is not None
+
+
+def test_a_published_ark_cannot_be_deleted_in_a_batch_either(db, root, world, published):
+    """The same refusal as the single path, so the batch is not a way round it."""
+    spare, _ = mint(db, shoulder=world["sh_a"], created_by="test", reserve=True)
+    db.commit()
+    with pytest.raises(Conflict):
+        ops.withdraw_arks(db, root, arks=[spare.ark, published.ark])
 
 
 def test_a_name_withdrawn_then_deleted_is_recorded_as_having_been_public(db, root, published):

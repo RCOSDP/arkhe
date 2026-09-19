@@ -1218,6 +1218,44 @@ def withdraw_ark(
     return _remove_ark(session, p, row, reason=reason, action=action)
 
 
+def withdraw_arks(
+    session: Session, p: Principal, *, arks: list[str], reason: str = ""
+) -> list[WithdrawnName]:
+    """Delete several ARKs that were never public, in one request.
+
+    This exists because reserving in bulk is a real way of working: numbers are handed to
+    objects that are still under review, sometimes for years, and when a batch of those
+    is abandoned there has to be a way to throw it away that is as cheap as minting it
+    was. Deleting them one at a time is not that.
+
+    What makes it safe to be cheap is that **nothing here has ever been seen**. Every row
+    must be unpublished now and never have been published; one that has been out is
+    refused, and the whole request with it. That name goes through the single-ARK path,
+    which asks for a reason and the ARK typed again. The weight still follows the name's
+    history rather than the size of the request.
+
+    It is all or nothing, like the other bulk operations: every row is checked before
+    anything is deleted, so a batch cannot be half gone. Each name still moves to
+    WithdrawnName and is never assigned again, and one audit event records the count.
+    """
+    from arkhe.domain import authz
+
+    found = authz.fetch_for_update(session, p, arks)  # one missing row fails it all
+    rows = [found[k] for k in arks]
+    for row in rows:
+        authz.assert_may_touch(session, p, row)
+        if row.published_at is not None:
+            raise Conflict(errors.ARK_ALREADY_PUBLIC, ark=compact_ark(row.ark))
+        if row.was_ever_public:
+            raise Conflict(errors.BULK_EXPOSED, ark=compact_ark(row.ark))
+
+    gone = [
+        _remove_ark(session, p, row, reason=reason, action="bulk_withdraw") for row in rows
+    ]
+    audit(session, p, "bulk_withdraw", count=len(gone))
+    return gone
+
+
 def purge_ark(
     session: Session, p: Principal, *, ark: str, reason: str, confirm: str = ""
 ) -> WithdrawnName:

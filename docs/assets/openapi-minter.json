@@ -640,6 +640,58 @@
         ]
       }
     },
+    "/api/delete/bulk": {
+      "post": {
+        "tags": [
+          "ark"
+        ],
+        "summary": "Bulk Delete",
+        "description": "**Delete several ARKs that were never published, in one request.** Requires\n`ark:delete`, and one request holds at most `ARKHE_BULK_LIMIT` rows.\n\nReserving in bulk is a real way of working: numbers are handed to objects that are still\nunder review, sometimes for years. When such a batch is abandoned, **throwing it away has\nto be as cheap as minting it was** — one row at a time is not that.\n\nWhat makes it safe to be cheap is that **none of these names has ever been seen**. A row\nthat is published, or that has ever been published, **fails the whole request** with\n`409`: that name goes through `/api/delete` on its own, which asks for a reason and the\nARK typed again. **The weight follows the name's history, not the size of the request.**\n\nNothing is deleted in part — every row is checked first — and each name is kept in the\nledger of withdrawn names and never assigned again.",
+        "operationId": "bulk_delete_api_delete_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkDeleteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkDeleteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": [
+              "ark:delete"
+            ]
+          },
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/stats": {
       "get": {
         "tags": [
@@ -1113,6 +1165,53 @@
         },
         "type": "object",
         "title": "Body_token_oauth_token_post"
+      },
+      "BulkDeleteIn": {
+        "properties": {
+          "data": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "The ARKs to delete."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Reason",
+            "description": "Why the batch was withdrawn. Kept with each name; not published.",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BulkDeleteIn",
+        "description": "Delete several ARKs that were **never published**, in one request. Reserving in bulk is a way of working — numbers go to objects still under review — so throwing an abandoned batch away has to be as cheap as minting it was.\n\n**One row that is published, or that has ever been published, fails the whole request** (409): such a name goes through `/api/delete` on its own, which asks for a reason and the ARK typed again. Nothing is deleted in part, and every name is remembered and never assigned again."
+      },
+      "BulkDeleteOut": {
+        "properties": {
+          "withdrawn": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Withdrawn",
+            "description": "The ARKs that are gone, in the order sent."
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "withdrawn",
+          "count"
+        ],
+        "title": "BulkDeleteOut"
       },
       "BulkImportIn": {
         "properties": {

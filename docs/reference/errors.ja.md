@@ -67,4 +67,5 @@ ARKHE-1403 ark:99999/x9tn1qkq2g8 — Check digit mismatch: the identifier looks 
 | `ARKHE-1501` | 409 | **公開中の ARK は、そのままでは削除できない。** 先に公開を取り下げる（`/api/unpublish`）か、`/api/purge` で一手に行う。**どちらも理由と打ち直しを要求する**。消さずに済ませるなら tombstone に付け替えるか `url` を空にする（`NR` を宣言している以上、解決が止まることは許されない） | {ark} is published; unpublish it first (or purge it in one step). |
 | `ARKHE-1502` | 409 | 修飾子付きの名前がぶら下がっている。**先に下から取り下げる**——親だけ消すと、行き先を継ぐ先の無い部分参照が残る | {ark} has {count} qualified name(s) under it; withdraw those first. |
 | `ARKHE-1503` | 409 | その ARK は公開していないので、公開を取り下げることはできない（消すなら取り下げではなく削除） | {ark} is not published; there is nothing to withdraw from publication. |
+| `ARKHE-1504` | 409 | **一度でも外に出した名前は一括では消せない。** 理由と打ち直しを求める重い経路（`/api/delete`）を通す——**軽い経路で大量に捨てられるのは、誰も見ていない名前だけ** | {ark} has been published; a name that has been out is deleted on its own, not in a batch. |
 | `ARKHE-1601` | 429 | 1 日の採番上限に達した（組織ごとの `quota_per_day`） | Daily quota exhausted: {used} of {quota} used in the last 24 hours. |

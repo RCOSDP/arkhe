@@ -308,6 +308,12 @@ ARK_NOT_PUBLIC = Code(
     "その ARK は公開していないので、公開を取り下げることはできない"
     "（消すなら取り下げではなく削除）",
 )
+BULK_EXPOSED = Code(
+    "ARKHE-1504", 409,
+    "{ark} has been published; a name that has been out is deleted on its own, not in a batch.",
+    "**一度でも外に出した名前は一括では消せない。** 理由と打ち直しを求める重い経路を通す"
+    "——**軽い経路で大量に捨てられるのは、誰も見ていない名前だけ**",
+)
 ARK_HAS_PARTS = Code(
     "ARKHE-1502", 409,
     "{ark} has {count} qualified name(s) under it; withdraw those first.",

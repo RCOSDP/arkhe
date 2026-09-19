@@ -215,6 +215,12 @@ JA: dict[str, str] = {
                           "よろしいですか",
     "ark.delete.aborted": "消しませんでした",
     "ark.delete.done": "{ark} を取り下げました（この名前は二度と採られません）",
+    "ark.delete.arks": "消す ARK。複数並べられる。`-` で標準入力から 1 行 1 件で読む",
+    "ark.delete.confirm_many": "{count} 件を消します。**公開したことのある名前が"
+                               "混じっていれば、1 件も消さずに断ります。** よろしいですか",
+    "ark.delete.done_many": "{count} 件を取り下げました"
+                            "（これらの名前は二度と採られません）",
+    "ark.delete.nothing": "ARK が 1 件も渡されませんでした",
     "ark.purge.help": "**公開した ARK を破棄する。** これは約束を破る操作である"
                       "——削除命令や、公開してはならなかったものへの逃げ道として"
                       "だけ使う。\n\n"
@@ -438,6 +444,12 @@ EN: dict[str, str] = {
                           "Continue",
     "ark.delete.aborted": "left it in the ledger",
     "ark.delete.done": "withdrew {ark} (that name is never assigned again)",
+    "ark.delete.arks": "the ARKs to delete; give several, or `-` to read them from "
+                       "standard input, one per line",
+    "ark.delete.confirm_many": "About to delete {count}. **If any of them has ever been "
+                               "published, none is deleted.** Go ahead",
+    "ark.delete.done_many": "withdrew {count} (those names are never assigned again)",
+    "ark.delete.nothing": "no ARK was given",
     "ark.purge.help": "**Purge a published ARK.** This breaks the promise the service "
                       "makes — use it only as a way out for a removal order, or for "
                       "what should never have been published.\n\n"

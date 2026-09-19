@@ -6,7 +6,9 @@ goes through the same invariants and leaves the same record in the audit log.
 
 from __future__ import annotations
 
+import sys
 from datetime import UTC, datetime, timedelta
+from typing import Annotated
 
 import typer
 from sqlalchemy import select
@@ -429,29 +431,59 @@ def ark_unpublish(
 
 @ark_app.command("delete", help=t("ark.delete.help"))
 def ark_delete(
-    ark: str,
+    # Annotated rather than a default, because a list default that is a call is a
+    # mutable-default shape even when Typer fills it in.
+    arks: Annotated[list[str], typer.Argument(help=t("ark.delete.arks"))],
     reason: str = typer.Option("", help=t("ark.delete.reason")),
     yes: bool = typer.Option(False, "--yes", "-y", help=t("ark.delete.yes")),
 ):
-    """Delete an ARK that is not published. While it is, admin_ops refuses.
+    """Delete ARKs that are not published. While one is, admin_ops refuses.
 
-    If the name was ever published it asks, because admin_ops then requires a reason and
-    a confirmation, which are filled from that answer. A reservation that was never
-    published is still deleted without ceremony: how much is asked matches what is being
-    lost.
+    One ARK goes through withdraw_ark, which allows a name that was published once: it
+    asks first, and the reason and confirmation admin_ops then requires are filled from
+    that answer. A reservation that was never published is deleted without ceremony, so
+    how much is asked matches what is being lost.
+
+    Several go through withdraw_arks, which refuses a name that has ever been public and
+    fails the batch with it. Abandoning a batch of reservations has to be as cheap as
+    minting it was, and the cheap path is only for names nobody has seen; a name that
+    went out is deleted on its own.
+
+    A single `-` reads the ARKs from standard input, one per line, so a list produced by
+    `arkhe ark list` or a query can be piped straight in.
     """
-    key = ark_key_from_input(ark)
+    if arks == ["-"]:
+        arks = [line.strip() for line in sys.stdin if line.strip()]
+    keys = [ark_key_from_input(a) for a in arks]
+    if not keys:
+        typer.echo(t("ark.delete.nothing"))
+        raise typer.Exit(1)
+
     with _session() as s:
-        row = s.get(Ark, key)
-        exposed = row is not None and row.first_published_at is not None
-        if exposed and not yes:
-            if not typer.confirm(t("ark.delete.confirm", ark=compact_ark(key))):
-                typer.echo(t("ark.delete.aborted"))
-                raise typer.Exit(1)
-        gone = ops.withdraw_ark(s, _root(), ark=key, reason=reason, confirm=key)
-        name = compact_ark(gone.ark)
+        if len(keys) == 1:
+            key = keys[0]
+            row = s.get(Ark, key)
+            exposed = row is not None and row.first_published_at is not None
+            if exposed and not yes:
+                if not typer.confirm(t("ark.delete.confirm", ark=compact_ark(key))):
+                    typer.echo(t("ark.delete.aborted"))
+                    raise typer.Exit(1)
+            gone = ops.withdraw_ark(s, _root(), ark=key, reason=reason, confirm=key)
+            name = compact_ark(gone.ark)
+            s.commit()
+            typer.echo(t("ark.delete.done", ark=name))
+            return
+
+        # One question for the batch. Asking per ARK would make a thousand
+        # reservations unthrowable-away in practice, which is how they end up left in
+        # the ledger.
+        if not yes and not typer.confirm(t("ark.delete.confirm_many", count=len(keys))):
+            typer.echo(t("ark.delete.aborted"))
+            raise typer.Exit(1)
+        gone_rows = ops.withdraw_arks(s, _root(), arks=keys, reason=reason)
+        count = len(gone_rows)
         s.commit()
-        typer.echo(t("ark.delete.done", ark=name))
+        typer.echo(t("ark.delete.done_many", count=count))
 
 
 @ark_app.command("purge", help=t("ark.purge.help"))

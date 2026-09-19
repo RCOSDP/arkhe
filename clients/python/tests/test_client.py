@@ -460,3 +460,18 @@ def test_a_refusal_with_no_code_keeps_what_it_said():
             arkhe.hold("ark:99999/x9tn1qkq2g7", until="2099-01-01T00:00:00Z", reason="x")
     assert "ceiling" in str(caught.value)
     assert caught.value.detail["until"].startswith("the expiry")
+
+
+def test_a_batch_delete_sends_what_it_was_given_and_nothing_more():
+    """The batch path is only for names nobody has seen, so there is no confirmation to
+    fill in: the server refuses the whole request if one row has ever been public."""
+    seen = {}
+
+    def handler(request):
+        seen.update(sent(request))
+        return httpx.Response(200, json={"withdrawn": ["ark:99999/x9tn1qkq2g7"], "count": 1})
+
+    with stub(handler) as arkhe:
+        gone = arkhe.delete_many(["ark:99999/x9tn1qkq2g7"], reason="abandoned")
+    assert seen == {"data": ["ark:99999/x9tn1qkq2g7"], "reason": "abandoned"}
+    assert gone == ["ark:99999/x9tn1qkq2g7"]

@@ -148,3 +148,29 @@ def test_a_tombstone_keeps_the_identifier_and_drops_reachability(world, mint):
     gone = world.resolve(ark)
     assert gone.status_code == 200          # not 404: the name still exists
     assert world.api("post", "/api/query", json={"data": [ark]}).json()["data"]
+
+
+def test_a_batch_of_reservations_is_thrown_away_in_one_request(world, mint):
+    """Abandoning a batch has to be as cheap as minting it was, or the reservations
+    stay in the ledger."""
+    arks = [mint(url=f"{TARGET}/batch/{i}", reserve=True)["ark"] for i in range(4)]
+    r = world.api("post", "/api/delete/bulk",
+                  json={"data": arks, "reason": "the e2e suite abandoned them"})
+    assert r.status_code == 200, r.text
+    assert r.json()["count"] == 4
+    for ark in arks:
+        assert world.resolve(ark).status_code == 404
+    # The names are burned: minting never hands one of them out again.
+    again = world.api("post", "/api/query", json={"data": arks})
+    assert again.json()["data"] == []
+
+
+def test_a_batch_holding_a_published_ark_deletes_nothing(world, mint):
+    """The cheap path is only for names nobody has seen, and it is all or nothing."""
+    spare = mint(url=f"{TARGET}/spare", reserve=True)["ark"]
+    public = mint(url=f"{TARGET}/public")["ark"]
+    r = world.api("post", "/api/delete/bulk", json={"data": [spare, public]})
+    assert r.status_code == 409, r.text
+    assert r.json()["code"] in ("ARKHE-1501", "ARKHE-1504")
+    assert world.api("post", "/api/query", json={"data": [spare]}).json()["data"], \
+        "the batch was applied in part"

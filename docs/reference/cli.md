@@ -34,7 +34,7 @@ audit log the same way.
 | `arkhe ark list` | List minted ARKs. **Stops at 50 by default** — the ledger only grows. `--naan` and `--org` narrow it; `-q` looks at the ARK, its target and its title. `--state public|reserved` keeps only the published or only the reserved ones, and `--older-than N` only those minted more than N days ago — **together they find reservations nobody ever published**. |
 | `arkhe ark publish` | **Publish it globally**, including one that was withdrawn from publication. Running it twice is not an error. |
 | `arkhe ark unpublish` | **Withdraw it from publication.** The row stays, so `publish` puts it back — **this is the half that comes back.** A reason is required and it asks first (`--yes` skips that). |
-| `arkhe ark delete` | **Delete an ARK that is not currently published.** A published one must be unpublished first. **If it has ever been published, a reason is required and it asks first.** Only the row goes — **the name is never assigned again.** |
+| `arkhe ark delete` | **Delete ARKs that are not currently published.** A published one must be unpublished first. **If it has ever been published, a reason is required and it asks first**; several at once go through the batch path, which refuses any name that has ever been public. Give several ARKs, or `-` to read them from standard input. Only the rows go — **the names are never assigned again.** |
 | `arkhe ark purge` | **Purge a published ARK** — unpublish and delete in one step, within your own reach. A reason is required and it asks first (`--yes` skips that). **It breaks the promise** — a way out for a removal order, or for what should never have been published |
 
 `--help` on any command gives its arguments.
@@ -115,6 +115,11 @@ arkhe ark publish ark:99999/x9tn1qkq2g7            # from here on it resolves
 arkhe ark unpublish ark:99999/x9tn1qkq2g7 --reason "published by mistake"
 arkhe ark publish ark:99999/x9tn1qkq2g7            # and back again
 arkhe ark delete ark:99999/x9tn1qkq2g7 --reason "the deposit was abandoned"
+
+# a whole abandoned batch, asked about once. Look at it first: this cannot be undone
+arkhe ark list --state reserved --older-than 365 --limit 1000
+arkhe ark list --state reserved --older-than 365 --limit 1000 | awk '{print $1}' | \
+  arkhe ark delete - --reason "the review was abandoned"
 ```
 
 **Ordinary deletion only works before publication.** A published ARK goes only if the

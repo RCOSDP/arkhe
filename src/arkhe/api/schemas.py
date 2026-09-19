@@ -284,6 +284,32 @@ class DeleteIn(BaseModel):
     )
 
 
+class BulkDeleteIn(BaseModel):
+    """Delete several ARKs that were never published, in one request."""
+
+    model_config = _spec(
+        "Delete several ARKs that were **never published**, in one request. Reserving "
+        "in bulk is a way of working — numbers go to objects still under review — so "
+        "throwing an abandoned batch away has to be as cheap as minting it was.\n\n"
+        "**One row that is published, or that has ever been published, fails the whole "
+        "request** (409): such a name goes through `/api/delete` on its own, which asks "
+        "for a reason and the ARK typed again. Nothing is deleted in part, and every "
+        "name is remembered and never assigned again."
+    )
+
+    data: list[str] = Field(description="The ARKs to delete.")
+    reason: str = Field(
+        default="",
+        max_length=500,
+        description="Why the batch was withdrawn. Kept with each name; not published.",
+    )
+
+
+class BulkDeleteOut(BaseModel):
+    withdrawn: list[str] = Field(description="The ARKs that are gone, in the order sent.")
+    count: int
+
+
 class PurgeIn(BaseModel):
     """Purge a published ARK: withdrawal and deletion in one step, within the
     caller's reach."""

@@ -51,6 +51,7 @@ MINTER = {
     ("post", "/api/publish"): "publish",
     ("post", "/api/unpublish"): "unpublish",
     ("post", "/api/delete"): "delete",
+    ("post", "/api/delete/bulk"): "delete_many",
     ("post", "/api/purge"): "purge",
     ("put", "/api/tombstone"): "tombstone",
     ("put", "/api/hold"): "hold",

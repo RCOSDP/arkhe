@@ -368,6 +368,22 @@ class Arkhe:
         )
         return Withdrawn.of(data)
 
+    def delete_many(self, arks, *, reason: str = "") -> list[str]:
+        """Delete a batch of ARKs that were never published. Needs ark:delete.
+
+        Reserving in bulk is one request, so throwing an abandoned batch away is one
+        too. The cheapness is bounded by what is being lost: **one row that is
+        published, or that has ever been published, fails the whole request**, and that
+        name goes through delete() on its own, with a reason and the ARK typed again.
+
+        Nothing is deleted in part, and every name is still kept and never assigned
+        again. Returns the ARKs that are gone, in the order sent.
+        """
+        _, out = self._call(
+            "POST", "/api/delete/bulk", json={"data": list(arks), "reason": reason}
+        )
+        return list(out.get("withdrawn", []))
+
     def purge(self, ark: str, *, reason: str, confirm: str) -> Withdrawn:
         """Withdraw and delete a published ARK in one step. Needs ark:purge.
 

@@ -52,12 +52,22 @@ resolve it. **Whether an ARK resolves is decided by the ARK's state and by which
 is answering** — see [Running it distributed](../guides/federation.md#closed-resolver).
 
 ```bash
-curl -X POST /api/mint      -d '{"reserve": true}'        # does not resolve yet
-curl -X POST /api/publish   -d '{"ark": "ark:99999/x9…"}' # from here on it resolves
-curl -X POST /api/unpublish -d '{"ark": "…", "reason": "…", "confirm": "…"}'
-curl -X POST /api/publish   -d '{"ark": "ark:99999/x9…"}' # and back again
-curl -X POST /api/delete    -d '{"ark": "…", "reason": "…", "confirm": "…"}'
+curl -X POST /api/mint        -d '{"reserve": true}'        # does not resolve yet
+curl -X POST /api/delete      -d '{"ark": "ark:99999/x9…"}' # never published: that is all
+curl -X POST /api/delete/bulk -d '{"data": ["ark:99999/x9…", "…"]}'   # a whole batch
+
+curl -X POST /api/publish     -d '{"ark": "ark:99999/x9…"}' # from here on it resolves
+curl -X POST /api/unpublish   -d '{"ark": "…", "reason": "…", "confirm": "…"}'
+curl -X POST /api/publish     -d '{"ark": "ark:99999/x9…"}' # and back again
+curl -X POST /api/delete      -d '{"ark": "…", "reason": "…", "confirm": "…"}' # been out
 ```
+
+**Before it has been out, deleting is one call and asks for nothing** — no reason, no
+retyping — and a batch of them is one call too. Reserving in bulk is a real way of
+working: numbers go to objects that are still under review, sometimes for years, and an
+abandoned batch has to be as cheap to throw away as it was to mint. Making that heavy
+does not protect anything; it only leaves dead numbers in the ledger, which is what the
+reservation rule exists to avoid.
 
 **Publication comes back; deletion does not.** Withdrawing an ARK from publication leaves
 the row, so it can be published again — the judgement about whether something should be
@@ -66,7 +76,15 @@ authority and back means it stays out in the meantime. A *published* ARK still a
 `409` to `/api/delete`: unpublish it first, or purge it in one step.
 
 **What does not come back is having been out.** The record keeps the moment it first went
-out, and that never clears. It decides the **weight of the ceremony**: withdrawing a
+out, and that never clears.
+
+**"Out in the world" is not something a minter can observe**, so arkhe uses the first
+publication as its stand-in: from the moment the ARK first resolved, it is treated as a
+name someone may hold. The substitution errs in one direction only — an ARK can be
+published without anyone having seen it, and then the heavy path is asked for a name
+nobody holds, which costs a reason and a retyped ARK. The other direction, treating a
+name that has been out as if it were a private reservation, is the one that cannot be
+recovered from, and it cannot happen this way round. It decides the **weight of the ceremony**: withdrawing a
 reservation nobody ever saw is light, while taking back a name that has been in the world
 requires a reason and the ARK retyped. **The weight follows the name's history, not the
 rank of whoever is acting** — the dangerous question is not *who deletes* but *what

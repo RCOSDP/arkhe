@@ -11,6 +11,20 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **`POST /api/delete/bulk`** (`ark:delete`), and `arkhe ark delete` now takes several
+  ARKs or reads them from standard input. **Deleting has to be as cheap as minting was**:
+  reserving in bulk is a way of working — numbers go to objects still under review,
+  sometimes for years — and when a batch is abandoned, one request at a time means it is
+  never thrown away at all, which leaves exactly the dead numbers the reservation rule
+  exists to avoid.
+
+  What makes it safe to be cheap is that **none of those names has ever been seen**. A
+  row that is published, or that has ever been published, fails the whole request with
+  the new **`ARKHE-1504`**; that name goes through `/api/delete` on its own, with a
+  reason and the ARK typed again. Nothing is deleted in part, every name is still kept
+  and never assigned again, and the batch is one audit event. The Python client gained
+  `delete_many()`.
+
 - **A page comparing arkhe with the other ARK software** (`docs/project/comparison.md`,
   both languages). arklet, arklet-frick and EZID were installed, given their own
   database and driven over HTTP rather than only read, and the page marks which findings

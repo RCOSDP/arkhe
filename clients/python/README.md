@@ -111,7 +111,7 @@ your decision.
 | minting | `mint`, `mint_many`, `register` |
 | taking in | `import_ark`, `import_many` |
 | changing | `update` (replaces), `patch` (only what you pass), `update_many` |
-| publication | `publish`, `unpublish`, `delete`, `purge` |
+| publication | `publish`, `unpublish`, `delete`, `delete_many`, `purge` |
 | saying it is gone | `tombstone` |
 | stopping redirection | `hold`, `release_hold` |
 | reading | `query`, `stats` |
