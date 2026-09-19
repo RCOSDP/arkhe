@@ -1,4 +1,5 @@
-"""API の入出力。OpenAPI はここから自動生成される（drf-spectacular が不要になる）。"""
+"""The API request and response models. The OpenAPI document is generated from
+them."""
 
 from __future__ import annotations
 
@@ -10,7 +11,8 @@ from arkhe import errors
 from arkhe.arkspec.naming import compact_ark
 from arkhe.domain.resolution import DANGEROUS_SCHEMES, is_registrable
 
-#: 呼び出し側が設定できる項目。**`shoulder` はここに無い**——主体から引く。
+#: The fields a caller may set. shoulder is not among them: it follows from the
+#: principal.
 WRITABLE = (
     "url",
     "title",
@@ -28,31 +30,31 @@ WRITABLE = (
 
 
 def _spec(description: str) -> ConfigDict:
-    """スキーマの説明を**英語で**上書きする。
+    """Set the description a schema publishes.
 
-    **公開する OpenAPI は英語**——読者はこの台帳の外にいる。Pydantic は
-    クラスの docstring をスキーマの `description` に使うので、そのままだと
-    日本語が仕様書に出る。docstring は**実装を読む人のために日本語で残し**、
-    出す文面だけここで差し替える。
+    Pydantic uses a class docstring as the schema description. The docstring is written
+    for whoever reads the implementation, while what the document publishes is written
+    for readers outside this ledger, so the published wording is set here.
     """
     return ConfigDict(json_schema_extra={"description": description})
 
 
 class ArkFields(BaseModel):
-    """ERC / Dublin Core の受け皿。すべて任意。"""
+    """The ERC and Dublin Core fields. All optional."""
 
     model_config = _spec("ERC / Dublin Core fields. All optional.")
 
     @field_validator("url")
     @classmethod
     def _safe_url(cls, v: str) -> str:
-        """**ブラウザに解釈させると危ないものだけ拒む。**
+        """Refuse only what is dangerous for a browser to interpret.
 
-        ARK は物理オブジェクトにも他の識別子にも付けられるので、`urn:` `doi:`
-        `ark:` などを拒んではいけない。空も正当（行き先が無い対象）。
+        An ARK can name a physical object or another identifier, so urn:, doi: and ark:
+        must all be accepted, and empty is valid too: an object with no target.
 
-        拒むのは `javascript:` `data:` のたぐいだけ——`?info` は認証を要さない
-        公開ページで、そこに載る文字列を決めるのは採番した側だから。
+        What is refused is javascript:, data: and the like, because ?info is a public
+        page that needs no credentials and whoever minted the ARK chooses the text on
+        it.
         """
         if not is_registrable(v):
             raise ValueError(
@@ -77,11 +79,11 @@ class ArkFields(BaseModel):
 
 
 class MintIn(ArkFields):
-    """採番の入力。
+    """Input for minting.
 
-    **`shoulder` は任意。** 省略すると組織の `default_shoulder` が使われる。
-    指定した場合も**範囲を広げる手段にはならない**（登録された到達範囲内かを
-    検証するだけ）。`naan` は受け取らない——主体が決めるものだから。
+    shoulder is optional. Omitted, the organisation's default_shoulder is used; named,
+    it is only checked against the registered reach and never widens it. naan is not
+    accepted: it follows from the principal.
     """
 
     model_config = _spec(
@@ -92,7 +94,7 @@ class MintIn(ArkFields):
     )
 
     shoulder: str = ""
-    #: **公開前として採る。** 解決せず、要らなくなれば削除できる。
+    #: Mint it as reserved: it does not resolve, and it can still be deleted.
     reserve: bool = Field(
         default=False,
         description=(
@@ -101,7 +103,7 @@ class MintIn(ArkFields):
             "default mints and publishes in one step, as before."
         ),
     )
-    #: F4: **再送しても二重に採番しないための鍵。** 呼び出し側が付ける。
+    #: F4: the key that stops a resend minting twice. The caller supplies it.
     request_id: str = Field(
         default="",
         max_length=200,
@@ -113,10 +115,10 @@ class MintIn(ArkFields):
 
 
 class RegisterIn(ArkFields):
-    """B4: 修飾子付き ARK の登録。
+    """B4: registering a qualified ARK.
 
-    **`ark` は既存の base、`qualifier` はその後ろに付ける部分参照。**
-    採番ではないので NOID もチェックディジットも生成しない。
+    ark is an existing base name and qualifier is the part reference appended to it.
+    Nothing is minted, so no NOID and no check digit are generated.
     """
 
     model_config = _spec(
@@ -130,10 +132,10 @@ class RegisterIn(ArkFields):
 
 
 class ImportIn(ArkFields):
-    """外で採番された ARK を取り込む。
+    """Import an ARK that was minted elsewhere.
 
-    **`ark` は呼び出し側が持ってくる名前**——ここが `mint` との唯一にして
-    決定的な違いで、`mint` が構造で守っていたものが検査に移る。詳しくは
+    The caller brings the name in ark. That is the one decisive difference from mint:
+    everything mint guaranteed structurally becomes a check here. See
     `domain.minting.import_minted`。
     """
 
@@ -149,11 +151,11 @@ class ImportIn(ArkFields):
 
 
 class HoldIn(BaseModel):
-    """転送の一時停止。**解決は止めない**（記述は返り続ける）。
+    """Hold redirection. Resolution is not stopped; the description keeps coming back.
 
-    `until` を必須にしてあるのは、「一時的」を人の記憶に頼ると恒久化するから。
-    `reason` を必須にしてあるのは、**公開の口（`?info`）に出る**うえ、外す判断に
-    要るから——理由の無い保留は、掛けた本人以外に外せない。
+    until is required because "temporary" left to memory becomes permanent. reason is
+    required because it is published at ?info and because lifting the hold needs it: a
+    hold with no reason cannot be lifted by anyone but whoever set it.
     """
 
     model_config = _spec(
@@ -175,7 +177,7 @@ class HoldIn(BaseModel):
 
 
 class HoldReleaseIn(BaseModel):
-    """期限を待たずに保留を外す。"""
+    """Lift a hold before its expiry."""
 
     model_config = _spec("Lift a hold before its expiry.")
 
@@ -183,7 +185,8 @@ class HoldReleaseIn(BaseModel):
 
 
 class UpdateIn(ArkFields):
-    """`PUT` の入力。**レコードの置き換え**なので、省いた項目は既定値で埋まる。"""
+    """Input for PUT: the record is replaced, so an omitted field takes its
+    default."""
 
     model_config = _spec(
         "Input for a replacing update. **Every omitted field takes its default**, so "
@@ -194,12 +197,12 @@ class UpdateIn(ArkFields):
 
 
 class PatchIn(ArkFields):
-    """`PATCH` の入力。**送られた項目だけ**を書き換える。
+    """Input for PATCH: only the fields that were sent are changed.
 
-    `PUT` との違いは「省いた項目をどう読むか」だけ。あちらは「空にせよ」、
-    こちらは「触るな」。`model_fields_set` に**実際に送られてきた鍵**が入るので、
-    「空文字を送って消す」と「送らないから触らない」を区別できる
-    ——これができないと、**記述を消す手段が無くなる**。
+    The only difference from PUT is how an omitted field is read: there it means "make
+    it empty", here it means "leave it alone". model_fields_set holds the keys that were
+    actually sent, which distinguishes sending an empty string to clear a field from not
+    sending it at all. Without that, there would be no way to clear a field.
     """
 
     model_config = _spec(
@@ -211,13 +214,14 @@ class PatchIn(ArkFields):
     ark: str
 
     def sent(self) -> dict:
-        """送られてきた書き込み可能項目だけを返す。"""
+        """Return only the writable fields that were sent."""
         return {k: v for k, v in self.model_dump(include=set(WRITABLE)).items()
                 if k in self.model_fields_set}
 
 
 class PublishIn(BaseModel):
-    """**ARK をグローバルに公開する。** 予約していたものも、取り下げたものも。"""
+    """Publish an ARK to the world: one that was reserved, or one that was
+    withdrawn."""
 
     model_config = _spec(
         "Publish an ARK: a reserved one, or one whose publication was withdrawn. From "
@@ -229,7 +233,7 @@ class PublishIn(BaseModel):
 
 
 class UnpublishIn(BaseModel):
-    """**公開を取り下げる。** 行は残り、解決しなくなる。"""
+    """Withdraw a publication. The row stays and it stops resolving."""
 
     model_config = _spec(
         "Withdraw an ARK from publication. The record stays and can be published "
@@ -253,7 +257,7 @@ class UnpublishIn(BaseModel):
 
 
 class DeleteIn(BaseModel):
-    """**公開前の ARK を取り下げる。** 公開したものには効かない。"""
+    """Delete an ARK that is not published. It does nothing to a published one."""
 
     model_config = _spec(
         "Delete an ARK that is not currently published. One that is published must be "
@@ -281,7 +285,8 @@ class DeleteIn(BaseModel):
 
 
 class PurgeIn(BaseModel):
-    """**公開した ARK を破棄する。** 取り下げと削除を一手で、届く範囲の内側だけ。"""
+    """Purge a published ARK: withdrawal and deletion in one step, within the
+    caller's reach."""
 
     model_config = _spec(
         "Purge a **published** ARK in one step (unpublish and delete). Within the "
@@ -304,7 +309,7 @@ class PurgeIn(BaseModel):
 
 
 class DeleteOut(BaseModel):
-    """取り下げた結果。**行は消え、名前は残る。**"""
+    """What a withdrawal leaves: the row is gone and the name remains."""
 
     model_config = _spec(
         "The row is gone; the name is kept so that it is never assigned again."
@@ -313,12 +318,13 @@ class DeleteOut(BaseModel):
     ark: str
     withdrawn_at: datetime
     reason: str = ""
-    #: 公開した名前の破棄なら、いつ公開していたか。`null` は公開前の取り下げ。
+    #: For a purge, when the name was published. null means it was withdrawn before
+    #: publication.
     was_published_at: datetime | None = None
 
 
 class TombstoneIn(BaseModel):
-    """**対象が失われたと宣言する。** ARK は削除しない。"""
+    """Declare that the object is gone. The ARK is not deleted."""
 
     model_config = _spec(
         "Declare that the object is gone. **The ARK is not deleted** — the identifier "
@@ -326,7 +332,7 @@ class TombstoneIn(BaseModel):
     )
 
     ark: str
-    #: 空なら、リゾルバが記述そのものを返す（D6 と同じ経路）。
+    #: Empty means the resolver returns the description itself, as in D6.
     url: str = ""
     commitment: str = ""
 
@@ -340,7 +346,7 @@ class BulkUpdateIn(BaseModel):
 
 
 class BulkImportIn(BaseModel):
-    """まとめて取り込む。**1 件でも通らなければ何も作らない。**"""
+    """Import in bulk. One row that fails any check and nothing is created."""
 
     model_config = _spec(
         "Import in bulk. **One row that fails any check and nothing is created** — a "
@@ -361,7 +367,7 @@ class BulkQueryIn(BaseModel):
 
 
 class ShoulderStatOut(BaseModel):
-    """shoulder 1 つぶんの内訳。"""
+    """The breakdown for one shoulder."""
 
     model_config = _spec(
         "One shoulder's share of the ledger. **The shoulder is the unit the ledger is "
@@ -378,7 +384,7 @@ class ShoulderStatOut(BaseModel):
 
 
 class StatsOut(BaseModel):
-    """**この主体から見た台帳。** 届かないものは 1 件も入っていない。"""
+    """The ledger as this principal sees it. Nothing out of reach is included."""
 
     model_config = _spec(
         "Counts for the ledger **as this caller sees it**. Nothing outside the caller's "
@@ -433,10 +439,10 @@ class ArkOut(BaseModel):
     when: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None
-    #: **グローバルに公開した時刻。`null` はまだ公開していない**
-    #: ——解決せず、まだ削除できる状態である。
+    #: When it was published to the world. null means it has not been: it does not
+    #: resolve and can still be deleted.
     published_at: datetime | None = None
-    #: 転送を止めているなら、その期限と理由。**止まっていることは隠さない。**
+    #: If redirection is held, until when and why. A hold is not hidden.
     hold_until: datetime | None = None
     hold_reason: str = ""
 
