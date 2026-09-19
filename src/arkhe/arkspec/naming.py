@@ -1,19 +1,21 @@
-"""ARK 文字列の解析・正規化・祖先生成。
+"""Parsing, normalising and generating ancestors of ARK strings.
 
-**ARK 仕様の難所はこのモジュールに集約されている。** Django にも DB にも依存
-しないので、単体で検証できる。
+The hard parts of the specification are collected in this module. Nothing here touches a
+database, so it can be verified on its own.
 
 Derived in part from arklet (https://github.com/internetarchive/arklet),
 MIT License, Copyright (c) Internet Archive. See LICENSE.
 
-受け入れ条件:
-  A1  `ARK:` を大小非依存で受ける。**NAAN は小文字化、名前の大小は保持**
-  A2  ハイフンは無意味として無視する
-  N2  **NAAN は文字列として保持・比較する**（`ark:099999/…` と `ark:99999/…` は別物）
-  N3  betanumeric NAAN を受理する（2001 年以前の歴史的 NAAN）
-  N4  構造文字の正規化。`.` は両側に非構造文字がある場合のみ構造文字
-  F1  NAAN の長さ制限（仕様が要求する 16 オクテットまで受ける）
-  D5  祖先は最長一致
+Acceptance criteria:
+  A1  ARK: is matched case-insensitively. The NAAN is lowercased; the name keeps its
+      case
+  A2  hyphens carry no meaning and are ignored
+  N2  a NAAN is kept and compared as a string (ark:099999/... and ark:99999/... differ)
+  N3  betanumeric NAANs are accepted, which exist from before 2001
+  N4  structural characters are normalised. A . is structural only with ordinary
+      characters on both sides
+  F1  the length limit on a NAAN: up to the 16 octets the specification requires
+  D5  the longest ancestor wins
 """
 
 from __future__ import annotations
@@ -24,60 +26,62 @@ from typing import NamedTuple
 
 from .betanumeric import BETANUMERIC
 
-#: ARK は `/` を「包含（部分）」、`.` を「変種」の意味で予約している。どちらも
-#: base name のあとに続く修飾子領域を開くので、suffix passthrough は両方を走査する。
+#: ARK reserves / for containment, meaning a part, and . for a variant. Both open the
+#: qualifier area after the base name, so inheritance scans for both.
 QUALIFIER_SEPARATORS = "/."
 
-#: F1: 仕様（draft-kunze-ark-42 §2.3）: "For received ARKs, implementations **must
+#: F1: draft-kunze-ark-42, 2.3: "For received ARKs, implementations **must
 #: support a minimum NAAN length of 16 octets**."
 #:
-#: **以前は 10 だった。** IA 原典（arklet）の `len(naan) > 10` を踏襲したもので、
-#: あちらは NAAN を `int()` に通すので変換前に守る必要があった。**arkhe は N2 で
-#: 「NAAN は文字列として保持・比較する。整数化してはならない」と決めている**ので、
-#: 守るべき変換がそもそも無い——理由の無いまま仕様の下限を割っていた。
+#: It used to be 10, inherited from arklet's len(naan) > 10, which existed because that
+#: implementation passed a NAAN through int() and had to guard the conversion. N2 settles
+#: that a NAAN is kept and compared as a string and never made an integer, so there is no
+#: conversion to guard, and the limit was below what the specification requires for no
+#: reason.
 #:
-#: 2001 年以降に割り当てられた NAAN はすべて 5 桁だが、ここは**受け取る側の
-#: 下限**であって、我々が配る番号の話ではない。
+#: Every NAAN assigned since 2001 is five digits, but this is the minimum a receiving
+#: implementation must support, not a statement about the numbers we hand out.
 MAX_NAAN_LENGTH = 16
 
-#: F1: 仕様（§3.1）: "implementations must support a minimum length of **255 octets**
+#: F1: 3.1: "implementations must support a minimum length of **255 octets**
 #: for the string composed of the Base Name plus Qualifier."
 #:
-#: 名前は visible ASCII なので、オクテットと文字数は一致する（%-エンコードされた
-#: 部分も `%XX` という ASCII 3 文字として数える）。
+#: Names are visible ASCII, so octets and characters are the same count; a percent
+#: encoding counts as the three ASCII characters %XX.
 MAX_NAME_LENGTH = 255
 
-#: 台帳の鍵（`<naan>/<name>`）に要る長さ。**両方の下限を満たすために足す。**
+#: The length the ledger key (<naan>/<name>) needs: the two minimums added together.
 MAX_ARK_LENGTH = MAX_NAAN_LENGTH + 1 + MAX_NAME_LENGTH
 
-#: A1: ラベルは大小非依存。
+#: A1: the label matches case-insensitively.
 _LABEL = re.compile(r"ark:", re.IGNORECASE)
 
-#: N3: NAAN は betanumeric（数字＋子音）。2001 年以降は 5 桁数字だが、
-#: それ以前の歴史的 NAAN は betanumeric でありうる。
+#: N3: a NAAN is betanumeric, digits and consonants. Since 2001 they are five digits,
+#: but older ones may be betanumeric.
 _NAAN_CHARS = frozenset(BETANUMERIC)
 
 
 class ParsedArk(NamedTuple):
-    """`nma` は ARK の前に付いていたホスト部（あれば）。"""
+    """nma is the host part that preceded the ARK, when there was one."""
 
     nma: str
-    naan: str  # N2: **文字列**。整数化しない
-    name: str  # A1: 大小を保持
+    naan: str  # N2: a string, never an integer
+    name: str  # A1: keeps its case
 
 
 class ArkParseError(ValueError):
-    """ARK として解釈できない。"""
+    """It cannot be read as an ARK."""
 
 
 def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
-    """ARK 文字列を (nma, naan, name) に分解する。
+    """Split an ARK string into (nma, naan, name).
 
-    A1: `ark:` / `ARK:` / `Ark:` を受け、**NAAN は小文字化、name の大小は保持**する。
-    N2: NAAN を**文字列のまま**返す。`099999` と `99999` は別の NAAN。
-    N3: betanumeric NAAN を受理する。
-    F1: 長さ制限を先に適用する。
-    D4: `allow_naan_only=True` なら `ark:99999`（名前なし）も受け、`name=""` を返す。
+    A1: ark:, ARK: and Ark: are all accepted; the NAAN is lowercased and the name keeps
+    its case.
+    N2: the NAAN is returned as a string. 099999 and 99999 are different NAANs.
+    N3: betanumeric NAANs are accepted.
+    F1: the length limits are applied first.
+    D4: with allow_naan_only=True, ark:99999 with no name is accepted and name is "".
     """
     if not isinstance(ark, str):
         raise ArkParseError("not a string")
@@ -90,21 +94,23 @@ def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
     rest = rest.lstrip("/")
     naan, slash, name = rest.partition("/")
     if not slash or not name:
-        # D4: **NAAN だけの ARK は不正ではない。** `ark:99999` は「その名前空間
-        # そのもの」を指し、N2T も階層を遡ってここまで見る。呼び出し側が扱えるよう
-        # `name=""` で返す——扱えない側は `allow_naan_only=False` で弾ける。
+        # D4: an ARK that is only a NAAN is not malformed. ark:99999 names the
+        # namespace itself, and n2t walks up to it as well. It is returned with an
+        # empty name for callers that handle it; those that do not pass
+        # allow_naan_only=False.
         if not allow_naan_only:
             raise ArkParseError("missing name part")
         name = ""
 
-    # F1: 変換や照合の前に長さで弾く。**空と長すぎるは別の理由**——同じ文面に
-    # まとめると、`ark:/` に「16 オクテットを超えている」と答えることになる。
+    # F1: length is checked before any conversion or comparison. Empty and too long
+    # are different reasons: with one message, ark:/ would be told it exceeds 16
+    # octets.
     if not naan:
         raise ArkParseError("missing NAAN")
     if len(naan) > MAX_NAAN_LENGTH:
         raise ArkParseError(f"NAAN is longer than {MAX_NAAN_LENGTH} octets")
 
-    naan = naan.lower()  # A1: NAAN だけ小文字化する
+    naan = naan.lower()  # A1: only the NAAN is lowercased
     if not set(naan) <= _NAAN_CHARS:  # N3
         raise ArkParseError("NAAN must be betanumeric")
 
@@ -112,124 +118,129 @@ def parse_ark(ark: str, *, allow_naan_only: bool = False) -> ParsedArk:
 
 
 def ark_key(naan: str, name: str) -> str:
-    """保存・照合に使う正規化キー。
+    """The normalised key used for storage and comparison.
 
-    N2 のため NAAN は文字列のまま連結する。**ハイフンは呼び出し側で落とす**
-    （A2。`strip_hyphens` を通した name を渡す）。
+    For N2 the NAAN is joined as a string. Hyphens are removed by the caller (A2: pass a
+    name that has been through strip_hyphens).
     """
     return f"{naan}/{name}"
 
 
 def compact_ark(key: str) -> str:
-    """台帳の鍵（`<naan>/<name>`）を **compact ARK の表記**にする。
+    """Turn a ledger key (<naan>/<name>) into the compact ARK form.
 
-    A5。仕様（draft-kunze-ark-42 §2.2）:
+    A5. draft-kunze-ark-42, 2.2:
 
     > There is a new form of the label, "ark:", and an old form, "ark:/", both of
     > which **must be recognized in perpetuity**. Implementations **should generate
     > new ARKs in the new form (without the "/")**.
 
-    **受理と生成で非対称にする。** 受け取るほうは両方を永久に受ける（`parse_ark`）。
-    出すほうは新形式に寄せる——旧形式を出し続けると、我々が配った文字列が
-    そのまま次の実装の入力になり、**旧形式が減らない**。
+    Accepting and generating are deliberately asymmetric. What is accepted stays both
+    forms in perpetuity (parse_ark); what is generated uses the new form. Keeping the old
+    one on the way out means the strings we hand round become someone else's input, and
+    the old form never shrinks.
 
-    ここを 1 つの関数にしてあるのは、`f"ark:/{…}"` が散っていると片方だけ直る
-    からである。**表記を決める場所は 1 つ。**
+    It is one function because scattered f"ark:/{...}" would be fixed in one place and
+    not another. One place decides the spelling.
     """
     return f"ark:{key}"
 
 
-#: A3: 除去するハイフン様文字。
+#: A3: the hyphen-like characters that are removed.
 #:
-#: 仕様（draft-kunze-ark-42 §3.2）: "All hyphens are removed. Implementors should
+#: draft-kunze-ark-42, 3.2: "All hyphens are removed. Implementors should
 #: be aware that **non-ASCII hyphen-like characters (eg, U+2010 to U+2015) may
 #: arrive in the place of hyphens**."
 #:
-#: `eg` とあるとおり例示なので、実務で届くものを足した。**日本語の文書は Word 由来が
-#: 多く、`-` が自動的に `–`（EN DASH）に置換される**。全角入力の `－` も同じ理由。
+#: The specification says "eg", so the list is an example, and what actually arrives
+#: has been added. Documents written in a word processor often have - replaced with an
+#: en dash automatically, and full-width input produces its own variant.
 #:
-#: `ー`（U+30FC 長音符）は**入れない**。見た目は似ているが punctuation ではなく
-#: 修飾文字で、ここに入れると日本語として意味のある文字を黙って消すことになる。
-#: ARK の名前は betanumeric なので、混入していれば結局 404 になる——診断が
-#: 「未登録」になるだけで、識別子を書き換えてしまうよりはよい。
+#: U+30FC is not included. It looks similar but is a letter modifier rather than
+#: punctuation, and removing it would silently delete a meaningful character. ARK names
+#: are betanumeric, so a name containing it ends in a 404 anyway: the diagnosis is
+#: "unregistered", which is better than rewriting an identifier.
 HYPHENS = (
     "-"  # U+002D HYPHEN-MINUS
     "\u2010"  # HYPHEN
     "\u2011"  # NON-BREAKING HYPHEN
     "\u2012"  # FIGURE DASH
-    "\u2013"  # EN DASH ← Word の自動置換で最も多い
+    "\u2013"  # EN DASH, the most common automatic replacement
     "\u2014"  # EM DASH
     "\u2015"  # HORIZONTAL BAR
-    "\u2212"  # MINUS SIGN ← 全角・数式由来
+    "\u2212"  # MINUS SIGN, from full-width input and from formulae
     "\uff0d"  # FULLWIDTH HYPHEN-MINUS
 )
 _HYPHEN_TABLE = dict.fromkeys(map(ord, HYPHENS))
 
-#: 構造文字（成分の区切り）。`/` は包含、`.` は変種。
+#: The structural characters that separate components: / for containment, . for a
+#: variant.
 STRUCTURAL = "/."
 _STRUCTURAL_RUN = re.compile(r"([/.])[/.]+")
 
-#: A4: %-エンコードの三つ組。**16 進 2 桁として成立するものだけ**を見る。
+#: A4: a percent-encoded triplet. Only what is a valid pair of hex digits counts.
 _PERCENT_TRIPLET = re.compile(r"%([0-9A-Fa-f]{2})")
 
 
 def normalize_percent(text: str) -> str:
-    """%-エンコードの 16 進を大文字に揃える（正規化 手順5）。
+    """Upper-case the hex of a percent encoding (normalisation, step 5).
 
-    A4。仕様（draft-kunze-ark-42 §3.2 手順5）: "the two characters following every
+    A4. draft-kunze-ark-42, 3.2, step 5: "the two characters following every
     occurrence of '%' are converted to uppercase. **The case of all other letters in
     the ARK string must be preserved.**"
 
-    **`%2f` と `%2F` を別の識別子にしないためだけの規則ではない。** §3.1 は
-    「大文字の 16 進が望ましい——ARK を知らないソフトウェアが URL として等値
-    比較するときに効く」と理由まで書いている。揃えておかないと、我々の外側で
-    比較された瞬間に別物になる。
+    This is not only about keeping %2f and %2F from being different identifiers. 3.1
+    gives the reason: upper-case hex is preferred because software that knows nothing
+    about ARKs compares URLs for equality. Without it, two forms become different the
+    moment they are compared outside this system.
 
-    **三つ組として成立しないものは触らない。** 裸の `%` や `%zz` は不正だが、
-    ここで直すと「壊れた入力を黙って別の文字列にする」ことになる——名前の
-    一部として届いたのかもしれないので、そのまま通して照合で落とす。
+    Anything that is not a valid triplet is left alone. A bare % or %zz is invalid, but
+    correcting it here would silently turn broken input into a different string, and it
+    may have arrived as part of a name. It is passed through and fails at lookup.
     """
     return _PERCENT_TRIPLET.sub(lambda m: "%" + m.group(1).upper(), text)
 
 
 def strip_hyphens(text: str) -> str:
-    """ハイフンを落とす。
+    """Remove hyphens.
 
-    A2: ハイフンは可読性のために入るか、行折り返しで紛れ込むので、**字句比較では
-    無視する**。A3: ASCII だけでなく `HYPHENS` の全部を落とす。
+    A2: hyphens are there for readability, or arrive from a line break, so they are
+    ignored when comparing. A3: every character in HYPHENS is removed, not only the
+    ASCII one.
 
-    Derived from arklet（A3 で非 ASCII に拡張）。
+    Derived from arklet, extended to non-ASCII for A3.
     """
     return text.translate(_HYPHEN_TABLE)
 
 
 def normalize_structural(text: str) -> str:
-    """構造文字を正規化する。
+    """Normalise the structural characters.
 
-    N4。仕様（draft-kunze-ark-42 §3.2）:
+    N4. draft-kunze-ark-42, 3.2:
 
     > Structural characters (slash and period) are normalized: **initial and final
     > occurrences are removed**, and **two structural characters in a row (e.g., //
     > or ./) are replaced by the first character**, iterating until each occurrence
     > has at least one non-structural character on either side.
 
-    以前はスラッシュの連続しか畳んでおらず、「`.` は両側に非構造文字がある場合のみ
-    構造文字だから畳まない」と書いていた。**これは規則の取り違えだった**——
-    「両側に非構造文字」は*畳んだ後*の終了条件（`iterating **until** …`）であって、
-    畳まない理由ではない。**先に畳み、その結果に対して構造性を判定する**。
+    This used to collapse only runs of slashes, on the reading that a . is structural
+    only with ordinary characters on both sides and therefore should not be collapsed.
+    That was a misreading: "ordinary characters on both sides" is the condition for
+    stopping after collapsing ("iterating until ..."), not a reason not to collapse.
+    Collapse first, then decide what is structural in the result.
 
-    連続を 1 回の `sub` で潰せるのは、正規表現が走り全体を貪欲に取るため。
-    結果として構造文字が隣り合うことは無くなり、終了条件が満たされる。
+    One substitution is enough because the pattern takes each run greedily. Afterwards no
+    two structural characters are adjacent, which is the stopping condition.
     """
     return _STRUCTURAL_RUN.sub(r"\1", text.strip(STRUCTURAL))
 
 
 def is_structural_at(text: str, index: int) -> bool:
-    """`text[index]` が成分を区切る構造文字か。
+    """Whether text[index] separates components.
 
-    N4: 仕様は `.` について「成分を区切るには**両側に少なくとも 1 つの非構造
-    文字**が必要」と定める。これを見ないと `abc..def` から `abc.` という
-    **存在しえない祖先候補**が生成される。
+    N4: for a ., the specification requires at least one ordinary character on each side
+    before it separates anything. Without that check, abc..def would produce abc., an
+    ancestor that cannot exist.
     """
     char = text[index]
     if char == "/":
@@ -244,14 +255,15 @@ def is_structural_at(text: str, index: int) -> bool:
 
 
 def gen_prefixes(name: str) -> Iterator[str]:
-    """name の祖先を**長いものから順に**返す。
+    """Yield the ancestors of a name, longest first.
 
-    D5: 解決は「末尾から遡り、最初に登録済みの祖先で止まる」＝**最長一致**。
-    呼び出し側が最初にヒットしたものを採ればよいように、長い順で返す。
+    D5: resolution walks back from the end and stops at the first registered ancestor,
+    which is the longest match. They are yielded longest first so that the caller can
+    take the first hit.
 
-    N4: 構造文字として成立する位置でだけ切る。
+    N4: it only cuts where a character really separates components.
 
-    Derived from arklet（`is_structural_at` の条件を追加）。
+    Derived from arklet, with the is_structural_at condition added.
     """
     for i in range(len(name) - 1, 0, -1):
         if name[i] in QUALIFIER_SEPARATORS and is_structural_at(name, i):
@@ -259,16 +271,17 @@ def gen_prefixes(name: str) -> Iterator[str]:
 
 
 def split_after_normalized(text: str, length: int) -> tuple[str, str]:
-    """ハイフンを除いて数えた `length` 文字目の直後で分割する。
+    """Split immediately after the character at length, counting without hyphens.
 
-    head は保存済み ARK と照合されるのでハイフンを除いて測る。tail は**このリゾルバが
-    採番していない資源へのパス**なので、ハイフンも含めて渡されたまま返す。
+    The head is compared against stored ARKs, so it is measured with hyphens removed. The
+    tail is a path into a resource this resolver did not mint, so it is returned exactly
+    as it arrived, hyphens included.
 
     Derived from arklet.
     """
     seen = 0
     for i, char in enumerate(text):
-        if char in HYPHENS:  # A3: 非 ASCII のハイフンも数に入れない
+        if char in HYPHENS:  # A3: non-ASCII hyphens are not counted either
             continue
         if seen == length:
             return text[:i], text[i:]
