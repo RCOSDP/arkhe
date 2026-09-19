@@ -272,7 +272,9 @@ def assert_within_quota(session: Session, principal: Principal, count: int = 1) 
         return
     since = datetime.now(UTC) - timedelta(days=1)
     used = session.scalar(
-        select(func.count())
+        # **数える列を名指しする**（`count(*)` にしない）。`domain.stats` と同じ約束で、
+        # 索引だけで答えられる形に寄せる。
+        select(func.count(Ark.ark))
         .select_from(Ark)
         .join(Shoulder, Ark.shoulder_id == Shoulder.id)
         .where(Shoulder.manager_id == manager.id, Ark.created_at >= since)

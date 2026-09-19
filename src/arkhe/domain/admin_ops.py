@@ -1211,7 +1211,7 @@ def _remove_ark(
     跡が残ることは、どちらの入口から来ても同じでなければならない。
     """
     parts = session.scalar(
-        select(func.count())
+        select(func.count(Ark.ark))
         .select_from(Ark)
         .where(Ark.ark.like(_like_prefix(row.ark), escape="\\"), Ark.ark != row.ark)
     )

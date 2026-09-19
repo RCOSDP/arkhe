@@ -9,6 +9,16 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Three remaining `count(*)` calls are gone** (the minting quota, the check for part
+  references, the admin overview). **The counted column is named** — `count(*)` counts
+  rows, so an index alone cannot answer it, and it costs more as the ledger grows. When
+  `domain.stats` was fixed this way in 0.6.0, **these three were left behind.**
+
+  **A check now watches for it** (`test_数える列は必ず名指しする`). Fixing the three that
+  exist today is not enough; the next person writes `func.count()` again.
+
 ### Added
 
 - **The end-to-end suite went from 13 checks to 54** (`tests/e2e/`). Same shape as before

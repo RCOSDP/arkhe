@@ -289,3 +289,27 @@ def test_日時は必ずUTC付きで返る(db, root, world):
         got = getattr(st, name)
         assert got is not None and got.tzinfo is not None, f"{name} に時刻帯が無い"
         datetime.now(UTC) - got          # 引き算が通ること自体が検査である
+
+
+def test_数える列は必ず名指しする():
+    """**`count(*)` を置かない。** 数える列を名指しする。
+
+    `count(*)` は行そのものを数えるので、**索引だけでは答えられない**ことがある
+    （PostgreSQL は可視性を確かめに heap を見に行く）。`count(<列>)` なら、その列の
+    索引で足りる形に寄せられる——台帳が伸びるほど差が出るのは、**数えるのは画面と
+    採番の上限**という、いちばん止められない場所だからである。
+
+    **機械で見る。** 「今ある 3 か所を直した」で終わらせると、次に書く人がまた
+    `func.count()` と書き、レビューが見落とせばそのまま入る。
+    """
+    import re
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[1] / "src"
+    bare = [
+        f"{path.relative_to(src)}:{i}"
+        for path in src.rglob("*.py")
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
+        if re.search(r"\bcount\(\s*\)", line)
+    ]
+    assert not bare, "数える列が名指しされていない（count(*) になる）: " + ", ".join(bare)

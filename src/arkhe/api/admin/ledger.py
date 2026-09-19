@@ -78,7 +78,7 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
     counts = (
         dict(
             session.execute(
-                select(Ark.shoulder_id, func.count())
+                select(Ark.shoulder_id, func.count(Ark.ark))
                 .where(Ark.shoulder_id.in_(visible))
                 .group_by(Ark.shoulder_id)
             ).all()
