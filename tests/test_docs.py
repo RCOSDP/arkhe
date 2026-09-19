@@ -476,7 +476,7 @@ def test_the_code_is_written_in_english():
                                          (0x4e00, 0x9fff))
     ) + "]")
     root = ROOT
-    checked = ("src", "tests", "scripts", "alembic", "compose")
+    checked = ("src", "tests", "scripts", "alembic", "compose", "clients")
     offenders = []
     for folder in checked:
         for path in sorted((root / folder).rglob("*")):

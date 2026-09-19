@@ -14,6 +14,8 @@ What it builds
 
   NAAN 99999      authoritative. Three organisations are onboarded under it
   NAAN 88888      resolution is delegated. No rows here; resolution is forwarded
+  namespace /d9   minting is delegated to another minter, so that the 307 that points
+                  at it can be checked from outside
   organisation a  namespace /e1, no quota. Seeded ARKs go here
   organisation b  namespace /b2, used to check that reach stops at the organisation
   organisation q  namespace /q1, one ARK a day, used to check the quota
@@ -55,6 +57,13 @@ NAAN = "99999"
 #: A NAAN whose minting and resolution are delegated. No rows are held for it.
 DELEGATED_NAAN = "88888"
 DELEGATE = "https://delegate.example.org"
+
+#: A namespace under our own NAAN whose minting happens elsewhere. It is what the 307
+#: is checked against: nothing is minted here, and the answer names the other minter.
+#: The endpoint does not have to exist, because nothing calls it — a client is told
+#: where to go and decides for itself.
+DELEGATED_SHOULDER = "/d9"
+DELEGATE_MINTER = "https://mint.partner.example.org/api/mint"
 
 #: Organisations and namespaces share one key. "a" is the main one, "b" is there to
 #: check that reach stops at the organisation, "q" only exists for the quota.
@@ -208,6 +217,24 @@ def build(*, arks: int = 0, migrate: bool = False, force: bool = False) -> dict:
     if set(managers) != set(ORGS):
         raise SystemExit(f"could not read the organisation ids:\n{listing}")
 
+    # A namespace whose minting is delegated. `shoulder list` prints the id first, as
+    # that command says, and the shoulder is listed as <naan><shoulder>.
+    listing = _cli(env, "shoulder", "list")
+    wanted = f"{NAAN}{DELEGATED_SHOULDER}"
+    if not any(wanted in line for line in listing.splitlines()):
+        # It belongs to organisation a, so that a credential of that organisation
+        # reaches it: the answer to be checked is "minting happens elsewhere", not
+        # "this is out of your reach".
+        _cli(env, "shoulder", "add", NAAN, DELEGATED_SHOULDER,
+             "--manager", managers["a"],
+             "--note", "minting is delegated; used by the end-to-end suite")
+        listing = _cli(env, "shoulder", "list")
+    for line in listing.splitlines():
+        if wanted in line:
+            _cli(env, "shoulder", "status", line.split()[0], "delegated",
+                 "--minter", DELEGATE_MINTER, "--note", "delegated to another minter")
+            break
+
     keys = {}
     for tag, client_id, org, scopes, kind in CLIENTS:
         if client_id not in have_clients:
@@ -231,6 +258,8 @@ def build(*, arks: int = 0, migrate: bool = False, force: bool = False) -> dict:
         "naan": NAAN,
         "delegated_naan": DELEGATED_NAAN,
         "delegate": DELEGATE,
+        "delegated_shoulder": DELEGATED_SHOULDER,
+        "delegate_minter": DELEGATE_MINTER,
         "shoulders": SHOULDERS,
         "managers": managers,
         "clients": {tag: cid for tag, cid, *_ in CLIENTS},
@@ -256,6 +285,7 @@ def main() -> None:
         return
 
     print(f"NAAN {out['naan']} (delegate {out['delegated_naan']} -> {out['delegate']})")
+    print(f"  {out['naan']}{out['delegated_shoulder']}  minting -> {out['delegate_minter']}")
     for tag, shoulder in out["shoulders"].items():
         print(f"  {out['naan']}{shoulder:<4} organisation id {out['managers'][tag]:<3} "
               f"{ORGS[tag]}")

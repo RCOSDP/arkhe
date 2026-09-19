@@ -48,12 +48,32 @@ cd compose/oidc && docker compose up -d --build
 | `src/arkhe/db/` | SQLAlchemy のモデルとリポジトリ |
 | `src/arkhe/auth/` | 3 つの認証機構（apikey / oauth2 / oidc）と `Principal` |
 | `src/arkhe/api/` | FastAPI のルータ、管理画面、国際化 |
+| `clients/python/` | **Python クライアント**（`arkhe-client`）。依存 1 つの別パッケージ |
 
 `ARKHE_RESOLVER=1` で resolver として起動する。**minter に解決の口は無く、resolver に
 採番の口も無い**（別々にスケールさせ、resolver を読み取り専用ロールとレプリカに
 向けるため）。
 
 データモデルは [`docs/reference/data-model.ja.md`](docs/reference/data-model.ja.md)（ER 図）。
+
+## Python から叩く
+
+```python
+from arkhe_client import Arkhe, Resolver
+
+with Arkhe("https://mint.example.org", token="arkhe_...") as arkhe:
+    ark = arkhe.mint(url="https://repo.example.ac.jp/records/42", title="A dataset")
+```
+
+すべてのエンドポイントを持ち、**API 文書には書けない判断を 3 つ**行う。**採番は必ず
+冪等鍵を載せる**ので応答が失われても誰も持たない番号が消費されない。**別 minter への
+307 を追わない**——追えば自組織の資格情報を他組織の口に送ることになる。**断りには
+`ARKHE-xxxx` が付く**ので、文面に一致させる必要がない。手書きだが、公開 OpenAPI 文書と
+**両方向で突き合わせて**いるので、サーバにエンドポイントが増えるとクライアントが追うまで
+ビルドが落ちる。
+
+[`clients/python/README.md`](clients/python/README.md) と
+[手引き](https://rcosdp.github.io/arkhe/ja/guides/python-client/)にある。
 
 ## 認証
 

@@ -1,6 +1,6 @@
 [project]
 name = "arkhe"
-version = "0.12.1"
+version = "0.13.0"
 description = "ARK identifier infrastructure — minter and resolver as separate services"
 requires-python = ">=3.12"
 license = "MIT"
@@ -39,8 +39,12 @@ build-backend = "hatchling.build"
 packages = ["src/arkhe"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
+# The Python client is a separate package in the same repository (clients/python). Its
+# tests run in the same net: it is checked against the OpenAPI documents this build
+# generates, so a change to the API that the client does not follow fails here rather
+# than in someone else's application.
+pythonpath = ["src", "clients/python"]
+testpaths = ["tests", "clients/python/tests"]
 asyncio_mode = "auto"
 # The end-to-end suite is deselected by default. It starts PostgreSQL in docker and
 # brings up two uvicorn processes, which takes about 25 seconds; mixed in with the fast

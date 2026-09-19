@@ -8,6 +8,46 @@
 
 ## [未リリース]
 
+## [0.13.0] — 2026-09-19
+
+**クライアントを持った版。**
+
+API でできることが、自分で requests を書かなくても Python から届くようになった。
+そして本題はそこではなく、**どの呼び出しなら再送していいかを、呼ぶ人ごとに決め直さずに
+済むようになった**こと。**識別子を採り直せない台帳**で、その判断を人数ぶん持つ余裕は無い。
+
+### 追加
+
+- **Python クライアント**（`clients/python`、`arkhe-client`）。minter と resolver の
+  すべてのエンドポイントを持ち、**API 文書には書けない判断を 3 つ**行う。
+
+  **採番は冪等鍵を載せる。** `mint()` は必ず `request_id` を送り（渡されなければ生成し）、
+  再送では同じ鍵を送る。**応答が失われても、誰も持たない番号が消費されない**。どちらが
+  起きたかは `Ark.resent` が言う。`mint_many()` は各行に鍵を置き、これが**途中で切れた
+  一括採番をそのまま送り直せる**理由。再送しても二重に効かない呼び出しだけを再送し、
+  それ以外は `TransportError` として判断を呼び出し側に残す。
+
+  **別 minter への 307 を追わない。** 追えば自組織の資格情報を他組織の口に送ることになり、
+  向こうで採られた ARK はこちらの台帳が知らない ARK になる。`Delegated` として上がり、
+  `.minter` と `.about` を持つ。
+
+  **断りには `ARKHE-xxxx` が付く**（`ArkheError` 配下の型付き例外）。コードを持たない
+  断り——domain が上げ、画面が項目の横に出す `{項目: 何が悪いか}` の形——も、素の 400 に
+  せず中身を保つ。
+
+  **生成ではなく手書き**。生成が与えるのは網羅で、**網羅は検査できる**から——
+  `clients/python/tests/test_contract.py` がクライアントと公開 OpenAPI 文書を両方向で
+  突き合わせるので、サーバにエンドポイントが増えるとビルドが落ち、「クライアントも持つべきか」
+  を決める場面になる。スタブに対して 39 本、本物の一式に対して 14 本。
+
+- **通しの検査に「採番が委譲された shoulder」（`99999/d9`）を種として用意した。** 単体
+  テストの中だけでなく、**外から 307 を確かめられる**ようにするため。
+
+### 変更
+
+- **`pytest` が `clients/python/tests` も拾う**ようにし、英語のみの検査を `clients/` にも
+  広げた。**クライアントは、話し相手のサーバと同じ網で検査される**。
+
 ## [0.12.1] — 2026-09-19
 
 **README の日英が揃っていなかったのを直した版。**
@@ -1557,7 +1597,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.12.1...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.13.0
 [0.12.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.1
 [0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0
 [0.11.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.11.0

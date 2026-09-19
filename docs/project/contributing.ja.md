@@ -10,7 +10,7 @@
 ```bash
 uv sync --frozen --all-extras   # lock どおりに入れる
 uv run pytest -q
-uv run ruff check src tests
+uv run ruff check src tests clients
 ```
 
 ## CI は無い。検査は手元で走る

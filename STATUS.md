@@ -15,9 +15,9 @@
 
 | | |
 | --- | --- |
-| 版 | **0.12.1**（2026-09-19 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
+| 版 | **0.13.0**（2026-09-19 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
 | テスト | **すべて green**（`uv run pytest -q`）。**通しの検査は別枠**（`uv run pytest -m e2e`——docker で PostgreSQL を立て、minter と resolver を `uvicorn` で建てて HTTP で叩く。`check.sh` の手順 5） |
-| 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
+| 静的検査 | `ruff check src tests clients` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語 |
 | マイグレーション | head は単一（`b9d4a17c3e85`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回し、`tests/test_migrations.py` が SQLite で頭まで流す |
 | Python | 3.12 以上。本体の依存は **optional**（`arkspec` と `domain.resolution` は何も入れずに import できる） |
@@ -46,6 +46,7 @@
 | 運用コマンド | **画面と同じ `domain` を通る** | `cli.py` |
 | 観測性 | `/healthz` `/readyz`、構造化ログ、`/.well-known/ark`、**衝突の記録**（`mint_collision`）。**メトリクスの口は持たない**——ログの系統を 2 つにしない | `observability.py`, `domain/minting.py` |
 | 体験環境 | Keycloak ＋ PostgreSQL ＋ minter/resolver の compose | `compose/oidc/` |
+| Python クライアント | 全エンドポイント＋**採番の冪等鍵・307 を追わない・`ARKHE-xxxx` 付きの例外**。**公開 OpenAPI と両方向で突き合わせ**、本物の一式に対しても 14 本流す | `clients/python/` |
 
 テストの内訳:
 
@@ -60,6 +61,9 @@ test_hold.py         転送の保留            test_publication.py 公開と、
 test_migrations.py   移行が頭まで流れること（`test_publication.py` は purge も見る）
 test_stats.py        台帳の統計（**届かないものが混ざらないこと**）
 ```
+
+`clients/python/tests/` はクライアント側（スタブに対する判断 39 本＋OpenAPI との突き合わせ）。
+`pytest` の `testpaths` に入れてあるので、**同じ 1 本の `uv run pytest -q` で一緒に回る**。
 
 ## 分かっている穴
 
@@ -106,6 +110,24 @@ test_stats.py        台帳の統計（**届かないものが混ざらないこ
    手立ては[デプロイ](docs/guides/deployment.md)に書いた。**組んでいないだけである。**
 
 ## やってみて分かったこと
+
+### Python クライアントを書いた（2026-09-19・生成ではなく手書きにした）
+
+**生成が与えるのは網羅で、網羅は検査できる**——`clients/python/tests/test_contract.py` が
+クライアントと公開 OpenAPI 文書を両方向で突き合わせる（エンドポイントに対応する
+メソッドがあるか、メソッドの指すエンドポイントがまだ在るか、`Ark` の項目が `ArkOut` と
+一致するか）。**壊して落ちることを確かめた**——`Ark` から項目を 1 つ落とすと落ち、
+OpenAPI に架空の `POST /api/rename` を足すと落ちる。
+
+**生成が与えられないのは 3 つ**。採番の冪等鍵（`request_id` を必ず載せ、再送で同じものを
+送る）、**307 を追わないこと**（追えば自組織の資格情報を他組織の口に送る）、断りに
+`ARKHE-xxxx` を載せること。**これがクライアントを書いた理由**で、残りは API に Python の
+名前を付けただけ。
+
+書いている途中で 1 つ分かった: **コードを持たない断りがある**。domain が
+`Invalid({"until": "...", "reason": "..."})` の形で上げるもの（画面が項目の横に出す形）で、
+最初のクライアントはこれを素の `HTTP 400` にしていた。本物のサーバに対して流して気づいた
+もので、**スタブだけなら気づかないまま通っていた**。
 
 ### コードの言語を英語に揃えた（2026-09-19）
 

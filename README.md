@@ -54,12 +54,33 @@ while resolution keeps answering — see [Quickstart](https://rcosdp.github.io/a
 | `src/arkhe/db/` | SQLAlchemy models and the repository |
 | `src/arkhe/auth/` | Three authentication mechanisms (apikey / oauth2 / oidc) and `Principal` |
 | `src/arkhe/api/` | FastAPI routers, the admin interface, internationalisation |
+| `clients/python/` | **The Python client** (`arkhe-client`), a separate package with one dependency |
 
 Set `ARKHE_RESOLVER=1` to run as a resolver. **A minter has no resolution endpoint,
 and a resolver has no minting endpoint** — so the two can be scaled separately and
 the resolver can be pointed at a read-only role and a replica.
 
 The data model is in [`docs/reference/data-model.md`](docs/reference/data-model.md), with an ER diagram.
+
+## Calling it from Python
+
+```python
+from arkhe_client import Arkhe, Resolver
+
+with Arkhe("https://mint.example.org", token="arkhe_...") as arkhe:
+    ark = arkhe.mint(url="https://repo.example.ac.jp/records/42", title="A dataset")
+```
+
+The client covers every endpoint and does three things the API document cannot express:
+**every mint carries an idempotency key**, so a lost answer cannot spend a number nobody
+holds; **the 307 to another minter is not followed**, because that would send your
+credential to another organisation; and **refusals arrive with their `ARKHE-xxxx` code**
+rather than a sentence to match on. It is hand-written and checked against the published
+OpenAPI documents in both directions, so an endpoint added here fails the build until the
+client follows.
+
+See [`clients/python/README.md`](clients/python/README.md) and
+[the guide](https://rcosdp.github.io/arkhe/guides/python-client/).
 
 ## Authentication
 

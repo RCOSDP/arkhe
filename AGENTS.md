@@ -25,7 +25,7 @@ ARK 識別子の払い出しと解決。**一度配った名前が、別のも�
 ```bash
 uv sync --frozen --all-extras     # lock どおりに入れる
 uv run pytest -q                  # 全部通ること
-uv run ruff check src tests
+uv run ruff check src tests clients
 ```
 
 `--frozen` は lock と `pyproject.toml` がずれていたら落ちる。**依存を足したら
@@ -82,6 +82,8 @@ force push していた**。**止めたつもりが出ている**のがいちば
 ```
 src/arkhe/     実装。層の説明は下
 tests/         ファイル名が対象を表す。`tests/e2e/` は**通しの検査**（`-m e2e`。docker が要る）
+clients/python/ Python クライアント（`arkhe-client`）。**別パッケージだが同じ網で検査する**
+               ——`test_contract.py` が公開 OpenAPI と両方向で突き合わせる
 alembic/       マイグレーション。**PostgreSQL で検証する**
 docs/          MkDocs。`page.md` が英語、`page.ja.md` が日本語
 compose/oidc/  Keycloak つきの体験環境。**見本であって手本ではない**
@@ -197,6 +199,10 @@ shoulder を 2 か所で採らない、権威を持つ台帳は NAAN あたり 1
 多言語カタログ（`api/i18n/`・`cli_i18n.py`・`errors.py` の `ja`）だけで、
 あれは日本語の画面そのものである。文書（この文書・STATUS・`docs/*.ja.md`）は
 今までどおり日本語。
+
+**API を足したらクライアントも落ちる。** `clients/python/tests/test_contract.py` が
+公開 OpenAPI 文書と両方向で突き合わせているので、エンドポイントを足すと
+「クライアントも持つべきか」を決めるまで緑にならない。**決めずに素通りしない**ための仕掛け。
 
 **どのファイルが何を見ているかは [STATUS.md](STATUS.md) の「テストの内訳」。**
 ここに並べ直すと必ず片方が古くなる——実際、この一覧は 5 本ぶん遅れていた。

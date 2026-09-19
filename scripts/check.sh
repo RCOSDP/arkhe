@@ -14,7 +14,7 @@
 # What it looks at:
 #   1. the lock file against pyproject (uv sync --frozen)
 #   2. ruff
-#   3. pytest
+#   3. pytest, for the server and for the Python client in clients/python
 #   4. the migrations, round-tripped on PostgreSQL, since SQLite accepts schemas
 #      PostgreSQL refuses, plus alembic check
 #   5. the end-to-end suite: built in the production shape (uvicorn in two roles with
@@ -59,10 +59,10 @@ run uv sync --frozen --all-extras
 ok "uv sync --frozen"
 
 sec "2. ruff"
-run uv run ruff check src tests
+run uv run ruff check src tests clients
 ok "ruff"
 
-sec "3. pytest"
+sec "3. pytest (the server, and the Python client)"
 run uv run pytest -q
 ok "pytest"
 

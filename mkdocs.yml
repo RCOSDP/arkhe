@@ -71,6 +71,7 @@ plugins:
             From minting to resolving, with curl: curl で採番から解決まで
             Authentication: 認証
             Admin interface: 管理画面
+            Python client: Python クライアント
             Succession and departure: 承継と離脱
             Deployment: デプロイ
             Running several arkhe: 分散して運用する
@@ -148,6 +149,7 @@ nav:
       - From minting to resolving, with curl: guides/walkthrough.md
       - Authentication: guides/authentication.md
       - Admin interface: guides/admin.md
+      - Python client: guides/python-client.md
       - Succession and departure: guides/succession.md
       - Deployment: guides/deployment.md
       - Running several arkhe: guides/federation.md

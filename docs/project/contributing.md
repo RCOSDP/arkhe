@@ -10,7 +10,7 @@
 ```bash
 uv sync --frozen --all-extras   # install exactly what the lock says
 uv run pytest -q
-uv run ruff check src tests
+uv run ruff check src tests clients
 ```
 
 ## There is no CI. The checks run on your machine

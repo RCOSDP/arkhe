@@ -141,6 +141,15 @@ class World:
         return self.seed["delegate"]
 
     @property
+    def delegated_shoulder(self) -> str:
+        """A namespace under our own NAAN whose minting happens at another minter."""
+        return self.seed["delegated_shoulder"]
+
+    @property
+    def delegate_minter(self) -> str:
+        return self.seed["delegate_minter"]
+
+    @property
     def admin(self) -> dict[str, str]:
         return self.seed["admin"]
 

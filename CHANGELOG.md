@@ -9,6 +9,52 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-09-19
+
+**The release that gave arkhe a client.**
+
+Everything the API can do is now reachable from Python without anyone writing their own
+requests — and, more to the point, without anyone writing their own idea of which calls
+are safe to retry. A ledger whose identifiers cannot be reissued cannot afford that
+decision to be made once per caller.
+
+### Added
+
+- **A Python client** (`clients/python`, `arkhe-client`). It covers every endpoint of
+  the minter and the resolver, and it makes the three decisions the API document cannot
+  express:
+
+  **Minting carries an idempotency key.** Every `mint()` sends a `request_id`, generated
+  when the caller does not supply one, and a retry sends the same one, so a lost answer
+  cannot leave a number spent with nobody holding it. `Ark.resent` says which happened.
+  `mint_many()` keys every row, which is what makes an interrupted batch safe to send
+  again. Only calls that can be sent twice without acting twice are retried; anything
+  else raises `TransportError` and leaves the decision to the caller.
+
+  **The 307 to another minter is not followed.** Following it would send one
+  organisation's credential to another organisation's endpoint, and an ARK minted over
+  there is one this ledger knows nothing about. It is raised as `Delegated`, carrying
+  `.minter` and `.about`.
+
+  **Refusals carry their `ARKHE-xxxx` code**, as typed exceptions under `ArkheError`.
+  Refusals that carry no code — the `{field: what is wrong}` shape the domain raises and
+  the screens show beside the field — keep what they said rather than becoming a bare
+  400.
+
+  It is hand-written rather than generated, because what a generator adds is coverage and
+  coverage is the part that can be checked: `clients/python/tests/test_contract.py`
+  compares the client with the published OpenAPI documents in both directions, so an
+  endpoint added to the server fails the build until someone decides whether the client
+  should carry it. 39 checks run against a stub and 14 against the real stack.
+
+- **The end-to-end suite seeds a namespace whose minting is delegated** (`99999/d9`), so
+  that the `307` can be checked from outside rather than only in a unit test.
+
+### Changed
+
+- **`pytest` also collects `clients/python/tests`**, and the English-only check now
+  covers `clients/`. The client is checked in the same net as the server it speaks to.
+
 ## [0.12.1] — 2026-09-19
 
 **The release that made the two READMEs match.**
@@ -1686,7 +1732,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.13.0
 [0.12.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.1
 [0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0
 [0.11.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.11.0

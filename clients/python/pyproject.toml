@@ -1,0 +1,29 @@
+[project]
+name = "arkhe-client"
+version = "0.1.0"
+description = "Python client for arkhe: mint, update and resolve ARK identifiers"
+requires-python = ">=3.11"  # datetime.fromisoformat reads the whole of ISO 8601 from 3.11
+license = "MIT"
+readme = "README.md"
+# One dependency. A client that is awkward to install is one people copy out of
+# instead, and every copy then has its own idea of what a retry is safe to do.
+dependencies = ["httpx>=0.27"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["arkhe_client"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# The API's own field names include type and format. Renaming them here would mean
+# writing a translation table between this client and the document it speaks.
+ignore = ["A002"]
