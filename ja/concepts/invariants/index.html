@@ -1539,16 +1539,29 @@ ORM の層で削除を拒む——しかも見るのは「<strong>一度でも�
 <p><strong>閉域のリゾルバは別である</strong>（<code>ARKHE_RESOLVE_UNPUBLISHED=1</code>）。閉じた網の中で採番した
 ARK を、その網のリゾルバが解決できないなら配る意味が無い。<strong>解決するかどうかは、ARK の
 状態だけでなく、どのリゾルバが答えているかで決まる</strong>——<a href="../../guides/federation/#closed-resolver">分散して運用する</a>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">      </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># まだ解決しない</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">   </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># ここから解決を始める</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/unpublish<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">   </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># 出し直す</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">    </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/mint<span class="w">        </span>-d<span class="w"> </span><span class="s1">'{"reserve": true}'</span><span class="w">        </span><span class="c1"># まだ解決しない</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">      </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># 未公開ならこれだけ</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete/bulk<span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"data": ["ark:99999/x9…", "…"]}'</span><span class="w">   </span><span class="c1"># まとめて捨てる</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># ここから解決を始める</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/unpublish<span class="w">   </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/publish<span class="w">     </span>-d<span class="w"> </span><span class="s1">'{"ark": "ark:99999/x9…"}'</span><span class="w"> </span><span class="c1"># 出し直す</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>/api/delete<span class="w">      </span>-d<span class="w"> </span><span class="s1">'{"ark": "…", "reason": "…", "confirm": "…"}'</span><span class="w"> </span><span class="c1"># 出した名前</span>
 </code></pre></div>
+<p><strong>一度も外に出していないうちは、削除は 1 回の呼び出しで、何も要求しない</strong>——理由も
+打ち直しも要らず、<strong>まとめて捨てるのも 1 回</strong>。予約でまとめて採るのは実際の使い方で、
+番号は審査中の対象に、ときに何年も預けられる。<strong>捨てるのが採るより高くつくなら</strong>、
+放置された番号が台帳に残るだけで、それは予約という仕組みが避けようとしていた当のもの
+である。重くしても何も守られない。</p>
 <p><strong>公開は戻せる。削除は戻せない。</strong> 公開を取り下げても行は残るので、出し直せる
 ——出してよいかの判断は<strong>対象を持っている側</strong>にあり、そこから RA に上げて戻って
 くるまで待たせれば、その間は出たままになる。<strong>公開中</strong>の ARK への <code>/api/delete</code> は
 今までどおり <code>409</code> で断る——先に取り下げるか、<code>/api/purge</code> で一手に行う。</p>
+<p><strong>「世に出た」かどうかは、採番する側からは観測できない。</strong> そこで arkhe は<strong>初回の公開を
+その代理</strong>に使う——一度でも解決したなら、以後その名前は誰かが持っているものとして扱う。
+<strong>この代用は片側にしか外れない</strong>。誰にも見られないまま公開された ARK に重い経路を要求
+することはあり、その代償は理由 1 行と ARK の打ち直しである。逆——<strong>外に出た名前を私的な
+予約として扱う</strong>——は取り返しがつかないが、この向きでは起こらない。</p>
 <p><strong>戻らないのは「一度出した」ことのほうである。</strong> 初めて公開した時刻は記録に残り、
 決して消えない。これが決めるのは<strong>儀式の重さ</strong>で、誰も見なかった予約の取り下げは
 軽く、<strong>世に出た名前を引っ込めるには理由と打ち直しが要る</strong>。<strong>重さは名前の履歴に

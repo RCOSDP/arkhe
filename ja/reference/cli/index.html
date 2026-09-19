@@ -1611,7 +1611,7 @@
 </tr>
 <tr>
 <td><code>arkhe ark delete</code></td>
-<td><strong>公開していない ARK を消す。</strong> 公開中のものは先に取り下げる。<strong>一度でも公開した名前なら理由が必須で、確認を訊く。</strong> 消えるのは行だけで、<strong>その名前は二度と採られない。</strong></td>
+<td><strong>公開していない ARK を消す。</strong> 公開中のものは先に取り下げる。<strong>一度でも公開した名前なら理由が必須で、確認を訊く。</strong> 複数並べると一括の経路を通り、<strong>一度でも公開した名前が混じっていれば 1 件も消さない</strong>。<code>-</code> を渡すと標準入力から 1 行 1 件で読む。消えるのは行だけで、<strong>その名前は二度と採られない。</strong></td>
 </tr>
 <tr>
 <td><code>arkhe ark purge</code></td>
@@ -1668,6 +1668,11 @@ registry への登録という、arkhe の外で起きる手順も含めて</str
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>unpublish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"誤って公開した"</span>
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>publish<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w">            </span><span class="c1"># 出し直す</span>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>ark:99999/x9tn1qkq2g7<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"登録が取りやめになった"</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="c1"># 放置された予約をまとめて捨てる。訊かれるのは 1 回。**先に一覧を見ること**（戻せない）</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved<span class="w"> </span>--older-than<span class="w"> </span><span class="m">365</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">1000</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>arkhe<span class="w"> </span>ark<span class="w"> </span>list<span class="w"> </span>--state<span class="w"> </span>reserved<span class="w"> </span>--older-than<span class="w"> </span><span class="m">365</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">'{print $1}'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span>arkhe<span class="w"> </span>ark<span class="w"> </span>delete<span class="w"> </span>-<span class="w"> </span>--reason<span class="w"> </span><span class="s2">"審査が取りやめになった"</span>
 </code></pre></div>
 <p><strong>そのまま消せるのは、今 公開していないものだけ。</strong> 公開中の ARK は、先に
 <code>arkhe ark unpublish</code> で取り下げるか、<code>arkhe ark purge</code> で一手に破棄する

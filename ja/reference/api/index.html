@@ -1509,6 +1509,11 @@
 なので、取り下げには <code>reason</code> と、ARK を打ち直す <code>confirm</code> が要る。削除も同じで、
 一度でも公開したものには同じ 2 つを要求する。<strong>重さは名前の履歴に従い、呼ぶ側の位
 には従わない。</strong></p>
+<p><strong>捨てる一括は 1 リクエストで済む。</strong> <code>POST /api/delete/bulk</code>（<code>ark:delete</code>）は
+<strong>一度も公開していない</strong> ARK をまとめて消す——予約でまとめて採るのが実際の使い方である
+以上、<strong>捨てるのも採るのと同じ安さでなければ</strong>、放置された番号が台帳に残るだけになる。
+<strong>公開中、または一度でも公開した行が 1 つでもあれば、リクエスト全体が <code>409</code> で落ちる</strong>。
+その名前は <code>POST /api/delete</code> を 1 件で通す——理由と ARK の打ち直しを求める経路である。</p>
 <p><strong><code>POST /api/purge</code> は 2 手を一度に行う</strong>（<code>ark:purge</code>、届く範囲の内側）。裁判所の
 削除命令や、公開してはならなかった個人情報のためのもので、<strong>逃げ道が無ければ誰かが
 DB を直接叩く</strong>からである。理由が要り、<code>confirm</code> に ARK を打ち直させ、監査に残る。

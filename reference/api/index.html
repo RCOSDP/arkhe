@@ -1515,6 +1515,11 @@ leaves the row and stops the ARK resolving; <code>POST /api/publish</code> puts 
 administrator inside its NAAN. Because the name has been out in the world, unpublishing
 needs a <code>reason</code> and <code>confirm</code> repeating the ARK, and so does deleting anything that has
 ever been published. <strong>The weight follows the name's history, not the caller's rank.</strong></p>
+<p><strong>An abandoned batch goes in one request.</strong> <code>POST /api/delete/bulk</code> (<code>ark:delete</code>)
+deletes several ARKs that were <strong>never published</strong> — reserving in bulk is a way of
+working, so throwing the batch away has to be as cheap as minting it was. <strong>One row that
+is published, or that has ever been published, fails the whole request</strong> (<code>409</code>); that
+name goes through <code>POST /api/delete</code> on its own, with a reason and the ARK typed again.</p>
 <p><strong><code>POST /api/purge</code> does both steps at once</strong> (<code>ark:purge</code>, within your reach) — for a
 removal order, or data that should never have been published — because <strong>without a way
 out someone deletes rows straight from the database</strong>. It requires a reason, <code>confirm</code>

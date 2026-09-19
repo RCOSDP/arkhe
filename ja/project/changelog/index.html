@@ -1238,7 +1238,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="未リリース">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0140--2026-09-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.14.0 — 2026-09-19
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.14.0 — 2026-09-19">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2278,7 +2289,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="未リリース">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0140--2026-09-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.14.0 — 2026-09-19
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.14.0 — 2026-09-19">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3296,8 +3318,30 @@
 <p>書式は <a href="https://keepachangelog.com/ja/1.1.0/">Keep a Changelog</a>、版は
 <a href="https://semver.org/lang/ja/">SemVer</a>。<strong>識別子を振り直せない体系で何を破壊的変更と
 みなすか</strong>は<a href="https://rcosdp.github.io/arkhe/ja/project/versioning/">方針</a>にある。</p>
-<h2 id="未リリース"><a href="https://github.com/RCOSDP/arkhe/compare/v0.13.0...HEAD">未リリース</a><a class="headerlink" href="#未リリース" title="Permanent link">&para;</a></h2>
+<h2 id="未リリース"><a href="https://github.com/RCOSDP/arkhe/compare/v0.14.0...HEAD">未リリース</a><a class="headerlink" href="#未リリース" title="Permanent link">&para;</a></h2>
+<h2 id="0140--2026-09-19"><a href="https://github.com/RCOSDP/arkhe/releases/tag/v0.14.0">0.14.0</a> — 2026-09-19<a class="headerlink" href="#0140--2026-09-19" title="Permanent link">&para;</a></h2>
+<p><strong>捨てるのを、採るのと同じ安さにした版。</strong></p>
+<p>予約でまとめて採るのは実際の使い方で、番号は審査中の対象にときに何年も預けられる。
+その一括が取りやめになったとき、これまでは ARK ごとに 1 リクエスト必要で、<strong>それは
+実際には誰も消さない</strong>ということである。残るのは、予約という仕組みが避けようとして
+いた当の「放置された番号」。<strong>安い経路の範囲は、失われるもので決まる</strong>——誰にも
+見られていない名前だけが通る。</p>
 <h3 id="追加">追加<a class="headerlink" href="#追加" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>POST /api/delete/bulk</code></strong>（<code>ark:delete</code>）と、複数 ARK・標準入力を受ける
+  <code>arkhe ark delete</code>。<strong>捨てるのは、採ったのと同じ安さでなければならない</strong>——予約で
+  まとめて採るのは実際の使い方で、番号は審査中の対象にときに何年も預けられる。その
+  一括が取りやめになったとき、1 件ずつしか消せないなら<strong>実際には誰も消さない</strong>。
+  残るのは、予約という仕組みが避けようとしていた当の「放置された番号」である。</li>
+</ul>
+<p><strong>安くしてよい理由は、これらの名前が誰にも見られていないこと。</strong> 公開中、または
+  一度でも公開した行が 1 つでもあれば、新しい <strong><code>ARKHE-1504</code></strong> でリクエスト全体が
+  落ちる——その名前は <code>/api/delete</code> を 1 件で通す（理由と ARK の打ち直し）。<strong>一部だけ
+  消えることはなく</strong>、名前は従来どおり二度と採られず、監査は 1 件にまとまる。</p>
+<p>Python クライアントには <code>delete_bulk()</code> が入り、<strong>一括のメソッド名をエンドポイントに
+  揃えた</strong>——<code>mint_bulk</code> / <code>import_bulk</code> / <code>update_bulk</code> / <code>delete_bulk</code>（以前は <code>*_many</code>）。
+  <strong>検査で固定してある</strong>: <code>/bulk</code> のエンドポイントは <code>_bulk</code> で終わるメソッドが呼び、
+  それ以外は呼ばない。クライアントは未リリースなので、古い名前に依存するものは無い。</p>
 <ul>
 <li><strong>ほかの ARK ソフトウェアとの比較のページ</strong>（<code>docs/project/comparison.md</code>、日英）。
   arklet / arklet-frick / EZID は<strong>読むだけでなく実際に入れて、DB を与えて HTTP で叩いた</strong>
@@ -3309,7 +3353,8 @@
 <p><strong>機能単位の対応表</strong>を載せた——解決／採番と書き込み／識別子の一生／認可と運用の 4 つの表
   で arkhe・arklet・arklet-frick・EZID を並べ、<strong>動かして確かめたセルには剣印</strong>を付けた。
   AMS・greens・arks-service・NOID 系・N2T はより粗い表に。<strong>見当たらなかっただけのものは
-  ✗ ではなく「—」</strong>にしてある（無いことを確かめたわけではないため）。</p>
+  ✗ ではなく「—」</strong>にしてある（無いことを確かめたわけではないため）。日英の README からも、
+  もともと arklet に触れていた「由来」の節から辿れるようにした。</p>
 <h3 id="修正">修正<a class="headerlink" href="#修正" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>「arklet は採番の衝突を更新に化けさせる」という記述を、時点つきに直した。</strong> arkhe が
@@ -3328,7 +3373,7 @@
 </ul>
 <p><strong>採番は冪等鍵を載せる。</strong> <code>mint()</code> は必ず <code>request_id</code> を送り（渡されなければ生成し）、
   再送では同じ鍵を送る。<strong>応答が失われても、誰も持たない番号が消費されない</strong>。どちらが
-  起きたかは <code>Ark.resent</code> が言う。<code>mint_many()</code> は各行に鍵を置き、これが<strong>途中で切れた
+  起きたかは <code>Ark.resent</code> が言う。<code>mint_bulk()</code> は各行に鍵を置き、これが<strong>途中で切れた
   一括採番をそのまま送り直せる</strong>理由。再送しても二重に効かない呼び出しだけを再送し、
   それ以外は <code>TransportError</code> として判断を呼び出し側に残す。</p>
 <p><strong>別 minter への 307 を追わない。</strong> 追えば自組織の資格情報を他組織の口に送ることになり、

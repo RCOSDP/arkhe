@@ -1506,7 +1506,7 @@ client_id と client_secret を渡す。最初に必要になったときに取�
 翌日の再送も同じ要求だと分かる。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">arkhe</span><span class="o">.</span><span class="n">mint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"record-</span><span class="si">{</span><span class="n">record</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
-<p><code>mint_many()</code> は各行に鍵を置く。これが<strong>途中で切れた一括採番をそのまま送り直せる</strong>理由で、
+<p><code>mint_bulk()</code> は各行に鍵を置く。これが<strong>途中で切れた一括採番をそのまま送り直せる</strong>理由で、
 通っていた行は二重に採られず、そのまま返る。</p>
 <p>再送しても二重に効かない呼び出しだけを再送する。それ以外は <code>TransportError</code> になり、判断は
 呼び出し側に残る。<strong>応答が無い場合、書き込みが起きたかどうかは分からない</strong>ため。</p>
@@ -1559,19 +1559,19 @@ client_id と client_secret を渡す。最初に必要になったときに取�
 <tbody>
 <tr>
 <td>採番</td>
-<td><code>mint</code>, <code>mint_many</code>, <code>register</code></td>
+<td><code>mint</code>, <code>mint_bulk</code>, <code>register</code></td>
 </tr>
 <tr>
 <td>取り込み</td>
-<td><code>import_ark</code>, <code>import_many</code></td>
+<td><code>import_ark</code>, <code>import_bulk</code></td>
 </tr>
 <tr>
 <td>書き換え</td>
-<td><code>update</code>（置き換え）, <code>patch</code>（渡した分だけ）, <code>update_many</code></td>
+<td><code>update</code>（置き換え）, <code>patch</code>（渡した分だけ）, <code>update_bulk</code></td>
 </tr>
 <tr>
 <td>公開と取り下げ</td>
-<td><code>publish</code>, <code>unpublish</code>, <code>delete</code>, <code>purge</code></td>
+<td><code>publish</code>, <code>unpublish</code>, <code>delete</code>, <code>delete_bulk</code>, <code>purge</code></td>
 </tr>
 <tr>
 <td>失われたと告げる</td>

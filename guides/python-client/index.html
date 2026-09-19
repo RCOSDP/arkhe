@@ -1508,7 +1508,7 @@ passing yourself is one you keep beside the record you are minting for, so that 
 an hour or a day later is still recognised:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">arkhe</span><span class="o">.</span><span class="n">mint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"record-</span><span class="si">{</span><span class="n">record</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
-<p><code>mint_many()</code> puts a key on every row, which is what makes an interrupted batch safe to
+<p><code>mint_bulk()</code> puts a key on every row, which is what makes an interrupted batch safe to
 send again: the rows that got through come back rather than being minted twice.</p>
 <p>Only calls that can be sent twice without acting twice are retried. Anything else raises
 <code>TransportError</code> and leaves the decision to you, because with no answer at all, whether
@@ -1564,19 +1564,19 @@ and <code>target</code> is then <code>None</code>. <code>describe()</code> asks 
 <tbody>
 <tr>
 <td>minting</td>
-<td><code>mint</code>, <code>mint_many</code>, <code>register</code></td>
+<td><code>mint</code>, <code>mint_bulk</code>, <code>register</code></td>
 </tr>
 <tr>
 <td>taking in</td>
-<td><code>import_ark</code>, <code>import_many</code></td>
+<td><code>import_ark</code>, <code>import_bulk</code></td>
 </tr>
 <tr>
 <td>changing</td>
-<td><code>update</code> (replaces), <code>patch</code> (only what you pass), <code>update_many</code></td>
+<td><code>update</code> (replaces), <code>patch</code> (only what you pass), <code>update_bulk</code></td>
 </tr>
 <tr>
 <td>publication</td>
-<td><code>publish</code>, <code>unpublish</code>, <code>delete</code>, <code>purge</code></td>
+<td><code>publish</code>, <code>unpublish</code>, <code>delete</code>, <code>delete_bulk</code>, <code>purge</code></td>
 </tr>
 <tr>
 <td>saying it is gone</td>
