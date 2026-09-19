@@ -4,8 +4,9 @@ version = "0.11.0"
 description = "ARK identifier infrastructure — minter and resolver as separate services"
 requires-python = ">=3.12"
 license = "MIT"
-# 依存なしで import できる層（arkspec / domain.resolution）を持つため、
-# 本体の依存は optional に置く。仕様の検証だけしたい利用者は何も入れずに済む。
+# There is a layer that imports with no dependencies at all (arkspec and
+# domain.resolution), so the application's dependencies are optional. Anyone who only
+# wants to check the specification installs nothing.
 dependencies = []
 
 [project.optional-dependencies]
@@ -17,12 +18,12 @@ app = [
   "pydantic>=2.9",
   "pydantic-settings>=2.6",
   "psycopg[binary]>=3.2",
-  "argon2-cffi>=23.1",      # API キーのハッシュ
-  "pyjwt[crypto]>=2.9",     # 自前発行トークンと OIDC の検証
-  "httpx>=0.27",            # JWKS の取得
-  "typer>=0.15",            # 運用コマンド
-  "jinja2>=3.1",            # 管理画面のテンプレート
-  "python-multipart>=0.0.12",  # 管理画面のフォーム
+  "argon2-cffi>=23.1",      # hashing API keys
+  "pyjwt[crypto]>=2.9",     # our own tokens, and verifying OIDC
+  "httpx>=0.27",            # fetching the JWKS
+  "typer>=0.15",            # the operator commands
+  "jinja2>=3.1",            # the admin templates
+  "python-multipart>=0.0.12",  # the admin forms
 ]
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "pytest-cov", "ruff", "httpx>=0.27"]
 docs = ["mkdocs-material>=9.5", "mkdocs-static-i18n>=1.2", "mike>=2.1"]
@@ -41,11 +42,11 @@ packages = ["src/arkhe"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-# **通しの検査は既定では走らせない。** docker で PostgreSQL を立て、uvicorn を 2 つ
-# 建てるので 1 分ほどかかる——速い網と混ぜると、誰も普段は流さなくなる。
-# `check.sh` が別の手順として呼ぶ（`uv run pytest -m e2e`)。
+# The end-to-end suite is deselected by default. It starts PostgreSQL in docker and
+# brings up two uvicorn processes, which takes about 25 seconds; mixed in with the fast
+# net, nobody would run either. check.sh calls it as its own step (uv run pytest -m e2e).
 addopts = "-m 'not e2e'"
-markers = ["e2e: 本番と同じ形で建てて HTTP で叩く通しの検査（docker が要る）"]
+markers = ["e2e: the end-to-end suite, built in the production shape and driven over HTTP (needs docker)"]
 
 [tool.ruff]
 line-length = 100

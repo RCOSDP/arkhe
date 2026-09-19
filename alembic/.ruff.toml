@@ -1,2 +1,3 @@
-# 自動生成されたマイグレーションは整形の対象外にする（生成物の差分を汚さない）。
+# Generated migrations are left out of the formatting rules, so that the diff of a
+# generated file stays clean.
 exclude = ["versions"]

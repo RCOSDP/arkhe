@@ -1,30 +1,31 @@
-# 依存の更新を受け取る。**lock があるだけでは古びていくのを止められない。**
+# Receive dependency updates. A lock file alone does not stop things ageing.
 #
-# 固定は「今日と同じものが明日も入る」ための仕組みであって、「新しいものを
-# 見なくてよい」という意味ではない。放っておくと、直っている脆弱性を抱えたまま
-# 動き続けることになる——**まとめて上げるほうが、1 つずつより難しい。**
+# Pinning exists so that tomorrow installs what today installed; it does not mean
+# nothing new has to be looked at. Left alone, the service keeps running with
+# vulnerabilities that have already been fixed, and catching up all at once is harder
+# than keeping up.
 #
-# 毎週。1 つずつ PR が来ると読む気が失せるので、まとめて 1 本にする。
+# Weekly, grouped into one pull request: a stream of separate ones stops being read.
 version: 2
 updates:
   - package-ecosystem: uv
     directory: /
     schedule: {interval: weekly, day: monday}
     open-pull-requests-limit: 3
-    # **lock だけ動かす。宣言は触らせない。**
+    # Only the lock moves; the declaration is left alone.
     #
-    # 既定の Dependabot は、更新を「効かせる」ために `pyproject.toml` の下限を
-    # 入れた版まで引き上げてくる。だがそれは「古い版では動かない」と言うのと
-    # 同じで、確かめずにそう言うことになる——arkhe をライブラリとして使う側は、
-    # 理由の無い下限のぶんだけ他と共存しにくくなる。
+    # By default Dependabot raises the lower bounds in pyproject.toml to whatever it
+    # installed, to make the update "take effect". That is the same as saying the older
+    # version does not work, without having checked, and anyone using arkhe as a library
+    # then has a harder time fitting it alongside other packages.
     #
-    # 「どの範囲なら動くか」は宣言が、「今どれで動かしているか」は lock が持つ。
-    # 更新で動くのは後者だけでよい。
+    # The declaration says which versions work; the lock says which are in use. An
+    # update only has to move the second.
     versioning-strategy: lockfile-only
     groups:
       python:
         patterns: ["*"]
     commit-message: {prefix: "chore(deps)"}
 
-# ワークフローの action は見ない——**ワークフローを持っていない**。
-# 検査と公開は scripts/ の 3 本で、走らせるのは手元である（AGENTS.md）。
+# Workflow actions are not watched, because there are no workflows. Checking and
+# publishing are the three scripts in scripts/, run locally (see AGENTS.md).

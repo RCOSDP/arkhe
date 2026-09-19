@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# deploy-docs.sh — ドキュメントサイトを gh-pages へ出す。**唯一の公開手順**である。
+# deploy-docs.sh - publish the documentation site to gh-pages. This is the only way it
+# is published.
 #
-# もともと .github/workflows/docs.yml がやっていたことを、そのままここへ移した。
-# GitHub Pages は gh-pages ブランチを直接配信する
-# （Settings → Pages → Deploy from a branch → gh-pages / root）。
-# **gh-pages は生成物**なので手で触らない。書き手はこのスクリプトだけ。
+# It is what .github/workflows/docs.yml used to do, moved here. GitHub Pages serves the
+# gh-pages branch directly (Settings, Pages, Deploy from a branch, gh-pages / root).
+# gh-pages is generated, so nobody edits it by hand; this script is its only writer.
 #
-#   bash scripts/deploy-docs.sh              # 検査 → ビルド → 公開
-#   bash scripts/deploy-docs.sh --dry-run    # 検査とビルドだけ（push しない）
+#   bash scripts/deploy-docs.sh              # check, build, publish
+#   bash scripts/deploy-docs.sh --dry-run    # check and build only, without pushing
 #
-# 出す前に 2 つ確かめる。どちらも「**サイトに在るのにリポジトリで追えない内容**」を
-# 防ぐためのもので、CI では checkout がその役をしていた。
-#   * 追跡ファイルに未コミットの変更が無いこと（ALLOW_DIRTY=1 で外せる）
-#   * HEAD が origin に押されていること（押されていなければ警告）
+# Two things are checked first. Both exist to stop content being on the site that cannot
+# be traced in the repository, which is what checkout did under CI.
+#   * no uncommitted changes to tracked files (ALLOW_DIRTY=1 skips it)
+#   * HEAD has been pushed to origin (a warning if it has not)
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,72 +23,73 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1;;
     -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1' "$0"; exit 0;;
-    # **綴り違いを黙って通さない。** 素通ししていた頃は `--dryrun` と打つと
-    # 何も言わずに **gh-pages へ force push** していた——止めたつもりが出ている、
-    # がいちばん困る。check.sh / release.sh と同じ扱いにする。
-    *) echo "不明な引数: $1" >&2; exit 2;;
+    # A misspelt flag is not passed over silently. While it was, typing --dryrun
+    # force-pushed to gh-pages without a word: publishing something meant to be held
+    # back is the worst outcome. Handled as in check.sh and release.sh.
+    *) echo "unknown argument: $1" >&2; exit 2;;
   esac; shift
 done
 
 sec() { printf '\n\033[1m=== %s ===\033[0m\n' "$*"; }
 die() { echo "  ✗ $*" >&2; exit 1; }
 
-command -v uv >/dev/null 2>&1 || die "uv が無い"
+command -v uv >/dev/null 2>&1 || die "uv is not installed"
 
-sec "1. 出せる状態か"
+sec "1. is it in a state to publish"
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   if [ "${ALLOW_DIRTY:-}" = "1" ]; then
-    echo "  ! 未コミットの変更があるまま出す（ALLOW_DIRTY=1）"
+    echo "  ! publishing with uncommitted changes (ALLOW_DIRTY=1)"
   else
     git status --short --untracked-files=no | sed 's/^/    /'
-    die "未コミットの変更がある。先にコミットするか ALLOW_DIRTY=1 を付ける"
+    die "there are uncommitted changes. Commit first, or pass ALLOW_DIRTY=1"
   fi
 fi
 branch="$(git rev-parse --abbrev-ref HEAD)"
 git fetch --quiet origin "$branch" 2>/dev/null
 remote="$(git rev-parse "origin/$branch" 2>/dev/null || true)"
 if [ -n "$remote" ] && [ "$(git rev-parse HEAD)" != "$remote" ]; then
-  echo "  ! HEAD が origin/$branch と違う。サイトにだけ在って追えない内容になりうる"
+  echo "  ! HEAD differs from origin/$branch. The site could carry content that cannot be traced"
 fi
 echo "  ✓ $branch $(git rev-parse --short HEAD)"
 
-sec "2. 仕様を実装から起こす"
-# API 仕様は生成物。**直したのに公開が追随しない**ことがないよう、出す前に必ず作り直す。
-uv run python scripts/export_openapi.py || die "OpenAPI を書き出せない"
+sec "2. generate the specification from the implementation"
+# The API document is generated. It is rebuilt before publishing so that a fix cannot
+# be left out of what goes out.
+uv run python scripts/export_openapi.py || die "cannot write the OpenAPI documents"
 if ! git diff --quiet -- docs/assets/openapi-*.json 2>/dev/null; then
-  die "書き出した OpenAPI がコミット済みと違う。先にコミットする"
+  die "the OpenAPI documents differ from what is committed. Commit them first"
 fi
 
-sec "3. 検査"
-# **リンク切れを公開しない。** --strict は警告を失敗にする。
-# **ページ内のアンカー切れも見る。** mkdocs は INFO で流すので `--strict` では
-# 止まらないが、読む側にとっては同じ「切れたリンク」である。
+sec "3. checks"
+# A broken link is not published. --strict turns warnings into failures.
+# Broken anchors within a page are checked too: mkdocs logs those at INFO, so --strict
+# does not stop for them, while to a reader they are the same broken link.
 out="$(uv run mkdocs build --strict --site-dir "$(mktemp -d)" 2>&1)" \
-  || { echo "$out" | tail -20 | sed 's/^/    /'; die "mkdocs build --strict が落ちた"; }
+  || { echo "$out" | tail -20 | sed 's/^/    /'; die "mkdocs build --strict failed"; }
 if echo "$out" | grep -q "there is no such anchor"; then
   echo "$out" | grep "there is no such anchor" | sed 's/^/    /'
-  die "ページ内のリンクが切れている"
+  die "a link within a page is broken"
 fi
-echo "  ✓ mkdocs build --strict（アンカー切れも見る）"
+echo "  ✓ mkdocs build --strict, including anchors"
 
 if [ -n "$DRY" ]; then
   echo
-  printf '\033[1m✓ --dry-run: ここまで。公開はしていない\033[0m\n'
+  printf '\033[1m✓ --dry-run: stopping here. Nothing was published\033[0m\n'
   exit 0
 fi
 
-sec "4. gh-pages へ出す"
-# gh-deploy は site/ を作って gh-pages に force push する。**履歴は残らない**
-# （生成物なので、追うのはソースの側でよい）。
-uv run mkdocs gh-deploy --force --message "docs: $(git rev-parse --short HEAD) を公開" \
-  || die "gh-deploy が落ちた"
+sec "4. publish to gh-pages"
+# gh-deploy builds site/ and force-pushes it to gh-pages. No history is kept there;
+# it is generated, and the source is what anyone follows.
+uv run mkdocs gh-deploy --force --message "docs: publish $(git rev-parse --short HEAD)" \
+  || die "gh-deploy failed"
 
 cat <<MSG
 
-✓ 公開した
+Published.
 
-  https://rcosdp.github.io/arkhe/      （日本語は /ja/）
+  https://rcosdp.github.io/arkhe/      (Japanese is under /ja/)
 
-反映まで数十秒かかる。出ないときは Settings → Pages が
-**Deploy from a branch → gh-pages / (root)** になっているか見る。
+It takes up to a minute to appear. If it does not, check that Settings, Pages is set to
+Deploy from a branch, gh-pages / (root).
 MSG

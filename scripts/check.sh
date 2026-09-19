@@ -1,27 +1,31 @@
 #!/usr/bin/env bash
-# check.sh — この版が出せる状態かを確かめる。**唯一の検査手順**である。
+# check.sh - decide whether this version is in a state to be released. It is the only
+# set of checks there is.
 #
-# もともと .github/workflows/{ci,docs}.yml がやっていたことを、そのままここへ移した。
-# **系統を 2 つ持たない**——手元と CI に分かれると、「片方では通る」変更が生まれ、
-# やがて誰も赤い側を見なくなる。
+# It is what .github/workflows/{ci,docs}.yml used to do, moved here. There is one system
+# rather than two: split between a laptop and CI, a change appears that passes on one
+# side, and before long nobody looks at the other.
 #
-#   bash scripts/check.sh              # 全部
-#   bash scripts/check.sh --no-db      # マイグレーションの往復を飛ばす
-#   bash scripts/check.sh --no-docs    # 文書のビルドを飛ばす
-#   PGPORT=55433 bash scripts/check.sh 使い捨て PostgreSQL の待ち受けポート
+#   bash scripts/check.sh              # everything
+#   bash scripts/check.sh --no-db      # skip the migration round trip
+#   bash scripts/check.sh --no-docs    # skip building the documentation
+#   PGPORT=55433 bash scripts/check.sh # the port the throwaway PostgreSQL listens on
 #
-# 見るもの:
-#   1. lock と pyproject のずれ（uv sync --frozen）
+# What it looks at:
+#   1. the lock file against pyproject (uv sync --frozen)
 #   2. ruff
 #   3. pytest
-#   4. マイグレーションを **PostgreSQL で往復**（SQLite は PostgreSQL が弾く形を通す）
-#      ＋ alembic check
-#   5. **通しの検査**——本番と同じ形（uvicorn × 2 役割 ＋ PostgreSQL）に建てて HTTP で叩く
-#   6. OpenAPI を実装から書き出して、コミット済みのものとずれていないか
-#   7. mkdocs build --strict（ページ内のアンカー切れも落とす）
+#   4. the migrations, round-tripped on PostgreSQL, since SQLite accepts schemas
+#      PostgreSQL refuses, plus alembic check
+#   5. the end-to-end suite: built in the production shape (uvicorn in two roles with
+#      PostgreSQL) and driven over HTTP
+#   6. the OpenAPI documents, written from the implementation and compared with what is
+#      committed
+#   7. mkdocs build --strict, which also fails on a broken anchor within a page
 #
-# **道具が無い項目は黙って通さず SKIP と出す。**「入っていないから通った」が
-# いちばん危ない——緑を見て出したのに、見ていない検査があることになる。
+# A check whose tooling is missing prints SKIP rather than passing quietly. "It passed
+# because it was not installed" is the dangerous outcome: the release goes out on a green
+# result that did not include it.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,7 +37,7 @@ while [ $# -gt 0 ]; do
     --no-db)   WITH_DB=0;;
     --no-docs) WITH_DOCS=0;;
     -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1' "$0"; exit 0;;
-    *) echo "不明な引数: $1" >&2; exit 2;;
+    *) echo "unknown argument: $1" >&2; exit 2;;
   esac; shift
 done
 
@@ -44,12 +48,13 @@ sec()  { printf '\n\033[1m=== %s ===\033[0m\n' "$*"; }
 ok()   { echo "  ✓ $*"; }
 skip() { echo "  ~ SKIP: $*"; SKIPPED=$((SKIPPED + 1)); }
 die()  { echo "  ✗ $*" >&2; exit 1; }
-run()  { "$@" || die "$* が落ちた"; }
+run()  { "$@" || die "$* failed"; }
 
-command -v uv >/dev/null 2>&1 || die "uv が無い。https://docs.astral.sh/uv/"
+command -v uv >/dev/null 2>&1 || die "uv is not installed. https://docs.astral.sh/uv/"
 
-sec "1. lock どおりに入れる"
-# **lock と pyproject.toml がずれていたらここで落とす。** ずれたまま緑になるほうが困る。
+sec "1. install exactly what the lock file says"
+# If the lock file and pyproject.toml disagree, it stops here. Passing while they
+# disagree is the worse outcome.
 run uv sync --frozen --all-extras
 ok "uv sync --frozen"
 
@@ -61,79 +66,83 @@ sec "3. pytest"
 run uv run pytest -q
 ok "pytest"
 
-sec "4. マイグレーションの往復（PostgreSQL）"
-# **デモの DB には当たらない。** 落として作り直す検査なので、消えて困るものに向けない。
+sec "4. the migrations, round-tripped on PostgreSQL"
+# It never touches the demonstration database: this check drops and recreates, so it
+# is not pointed at anything whose loss would matter.
 pg_down() { docker rm -f "$PG_NAME" >/dev/null 2>&1 || true; }
 if [ "$WITH_DB" = 0 ]; then
-  skip "--no-db が指定された。**SQLite だけの確認は CI 相当ではない**"
+  skip "--no-db was given. Checking on SQLite alone is not the same check"
 elif ! command -v docker >/dev/null 2>&1; then
-  skip "docker が無い。PostgreSQL でのマイグレーション検査を通していない"
+  skip "no docker, so the migrations were not checked on PostgreSQL"
 else
   trap pg_down EXIT
   pg_down
   docker run -d --rm --name "$PG_NAME" \
     -e POSTGRES_USER=arkhe -e POSTGRES_PASSWORD=arkhe -e POSTGRES_DB=arkhe \
-    -p "$PGPORT:5432" postgres:17-alpine >/dev/null || die "PostgreSQL を起動できない"
+    -p "$PGPORT:5432" postgres:17-alpine >/dev/null || die "cannot start PostgreSQL"
   up=0
   for _ in $(seq 1 40); do
     docker exec "$PG_NAME" pg_isready -U arkhe >/dev/null 2>&1 && { up=1; break; }
     sleep 1
   done
-  [ "$up" = 1 ] || die "PostgreSQL が起動しない（$PG_NAME）"
+  [ "$up" = 1 ] || die "PostgreSQL never came up ($PG_NAME)"
   export ARKHE_DATABASE_URL="postgresql+psycopg://arkhe:arkhe@localhost:$PGPORT/arkhe"
   export ARKHE_AUTH=apikey
   run uv run alembic upgrade head
   run uv run alembic downgrade base
   run uv run alembic upgrade head
-  # **`alembic check` の指摘は本物。** 宣言してあるのに作られない FK をこれが見つける。
+  # What alembic check reports is real: it is what found a foreign key that was
+  # declared and never created.
   run uv run alembic check
   pg_down; trap - EXIT
   ok "upgrade → downgrade base → upgrade → check"
 fi
 
-sec "5. 通しの検査（uvicorn × 2 役割 ＋ PostgreSQL）"
-# **速い網が通り抜けるものを、ここで捕まえる。** app をファクトリとして建てられるか、
-# CLI で組んだ台帳に CLI が刷った鍵で届くか、resolver が書き込み DB に触れないか。
-# 自前で使い捨ての PostgreSQL を立てる（pytest の fixture の中）。
+sec "5. the end-to-end suite (uvicorn in two roles, with PostgreSQL)"
+# This catches what passes through the fast net: whether the app can be built as a
+# factory, whether the credential the CLI printed reaches the ledger the CLI built, and
+# whether a resolver stays off the write database. It starts its own throwaway
+# PostgreSQL, inside a pytest fixture.
 if [ "$WITH_DB" = 0 ]; then
-  skip "--no-db が指定された。**通しの検査を通していない**"
+  skip "--no-db was given, so the end-to-end suite did not run"
 elif ! command -v docker >/dev/null 2>&1; then
-  skip "docker が無い。**通しの検査を通していない**"
+  skip "no docker, so the end-to-end suite did not run"
 else
   run uv run pytest -q -m e2e
-  ok "通しの検査"
+  ok "the end-to-end suite"
 fi
 
-sec "6. OpenAPI が実装に追随しているか"
-# 仕様は実装から起こす。**コミット済みのものがずれていたら、ここで気づく。**
+sec "6. the OpenAPI documents follow the implementation"
+# The specification is generated from the implementation, and a committed copy that
+# has drifted is noticed here.
 run uv run python scripts/export_openapi.py
 if git diff --quiet -- docs/assets/openapi-*.json 2>/dev/null; then
-  ok "docs/assets/openapi-*.json は最新"
+  ok "docs/assets/openapi-*.json is up to date"
 else
   git diff --stat -- docs/assets/openapi-*.json | sed 's/^/    /'
-  die "コミット済みの OpenAPI が実装から遅れている。書き出した結果をコミットする"
+  die "the committed OpenAPI documents are behind the implementation. Commit what was written"
 fi
 
-sec "7. 文書"
+sec "7. documentation"
 if [ "$WITH_DOCS" = 0 ]; then
-  skip "--no-docs が指定された"
+  skip "--no-docs was given"
 else
-  # --strict: リンク切れや解決できない参照を、警告で済ませず失敗にする
-  # **ページ内のアンカー切れも落とす。** mkdocs はこれを INFO で流すので
-  # `--strict` では止まらない——見出しを直したときに、そこを指すリンクだけが
-  # 静かに死ぬ。実際 1 本死んでいた。
+  # --strict turns a broken link or an unresolvable reference into a failure rather
+  # than a warning. Broken anchors within a page are caught as well: mkdocs logs those
+  # at INFO, so --strict does not stop for them, and renaming a heading quietly kills
+  # every link pointing at it. One of them had died.
   out="$(uv run mkdocs build --strict --site-dir "$(mktemp -d)" 2>&1)" \
-    || { echo "$out" | tail -20 | sed 's/^/    /'; die "mkdocs build --strict が落ちた"; }
+    || { echo "$out" | tail -20 | sed 's/^/    /'; die "mkdocs build --strict failed"; }
   if echo "$out" | grep -q "there is no such anchor"; then
     echo "$out" | grep "there is no such anchor" | sed 's/^/    /'
-    die "ページ内のリンクが切れている"
+    die "a link within a page is broken"
   fi
-  ok "mkdocs build --strict（アンカー切れも見る）"
+  ok "mkdocs build --strict, including anchors"
 fi
 
 echo
 if [ "$SKIPPED" -gt 0 ]; then
-  printf '\033[1m✓ 通過（ただし %d 項目 SKIP。出す前にその項目を通すこと）\033[0m\n' "$SKIPPED"
+  printf '\033[1m✓ passed, with %d skipped. Run those before releasing\033[0m\n' "$SKIPPED"
 else
-  printf '\033[1m✓ 全部通過\033[0m\n'
+  printf '\033[1m✓ everything passed\033[0m\n'
 fi

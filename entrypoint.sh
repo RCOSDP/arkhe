@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# minter と resolver は同じイメージ。RESOLVER=1 で resolver になる。
+# The minter and the resolver share an image. RESOLVER=1 makes it a resolver.
 set -euo pipefail
 
 PORT="${JC2ARK_PORT:-8080}"
 WORKERS="${JC2ARK_WORKERS:-3}"
-# M7: **--timeout を明示する。** 既定の 30 秒に依存しない。arklet はここが未指定で、
-# 認可の線形走査が 30 秒を超えたときワーカーが殺されていた。
+# M7: --timeout is set explicitly rather than left at the default of 30 seconds.
+# arklet left it unset, and workers were killed when its linear authorisation scan took
+# longer than that.
 TIMEOUT="${JC2ARK_TIMEOUT:-60}"
 GRACEFUL="${JC2ARK_GRACEFUL_TIMEOUT:-30}"
 
@@ -14,16 +15,18 @@ export JC2ARK_ROLE="$ROLE"
 
 case "$ROLE" in
   resolver)
-    # M8: resolver は**読み取り専用ロール**で動くのでマイグレーションしない。
+    # M8: a resolver runs as a read-only role, so it does not migrate.
     python manage.py collectstatic --noinput >/dev/null 2>&1 || true
     ;;
   admin)
-    # **決して外部公開しない**運用者向けの画面。スキーマは minter が作る。
+    # The operator screens, which are never exposed publicly. The minter creates the
+    # schema.
     python manage.py collectstatic --noinput >/dev/null 2>&1 || true
     ;;
   minter)
-    # スキーマと superuser は**書き手である minter が用意する**。
-    # admin 側に置くと、admin を止めている間にマイグレーションが走らない。
+    # The schema and the first administrator are created by the minter, which is the
+    # writer. Doing it here would mean no migration runs while the admin interface is
+    # stopped.
     echo "running migrations"
     python manage.py migrate --noinput
     python manage.py collectstatic --noinput >/dev/null 2>&1 || true

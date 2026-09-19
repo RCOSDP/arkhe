@@ -1,10 +1,11 @@
-# arkhe のイメージ。**依存は pyproject の [app] だけ**（arkspec と resolution は
-# stdlib しか使わないので、本来ここに要るのは HTTP と DB の分だけ）。
+# The arkhe image. It installs only the app extra from pyproject: arkspec and
+# resolution use nothing but the standard library, so what is needed here is HTTP and a
+# database driver.
 #
-# **`uv.lock` どおりに入れる。** 上限を書いていないので、`pip install .` では
-# 焼き直すたびに中身が変わる——同じ Dockerfile と同じコミットから別のイメージが
-# できるのは、追跡できない障害の温床になる。`--frozen` は lock と pyproject が
-# ずれていたらそこで落とす（ずれたまま通るほうが困る）。
+# Installed exactly as uv.lock says. There are no upper bounds, so pip install . would
+# put something different in every rebuild, and two images built from the same Dockerfile
+# and the same commit differing is where untraceable failures come from. --frozen stops
+# if the lock and pyproject disagree, which is better than passing while they do.
 FROM python:3.12-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.10.12 /uv /usr/local/bin/uv
@@ -16,8 +17,8 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# **依存だけを先に入れる。** ソースを変えても、依存が変わっていなければ
-# この層は再利用される。
+# Dependencies are installed first, so that changing the source reuses this layer
+# whenever the dependencies have not changed.
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-install-project --extra app
 
@@ -27,5 +28,6 @@ COPY alembic.ini ./
 RUN uv sync --frozen --extra app
 
 EXPOSE 8000
-# 既定は minter + admin。resolver として動かすなら ARKHE_RESOLVER=1 を渡す。
+# The default is the minter with the admin interface. Pass ARKHE_RESOLVER=1 for a
+# resolver.
 CMD ["uvicorn", "arkhe.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
