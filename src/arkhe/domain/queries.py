@@ -1,11 +1,11 @@
-"""一覧の絞り込み。**画面も CLI も、ここを呼ぶ。**
+"""Filtering lists. The screens and the CLI both call this.
 
-`admin_ops` が「何をするか」を持つのに対し、ここは「何が見えるか」を持つ。
+admin_ops holds what can be done; this holds what can be seen.
 
-到達範囲の判定を 2 か所に書くと、片方だけ直したときに**画面には出ないものが
-CLI には出る**——そして気づくのは、見えてはいけないものが見えた後になる。
-検索条件も同じで、画面が 3 つの項目を見て CLI が 1 つしか見なければ、
-同じ言葉で引いたのに結果が違う、が起きる。
+Writing the reach in two places means that fixing one leaves rows hidden on the screens
+but visible in the CLI, and it is noticed only after something was seen that should not
+have been. Search is the same: if the screens look at three fields and the CLI at one,
+the same words give different results.
 """
 
 from __future__ import annotations
@@ -27,12 +27,12 @@ from arkhe.db.models import Ark, Manager, Shoulder
 
 
 def ark_key_from_input(raw: str) -> str:
-    """`ark:99999/x9tn1qkq2g7` でも、旧形式の `ark:/99999/x9tn1qkq2g7` でも、
-    `99999/x9tn1qkq2g7` でも、台帳の鍵に直す。
+    """Turn ark:99999/x9tn1qkq2g7, the older ark:/99999/x9tn1qkq2g7, or a bare
+    99999/x9tn1qkq2g7 into the key used in the ledger.
 
-    **解決側と同じ正規化を通す。** ここだけ素通しにすると、`…/x/` や `…/x..v` を
-    送った側が「同じ ARK」に触れず 404 になる。画面・CLI・API が別々に書くと、
-    片方でだけ当たらない、が起きる——だから 1 か所に置く。
+    It goes through the same normalisation as resolution. Skipping it here would leave
+    someone who sent .../x/ or .../x..v unable to reach the same ARK, and written
+    separately in the screens, the CLI and the API, one of them would miss.
     """
     try:
         p = parse_ark(raw if raw.lower().startswith(("ark:", "http")) else f"ark:{raw}")
@@ -42,16 +42,18 @@ def ark_key_from_input(raw: str) -> str:
 
 
 def visible_arks(p: Principal) -> Select:
-    """**到達範囲でそのまま絞る。**
+    """Narrow by reach.
 
-    システム管理者は全件、NAAN 単位はその NAAN、組織単位は自組織の shoulder に
-    限る——一覧の絞り込みと認可を別々に書かない。
+    The system administrator sees everything, a NAAN-level principal sees that NAAN, and
+    an organisation sees its own shoulders. The filter and the authorisation are not
+    written separately.
     """
     stmt = select(Ark)
     if not p.is_system:
         stmt = stmt.where(Ark.naan == p.naan)
     if not p.is_naan_wide:
-        # 主体が shoulder に固定されていればそれだけ（採番できる範囲と同じ絞り方）。
+        # A principal pinned to a shoulder sees only that one, narrowed the same way
+        # as what it may mint into.
         if p.shoulder_id is not None:
             stmt = stmt.where(Ark.shoulder_id == p.shoulder_id)
         else:
@@ -63,8 +65,9 @@ def visible_arks(p: Principal) -> Select:
     return stmt
 
 
-#: 公開の状態で絞る値。**画面の選択肢も CLI の引数もここから採る**——
-#: 別々に持つと、片方でしか指定できない値が生まれる。
+#: The publication states that can be filtered on. The choices on the screens and the
+#: CLI arguments both come from here; kept separately, one of them would gain a value
+#: the other does not have.
 ARK_STATES = ("public", "reserved")
 
 
@@ -72,19 +75,19 @@ def narrow_arks(
     stmt: Select, *, naan: str = "", org: str = "", q: str = "", state: str = "",
     older_than_days: int = 0,
 ) -> Select:
-    """絞り込みを重ねる。**到達範囲を広げる手段ではない。**
+    """Add filters. This is not a way to widen the reach.
 
-    `visible_arks` で先に絞ったものに重ねるので、届かない NAAN や組織を指定しても
-    何も出ない——**絞り込みの引数は、見える範囲の外に出る鍵にはならない。**
+    They are applied on top of visible_arks, so naming a NAAN or an organisation out of
+    reach returns nothing: a filter is never a key to something otherwise invisible.
 
-    `naan` は今のところ CLI からしか渡らない（画面は組織で絞る）。片方にしか
-    無いのは入口の違いで、**どちらも同じ式を通る**。
+    naan currently comes only from the CLI, since the screens filter by organisation.
+    That is a difference of entrance; both go through this one query.
 
-    `state` は公開したものだけ／公開前のものだけ（`ARK_STATES`）。知らない値は
-    **黙って無視する**——絞り込みの引数で 400 を返しても、できることは増えない。
+    state selects published or reserved rows (ARK_STATES). An unknown value is ignored
+    rather than refused: answering 400 to a filter would not let anyone do more.
 
-    `older_than_days` は採番からの日数。**公開前のまま放置されたものを拾う**のが
-    主な用途で、`--state reserved` と重ねて使う。
+    older_than_days counts from minting. It is mainly for finding reserved ARKs that
+    were left behind, used together with --state reserved.
     """
     if naan.strip():
         stmt = stmt.where(Ark.naan == naan.strip())
@@ -95,28 +98,29 @@ def narrow_arks(
             )
         )
     if (want := state.strip().lower()) in ARK_STATES:
-        # **公開前は放っておくと溜まる。** 予約したまま公開も取り下げもされない
-        # 番号は、誰も指さないまま台帳に残る——見えるようにしておく。
+        # Reserved ARKs accumulate if nothing is done. A number that is neither
+        # published nor withdrawn stays in the ledger naming nothing, so it is made
+        # visible.
         stmt = stmt.where(
             Ark.published_at.is_(None) if want == "reserved" else Ark.published_at.is_not(None)
         )
     if older_than_days > 0:
-        # **古さで絞る。** 公開前のまま放置されたものを拾うための引数だが、
-        # `state` と直交させてある——「3 年前に採って今も直していない公開済みの
-        # ARK」も、探したい日が来る。
+        # Filter by age. It exists for reserved ARKs left behind, but it is
+        # independent of state: one day someone will want published ARKs minted three
+        # years ago and never touched since.
         cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
         stmt = stmt.where(Ark.created_at < cutoff)
     term = q.strip()
     if term:
-        # **ARK そのものと、行き先と、題名で引く。** 運用で手元にあるのはどれか
-        # 分からないので、3 つとも見る。
+        # Search the ARK itself, the target and the title. Whoever is searching may
+        # have only one of them.
         like = f"%{term}%"
         stmt = stmt.where(Ark.ark.ilike(like) | Ark.url.ilike(like) | Ark.title.ilike(like))
     return stmt
 
 
 def selectable_orgs(p: Principal) -> Select:
-    """絞り込みに出す組織。**届く範囲のものだけ。**"""
+    """The organisations offered as filters: only those within reach."""
     stmt = select(Manager).order_by(Manager.naan, Manager.name)
     if not p.is_system:
         stmt = stmt.where(Manager.naan == p.naan)

@@ -1,15 +1,17 @@
-"""shoulder の規約と割当。
+"""The shoulder convention, and how shoulders are assigned.
 
-shoulder は NAAN の下位名前空間で、**組織（Manager）への名前空間の委譲**を担う。
+A shoulder is a namespace below a NAAN, and it is how a namespace is delegated to an
+organisation.
 
-**全 NAAN で使う**（`design_ark_multitenant_authz.md` §2.1.1）。1 組織 1 NAAN の
-岡崎3研究所でも default shoulder を必ず 1 つ持たせる。使わないと NAAN ごとに
-モデルが分岐し、**first-digit 規約が NAAN によって成立したりしなかったりする**。
+Every NAAN uses one (design_ark_multitenant_authz.md, 2.1.1). Even where one
+organisation holds one NAAN, it is given a default shoulder. Without that the model
+would branch per NAAN, and the first-digit convention would hold for some NAANs and not
+others.
 
-受け入れ条件:
-  B2  shoulder は単一セグメント（多段を許さない）
-  N5  **公衆が読める意味を持たせない。** 分野・装置は ARK の名前ではなく
-      `format` / payload で表現する
+Acceptance criteria:
+  B2  a shoulder is a single segment; nesting is not allowed
+  N5  it carries no meaning a reader could interpret. A discipline or an instrument
+      belongs in format or in the payload, not in the name of an ARK
 """
 
 from __future__ import annotations
@@ -19,13 +21,14 @@ import secrets
 
 from .betanumeric import CONSONANTS
 
-#: first-digit 規約: shoulder は NAAN の末尾から**最初の数字までを含む**範囲。
-#: 区切り文字なしで shoulder と blade の境界を判定できるのはこの規約による。
-#: 子音の並び＋末尾に数字 1 桁。母音と `l` を除くので偶然の単語にならない。
+#: The first-digit convention: a shoulder runs from the start of the name up to and
+#: including the first digit, which is how the boundary between shoulder and blade is
+#: found without a separator. Consonants followed by one digit; vowels and l are
+#: excluded, so no word appears by accident.
 SHOULDER_PATTERN = re.compile(rf"^/[{CONSONANTS}]+[0-9]$")
 
-#: 採用する長さ: 子音 2 ＋数字 1 の 3 文字。19*19*9 = 3,610 組織を収容できる
-#: （800 組織で使用率 22.2%）。`ark_ra_model.md` §5.0。
+#: The length used here: two consonants and a digit. That holds 3,610 organisations,
+#: which is 22.2% used at 800 of them (ark_ra_model.md, 5.0).
 DEFAULT_SHOULDER_LENGTH = 3
 
 
@@ -34,10 +37,11 @@ class InvalidShoulder(ValueError):
 
 
 def validate_shoulder(shoulder: str) -> None:
-    """first-digit 規約に照らして検証する。
+    """Check a shoulder against the first-digit convention.
 
-    B2: shoulder のあとのスラッシュを明確に禁じる——それは「手前の部分が実在の
-    対象を名指し、ARK 全体がその対象に含まれる」という**二重に誤った含意**を持つ。
+    B2 forbids a slash after the shoulder, because it would imply both that the part
+    before it names a real object and that the whole ARK is contained in that object.
+    Neither is true.
     """
     if not shoulder.startswith("/"):
         raise InvalidShoulder("Shoulders must start with a forward slash")
@@ -50,37 +54,39 @@ def validate_shoulder(shoulder: str) -> None:
 
 
 def generate_shoulder(length: int = DEFAULT_SHOULDER_LENGTH) -> str:
-    """規約に沿った不透明な shoulder を 1 つ返す。
+    """Return one opaque shoulder that follows the convention.
 
-    **連番割当は採らない。** `/bb1`, `/bb2`, `/bb3` と振ると **shoulder が加入順を
-    漏らす**——これは opacity の趣旨（公衆に意味を読ませない）に反する。NOID と
-    同じく乱数で引き、衝突は呼び出し側がリトライする。
+    They are not assigned in sequence. /bb1, /bb2, /bb3 would leak the order
+    organisations joined in, which is against the point of opacity. Like a NOID it is
+    drawn at random, and the caller retries on a collision.
 
-    shoulder は秘密ではない（公開名前空間の目印）。ここでの不透明性は
-    「推測困難」ではなく「**意味を持たない**」こと。
+    A shoulder is not a secret; it marks a public namespace. Opaque here means carrying
+    no meaning, not being hard to guess.
     """
     if length < 2:
         raise ValueError("shoulder length must be >= 2 (consonants + one digit)")
     body = "".join(secrets.choice(CONSONANTS) for _ in range(length - 1))
-    # 末尾の数字は 0-9 すべて使う。betanumeric は**母音を除いてある**ので `o` が
-    # 存在せず、`0` と紛れる相手がいない。除くと容量が 1 割減るだけで得がない。
+    # All ten digits are used. The betanumeric set has no vowels, so there is no o to
+    # confuse with 0, and excluding one would cost a tenth of the capacity for nothing.
     return "/" + body + secrets.choice("0123456789")
 
 
 def shoulder_capacity(length: int = DEFAULT_SHOULDER_LENGTH) -> int:
-    """その長さで収容できる shoulder 数。
+    """How many shoulders a given length holds.
 
-    3 文字（子音 2 ＋数字 1）で 19² × 10 = **3,610**。JAIRO Cloud の 800 組織に
-    対して使用率 22.2%・4.5 倍の余裕（`ark_ra_model.md` §5.0）。
+    Three characters, two consonants and a digit, give 19 squared times 10, or 3,610.
+    Against 800 organisations that is 22.2% used, with 4.5 times the room
+    (ark_ra_model.md, 5.0).
     """
     return len(CONSONANTS) ** (length - 1) * 10
 
 
 def split_shoulder(name: str) -> tuple[str, str]:
-    """first-digit 規約で name を (shoulder, blade) に分ける。
+    """Split a name into (shoulder, blade) using the first-digit convention.
 
-    **区切り文字なしで境界を判定できる**ことがこの規約の目的。shoulder は
-    先頭から最初の数字までを含む。数字が無ければ shoulder は空。
+    Finding the boundary without a separator is the point of the convention. The
+    shoulder runs from the start up to and including the first digit; with no digit the
+    shoulder is empty.
     """
     for i, char in enumerate(name):
         if char.isdigit():

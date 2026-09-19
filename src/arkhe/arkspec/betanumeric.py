@@ -1,39 +1,41 @@
-"""betanumeric 文字集合と NOID チェックディジット。
+"""The betanumeric character set and the NOID check digit.
 
-ARK の名前は「母音と `l` を除く数字＋子音」＝ betanumeric で構成する。これは
-**転記されることを前提にした規約**である（`ark_domain_pid_design.md` §7）:
+ARK names are made of digits and consonants, with the vowels and l left out: the
+betanumeric set. The convention assumes names will be copied by hand
+(ark_domain_pid_design.md, 7):
 
-- ラベルから打ち込むとき `l`/`1`・`O`/`0` を誤らない
-- 偶然の単語ができない
-- NCDA チェックディジットが単一文字誤りと隣接転置を検出する
+- typing from a label, l and 1, or O and 0, cannot be confused
+- no word appears by accident
+- the NCDA check digit detects a single wrong character and a swap of neighbours
 
 Derived from arklet (https://github.com/internetarchive/arklet), MIT License,
 Copyright (c) Internet Archive. See LICENSE.
 
-受け入れ条件: N6（betanumeric 限定）・N7（チェックディジットの計算範囲・適合を維持）
+Acceptance criteria: N6 (betanumeric only) and N7 (the range the check digit is
+computed over stays interoperable).
 """
 
 from __future__ import annotations
 
 import secrets
 
-#: 数字 10 ＋ 子音 19（母音 aeiou と `l` を除く）＝ 29 文字。
+#: Ten digits and nineteen consonants, leaving out aeiou and l: 29 characters.
 BETANUMERIC = "0123456789bcdfghjkmnpqrstvwxz"
 
-#: shoulder に使える子音のみ（first-digit 規約の前半部分）。
+#: Just the consonants, which is what a shoulder is made of before its digit.
 CONSONANTS = "bcdfghjkmnpqrstvwxz"
 
 _MODULUS = len(BETANUMERIC)  # 29
 
 
 def noid_check_digit(name: str) -> str:
-    """base compact name に対する NCDA チェックディジットを返す。
+    """Return the NCDA check digit for a base compact name.
 
-    N7: 仕様は「チェックディジットは blade の末尾に置き、**label を除いた
-    base compact name** に対して計算する」「**修飾子は含めない**」と定めている。
-    呼び出し側は `f"{naan}{shoulder}{noid}"` を渡すこと。
+    N7: the specification places the digit at the end of the blade and computes it over
+    the base compact name without the label, excluding any qualifier. Callers pass
+    f"{naan}{shoulder}{noid}".
 
-    betanumeric 以外の文字はスコアに算入しない（NOID 原典の挙動）。
+    Characters outside the betanumeric set score nothing, as in the original NOID.
 
     Derived from arklet.
     """
@@ -46,12 +48,12 @@ def noid_check_digit(name: str) -> str:
 
 
 def verify_check_digit(base_with_digit: str) -> bool:
-    """末尾 1 文字をチェックディジットとみなして検証する。
+    """Treat the last character as the check digit and verify it.
 
-    ⚠️ **渡すのは base compact name 全体**——すなわち `naan + shoulder + noid + cd`。
-    blade だけを渡すと必ず False になる。N7 のとおり検査桁は label を除いた
-    base compact name に対して計算されるので、NAAN を含めないと合わない。
-    通常は `verify_ark_check_digit(naan, name)` を使うこと。
+    What is passed is the whole base compact name: naan + shoulder + noid + digit.
+    Passing only the blade always returns False, because N7 computes the digit over the
+    base compact name without the label, which includes the NAAN. Normally, call
+    verify_ark_check_digit(naan, name) instead.
     """
     if len(base_with_digit) < 2:
         return False
@@ -60,29 +62,28 @@ def verify_check_digit(base_with_digit: str) -> bool:
 
 
 def check_digit_base(naan: str, name_without_digit: str) -> str:
-    """検査桁を計算する対象（base compact name）を組み立てる。
+    """Build the string the check digit is computed over: the base compact name.
 
-    ⚠️ **NAAN と name のあいだの `/` を含める。** 仕様は「label を除いた base
-    compact name に対して計算する」と定めており、compact name は `99999/kb1…`
-    である。arklet も `f"{naan}{shoulder}{noid}"`（shoulder は `/kb1`）として
-    スラッシュを含んでいる。
+    The slash between the NAAN and the name is included. The specification computes over
+    the base compact name without the label, and a compact name is 99999/kb1... arklet
+    included it too, as f"{naan}{shoulder}{noid}" with the shoulder written /kb1.
 
-    **`/` は betanumeric に無いのでスコアには算入されないが、以降の文字の位置を
-    1 つずらすため、含めるかどうかで検査桁が変わる。** 揃えないと arklet が採番
-    した ARK と相互に検証できない。
+    The slash is not in the betanumeric set, so it scores nothing, but it shifts every
+    later character by one position, which changes the digit. Without matching here, an
+    ARK minted by arklet could not be verified.
     """
     return f"{naan}/{name_without_digit}"
 
 
 def verify_ark_check_digit(naan: str, name: str) -> bool:
-    """`ark:<naan>/<name>` の検査桁を検証する。**呼び出し側はこちらを使う。**
+    """Verify the check digit of ark:<naan>/<name>. This is the function to call.
 
-    D1: 未登録 ARK に対してこれを検証し、不一致なら**転記ミスを明示した 404**
-    を返す。検証せずに転送すると、NCDA が保証している「単一文字誤り・隣接転置の
-    検出」を捨てることになる。
+    D1: an unregistered ARK is verified here, and a mismatch answers 404 saying it looks
+    like a transcription error. Forwarding without verifying throws away what NCDA
+    guarantees: detecting one wrong character or a swap of neighbours.
 
-    修飾子（`/` や `.` 以降）は検査桁の対象外（N7）なので、**base name だけを
-    渡すこと**。祖先探索で切り出した base を渡す想定。
+    A qualifier, anything after a / or a ., is outside the digit (N7), so pass the base
+    name alone, as cut out by the ancestor search.
     """
     if len(name) < 2:
         return False
@@ -90,7 +91,7 @@ def verify_ark_check_digit(naan: str, name: str) -> bool:
 
 
 def generate_noid(length: int) -> str:
-    """betanumeric の乱数列を返す。
+    """Return a random betanumeric string.
 
     Derived from arklet.
     """
