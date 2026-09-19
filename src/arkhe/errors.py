@@ -1,25 +1,28 @@
-"""API が返す誤りの符号。**一覧はここだけ。**
+"""The error codes the API returns. This is the only list of them.
 
-**符号を付けるのは、本文の文言に頼らせないため。** 文面は直る（訳も直る、語調も
-変わる）が、符号は変わらない。呼び出し側が `if "は存在しない" in body` のような
-書き方をせずに済む。
+A code exists so that callers do not have to read the wording. Wording changes, with a
+translation or a change of tone; a code does not, so nobody has to write something like
+`if "does not exist" in body`.
 
-**英語と日本語を両方持つ。** `message` は応答本文に出る英語で、読者はこの台帳の
-外にいる。`ja` は文書に載せる日本語の説明で、**運用する人は日本語で読む**。
-2 つを別々の場所に置くと必ずずれるので、1 つの表にしてある——参照ページも
-この表から検査する（`tests/test_docs.py`）。
+Each entry carries both languages. message is the English that appears in the response,
+for readers outside this ledger; ja is the Japanese explanation for the reference page,
+because the people running arkhe read it in Japanese. Kept in two places they would
+drift, so they are one table, and the reference page is checked against it
+(tests/test_docs.py).
 
-対象は **API と解決の口だけ**。管理画面は `api/i18n/` で別に日本語を持っており、
-起動時の設定エラーは運用者の端末に出るものなので、どちらもここには入れない。
+Only the API and the resolution endpoints are covered. The admin screens carry their own
+wording in api/i18n, and a settings error at startup appears on an operator's terminal;
+neither belongs here.
 
-番号の割り当て:
+How the numbers are assigned:
 
-  1000 番台  要求が読めない・値が不正（400）
-  1200 番台  認証（401）
-  1300 番台  認可（403）と委譲の案内（307）
-  1400 番台  見つからない（404）
-  1500 番台  **状態が合わない**（409）——値も権限も正しいが、対象が今その状態にない
-  1600 番台  上限（429）
+  1000s  the request cannot be read, or a value is wrong (400)
+  1200s  authentication (401)
+  1300s  authorisation (403) and pointing at a delegate (307)
+  1400s  not found (404)
+  1500s  the wrong state (409): the values and the permissions are right, but the row
+         is not in that state
+  1600s  a limit was reached (429)
 """
 
 from __future__ import annotations
@@ -28,14 +31,15 @@ from dataclasses import dataclass
 
 
 class ApiError(Exception):
-    """符号を持つ誤り。**応答本文は `{code, message, detail}` になる。**
+    """An error that carries a code. The response body is {code, message, detail}.
 
-    `Code` を渡すと符号・状態符号・英語の文面が付き、`**fmt` は文面を埋めると
-    同時に `detail` として**構造化されたまま**本文に載る（`limit` や `missing`
-    を文字列から切り出させない）。
+    Passing a Code attaches the code, the status and the English wording. Anything in
+    **fmt fills the wording and also appears in detail, still structured, so that values
+    such as limit or missing do not have to be cut out of a sentence.
 
-    文字列や辞書を渡した**従来の形も受ける**。管理画面はそちらで、日本語の文面を
-    そのまま返す——読者が違うので、無理に符号を振らない。
+    A plain string or dictionary is still accepted. The admin screens use that and
+    return their own wording: they have a different reader, so no code is forced on
+    them.
     """
 
     status = 400
@@ -55,7 +59,7 @@ class ApiError(Exception):
         super().__init__(self.message or str(self.detail))
 
     def body(self) -> dict:
-        """HTTP に載せる形。**符号が無いものは従来どおり。**"""
+        """The shape that goes over HTTP. Without a code, it is as it was."""
         if self.code is None:
             return self.detail if isinstance(self.detail, dict) else {"detail": self.detail}
         out = {"code": self.code.number, "message": self.message}
@@ -66,20 +70,21 @@ class ApiError(Exception):
 
 @dataclass(frozen=True)
 class Code:
-    """1 つの誤り。**符号・状態符号・英語の文面・日本語の説明**をまとめて持つ。"""
+    """One error: its code, its status, the English wording and the Japanese note."""
 
     number: str
     status: int
-    #: 応答本文に出る英語。`{}` は `say()` で埋める。
+    #: The English that appears in the response. say() fills the placeholders.
     message: str
-    #: 参照ページに出す日本語の説明。**本文には出さない。**
+    #: The Japanese explanation for the reference page. It never appears in a
+    #: response.
     ja: str
 
     def say(self, **kw) -> str:
         return self.message.format(**kw) if kw else self.message
 
 
-# --------------------------------------------------------------- 400 値が不正
+# ------------------------------------------------------- 400 a value is wrong
 ARK_UNREADABLE = Code(
     "ARKHE-1001", 400,
     "Not readable as an ARK: {reason}",
@@ -183,7 +188,7 @@ BULK_LIMIT = Code(
     "1 リクエストの件数上限（`ARKHE_BULK_LIMIT`）を超えた",
 )
 
-# ----------------------------------------------------------------- 401 認証
+# ------------------------------------------------------- 401 authentication
 NO_CREDENTIALS = Code(
     "ARKHE-1201", 401,
     "No credentials.",
@@ -206,7 +211,7 @@ UNSUPPORTED_GRANT_TYPE = Code(
     "対応していない grant_type。**実装しないものは明示して返す**",
 )
 
-# ------------------------------------------------------- 403 認可 / 307 委譲
+# ------------------------------------- 403 authorisation, 307 delegation
 INSUFFICIENT_SCOPE = Code(
     "ARKHE-1301", 403,
     "The token does not carry the required scope: {scope}",
@@ -263,7 +268,7 @@ SHOULDER_DELEGATED = Code(
 )
 
 
-# ------------------------------------------------------------- 404 見つからない
+# ------------------------------------------------------------ 404 not found
 ARK_NOT_FOUND = Code(
     "ARKHE-1401", 404,
     "No such ARK in this ledger.",
@@ -287,7 +292,7 @@ NO_METADATA_FOR_UNKNOWN_NAAN = Code(
     "inflection 無しなら上位リゾルバへ取り次ぐ",
 )
 
-# --------------------------------------------------------- 409 状態が合わない
+# ----------------------------------------------------- 409 the wrong state
 ARK_ALREADY_PUBLIC = Code(
     "ARKHE-1501", 409,
     "{ark} is published; unpublish it first (or purge it in one step).",
@@ -310,7 +315,7 @@ ARK_HAS_PARTS = Code(
     "——親だけ消すと、行き先を継ぐ先の無い部分参照が残る",
 )
 
-# ------------------------------------------------------------------ 429 上限
+# ---------------------------------------------------------------- 429 limits
 QUOTA_EXCEEDED = Code(
     "ARKHE-1601", 429,
     "Daily quota exhausted: {used} of {quota} used in the last 24 hours.",
@@ -318,7 +323,7 @@ QUOTA_EXCEEDED = Code(
 )
 
 
-#: 参照ページの検査が使う一覧。**番号順**。
+#: The list the reference-page check reads, in number order.
 CODES: tuple[Code, ...] = tuple(
     sorted(
         (v for v in list(globals().values()) if isinstance(v, Code)),
