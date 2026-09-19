@@ -126,5 +126,5 @@ cat <<MSG
 
 残り:
   bash scripts/deploy-docs.sh          # 変更履歴のページを追随させる
-  # weko4 側のサブモジュールポインタを進める
+  # submodule として組み込んでいる側があれば、そのポインタも
 MSG
