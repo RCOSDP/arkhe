@@ -1,7 +1,7 @@
-"""監査ログ。**NAAN 単位以上にしか見せない。**
+"""The audit log, shown only at NAAN level and above.
 
-誰が何をしたかはその名前空間を預かる側の情報で、組織の担当者が他組織の
-履歴を読む筋合いは無い。
+Who did what belongs to whoever holds the namespace; someone working for one
+organisation has no business reading another's history.
 """
 
 from __future__ import annotations
@@ -26,16 +26,16 @@ from arkhe.db.models import (
     AuditEvent,
 )
 
-# ------------------------------------------------------------------ 監査
+# ------------------------------------------------------------------ Audit
 
 
 @router.get("/audit", response_class=HTMLResponse)
 def audit(request: Request, principal: AdminPrincipal, session: Db,
           q: str = "", page: int = 1):
-    """**監査ログは NAAN 単位以上にしか見せない。**
+    """The audit log is shown only at NAAN level and above.
 
-    誰がいつ何をしたかは、その名前空間を預かる側の情報。組織の担当者に他組織の
-    操作履歴が見えてはならない。
+    Who did what and when belongs to whoever holds the namespace, and one
+    organisation's staff must not see another's operations.
     """
     if not principal.is_naan_wide:
         raise _refuse(request, "e.audit_naan_wide")

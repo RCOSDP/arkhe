@@ -1,11 +1,12 @@
-"""統計の画面。**数えるのは `domain/stats.py` だけ。**
+"""The statistics screen. All counting happens in domain/stats.py.
 
-画面が独自に集計を書くと、CLI や API と違う数を出す——**同じ「件数」が場所に
-よって違う**のは、いちばん質の悪いずれである。ここはドメインを呼んで並べるだけ。
+A screen that aggregates on its own reports different numbers from the CLI and the API,
+and one count differing by where it is read is the worst kind of drift. This module
+calls the domain and lays the result out.
 
-**scope では縛らない。** `/api/stats` は `ark:read` を要求するが、画面の一覧
-（`/admin/arks`）も scope では縛っていないので、そちらに揃えた。縛っているのは
-**到達範囲**で、そこはドメインの側で効いている。
+No scope is required. /api/stats requires ark:read, but the list screen at /admin/arks
+has no scope either, so this matches it. What binds is the reach, which the domain
+applies.
 """
 
 from __future__ import annotations
@@ -19,10 +20,10 @@ from arkhe.domain import stats as stats_domain
 
 @router.get("/stats", response_class=HTMLResponse)
 def stats(request: Request, principal: AdminPrincipal, session: Db):
-    """**見えている範囲を数えて見せる。**
+    """Count what is visible and show it.
 
-    届かないものは 1 件も入らない——`domain.stats` が `visible_arks` を通すので、
-    ここで認可を書き直していない。**合計もまた、在ることを漏らす。**
+    Nothing out of reach is included: domain.stats goes through visible_arks, so the
+    authorisation is not written again here. A total leaks existence too.
     """
     return _page(
         request, principal, "stats.html", "stats",

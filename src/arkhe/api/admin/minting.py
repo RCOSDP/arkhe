@@ -1,7 +1,7 @@
-"""手作業で 1 本採番する画面。
+"""The screen for minting one ARK by hand.
 
-通常の採番は組織のシステムが API から行う。ここは移行時の個別対応、
-物理オブジェクト、動作確認のためのもの。
+Ordinarily an organisation's own system mints through the API. This is for one-off cases
+during a migration, for physical objects, and for checking that things work.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from arkhe.arkspec.naming import compact_ark
 from arkhe.domain import authz, minting
 from arkhe.domain.resolution import is_registrable
 
-# ------------------------------------------------------------------ 採番
+# ----------------------------------------------------------------- Minting
 
 
 @router.get("/mint", response_class=HTMLResponse)
@@ -43,7 +43,8 @@ def mint_form(request: Request, principal: AdminPrincipal, session: Db):
                 principal,
                 "mint",
                 shoulders=_mintable(session, principal),
-                # NAAN 単位以上は shoulder の明示が必須（既定を持たない）。
+                # At NAAN level and above the shoulder must be named: there is no
+                # default.
                 needs_shoulder=principal.is_naan_wide,
                 types=RESOURCE_TYPES,
                 minted=None,
@@ -60,16 +61,17 @@ def mint_submit(
     shoulder: Annotated[str, Form()] = "",
     url: Annotated[str, Form()] = "",
     title: Annotated[str, Form()] = "",
-    type: Annotated[str, Form()] = "",  # noqa: A002 - ERC の項目名
+    type: Annotated[str, Form()] = "",  # noqa: A002 - the name of the ERC element
     who: Annotated[str, Form()] = "",
     when: Annotated[str, Form()] = "",
     reserve: Annotated[str, Form()] = "",
 ):
-    """画面からの採番。**API と同じ経路**（authz → minting）を通る。"""
+    """Minting from the screen, through the same path as the API: authz, then
+    minting."""
     authz.require_scope(principal, "ark:mint")
-    # **画面でも先に弾く。** 底では ORM が拒むが（`Ark._refuse_dangerous_url`）、
-    # それは `500` になるだけで**運用者に何も伝えない**。弾くのは守りのため
-    # ではなく、**断りを読める形にするため**である。
+    # Refused here as well. The ORM refuses it underneath
+    # (Ark._refuse_dangerous_url), but that is only a 500 and tells the operator
+    # nothing. This is not the guard; it is what makes the refusal readable.
     if not is_registrable(url):
         raise _refuse(request, "e.url_scheme")
     sh = authz.shoulder_for(session, principal, shoulder or None)
@@ -78,7 +80,8 @@ def mint_submit(
     ark, _ = minting.mint(
         session,
         shoulder=sh,
-        # **公開前として採れる。** 画面と API に差を作らない（`MintIn.reserve`）。
+        # It can be minted as reserved, so the screen and the API behave alike
+        # (see MintIn.reserve).
         reserve=bool(reserve),
         created_by=principal.client_id,
         url=url,

@@ -1,6 +1,7 @@
-"""`domain.resolution.ArkRepository` の SQLAlchemy 実装。
+"""The SQLAlchemy implementation of domain.resolution.ArkRepository.
 
-解決の決定ロジックは DB を知らない。ここが唯一の接点で、**問い合わせは 4 つだけ**。
+The resolution logic knows nothing about the database. This is the only point of
+contact, and it makes four queries.
 """
 
 from __future__ import annotations
@@ -11,19 +12,20 @@ from sqlalchemy.orm import Session, joinedload
 from arkhe.db.models import Ark, Naan, Shoulder
 from arkhe.domain.resolution import ArkRepository
 
-#: 保留（hold）の判定は ARK → shoulder → NAAN の順に見る。**関係を遅延で辿ると
-#: 解決 1 回につき問い合わせが 2 本増える**ので、同じ 1 本に載せてしまう。
-#: 解決はいちばん回る経路で、しかも読み取りレプリカに向く——ここを軽く保つ。
+#: A hold is looked for on the ARK, then the shoulder, then the NAAN. Following those
+#: relationships lazily would add two queries per resolution, so they ride along on the
+#: same one. Resolution is the busiest path and the one aimed at a read replica, so it
+#: is kept light.
 _WITH_HOLD_CHAIN = joinedload(Ark.shoulder).joinedload(Shoulder.naan_obj)
 
 
 class SqlArkRepository(ArkRepository):
-    """解決が引く窓口。
+    """What resolution reads through.
 
-    `unpublished` は**このリゾルバが公開前の ARK も引くか**
-    （`ARKHE_RESOLVE_UNPUBLISHED`）。閉域のリゾルバは引く——閉じた網の中で
-    採番した ARK を、その網のリゾルバが解決できなければ配る意味が無い。
-    公開のリゾルバは引かない。
+    unpublished says whether this resolver serves reserved ARKs
+    (ARKHE_RESOLVE_UNPUBLISHED). A resolver on a closed network does: if ARKs minted
+    inside it do not resolve there, handing them out is pointless. A public resolver
+    does not.
     """
 
     def __init__(self, session: Session, *, unpublished: bool = False):
@@ -31,21 +33,23 @@ class SqlArkRepository(ArkRepository):
         self.unpublished = unpublished
 
     def _visible(self, stmt):
-        """公開前を落とすかどうか。**絞りを 1 か所に置く**——2 つの問い合わせで
-        条件がずれると、完全一致では出ないのに祖先としては出る、が起きる。"""
+        """Whether reserved rows are dropped. The filter lives in one place: if the
+        two queries disagreed, a row could be hidden from an exact match and still be
+        found as an ancestor."""
         return stmt if self.unpublished else stmt.where(Ark.published_at.is_not(None))
 
     def get_ark(self, key: str):
-        # **公開前の行は引かない**（公開のリゾルバでは）。決定ロジック側も
-        # 弾くが、載せない時点で落としておく——読み取りレプリカに向いた
-        # いちばん回る経路なので、要らない行は運ばない。
+        # A public resolver does not read reserved rows. The decision logic refuses
+        # them too, but they are dropped here as well: this is the busiest path, aimed
+        # at a read replica, so nothing unnecessary is carried.
         return self.session.scalar(
             self._visible(select(Ark).where(Ark.ark == key)).options(_WITH_HOLD_CHAIN)
         )
 
     def get_arks(self, keys: list[str]) -> dict:
-        # SC1: **DB で関数ソートしない。** 候補は高々 name 長ぶんなので 1 回の
-        # IN で引き、順位づけはアプリ側（`gen_prefixes` の長い順）で行う。
+        # SC1: no sorting by a function in the database. There are at most as many
+        # candidates as the name is long, so they are fetched with one IN and ordered
+        # here, longest first, by gen_prefixes.
         rows = self.session.scalars(
             self._visible(select(Ark).where(Ark.ark.in_(keys))).options(_WITH_HOLD_CHAIN)
         ).all()

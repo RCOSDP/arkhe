@@ -1,18 +1,18 @@
-"""管理画面。**テーブルの行編集ではなく、操作の画面。**
+"""The admin interface: screens for operations, not row editing.
 
-画面が呼ぶのは `domain.admin_ops` と `domain.minting` で、DB を直接は触らない。
-CLI と同じ関数を通るので、画面から不変条件を破る道が生まれない。
+The screens call domain.admin_ops and domain.minting rather than touching the database,
+so they go through the same functions as the CLI and cannot break an invariant.
 
-見せる範囲は `Principal` の 3 段（system / naan / manager）でそのまま絞る。
-**画面の出し分けと実際の認可は同じ判定**を使う——別々にすると、ボタンは出ないが
-URL を直接叩けば通る、という穴ができる。
+What is shown is narrowed by the principal's tier, system, naan or manager. Display and
+authorisation use the same decision: keeping them apart leaves the hole where the button
+is hidden but the URL still works.
 
-画面ごとに分けてある。**取り込む順に意味は無い**（どれも `_common` の同じ
-ルータに登録するだけ）が、`arks` は `/arks/{ark:path}` を持つので、より具体的な
-経路を先に登録しておく必要がある。
+There is a module per screen. The import order does not matter, since they all register
+on the same router from _common, except that arks has /arks/{ark:path}, so more specific
+routes have to be registered first.
 """
 
-# 取り込むことでルータに登録される。順序については上の注記を参照。
+# Importing these registers them on the router. See the note above about order.
 from arkhe.api.admin import (  # noqa: E402,F401
     arks,
     audit,

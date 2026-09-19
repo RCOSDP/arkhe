@@ -1,8 +1,10 @@
-"""認証の結果。**どの機構で認証しても、認可はこの 1 つの型の上で判断する。**
+"""The result of authentication. Whatever the mechanism, authorisation is decided on
+this one type.
 
-api キー・自前トークン・外部 OIDC は「誰であるかをどう確かめたか」が違うだけで、
-確かめた後の問い「この主体はこの shoulder を触れるか」は同一。ここを分けないと、
-機構を足すたびに認可の分岐が増えて、**どこかに抜けができる**。
+An API key, a token we issued and an external OIDC token differ only in how identity was
+established. The question afterwards, whether this principal may touch this shoulder, is
+the same. Keeping them apart would add a branch to authorisation for every mechanism,
+and one of them would end up wrong.
 """
 
 from __future__ import annotations
@@ -14,45 +16,45 @@ from arkhe.db.models import Authority
 
 @dataclass(frozen=True)
 class Principal:
-    """認証済みの主体。
+    """An authenticated principal.
 
-    到達範囲（naan / manager / shoulder / scopes）は**クライアント登録の属性**で、
-    トークン要求やリクエスト本文からは決して来ない。権限昇格を防ぐため。
+    The reach, naan, manager, shoulder and scopes, comes from the registration and never
+    from a token request or a request body, which is what prevents privilege escalation.
     """
 
     client_id: str
     naan: str
     authority: str = Authority.MANAGER.value
     manager_id: int | None = None
-    #: **この主体が使える shoulder を 1 つに固定する**場合の id。None なら
-    #: manager が持つ shoulder のどれでも使える。
+    #: Pins the principal to one shoulder. None means any shoulder the organisation
+    #: holds.
     shoulder_id: int | None = None
     scopes: frozenset[str] = field(default_factory=frozenset)
-    #: どの機構で認証したか。監査に残す。
+    #: Which mechanism authenticated it, kept in the audit log.
     mechanism: str = ""
 
-    #: 接続元のアドレス。**要求の層でだけ入る**（ドメインは知らなくてよい）。
-    #: 監査に残すためだけに運ぶので、認可の判断には使わない
-    #: ——IP は詐称できるし、経路が変われば変わるため。
+    #: The caller's address, filled in only at the request layer. It is carried for
+    #: the audit log and never used to decide authorisation: an address can be forged,
+    #: and it changes when the route does.
     ip: str = ""
 
     @property
     def is_system(self) -> bool:
-        """RA の運用者。**全 NAAN に届く。**"""
+        """The RA operator, who reaches every NAAN."""
         return self.authority == Authority.SYSTEM
 
     @property
     def is_naan_wide(self) -> bool:
-        """NAAN 配下すべてに届く（system を含む）。"""
+        """Reaches everything under the NAAN, including the system administrator."""
         return self.authority in (Authority.SYSTEM, Authority.NAAN)
 
-    #: 後方互換。`authority=naan` は break-glass としても使われる。
+    #: Kept for compatibility: authority=naan is also used for break-glass.
     @property
     def is_break_glass(self) -> bool:
         return self.is_naan_wide
 
     def reaches_naan(self, naan: str) -> bool:
-        """その NAAN に届くか。**判定はここ 1 か所**（機構によらない）。"""
+        """Whether it reaches that NAAN. Decided here and nowhere else."""
         return self.is_system or self.naan == naan
 
     def has(self, scope: str) -> bool:

@@ -1,9 +1,10 @@
-"""管理画面のセッション。**署名付き Cookie 1 枚だけ。**
+"""Sessions for the admin interface: one signed cookie and nothing else.
 
-サーバ側にセッション表を持たない。持つと、resolver / minter / admin を別プロセスで
-動かす設計と噛み合わなくなる（共有ストアが要る）。**Cookie に入れるのは主体の
-識別子と期限だけ**で、到達範囲は毎回 Client 表から引き直す——組織の統廃合や鍵の
-失効が、次のリクエストから効くようにするため。
+There is no session table on the server. Having one would need a shared store, which
+does not fit running the resolver, the minter and the admin interface as separate
+processes. The cookie holds only the principal and an expiry; the reach is read from the
+Client table on each request, so a merger or a revoked credential takes effect from the
+next one.
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ def issue(subject: str, *, secret: str, ttl: int, extra: dict | None = None) -> 
 
 
 def read(token: str, *, secret: str) -> dict | None:
-    """壊れていても期限切れでも **None を返す**（呼び出し側でログインへ送る）。"""
+    """Return None for anything broken or expired; the caller sends them to sign in."""
     try:
         return jwt.decode(
             token, secret, algorithms=[ALGORITHM], options={"require": ["exp", "iat", "sub"]}
@@ -45,10 +46,10 @@ def set_cookie(response, token: str, *, ttl: int, secure: bool) -> None:
         COOKIE,
         token,
         max_age=ttl,
-        httponly=True,       # JS から読めない
-        samesite="lax",      # 外部サイトからの遷移では送らない（CSRF の面）
-        secure=secure,       # HTTPS のときだけ送る
-        path="/admin",       # **API には送らない。** 用途を混ぜない
+        httponly=True,       # not readable from JavaScript
+        samesite="lax",      # not sent when another site links here (CSRF)
+        secure=secure,       # only sent over HTTPS
+        path="/admin",       # never sent to the API: the two are kept apart
     )
 
 

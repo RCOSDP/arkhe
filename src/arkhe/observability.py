@@ -1,21 +1,22 @@
-"""運用のための記録。**構造化ログと、要求ごとの識別子。**
+"""Records for running the service: structured logs and a per-request identifier.
 
-無かったので、障害時に追う材料が DB を直接見る以外に無かった。
+There were none, so during an incident there was nothing to follow except the database.
 
-## 何を出し、何を出さないか
+What is logged, and what is not
 
-出すのは**追跡に要る最小限**——要求 ID・経路・状態・所要時間・接続元・主体。
-本文もヘッダも出さない。`Authorization` や `X-Forwarded-User` が混じると、
-**ログが認証情報の置き場になる**。
+The minimum needed to follow a request: its id, the path, the status, how long it took,
+the caller and the principal. No bodies and no headers. An Authorization or
+X-Forwarded-User header in the log would turn the log into a place credentials are kept.
 
-失敗の理由は利用者に返さない（総当たりの手掛かりになる）が、**ここには残す**。
-「鍵が期限切れ」なのか「組織が停止中」なのかを、運用者は知れなければならない。
+The reason a request failed is not returned to the caller, since it helps guessing, but
+it is kept here. An operator has to be able to tell an expired credential from a stopped
+organisation.
 
-## 要求 ID
+The request id
 
-前段が `X-Request-Id` を付けていればそれを使い、無ければ作る。応答にも返す
-ので、利用者が「この ID で調べてほしい」と言える。**長さを切る**——前段が
-何を入れてくるか分からないため。
+If a proxy set X-Request-Id it is used, otherwise one is made. It comes back in the
+response, so someone can say "look up this id". Its length is capped, because there is
+no telling what a proxy will send.
 """
 
 from __future__ import annotations
@@ -37,7 +38,7 @@ logger = logging.getLogger("arkhe")
 
 
 class _JsonFormatter(logging.Formatter):
-    """1 行 1 レコードの JSON。**集約基盤に渡す前提**で、人が読む整形はしない。"""
+    """One JSON record per line, meant for a log collector rather than for reading."""
 
     def format(self, record: logging.LogRecord) -> str:
         payload = {
@@ -57,7 +58,7 @@ class _JsonFormatter(logging.Formatter):
 
 
 def configure(level: str = "INFO") -> None:
-    """**アプリの出力先を 1 つに決める。** uvicorn の設定には触らない。"""
+    """Decide where this application logs. uvicorn's own settings are left alone."""
     if logger.handlers:
         return
     handler = logging.StreamHandler(sys.stdout)
@@ -68,7 +69,8 @@ def configure(level: str = "INFO") -> None:
 
 
 def log(msg: str, **fields) -> None:
-    """記録する。**秘密を渡さないのは呼び出し側の責任**（ここでは伏せない）。"""
+    """Write a record. Keeping secrets out of it is the caller's responsibility;
+    nothing is masked here."""
     logger.info(msg, extra={"fields": fields})
 
 
@@ -81,7 +83,7 @@ def install(app: FastAPI) -> None:
         try:
             response = await call_next(request)
         except Exception:
-            # **握り潰さない。** 記録して、そのまま上げる。
+            # Nothing is swallowed: record it and re-raise.
             logger.exception(
                 "unhandled", extra={"fields": {
                     "method": request.method, "path": request.url.path}}
@@ -90,8 +92,9 @@ def install(app: FastAPI) -> None:
         finally:
             REQUEST_ID.reset(token)
         took = int((time.perf_counter() - started) * 1000)
-        # 解決は毎回来るので、成功した解決は情報量が少ない——それでも残すのは、
-        # **「配った識別子が引かれているか」が運用の関心そのもの**だから。
+        # Resolution happens constantly, so a successful one says little on its own.
+        # It is still recorded, because whether the identifiers we handed out are being
+        # followed is exactly what operators care about.
         log(
             "request",
             method=request.method,

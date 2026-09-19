@@ -1,5 +1,5 @@
-"""ARK 仕様の純関数層。**Django にも DB にも依存しない。**
+"""The pure functions of the ARK specification. Nothing here touches a database.
 
-ARK 実装の難所はここに集約されている。上物（モデル・ビュー・認可）を作る前に、
-このパッケージ単体で受け入れ条件を満たすことを確かめる。
+The hard parts of implementing ARK live in this package. It satisfies the acceptance
+criteria on its own, before any models, views or authorisation are built on top.
 """

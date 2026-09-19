@@ -1,4 +1,5 @@
-"""認証・認可の失敗。**HTTP から切り離しておく**（テストを HTTP 抜きで書けるように）。"""
+"""Authentication and authorisation failures, kept away from HTTP so that they can be
+tested without it."""
 
 from __future__ import annotations
 
@@ -7,7 +8,7 @@ from arkhe.errors import ApiError
 
 
 class AuthError(ApiError):
-    """401。資格情報が無い・不正・期限切れ。"""
+    """401: the credentials are missing, wrong or expired."""
 
     status = 401
 
@@ -17,12 +18,13 @@ class AuthError(ApiError):
 
 
 class UnregisteredSubject(AuthError):
-    """認可サーバのトークンは正しいが、その主体が台帳に無い。
+    """The token from the authorisation server is valid, but the principal is not in
+    the ledger.
 
-    **AuthError と区別するのは、記録に残す価値がここだけ違うから。**
-    署名検証を通った後なので `subject` は認可サーバが書いた値であり、
-    運用者が登録するときにそのまま写せる——`client_id` の綴り違いは、
-    この構成でいちばん多い詰まりどころである。
+    It is distinguished from AuthError because only here is the record worth keeping.
+    The signature has been verified, so subject is what the authorisation server wrote
+    and an operator can copy it when registering. A misspelt client_id is the most
+    common way this setup gets stuck.
     """
 
     def __init__(self, subject: str, issuer: str = ""):
@@ -32,13 +34,13 @@ class UnregisteredSubject(AuthError):
 
 
 class Forbidden(ApiError):
-    """403。認証はできたが、その操作・その名前空間には届かない。"""
+    """403: authenticated, but out of reach of this operation or namespace."""
 
     status = 403
 
 
 class InsufficientScope(Forbidden):
-    """403 insufficient_scope。**足りない scope を明示する**（クライアントが直せるように）。"""
+    """403 insufficient_scope, naming the missing scope so the client can fix it."""
 
     def __init__(self, required: str):
         self.required = required
