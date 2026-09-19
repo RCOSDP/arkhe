@@ -1,8 +1,8 @@
-"""台帳を組む画面——NAAN、組織、名前空間。
+"""The screens that build the ledger: NAANs, organisations and namespaces.
 
-**画面から変えられるのは、宣言と運用の設定だけ。** ARK の行も shoulder の
-綴りも変えられない——変えられると、`NR` を宣言しているはずの体系で名前が
-振り直せることになる。
+What can be changed from a screen is what is declared and how things are run. Neither an
+ARK row nor the spelling of a shoulder can be: if they could, names could be reassigned
+in a scheme that declares NR.
 """
 
 from __future__ import annotations
@@ -39,16 +39,17 @@ from arkhe.domain import admin_ops as ops
 from arkhe.domain import authz
 from arkhe.settings import get_settings
 
-# ------------------------------------------------------------------ 委譲の構造
+# ------------------------------------------------------- The structure of delegation
 
 
 @router.get("/", response_class=HTMLResponse, name="admin_overview")
 def overview(request: Request, principal: AdminPrincipal, session: Db):
     naans = _visible_naans(session, principal)
     for n in naans:
-        # **リレーション名（`n.managers`）には代入しない。** 代入すると SQLAlchemy は
-        # 「この Naan の子はこれで全部」と解釈し、**一覧から外した組織の naan を
-        # NULL に更新する**。表示のための絞り込みがデータを壊す。別名に持つ。
+        # Do not assign to the relationship itself (n.managers). SQLAlchemy would
+        # read that as "these are all the children of this Naan" and set the naan of
+        # every organisation left out to NULL: filtering for display would destroy
+        # data. It is kept under another name.
         stmt = (
             select(Manager)
             .where(Manager.naan == n.naan)
@@ -70,9 +71,9 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
             else []
         )
 
-    # **見えている shoulder の分だけ数える。** 以前は `ark` 全体を毎回集計して
-    # いたので、ARK が増えるほど画面が重くなった（`Seq Scan on ark`）。
-    # `ix_ark_shoulder_created` が効く形にしてある。
+    # Count only the shoulders that are visible. This used to aggregate the whole ark
+    # table on every request, so the page got slower as ARKs accumulated (a sequential
+    # scan). It is written so that ix_ark_shoulder_created applies.
     visible = [sh.id for n in naans for m in n.visible_managers for sh in m.shoulders]
     visible += [sh.id for n in naans for sh in n.visible_orphans]
     counts = (
@@ -95,14 +96,14 @@ def overview(request: Request, principal: AdminPrincipal, session: Db):
     )
 
 
-# --------------------------------------------------------- 台帳を組む操作
+# ------------------------------------------------------ Building the ledger
 #
-# **画面から編集できるのは、宣言と運用の設定だけ。** ARK の行も shoulder の
-# 綴りも、画面からは変えられない——変えられてしまうと、`NR` を宣言している
-# はずの体系で名前が振り直せることになる。
+# What can be edited from a screen is what is declared and how things are run. Neither
+# an ARK row nor the spelling of a shoulder can be edited here: if they could, names
+# could be reassigned in a scheme that declares NR.
 #
-# 誰が何を変えられるかは `domain.admin_ops` の判定をそのまま使う。ここで
-# 別の判定を書くと、ボタンは出ないが POST は通る、という穴になる。
+# Who may change what comes from domain.admin_ops. Writing another decision here would
+# leave the hole where the button is hidden but the POST still works.
 
 
 @router.get("/naan/new", response_class=HTMLResponse)
@@ -138,7 +139,7 @@ def naan_create(
         is_authoritative=bool(authoritative), redirect=redirect.strip(),
     )
     session.flush()
-    # **登録の時点で決められるようにする。** 後回しにすると掛け忘れが残る。
+    # It can be decided at registration. Left until later, some are never applied.
     if rules:
         ops.set_naan_policy(
             session, principal, naan=naan.strip(),
@@ -153,9 +154,10 @@ def naan_create(
 @router.get("/naan/{naan}", response_class=HTMLResponse)
 def naan_edit(request: Request, principal: AdminPrincipal, session: Db, naan: str):
     obj = session.get(Naan, naan)
-    # **開ける条件と保存できる条件を揃える。** `reaches_naan` だけだと組織管理者にも
-    # 開けてしまい、編集できるように見えるフォームが保存で 403 になる。
-    # 出し分けと認可がずれているのと同じことなので、ここで揃える。
+    # Opening and saving are allowed under the same conditions. With reaches_naan
+    # alone an organisation administrator could open it, and a form that looks editable
+    # would answer 403 on save, which is the same drift between display and
+    # authorisation.
     if obj is None or not principal.is_naan_wide or not principal.reaches_naan(naan):
         raise _refuse(request, "e.out_of_reach_naan")
     return _page(request, principal, "naan_form.html", "overview", naan=obj,
@@ -179,10 +181,12 @@ def naan_save(
     hold_reason: Annotated[str, Form()] = "",
     hold_release: Annotated[str, Form()] = "",
 ):
-    """**NAA ポリシーは名前空間を配る側の宣言。** NAAN 単位以上でしか変えられない。
+    """The NAA policy is declared by whoever hands out the namespace, so it can only
+    be changed at NAAN level or above.
 
-    この名前空間の決まり（入り方・自己登録・scope の上限）もここで決める。
-    **原則をここに置く**——組織が増えると 1 つずつ掛けるのが現実的でなくなる。
+    The rules for this namespace, how principals get in, whether they may self-register
+    and the ceiling on scopes, are decided here too. They belong at this level: applying
+    them per organisation does not scale.
     """
     ops.set_na_policy(session, principal, naan=naan, policy=policy.strip())
     if rules:
@@ -207,10 +211,10 @@ def naan_save(
 
 
 def _apply_hold(session, principal, *, kind, key, days: int, reason: str, release: str):
-    """画面のフォームから保留を掛ける／外す。**CLI と同じ `admin_ops` を呼ぶ。**
+    """Set or lift a hold from the form. It calls the same admin_ops as the CLI.
 
-    日数が 0 なら何もしない——保存のたびに「掛け直す」ことになると、
-    期限が延び続けて恒久になる。
+    Zero days does nothing: re-applying it on every save would keep pushing the expiry
+    out until the hold was permanent.
     """
     if release:
         ops.release_hold(session, principal, kind=kind, key=key)
@@ -254,8 +258,8 @@ def manager_create(
         quota_per_day=int(quota) if quota.strip() else None,
     )
     session.flush()
-    # **迎える時点で制限を決められるようにする。** 後から掛け直す運用にすると、
-    # 必ず掛け忘れが残る。
+    # Restrictions can be decided while onboarding. Left until later, some of them
+    # are never applied.
     if policy:
         ops.set_org_policy(
             session, principal, manager_id=m.id,
@@ -277,8 +281,8 @@ def manager_edit(request: Request, principal: AdminPrincipal, session: Db, manag
         request, principal, "manager_form.html", "overview",
         manager=m, naans=[], levels=list(CommitmentLevel),
         mechanisms=ops.MECHANISMS, scopes=authz.SCOPES,
-        # **NAAN 側で既に絞られている分を見せる。** 見せないと、組織側で
-        # 選んだのに効かない項目が出て、設定が効いていないように見える。
+        # Show what the NAAN already narrows. Otherwise the organisation can choose
+        # something that has no effect, and the setting looks broken.
         naan_policy=ops.policy_for(session.get(Naan, m.naan), None),
     )
 
@@ -296,9 +300,11 @@ def manager_save(
     max_scopes: Annotated[list[str], Form()] = None,
     policy: Annotated[str, Form()] = "",
 ):
-    """**約束は組織自身のもの**なので、組織管理者も自組織の水準を変えられる。
+    """The promise belongs to the organisation, so its administrator can restate the
+    level.
 
-    採番上限はそうではない（配った側が課すもの）。判定は `admin_ops` 側にある。
+    The minting quota does not: it is imposed by whoever handed out the namespace. The
+    decision is in admin_ops.
     """
     if commitment:
         ops.set_commitment(session, principal, manager_id=manager_id, level=commitment)
@@ -307,8 +313,8 @@ def manager_save(
             session, principal, manager_id=manager_id,
             quota_per_day=int(quota) if quota.strip() else None,
         )
-        # `policy` はこのフォームが制限欄を出したという印。**出していない画面から
-        # 送られた空値で、既存の制限を消さないため。**
+        # policy marks that this form showed the restriction fields, so that an empty
+        # value from a form that did not show them cannot clear them.
         if policy:
             ops.set_org_policy(
                 session, principal, manager_id=manager_id,
@@ -378,7 +384,7 @@ def shoulder_save(
     hold_reason: Annotated[str, Form()] = "",
     hold_release: Annotated[str, Form()] = "",
 ):
-    """**retired からは戻せない。** その判定は `admin_ops` 側が持っている。"""
+    """There is no way back from retired. That decision lives in admin_ops."""
     sh = session.get(Shoulder, shoulder_id)
     if sh is None:
         raise _refuse(request, "e.out_of_reach_shoulder")
@@ -388,8 +394,8 @@ def shoulder_save(
             minter=minter.strip(), about=about.strip(), note=note.strip(),
         )
     elif about.strip() != sh.about or minter.strip() != sh.minter:
-        # 状態を変えずに案内だけ直す経路。**内部ホスト名を入れてしまったときに、
-        # ここから差し替えられる**必要がある。
+        # A path that changes the guidance without changing the state, so that an
+        # internal host name put there by mistake can be replaced.
         ops.set_shoulder_status(
             session, principal, shoulder_id=shoulder_id, status=sh.status,
             minter=minter.strip(), about=about.strip(),
@@ -408,13 +414,13 @@ def shoulder_save(
 
 
 
-# ------------------------------------------------------------ 保留中の転送
+# --------------------------------------------------------- Redirection on hold
 #
-# **期限つきでも、目に見えないと恒久化する。** 掛けた人が忘れても、一覧に
-# 残っていれば誰かが気づく。
+# Even with an expiry, a hold nobody can see becomes permanent. Whoever set it may
+# forget, but on a list someone else notices.
 
 
 @router.get("/holds", response_class=HTMLResponse)
 def holds(request: Request, principal: AdminPrincipal, session: Db):
-    """今かかっている保留を、層をまたいで 1 枚に並べる。"""
+    """List the holds in force across all three levels on one page."""
     return _page(request, principal, "holds.html", "holds", holds=ops.held(session, principal))

@@ -1,10 +1,11 @@
-"""統計の文言。台帳を数えた結果。
+"""Wording for the statistics: what counting the ledger produced.
 
-**接頭辞は `stat.`。** `st.` は既に shoulder の状態（採番可・予約・委譲・引退）が
-使っている——重複は起動時に落ちるが、**落ちない紛らわしさのほうが後で効く**。
+The prefix is stat. st. is already used by the shoulder states (mintable, reserved,
+delegated, retired). A duplicate key fails at startup, but confusion that does not fail
+is what costs later.
 
-**訳の対を同じファイルに置く。** 片方だけ足したのが差分で見える
-——起動時の検査に頼るのは最後の砦であって、最初の砦ではない。
+Both languages live in one file, so that adding to only one shows up in the diff. The
+check at startup is the last line of defence, not the first.
 """
 
 from __future__ import annotations
