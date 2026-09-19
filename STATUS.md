@@ -15,7 +15,7 @@
 
 | | |
 | --- | --- |
-| 版 | **0.13.0**（2026-09-19 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
+| 版 | **0.14.0**（2026-09-19 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
 | テスト | **すべて green**（`uv run pytest -q`）。**通しの検査は別枠**（`uv run pytest -m e2e`——docker で PostgreSQL を立て、minter と resolver を `uvicorn` で建てて HTTP で叩く。`check.sh` の手順 5） |
 | 静的検査 | `ruff check src tests clients` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語 |
@@ -31,7 +31,7 @@
 | ARK 仕様の純関数層 | NOID 生成、検査桁、shoulder 分割、正規化・インフレクション | `arkspec/` |
 | 解決 | 完全一致 → 祖先 passthrough → 検査桁 → shoulder 委譲 → 404／取次。`?` `??` `?info` `?json` | `domain/resolution.py` |
 | 採番 | 衝突は握りつぶさず数えて採り直す。冪等鍵（`request_id`）、一括採番、quota | `domain/minting.py` |
-| 公開と取り下げ | **公開前として採れ、公開は取り下げて出し直せる。** 削除は戻せない。公開前を解決するかはリゾルバの置き場所で決まる（閉域は解決する）。取り下げた名前は二度と採らない | `domain/admin_ops.py` |
+| 公開と取り下げ | **公開前として採れ、公開は取り下げて出し直せる。** **未公開なら一括で捨てられる**（`/api/delete/bulk`——採るのと同じ安さでなければ放置された番号が残る。一度でも公開した名前が 1 つでも混じれば全体を断る）。 削除は戻せない。公開前を解決するかはリゾルバの置き場所で決まる（閉域は解決する）。取り下げた名前は二度と採らない | `domain/admin_ops.py` |
 | 取り込み | **外で採番された ARK を台帳に載せる**（`/api/import`）。名前は first-digit 規約でshoulder を 1 つだけ選び、**総当たりで「入る shoulder」を探さない**。scope は `ark:import` | `api/mint.py` |
 | 委譲 | shoulder の 4 状態、`delegated` は `307` で行き先を返す（**プロキシしない**） | `domain/admin_ops.py` |
 | 転送の保留 | ARK / shoulder / NAAN を**期限つきで**止める。解決は止めない（`200` と記述） | `domain/resolution.py` |

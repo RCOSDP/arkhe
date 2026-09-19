@@ -8,6 +8,16 @@
 
 ## [未リリース]
 
+## [0.14.0] — 2026-09-19
+
+**捨てるのを、採るのと同じ安さにした版。**
+
+予約でまとめて採るのは実際の使い方で、番号は審査中の対象にときに何年も預けられる。
+その一括が取りやめになったとき、これまでは ARK ごとに 1 リクエスト必要で、**それは
+実際には誰も消さない**ということである。残るのは、予約という仕組みが避けようとして
+いた当の「放置された番号」。**安い経路の範囲は、失われるもので決まる**——誰にも
+見られていない名前だけが通る。
+
 ### 追加
 
 - **`POST /api/delete/bulk`**（`ark:delete`）と、複数 ARK・標準入力を受ける
@@ -1634,7 +1644,8 @@ BREAKING CHANGE: `ark` に `first_published_at` が増える。`ark:unpublish` s
   `domain/resolution.py`）は無改造で運べ、**97 本のテストがそのまま通った。**
 - `arkspec/` の一部は Internet Archive の arklet（MIT）から派生。NOTICE を参照。
 
-[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.13.0...HEAD
+[未リリース]: https://github.com/RCOSDP/arkhe/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.14.0
 [0.13.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.13.0
 [0.12.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.1
 [0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0

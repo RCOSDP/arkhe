@@ -9,6 +9,16 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-09-19
+
+**The release that made throwing away as cheap as minting.**
+
+Reserving in bulk is a way of working — numbers go to objects that are still under
+review, sometimes for years — and until now abandoning such a batch meant one request per
+ARK, which in practice means nobody does it. What is left behind is exactly the dead
+numbers the reservation rule exists to avoid. The cheap path is bounded by what is being
+lost: it is only for names nobody has ever seen.
+
 ### Added
 
 - **`POST /api/delete/bulk`** (`ark:delete`), and `arkhe ark delete` now takes several
@@ -1774,7 +1784,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.14.0
 [0.13.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.13.0
 [0.12.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.1
 [0.12.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.12.0
