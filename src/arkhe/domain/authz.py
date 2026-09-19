@@ -1,10 +1,12 @@
-"""認可の中核。**shoulder はリクエストで受け取らず主体から引く。**
+"""The core of authorisation. The shoulder comes from the principal, never from the
+request.
 
-これ 1 点で、越境（R1）と多数組織の振り分けが同時に片づく。arklet は
-`{naan, shoulder}` を本文で受けて NAAN 単位でしか認可していなかったため、
-**設定ミスでも詐称でも他組織の名前空間に採番できた**。
+That one point settles both crossing organisational boundaries (R1) and routing between
+many organisations. arklet took {naan, shoulder} from the request body and authorised
+only per NAAN, so a misconfiguration or a forged field let anyone mint into another
+organisation's namespace.
 
-認証機構（apikey / oauth2 / oidc）が何であっても、判断はここ 1 か所に集まる。
+Whatever the mechanism, apikey, oauth2 or oidc, the decision is made here.
 """
 
 from __future__ import annotations
@@ -39,11 +41,11 @@ class Invalid(ApiError):
 
 
 class Conflict(ApiError):
-    """**値も権限も正しいが、対象が今その状態にない。**
+    """The values and the permissions are right, but the row is not in that state.
 
-    400 でも 403 でもないのは、**送り直せば通るとは限らないが、送り方が
-    間違っているわけでもない**から——公開してしまった ARK を消そうとした、
-    子のある名前を先に消そうとした、といった場合がここに来る。
+    It is neither 400 nor 403 because sending it again may not help, and yet nothing was
+    sent wrongly. Deleting an ARK that has been published, or deleting a name before its
+    parts, arrives here.
     """
 
     status = 409
@@ -54,17 +56,18 @@ class Throttled(ApiError):
 
 
 class ShoulderDelegated(Forbidden):
-    """**採番はここではなく外部 minter で行う。** 行き先を添えて返す。
+    """Minting happens at an outside minter, not here. The answer says where.
 
-    プロキシしない——プロキシすると (1) 名前空間を誰が消費したか二重管理になり、
-    (2) 応答が失われたとき**誰も指していない ARK** が両側に残りうる。ARK は
-    NR を宣言する識別子なので、それは取り返しがつかない。
+    Nothing is proxied. Proxying would mean tracking who consumed the namespace in two
+    places, and a lost response could leave an ARK naming nothing on either side. An ARK
+    declares NR, so that cannot be taken back.
     """
 
     def __init__(self, shoulder: Shoulder):
         self.minter = shoulder.minter
         if shoulder.minter:
-            # **機械が叩ける口がある。** 307 で案内し、代理では呼ばない。
+            # There is an endpoint a machine can call. Point at it with 307 rather
+            # than calling on its behalf.
             super().__init__(
                 errors.SHOULDER_DELEGATED,
                 shoulder=shoulder.shoulder,
@@ -72,10 +75,11 @@ class ShoulderDelegated(Forbidden):
                 note=shoulder.note,
             )
         else:
-            # **叩ける口が無い**（閉域など）。307 で人向けのページへ送ると、
-            # クライアントはそこへ POST しにいく——**403 で止め、案内は本文に置く**。
-            # `about` は**あれば**載せる。無い委譲も正当で、その場合は
-            # 「ここでは採番しない」とだけ答える。
+            # There is no endpoint, on a closed network for instance. A 307 to a page
+            # for people would make clients POST to that page, so it stops with 403 and
+            # puts the guidance in the body. about is included when there is one; a
+            # delegation without one is valid, and then the answer is simply that we do
+            # not mint here.
             extra = {"about": shoulder.about} if shoulder.about else {}
             super().__init__(
                 errors.SHOULDER_DELEGATED_UNREACHABLE,
@@ -85,9 +89,9 @@ class ShoulderDelegated(Forbidden):
             )
 
 
-#: arkhe が実際に検査する scope。**ここが語彙の全体。**
-#: 画面の選択肢も認可サーバに登録する client scope も、これに揃える——
-#: 散らばると「登録できるのに検査されない scope」が生まれる。
+#: The scopes arkhe actually checks; this is the whole vocabulary. The choices on the
+#: screens and the client scopes registered at an authorisation server follow it. Spread
+#: across several places, a scope could be registrable without being checked anywhere.
 SCOPES = (
     "ark:mint", "ark:update", "ark:read", "ark:tombstone", "ark:hold", "ark:import",
     "ark:delete", "ark:unpublish", "ark:purge",
@@ -100,15 +104,16 @@ def require_scope(principal: Principal, scope: str) -> None:
 
 
 def shoulder_for(session: Session, principal: Principal, requested: str | None) -> Shoulder:
-    """この主体が採番に使える shoulder を決める。
+    """Decide which shoulder this principal mints into.
 
-    **リクエストの `shoulder` は任意。** 省略時は manager の `default_shoulder`。
-    指定された場合は**その主体の到達範囲に含まれるかを検証する**だけで、範囲を
-    広げる手段にはしない。
+    The shoulder in the request is optional. Omitted, the organisation's
+    default_shoulder is used; named, it is only checked against the principal's reach
+    and never widens it.
     """
     if principal.is_naan_wide:
-        # NAAN 配下（system は全 NAAN）ならどれでも使えるが、**明示が必須**
-        # ——既定を持たないので、誤って他組織の shoulder に打つ事故を防ぐ。
+        # A NAAN-level principal (or the system administrator, over every NAAN) may
+        # use any of them, but has to name one: with no default, nobody mints into
+        # another organisation's shoulder by accident.
         if not requested:
             raise Invalid(errors.SHOULDER_REQUIRED, authority=principal.authority)
         stmt = select(Shoulder).where(Shoulder.shoulder == requested)
@@ -118,8 +123,8 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
         if not found:
             raise Invalid(errors.SHOULDER_UNKNOWN, shoulder=requested)
         if len(found) > 1:
-            # system は全 NAAN に届くので、同じ shoulder 文字列が複数 NAAN に
-            # ありうる。**どれか 1 つを勝手に選ばない。**
+            # The system administrator reaches every NAAN, so the same shoulder
+            # string can exist under several. None of them is chosen for you.
             raise Invalid(
                 errors.SHOULDER_AMBIGUOUS,
                 shoulder=requested,
@@ -133,8 +138,8 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
     if manager is None or not manager.active:
         raise Forbidden(errors.NO_ORGANISATION)
 
-    # **主体が shoulder に固定されている場合はそれだけ。**
-    # 同じ shoulder を複数の主体が使うのは正常（鍵は共有しない）。
+    # A principal pinned to a shoulder uses only that one. Several principals sharing
+    # a shoulder is ordinary; what they do not share is a credential.
     if principal.shoulder_id is not None:
         fixed = session.get(Shoulder, principal.shoulder_id)
         if fixed is None:
@@ -156,26 +161,27 @@ def shoulder_for(session: Session, principal: Principal, requested: str | None) 
         )
     )
     if found is None:
-        # **他組織の shoulder を指定しても、存在の有無を漏らさず一律に拒む。**
+        # Naming another organisation's shoulder is refused the same way as one that
+        # does not exist, so nothing reveals which is which.
         raise Forbidden(errors.OUT_OF_REACH, target=requested)
     return found
 
 
 def assert_reaches_shoulder(session: Session, principal: Principal, shoulder: Shoulder) -> None:
-    """**既に特定できている shoulder**に、この主体が手を入れてよいか。
+    """Whether this principal may act on a shoulder that has already been identified.
 
-    `shoulder_for` は「名前から shoulder を選ぶ」口で、こちらは「選ばれた
-    shoulder を認可する」口。**判定の中身は同じ**——上位の権威は下位を覆う:
+    shoulder_for chooses a shoulder from a name; this authorises one that has been
+    chosen. The decision is the same, with a wider authority covering a narrower one:
 
-      system  … 全 NAAN・全 shoulder
-      naan    … その NAAN の下の全 shoulder
-      manager … 自組織の shoulder だけ
-      shoulder に固定された主体 … その 1 つだけ
+      system   every NAAN and every shoulder
+      naan     every shoulder under that NAAN
+      manager  the organisation's own shoulders
+      pinned   that one shoulder
 
-    分けてあるのは、取り込み（`import_minted`）が**名前から shoulder を決める**
-    ため。`shoulder_for` の探し方（shoulder 文字列で全 NAAN を検索）だと、
-    同じ綴りの shoulder が複数 NAAN にあるときに曖昧になる——取り込みは ARK が
-    NAAN を持っているので、**曖昧になりようがない引き方**をしてから認可する。
+    They are separate because import_minted derives the shoulder from the name. The way
+    shoulder_for searches, by shoulder string across every NAAN, is ambiguous when the
+    same spelling exists under several. An import carries the ARK, which carries the
+    NAAN, so it can look the shoulder up unambiguously and then authorise it.
     """
     if not principal.reaches_naan(shoulder.naan):
         raise Forbidden(errors.OUT_OF_REACH, target=shoulder.naan)
@@ -186,16 +192,16 @@ def assert_reaches_shoulder(session: Session, principal: Principal, shoulder: Sh
             raise Forbidden(errors.OUT_OF_REACH, target=shoulder.shoulder)
         return
     if principal.manager_id is None or shoulder.manager_id != principal.manager_id:
-        # **存在の有無を漏らさず一律に拒む**（`shoulder_for` と同じ扱い）。
+        # Refused without revealing whether it exists, as in shoulder_for.
         raise Forbidden(errors.OUT_OF_REACH, target=shoulder.shoulder)
 
 
 def assert_naan_is_ours(session: Session, naan: str) -> None:
-    """**この台帳が権威を持つ NAAN か。**
+    """Whether this ledger is authoritative for that NAAN.
 
-    取り込みは「この名前の記録を引き受ける」と宣言する操作なので、
-    **取り次いでいるだけの NAAN に対して行ってはいけない**——他所の名前空間の
-    保管者を名乗ることになる。主体の到達範囲とは別の話で、両方要る。
+    An import declares that we take on the record for this name, so it must not happen
+    for a NAAN we only forward: that would claim to hold someone else's namespace. It is
+    separate from the principal's reach, and both are required.
     """
     row = session.get(Naan, naan)
     if row is None or not row.is_authoritative:
@@ -203,7 +209,7 @@ def assert_naan_is_ours(session: Session, naan: str) -> None:
 
 
 def assert_shoulder_mintable(shoulder: Shoulder) -> None:
-    """**リザーブ枠・委譲・引退した shoulder では採番しない。**"""
+    """A reserved, delegated or retired shoulder does not mint."""
     if shoulder.status == ShoulderStatus.ACTIVE:
         return
     if shoulder.status == ShoulderStatus.DELEGATED:
@@ -217,10 +223,11 @@ def assert_shoulder_mintable(shoulder: Shoulder) -> None:
 
 
 def assert_may_touch(session: Session, principal: Principal, ark: Ark) -> None:
-    """既存 ARK に触れてよいか。
+    """Whether an existing ARK may be touched.
 
-    M3: **arklet の `update` は shoulder を参照すらしていなかった**ため、同一 NAAN
-    内の任意の ARK の解決先を書き換えられた。採番より重い——**永続識別子の乗っ取り**。
+    M3: arklet's update did not look at the shoulder at all, so the target of any ARK
+    under the same NAAN could be rewritten. That is worse than minting: it is taking
+    over a persistent identifier.
     """
     if not principal.reaches_naan(ark.naan):
         raise Forbidden(errors.OUT_OF_REACH, target=ark.ark, reason="another NAAN")
@@ -232,7 +239,7 @@ def assert_may_touch(session: Session, principal: Principal, ark: Ark) -> None:
 
 
 def visible_arks(session: Session, principal: Principal, keys: list[str]):
-    """M4: 読み取りも到達範囲に絞る。"""
+    """M4: reads are bounded by reach too."""
     stmt = select(Ark).where(Ark.ark.in_(keys)).options(selectinload(Ark.shoulder))
     if not principal.is_system:
         stmt = stmt.where(Ark.naan == principal.naan)
@@ -244,13 +251,13 @@ def visible_arks(session: Session, principal: Principal, keys: list[str]):
 
 
 def fetch_for_update(session: Session, principal: Principal, keys: list[str]) -> dict[str, Ark]:
-    """M5: **ARK をキーにした辞書で引き当てる。**
+    """M5: match rows by ARK through a dictionary.
 
-    arklet は順序不定の queryset を入力と `zip` しており、**別の ARK に他レコードの
-    値を書き込みうる**データ破壊バグがあった。件数が一致しない場合も黙って
-    切り詰められていた。
+    arklet zipped an unordered queryset with the input, which could write one row's
+    values onto a different ARK, and silently truncated when the counts did not match.
 
-    **1 件でも欠けるか範囲外なら全体を失敗させる**（部分適用しない）。
+    One row missing or out of reach fails the whole request; nothing is applied in
+    part.
     """
     found = {a.ark: a for a in visible_arks(session, principal, keys)}
     missing = [k for k in keys if k not in found]
@@ -260,10 +267,12 @@ def fetch_for_update(session: Session, principal: Principal, keys: list[str]) ->
 
 
 def assert_within_quota(session: Session, principal: Principal, count: int = 1) -> None:
-    """R3: 組織単位の 1 日あたり採番上限。**一組織の暴走を止める。**
+    """R3: the daily minting quota, per organisation. It stops one of them running
+    away.
 
-    `Manager.quota_per_day` が null なら無制限。break-glass は manager を持たない
-    ので対象外——障害対応で止まっては困る。
+    A null Manager.quota_per_day means no limit. A break-glass principal has no
+    organisation and is therefore exempt: it must not stop while an incident is being
+    handled.
     """
     if principal.manager_id is None:
         return
@@ -272,8 +281,8 @@ def assert_within_quota(session: Session, principal: Principal, count: int = 1) 
         return
     since = datetime.now(UTC) - timedelta(days=1)
     used = session.scalar(
-        # **数える列を名指しする**（`count(*)` にしない）。`domain.stats` と同じ約束で、
-        # 索引だけで答えられる形に寄せる。
+        # Name the column being counted rather than using count(*), as domain.stats
+        # does, so that an index can answer it.
         select(func.count(Ark.ark))
         .select_from(Ark)
         .join(Shoulder, Ark.shoulder_id == Shoulder.id)
@@ -296,15 +305,16 @@ def record_sign_in(
     ok: bool = True,
     **detail,
 ) -> None:
-    """入退室を残す。**到達範囲で間引かない。**
+    """Record people arriving and leaving, whoever they are.
 
-    `audit()` は NAAN 単位以上の操作だけを残すが、**入退室は誰のものでも残す**。
-    「誰がいつ入ったか」は、その人が何をしたかと同じくらい後から要る——
-    とくに**失敗したログイン**は、成功したものより先に見たい記録である。
+    audit() keeps only operations at NAAN level and above; these are kept for everyone.
+    Who signed in and when is needed later as much as what they did, and a failed
+    sign-in is the record people want to read first.
 
-    主体が特定できない失敗（無い ID、間違ったパスワード）も残す。ただし
-    **打ち込まれた値をそのまま残さない**——ログが利用者名の一覧になるのは
-    避けたいので、あるのは「その ID で失敗した」という事実だけにする。
+    Failures where the principal cannot be identified, an unknown username or a wrong
+    password, are recorded too, but not with everything that was typed: the log should
+    not become a list of usernames, so what remains is that an attempt under that name
+    failed.
     """
     session.add(
         AuditEvent(
@@ -321,18 +331,21 @@ def record_sign_in(
 def record_unknown_subject(
     session: Session, *, subject: str, issuer: str = "", ip: str = ""
 ) -> None:
-    """認可サーバから来たが登録の無い主体を残す。**同じ主体で行を増やさない。**
+    """Record a principal that arrived from the authorisation server without a
+    registration, without adding a row per attempt.
 
-    `client_id` の綴り違いは、認可サーバに寄せた構成でいちばん多い詰まりどころ
-    である。**弾いた瞬間に正しい文字列は手元にある**（`azp` は署名検証を通って
-    いる）ので、捨てずに残せば運用者は打ち直さずに登録できる。
+    A misspelt client_id is the most common way a deployment with an authorisation
+    server gets stuck. At the moment of refusal the exact string is in hand, since azp
+    passed signature verification, so keeping it lets an operator register without
+    retyping.
 
-    回数を数えるのは、**1 回きりなら打ち間違い、何度も来るなら設定が生きている**
-    からで、直す優先度がそれで分かる。行が増え続けることはない——認可サーバに
-    実在する client の数で頭打ちになる。
+    The count matters because one attempt is a typo while many mean something is
+    configured and running, which says how urgent it is. The table cannot grow without
+    limit: it is bounded by the number of clients that exist at the authorisation
+    server.
 
-    登録が済んだ行を消す処理は要らない。一覧は**登録の無いものだけ**を毎回
-    引き直すので、登録すればひとりでに消える。
+    Nothing has to delete rows once they are registered. The list re-reads only what is
+    unregistered, so registering removes it.
     """
     row = session.scalar(
         select(UnknownSubject).where(
@@ -350,14 +363,15 @@ def record_unknown_subject(
 def record_change(
     session: Session, principal: Principal, ark: Ark, *, action: str, before_url: str
 ) -> None:
-    """ARK の行き先が変わったことを残す。**誰が行っても残す。**
+    """Record that an ARK's target changed, whoever changed it.
 
-    `audit()` と違って到達範囲で間引かない——採番も付け替えも組織が行うので、
-    間引くと**肝心の変更が落ちる**。`NR` を宣言する体系で「この識別子は変わらない」
-    と言うなら、変えたのは何でいつ誰がやったのかを示せなければならない。
+    Unlike audit(), this is not thinned out by reach: minting and repointing are done by
+    organisations, so thinning would drop the changes that matter. A scheme that declares
+    NR and says an identifier does not change has to be able to show what changed, when,
+    and who did it.
     """
     if before_url == ark.url and action == "update":
-        return  # 行き先が変わっていないなら、履歴に残すことは無い
+        return  # nothing to record when the target did not change
     session.add(
         ArkChange(
             ark=ark.ark,
@@ -371,10 +385,10 @@ def record_change(
 
 
 def audit(session: Session, principal: Principal, action: str, target: str = "", **detail) -> None:
-    """R2: **NAAN 以上に届く操作は全件記録する。**
+    """R2: every operation that reaches NAAN level or above is recorded.
 
-    届く範囲が広いほど、後から「誰が何をしたか」を辿れる必要が高い。
-    system は全 NAAN に届くので当然含める。
+    The wider the reach, the more it matters that who did what can be traced afterwards.
+    The system administrator reaches every NAAN, so it is included.
     """
     if not principal.is_naan_wide:
         return
