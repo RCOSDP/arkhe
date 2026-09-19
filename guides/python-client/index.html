@@ -10,19 +10,19 @@
       
       
       
-        <link rel="canonical" href="https://rcosdp.github.io/arkhe/guides/admin/">
+        <link rel="canonical" href="https://rcosdp.github.io/arkhe/guides/python-client/">
       
       
-        <link rel="prev" href="../authentication/">
+        <link rel="prev" href="../admin/">
       
       
-        <link rel="next" href="../python-client/">
+        <link rel="next" href="../succession/">
       
       
         
           <link rel="alternate" href="./" hreflang="en">
         
-          <link rel="alternate" href="../../ja/guides/admin/" hreflang="ja">
+          <link rel="alternate" href="../../ja/guides/python-client/" hreflang="ja">
         
       
       
@@ -31,7 +31,7 @@
     
     
       
-        <title>Admin interface - arkhe</title>
+        <title>Python client - arkhe</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#admin-interface" class="md-skip">
+        <a href="#the-python-client" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Admin interface
+              Python client
             
           </span>
         </div>
@@ -173,7 +173,7 @@
           </li>
         
           <li class="md-select__item">
-            <a href="../../ja/guides/admin/" hreflang="ja" class="md-select__link">
+            <a href="../../ja/guides/python-client/" hreflang="ja" class="md-select__link">
               日本語
             </a>
           </li>
@@ -687,6 +687,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Admin interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -706,7 +734,7 @@
   <span class="md-ellipsis">
     
   
-    Admin interface
+    Python client
   
 
     
@@ -724,7 +752,7 @@
   <span class="md-ellipsis">
     
   
-    Admin interface
+    Python client
   
 
     
@@ -750,10 +778,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-shows" class="md-nav__link">
+  <a href="#minting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What it shows
+        Minting
       
     </span>
   </a>
@@ -761,10 +789,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reach-shapes-the-page" class="md-nav__link">
+  <a href="#a-lost-answer-does-not-cost-a-number" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reach shapes the page
+        A lost answer does not cost a number
       
     </span>
   </a>
@@ -772,82 +800,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#who-can-do-what" class="md-nav__link">
+  <a href="#a-delegated-namespace-is-reported-not-followed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Who can do what
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Who can do what">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#an-ark-all-three-tiers-each-inside-its-own-reach" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        An ARK: all three tiers, each inside its own reach
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-client-is-not-a-tier-it-is-a-combination" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A client is not a tier: it is a combination
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-guest-everyone-who-has-no-client-at-all" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The guest: everyone who has no client at all
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-namespace-naan-administrator-and-above" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A namespace: NAAN administrator and above
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#clients-and-organisations-an-organisation-may-act-inside-itself" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Clients and organisations: an organisation may act inside itself
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#getting-in" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Getting in
+        A delegated namespace is reported, not followed
       
     </span>
   </a>
@@ -855,10 +811,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#changing-settings" class="md-nav__link">
+  <a href="#refusals-carry-their-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Changing settings
+        Refusals carry their code
       
     </span>
   </a>
@@ -866,10 +822,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#internationalisation" class="md-nav__link">
+  <a href="#resolving" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Internationalisation
+        Resolving
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-else-there-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What else there is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-it-is-hand-written" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why it is hand-written
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#another-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Another language
       
     </span>
   </a>
@@ -880,34 +869,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../python-client/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Python client
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1373,10 +1334,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#what-it-shows" class="md-nav__link">
+  <a href="#minting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What it shows
+        Minting
       
     </span>
   </a>
@@ -1384,10 +1345,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reach-shapes-the-page" class="md-nav__link">
+  <a href="#a-lost-answer-does-not-cost-a-number" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reach shapes the page
+        A lost answer does not cost a number
       
     </span>
   </a>
@@ -1395,82 +1356,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#who-can-do-what" class="md-nav__link">
+  <a href="#a-delegated-namespace-is-reported-not-followed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Who can do what
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Who can do what">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#an-ark-all-three-tiers-each-inside-its-own-reach" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        An ARK: all three tiers, each inside its own reach
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-client-is-not-a-tier-it-is-a-combination" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A client is not a tier: it is a combination
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-guest-everyone-who-has-no-client-at-all" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The guest: everyone who has no client at all
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#a-namespace-naan-administrator-and-above" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        A namespace: NAAN administrator and above
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#clients-and-organisations-an-organisation-may-act-inside-itself" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Clients and organisations: an organisation may act inside itself
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#getting-in" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Getting in
+        A delegated namespace is reported, not followed
       
     </span>
   </a>
@@ -1478,10 +1367,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#changing-settings" class="md-nav__link">
+  <a href="#refusals-carry-their-code" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Changing settings
+        Refusals carry their code
       
     </span>
   </a>
@@ -1489,10 +1378,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#internationalisation" class="md-nav__link">
+  <a href="#resolving" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Internationalisation
+        Resolving
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-else-there-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What else there is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-it-is-hand-written" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why it is hand-written
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#another-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Another language
       
     </span>
   </a>
@@ -1516,7 +1438,7 @@
 
 
   
-    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/admin.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/RCOSDP/arkhe/edit/main/docs/guides/python-client.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1524,427 +1446,151 @@
   
 
 
-<h1 id="admin-interface">Admin interface<a class="headerlink" href="#admin-interface" title="Permanent link">&para;</a></h1>
-<p>The admin is <strong>operation-shaped, not table-shaped</strong>. There is no generic row editor.</p>
-<p>That is a deliberate refusal. Editing rows directly would let the interface do things
-the domain forbids — move a shoulder back out of <code>retired</code>, rewrite an <code>ark</code> primary
-key, delete a namespace. Auto-generated CRUD (sqladmin and friends) is a nicer
-database browser, and a database browser is exactly the wrong tool for a ledger whose
-value is in what it will not do.</p>
-<p>Every page calls <code>domain.admin_ops</code> or <code>domain.minting</code> — the same functions the CLI
-uses. There is no path through the interface that skips an invariant.</p>
-<h2 id="what-it-shows">What it shows<a class="headerlink" href="#what-it-shows" title="Permanent link">&para;</a></h2>
-<p><strong>Organisations</strong> — the ledger itself, as a nesting: organisation number (NAAN) → organisation →
-namespace. ARK is a scheme of handed-down namespaces, so the shape of what was handed
-down <em>is</em> the content.</p>
-<p>The page is called "Organisations" rather than "Delegation". It is the first page
-someone opens, so <strong>its heading is not a word the reader does not have yet</strong>.</p>
-<p>The terms are kept, in parentheses: "namespace (shoulder)", "number (the NAAN)",
-"Permanent; content may change (permanent-dynamic)". The plain wording comes first and
-the term follows, so a newcomer can read it as it stands and someone who knows the
-term can line it up with <a href="../../concepts/ark/">the specification</a>, the CLI and the API.
-<strong>Drop the terms and this page ends up speaking a different language from everything
-else.</strong></p>
-<p><strong>Mint an ARK</strong> — for the times one is needed by hand: a migration edge case, a
-physical object, a smoke test. Organisations normally mint through the API.</p>
-<p><strong>Users and keys</strong> — who may mint, with which key, reaching how far. What is listed
-is <strong>not the organisations themselves</strong> but their systems and their people.</p>
-<div class="admonition note">
-<p class="admonition-title">"Users" on screen is "principals" in the API and CLI</p>
-<p><strong>The readers differ, so the words do.</strong> The interface is read by whoever operates
-the service; the API and the CLI are read by whoever writes against them.</p>
-<table>
-<thead>
-<tr>
-<th>Interface</th>
-<th>API, CLI, data model</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>User</td>
-<td>Principal (<code>Client</code>)</td>
-</tr>
-<tr>
-<td>Key</td>
-<td>Credential</td>
-</tr>
-</tbody>
-</table>
-<p>"Principal" is the access-control term, which is also where the <code>Subject</code> column
-(machine / person) comes from.</p>
-</div>
-<p><strong>Held redirects</strong> — which identifiers and namespaces currently have <strong>redirection
-stopped</strong>. Holds expire on their own, but <strong>what is not visible becomes permanent</strong>: the
-person who set one may forget, and this list is how someone else notices. Only the
-redirect is stopped; resolution continues (<a href="../../concepts/invariants/">Invariants</a>).</p>
-<p><strong>Audit log</strong> — restricted to NAAN scope and wider. Who did what is information
-belonging to whoever holds the namespace; an organisation's administrator has no
-business reading another's.</p>
-<h2 id="reach-shapes-the-page">Reach shapes the page<a class="headerlink" href="#reach-shapes-the-page" title="Permanent link">&para;</a></h2>
-<p><strong>The same decision drives what is displayed and what is permitted.</strong> Splitting them
-creates the hole where a button is hidden but the URL still works.</p>
-<table>
-<thead>
-<tr>
-<th>Signed in as</th>
-<th>Sees</th>
-<th>Audit log</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>system administrator</td>
-<td>every NAAN</td>
-<td>yes</td>
-</tr>
-<tr>
-<td>NAAN administrator</td>
-<td>one NAAN, all its organisations</td>
-<td>yes</td>
-</tr>
-<tr>
-<td>organisation administrator</td>
-<td>one organisation</td>
-<td><strong>403</strong></td>
-</tr>
-</tbody>
-</table>
-<h2 id="who-can-do-what">Who can do what<a class="headerlink" href="#who-can-do-what" title="Permanent link">&para;</a></h2>
-<p><strong>Three things bind an action</strong>, and they are independent — being allowed by one does not
-excuse the others:</p>
-<ol>
-<li><strong>Reach</strong> — the three tiers above. It comes from the client's registration, never from
-   the request body or the token; a token can only <em>narrow</em> what a client may do.</li>
-<li><strong>Scope</strong> — the key for that kind of action (<code>ark:mint</code>, <code>ark:unpublish</code>, …).</li>
-<li><strong>Ceremony</strong> — a reason, and the ARK retyped, for anything that has ever been
-   published. <strong>This follows the name's history, not the actor's rank.</strong></li>
-</ol>
-<h3 id="an-ark-all-three-tiers-each-inside-its-own-reach">An ARK: all three tiers, each inside its own reach<a class="headerlink" href="#an-ark-all-three-tiers-each-inside-its-own-reach" title="Permanent link">&para;</a></h3>
-<p>Every row here goes through the same reach check, so the tiers differ only in <em>how far</em>
-they reach — never in <em>what</em> they may do.</p>
-<table>
-<thead>
-<tr>
-<th>Action</th>
-<th>Scope</th>
-<th>System</th>
-<th>NAAN</th>
-<th>Organisation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Mint, in bulk, register a qualifier</td>
-<td><code>ark:mint</code></td>
-<td>every NAAN</td>
-<td>its NAAN</td>
-<td>its own shoulder</td>
-</tr>
-<tr>
-<td>Import a name minted elsewhere</td>
-<td><code>ark:import</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td>Update, update in bulk</td>
-<td><code>ark:update</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td>Read (<code>/api/query</code>)</td>
-<td><code>ark:read</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td><strong>Publish</strong>, and publish again</td>
-<td><code>ark:mint</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td><strong>Withdraw from publication</strong></td>
-<td><code>ark:unpublish</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td><strong>Delete</strong> (not currently published)</td>
-<td><code>ark:delete</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td><strong>Purge</strong> (both steps at once)</td>
-<td><code>ark:purge</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td>Tombstone</td>
-<td><code>ark:tombstone</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-<tr>
-<td>Hold redirection for one ARK</td>
-<td><code>ark:hold</code></td>
-<td>”</td>
-<td>”</td>
-<td>”</td>
-</tr>
-</tbody>
-</table>
-<p><strong>The ceremony applies to withdrawing, deleting and purging anything that has ever been
-published</strong> — see <a href="../../concepts/invariants/#before-publication">Invariants</a>.</p>
-<h3 id="a-client-is-not-a-tier-it-is-a-combination">A client is not a tier: it is a combination<a class="headerlink" href="#a-client-is-not-a-tier-it-is-a-combination" title="Permanent link">&para;</a></h3>
-<p>The three tiers are only one axis. <strong>What a client actually is</strong> is a combination of
-three, and the most common client in practice is not a tier at all:</p>
-<table>
-<thead>
-<tr>
-<th>Axis</th>
-<th>What it decides</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>authority</code></td>
-<td>how far it reaches — the three tiers</td>
-</tr>
-<tr>
-<td><code>scopes</code></td>
-<td>what it may do; <strong>independent of the tier</strong></td>
-</tr>
-<tr>
-<td><code>shoulder_id</code></td>
-<td>pins an organisation's client to a single shoulder</td>
-</tr>
-</tbody>
-</table>
-<p><strong>A mint-only client</strong> — a repository that just asks for identifiers — is
-<code>authority=manager</code>, pinned with <code>shoulder_id</code>, holding <code>ark:mint</code> alone. That key opens
-exactly four doors:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>POST /api/mint        POST /api/mint/bulk
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>POST /api/register    POST /api/publish        ← publishing is part of ark:mint
+<h1 id="the-python-client">The Python client<a class="headerlink" href="#the-python-client" title="Permanent link">&para;</a></h1>
+<p><code>clients/python</code> in the repository is a Python client for the API this documentation
+describes. It covers every endpoint of the minter and the resolver, and it makes three
+decisions on your behalf that the API document cannot express.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>./clients/python
 </code></pre></div>
-<p>Two things follow, and both are deliberate:</p>
-<ul>
-<li><strong>It can put names into the world and take none of them back.</strong> Withdrawing, deleting
-  and purging are behind <code>ark:unpublish</code>, <code>ark:delete</code> and <code>ark:purge</code>, and it holds none
-  of them. Handing out a minting key does not hand out the power to stop a name.</li>
-<li><strong>It cannot read its own ARKs back</strong> (<code>/api/query</code> needs <code>ark:read</code>). Resolution needs
-  no authentication, so the identifiers themselves still work — this is about the ledger,
-  not about the names.</li>
-</ul>
-<p>Publishing sits with <code>ark:mint</code> because <strong>it is the second half of minting</strong>: a caller
-that reserved a name has to be able to put it out, or every draft would need a second
-key.</p>
-<h3 id="the-guest-everyone-who-has-no-client-at-all">The guest: everyone who has no client at all<a class="headerlink" href="#the-guest-everyone-who-has-no-client-at-all" title="Permanent link">&para;</a></h3>
-<p><strong>Resolution needs no authentication, and that is the point</strong> — an identifier nobody can
-resolve without a key is not a persistent identifier. The unauthenticated caller reaches:</p>
+<p>Python 3.11 or later, and one dependency, <code>httpx</code>.</p>
+<h2 id="minting">Minting<a class="headerlink" href="#minting" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arkhe_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arkhe</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">with</span> <span class="n">Arkhe</span><span class="p">(</span><span class="s2">"https://mint.example.org"</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="s2">"arkhe_..."</span><span class="p">)</span> <span class="k">as</span> <span class="n">arkhe</span><span class="p">:</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">ark</span> <span class="o">=</span> <span class="n">arkhe</span><span class="o">.</span><span class="n">mint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">"https://repo.example.ac.jp/records/42"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"A dataset"</span><span class="p">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">ark</span><span class="o">.</span><span class="n">ark</span><span class="p">)</span>          <span class="c1"># ark:99999/x9tn1qkq2g7</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">ark</span><span class="o">.</span><span class="n">published</span><span class="p">)</span>    <span class="c1"># True — a mint without reserve is published at once</span>
+</code></pre></div>
+<p><code>token=</code> takes an API key or a token from elsewhere. To use arkhe's own token endpoint
+instead, give it the client id and secret and it will fetch one when it first needs it,
+and again when it expires:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Arkhe</span><span class="p">(</span><span class="s2">"https://mint.example.org"</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="s2">"ops"</span><span class="p">,</span> <span class="n">client_secret</span><span class="o">=</span><span class="s2">"arkhes_..."</span><span class="p">,</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>      <span class="n">scope</span><span class="o">=</span><span class="s2">"ark:mint ark:read"</span><span class="p">)</span>
+</code></pre></div>
+<p>Which of these works depends on <code>ARKHE_AUTH</code>; see <a href="../authentication/">Authentication</a>.</p>
+<h2 id="a-lost-answer-does-not-cost-a-number">A lost answer does not cost a number<a class="headerlink" href="#a-lost-answer-does-not-cost-a-number" title="Permanent link">&para;</a></h2>
+<p>Minting cannot be undone, so every <code>mint()</code> carries an idempotency key and a retry sends
+the same one. The server then returns the ARK it minted the first time rather than
+minting another:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">ark</span> <span class="o">=</span> <span class="n">arkhe</span><span class="o">.</span><span class="n">mint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">"https://repo.example.ac.jp/records/42"</span><span class="p">)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">ark</span><span class="o">.</span><span class="n">resent</span>      <span class="c1"># True when this was an earlier minting coming back</span>
+</code></pre></div>
+<p>The key is generated for you, which covers a retry inside the same call. The key worth
+passing yourself is one you keep beside the record you are minting for, so that a retry
+an hour or a day later is still recognised:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">arkhe</span><span class="o">.</span><span class="n">mint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">request_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"record-</span><span class="si">{</span><span class="n">record</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<p><code>mint_many()</code> puts a key on every row, which is what makes an interrupted batch safe to
+send again: the rows that got through come back rather than being minted twice.</p>
+<p>Only calls that can be sent twice without acting twice are retried. Anything else raises
+<code>TransportError</code> and leaves the decision to you, because with no answer at all, whether
+the write happened is unknown.</p>
+<h2 id="a-delegated-namespace-is-reported-not-followed">A delegated namespace is reported, not followed<a class="headerlink" href="#a-delegated-namespace-is-reported-not-followed" title="Permanent link">&para;</a></h2>
+<p>Where minting is delegated, the server answers <code>307</code> with the other minter in
+<code>Location</code>, as <a href="../../concepts/delegation/">Delegation</a> describes. This client does not
+follow it: your credential belongs to your organisation, and an ARK minted at the other
+end is one your ledger knows nothing about.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arkhe_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">Delegated</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">arkhe</span><span class="o">.</span><span class="n">mint</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">shoulder</span><span class="o">=</span><span class="s2">"/z1"</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">except</span> <span class="n">Delegated</span> <span class="k">as</span> <span class="n">elsewhere</span><span class="p">:</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">elsewhere</span><span class="o">.</span><span class="n">minter</span>    <span class="c1"># where to go, or None when there is no endpoint to call</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">elsewhere</span><span class="o">.</span><span class="n">about</span>     <span class="c1"># a page for people, when the delegation names one</span>
+</code></pre></div>
+<h2 id="refusals-carry-their-code">Refusals carry their code<a class="headerlink" href="#refusals-carry-their-code" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arkhe_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conflict</span><span class="p">,</span> <span class="n">Throttled</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">arkhe</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">ark</span><span class="o">.</span><span class="n">ark</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">except</span> <span class="n">Conflict</span> <span class="k">as</span> <span class="n">refused</span><span class="p">:</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">refused</span><span class="o">.</span><span class="n">code</span>        <span class="c1"># "ARKHE-1501" — the part that does not change</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">refused</span><span class="o">.</span><span class="n">detail</span>      <span class="c1"># the values behind the wording</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="k">except</span> <span class="n">Throttled</span> <span class="k">as</span> <span class="n">capped</span><span class="p">:</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="n">capped</span><span class="o">.</span><span class="n">retry_after</span>  <span class="c1"># seconds, when the server said</span>
+</code></pre></div>
+<p><code>ArkheError</code> is the base of them all: <code>BadRequest</code>, <code>Unauthorized</code>, <code>Forbidden</code>,
+<code>Delegated</code>, <code>NotFound</code>, <code>Conflict</code>, <code>Throttled</code>, <code>ServerError</code> and <code>TransportError</code>.
+The codes are listed under <a href="../../reference/errors/">Errors</a>.</p>
+<h2 id="resolving">Resolving<a class="headerlink" href="#resolving" title="Permanent link">&para;</a></h2>
+<p>The resolver takes no credential, so it is a separate object:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">arkhe_client</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resolver</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">with</span> <span class="n">Resolver</span><span class="p">(</span><span class="s2">"https://ark.example.org"</span><span class="p">)</span> <span class="k">as</span> <span class="n">resolver</span><span class="p">:</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">found</span> <span class="o">=</span> <span class="n">resolver</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="s2">"ark:99999/x9tn1qkq2g7"</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">found</span><span class="o">.</span><span class="n">target</span>            <span class="c1"># where it redirects</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">found</span><span class="o">.</span><span class="n">description</span>       <span class="c1"># or, when it did not redirect, what came back instead</span>
+</code></pre></div>
+<p>A redirect is not the only success. A reserved ARK, one whose redirection is
+<a href="../../reference/configuration/">held</a> and a tombstoned one all resolve to a description,
+and <code>target</code> is then <code>None</code>. <code>describe()</code> asks with <code>?json</code>, which never redirects, and
+<code>statement()</code> asks with <code>??</code> for what this ledger promises about the name.</p>
+<h2 id="what-else-there-is">What else there is<a class="headerlink" href="#what-else-there-is" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Open to anyone</th>
-<th>What it gives</th>
+<th></th>
+<th></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>GET /ark:/…</code> and <code>GET /ark:…</code></td>
-<td>resolution, and the inflections <code>?</code> <code>??</code> <code>?info</code> <code>?json</code></td>
+<td>minting</td>
+<td><code>mint</code>, <code>mint_many</code>, <code>register</code></td>
 </tr>
 <tr>
-<td><code>GET /.well-known/ark</code></td>
-<td>which namespaces this service is responsible for</td>
+<td>taking in</td>
+<td><code>import_ark</code>, <code>import_many</code></td>
 </tr>
 <tr>
-<td><code>GET /healthz</code>, <code>GET /readyz</code></td>
-<td>liveness and readiness</td>
+<td>changing</td>
+<td><code>update</code> (replaces), <code>patch</code> (only what you pass), <code>update_many</code></td>
 </tr>
 <tr>
-<td><code>POST /oauth/token</code></td>
-<td>the door into becoming one of the actors above (credentials still required)</td>
+<td>publication</td>
+<td><code>publish</code>, <code>unpublish</code>, <code>delete</code>, <code>purge</code></td>
+</tr>
+<tr>
+<td>saying it is gone</td>
+<td><code>tombstone</code></td>
+</tr>
+<tr>
+<td>stopping redirection</td>
+<td><code>hold</code>, <code>release_hold</code></td>
+</tr>
+<tr>
+<td>reading</td>
+<td><code>query</code>, <code>stats</code></td>
+</tr>
+<tr>
+<td>resolving</td>
+<td><code>Resolver.resolve</code>, <code>describe</code>, <code>statement</code>, <code>inventory</code>, <code>exists</code></td>
 </tr>
 </tbody>
 </table>
-<p>Everything else needs a client.</p>
-<p><strong>This actor is why the reserved/published distinction exists at all.</strong> <code>?info</code> and <code>??</code>
-answer without a key, so if a public resolver served ARKs that have not been published, the
-existence, title and target of an unpublished object would go straight out to anyone who
-guessed the name. That is why <strong>the default does not serve them</strong>, and why serving them
-is a property of <em>where a resolver stands</em> (<code>ARKHE_RESOLVE_UNPUBLISHED</code>, for a resolver
-inside a closed network) rather than a property of the ARK.</p>
-<p>To the guest, a reserved ARK and one that was never minted are <strong>the same 404</strong>. A
-withdrawn one is too — and it stays a 404 forever, because the name is never assigned to
-anything else.</p>
-<h3 id="a-namespace-naan-administrator-and-above">A namespace: NAAN administrator and above<a class="headerlink" href="#a-namespace-naan-administrator-and-above" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Action</th>
-<th>System</th>
-<th>NAAN</th>
-<th>Organisation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Add a shoulder, change its status, delegate resolution</td>
-<td>yes</td>
-<td>yes</td>
-<td><strong>no</strong></td>
-</tr>
-<tr>
-<td>Hold redirection for a shoulder or a whole NAAN</td>
-<td>yes</td>
-<td>yes</td>
-<td><strong>no</strong></td>
-</tr>
-<tr>
-<td>Namespace policy, quota, commitment statement</td>
-<td>yes</td>
-<td>yes</td>
-<td><strong>no</strong></td>
-</tr>
-<tr>
-<td>Onboard an organisation</td>
-<td>yes</td>
-<td>yes</td>
-<td><strong>no</strong></td>
-</tr>
-<tr>
-<td><strong>Register a NAAN</strong></td>
-<td>yes</td>
-<td><strong>no</strong></td>
-<td><strong>no</strong></td>
-</tr>
-</tbody>
-</table>
-<p>Holding a shoulder or a NAAN stops a whole namespace, so it is kept above the
-organisations: <strong>one organisation's judgement must not sweep in another's identifiers.</strong></p>
-<h3 id="clients-and-organisations-an-organisation-may-act-inside-itself">Clients and organisations: an organisation may act inside itself<a class="headerlink" href="#clients-and-organisations-an-organisation-may-act-inside-itself" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Action</th>
-<th>System</th>
-<th>NAAN</th>
-<th>Organisation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Register a client</td>
-<td>yes</td>
-<td>its NAAN</td>
-<td><strong>its own organisation</strong></td>
-</tr>
-<tr>
-<td>… one with <code>authority=system</code></td>
-<td>yes</td>
-<td>no</td>
-<td>no</td>
-</tr>
-<tr>
-<td>… one with <code>authority=naan</code></td>
-<td>yes</td>
-<td>yes</td>
-<td>no</td>
-</tr>
-<tr>
-<td>Issue and revoke credentials, set a password, disable/enable</td>
-<td>yes</td>
-<td>its NAAN</td>
-<td><strong>its own organisation</strong></td>
-</tr>
-<tr>
-<td>Set a successor, carry out succession</td>
-<td>yes</td>
-<td>its NAAN</td>
-<td><strong>its own organisation</strong></td>
-</tr>
-<tr>
-<td>Depart (<code>arkhe depart</code>)</td>
-<td>yes</td>
-<td>yes</td>
-<td><strong>no</strong></td>
-</tr>
-</tbody>
-</table>
-<p><strong>The CLI always acts as the system administrator.</strong> Anyone with a shell on the server
-can reach the database anyway, so narrowing it by permission would not be a defence —
-<strong>instead every operation is audited.</strong></p>
-<h2 id="getting-in">Getting in<a class="headerlink" href="#getting-in" title="Permanent link">&para;</a></h2>
-<p>Set <code>ARKHE_ADMIN_LOGIN</code>; see <a href="../authentication/">Authentication</a>. In <code>bearer</code> mode
-there is no login screen at all — that is the choice "no browser access".</p>
-<p>Irreversible actions are marked as such in the interface, because they are. <strong>Publication
-is not one of them</strong> — it can be withdrawn and taken up again — but <strong>deleting a record
-is</strong>, and so is retiring a namespace. A name that has been used is never assigned to
-anything else, whichever way it went.</p>
-<h2 id="changing-settings">Changing settings<a class="headerlink" href="#changing-settings" title="Permanent link">&para;</a></h2>
-<p><strong>Only declarations and operational settings can be changed here.</strong> Neither an ARK
-row nor a shoulder's spelling can be edited from the interface — if they could, names
-could be reissued in a system that declares <code>NR</code>.</p>
-<table>
-<thead>
-<tr>
-<th>What</th>
-<th>Who</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>NAA policy (the NAAN's declaration)</td>
-<td>NAAN scope or wider</td>
-</tr>
-<tr>
-<td>Where minting happens (<code>/.well-known/ark</code>)</td>
-<td>System administrator</td>
-</tr>
-<tr>
-<td>Commitment level (the organisation's declaration)</td>
-<td><strong>The organisation itself</strong>, and wider</td>
-</tr>
-<tr>
-<td>Minting limit per day</td>
-<td>NAAN scope or wider</td>
-</tr>
-<tr>
-<td>Shoulder status and delegation</td>
-<td>NAAN scope or wider</td>
-</tr>
-</tbody>
-</table>
-<p>This split is not a permissions table; it is <strong>ARK's delegation structure showing
-through</strong>. The NAA policy is the declaration of the side handing namespaces out and
-covers every organisation beneath it, so one organisation's administrator cannot change
-it. The commitment level is what the receiving side states about itself, and <strong>a
-declaration nobody can make is not a declaration</strong> — so an organisational administrator
-can change theirs.</p>
-<p>The minting limit is the exception an organisation cannot change itself: a limit
-imposed by the side handing the namespace out means nothing if the side receiving it
-can lift it.</p>
-<p>The decisions live only in <code>domain.admin_ops</code>. The interface calls the same
-functions, so <strong>there is no case where a button is hidden but the URL still works.</strong></p>
-<h2 id="internationalisation">Internationalisation<a class="headerlink" href="#internationalisation" title="Permanent link">&para;</a></h2>
-<p>Japanese and English, switched from the globe in the header. The language is decided
-by <code>?lang=</code>, then a cookie, then <code>Accept-Language</code>.</p>
-<p>Catalogues are plain Python dicts rather than gettext, so adding a language is one
-module and no build step. <strong>A missing translation stops the process at startup</strong>,
-which is how you find out you added a key to one catalogue and not the other.</p>
+<p><code>update()</code> replaces and <code>patch()</code> does not, on the same endpoint. <code>unpublish()</code>,
+<code>delete()</code> and <code>purge()</code> take <code>confirm</code>, and the client never fills it in: the server
+compares it with the ARK so that a script walking a list cannot take a published name
+down without a second deliberate act.</p>
+<h2 id="why-it-is-hand-written">Why it is hand-written<a class="headerlink" href="#why-it-is-hand-written" title="Permanent link">&para;</a></h2>
+<p>The <a href="../../reference/api/">OpenAPI documents</a> are generated from the implementation, so
+they are the one description of the interface, and a generated client would be the
+obvious answer. What a generator gives is coverage — and coverage is the part that can
+be checked: <code>clients/python/tests/test_contract.py</code> compares the client with those
+documents in both directions, so an endpoint added to the server fails the build until
+someone decides whether the client should carry it.</p>
+<p>What a generator cannot give is the three decisions above. They are why this exists.</p>
+<p>The client is checked against a stub for what it decides, and against a real minter and
+resolver for whether that matches what the server does:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>clients/python/tests<span class="w">          </span><span class="c1"># fast</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>-m<span class="w"> </span>e2e<span class="w"> </span>-k<span class="w"> </span>python_client<span class="w">       </span><span class="c1"># needs docker</span>
+</code></pre></div>
+<h2 id="another-language">Another language<a class="headerlink" href="#another-language" title="Permanent link">&para;</a></h2>
+<p>There is no client for anything but Python yet. For one, generate it from
+<code>docs/assets/openapi-minter.json</code> and add the same three things by hand: the
+idempotency key on minting, refusing to follow the <code>307</code>, and the <code>ARKHE-xxxx</code> code on
+every refusal. Those are what makes a client safe to point at a ledger whose identifiers
+cannot be reissued.</p>
 
 
 
@@ -1980,7 +1626,7 @@ which is how you find out you added a key to one catalogue and not the other.</p
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../authentication/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Authentication">
+          <a href="../admin/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Admin interface">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1990,20 +1636,20 @@ which is how you find out you added a key to one catalogue and not the other.</p
                 Previous
               </span>
               <div class="md-ellipsis">
-                Authentication
+                Admin interface
               </div>
             </div>
           </a>
         
         
           
-          <a href="../python-client/" class="md-footer__link md-footer__link--next" aria-label="Next: Python client">
+          <a href="../succession/" class="md-footer__link md-footer__link--next" aria-label="Next: Succession and departure">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Python client
+                Succession and departure
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -71,6 +71,13 @@
         <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/onboarding/"/>
     </url>
     <url>
+        <loc>https://rcosdp.github.io/arkhe/guides/python-client/</loc>
+        <lastmod>2026-09-19</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/python-client/"/>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/python-client/"/>
+    </url>
+    <url>
         <loc>https://rcosdp.github.io/arkhe/guides/succession/</loc>
         <lastmod>2026-09-19</lastmod>
         <changefreq>daily</changefreq>
@@ -209,6 +216,13 @@
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/onboarding/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/onboarding/"/>
+    </url>
+    <url>
+        <loc>https://rcosdp.github.io/arkhe/ja/guides/python-client/</loc>
+        <lastmod>2026-09-19</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ja" href="https://rcosdp.github.io/arkhe/ja/guides/python-client/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://rcosdp.github.io/arkhe/guides/python-client/"/>
     </url>
     <url>
         <loc>https://rcosdp.github.io/arkhe/ja/guides/succession/</loc>
