@@ -64,8 +64,8 @@ def test_a_resend_gets_the_first_ark_back(arkhe):
 def test_a_batch_sent_twice_mints_once(arkhe):
     """An interrupted batch can simply be sent again."""
     rows = [{"url": f"{TARGET}/batch/{i}", "request_id": new_request_id()} for i in range(3)]
-    first = arkhe.mint_many(rows, request_ids=False)
-    again = arkhe.mint_many(rows, request_ids=False)
+    first = arkhe.mint_bulk(rows, request_ids=False)
+    again = arkhe.mint_bulk(rows, request_ids=False)
     assert first.created == 3
     assert again.created == 0 and again.replayed == 3
     assert [a.ark for a in again] == [a.ark for a in first]
@@ -147,7 +147,7 @@ def test_a_refusal_with_no_code_still_says_what_was_wrong(arkhe):
 def test_a_batch_of_reservations_goes_away_in_one_call(arkhe, resolver):
     """The client side of the same thing: reserve a batch for review, throw it away."""
     arks = [arkhe.mint(url=f"{TARGET}/bulk-delete/{i}", reserve=True).ark for i in range(3)]
-    gone = arkhe.delete_many(arks, reason="the review was abandoned")
+    gone = arkhe.delete_bulk(arks, reason="the review was abandoned")
     assert gone == arks
     for ark in arks:
         with pytest.raises(NotFound):
@@ -160,7 +160,7 @@ def test_a_batch_that_holds_a_published_ark_is_refused(arkhe):
     spare = arkhe.mint(url=f"{TARGET}/keep", reserve=True).ark
     public = arkhe.mint(url=f"{TARGET}/out").ark
     with pytest.raises(Conflict) as caught:
-        arkhe.delete_many([spare, public])
+        arkhe.delete_bulk([spare, public])
     assert caught.value.code in ("ARKHE-1501", "ARKHE-1504")
     assert arkhe.query([spare]), "the batch was applied in part"
 

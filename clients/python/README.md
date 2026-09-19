@@ -58,7 +58,7 @@ job id — so that a retry days later is still recognised as the same request:
 arkhe.mint(url=record.url, request_id=f"record-{record.id}")
 ```
 
-`mint_many()` puts a key on every row unless you pass `request_ids=False`, which is what
+`mint_bulk()` puts a key on every row unless you pass `request_ids=False`, which is what
 makes an interrupted batch safe to send again: the rows that got through are returned
 rather than minted twice.
 
@@ -108,10 +108,10 @@ your decision.
 
 | | |
 | --- | --- |
-| minting | `mint`, `mint_many`, `register` |
-| taking in | `import_ark`, `import_many` |
-| changing | `update` (replaces), `patch` (only what you pass), `update_many` |
-| publication | `publish`, `unpublish`, `delete`, `delete_many`, `purge` |
+| minting | `mint`, `mint_bulk`, `register` |
+| taking in | `import_ark`, `import_bulk` |
+| changing | `update` (replaces), `patch` (only what you pass), `update_bulk` |
+| publication | `publish`, `unpublish`, `delete`, `delete_bulk`, `purge` |
 | saying it is gone | `tombstone` |
 | stopping redirection | `hold`, `release_hold` |
 | reading | `query`, `stats` |

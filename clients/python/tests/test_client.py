@@ -125,7 +125,7 @@ def test_a_write_that_cannot_be_repeated_is_not_repeated():
 
 
 def test_a_batch_with_no_keys_is_not_repeated_either():
-    """mint_many puts a key on every row unless it is told not to. Told not to, it
+    """mint_bulk puts a key on every row unless it is told not to. Told not to, it
     loses the right to retry with it."""
     tries = []
 
@@ -135,7 +135,7 @@ def test_a_batch_with_no_keys_is_not_repeated_either():
 
     with stub(handler, retries=3) as arkhe:
         with pytest.raises(TransportError):
-            arkhe.mint_many([{"url": "https://example.org/1"}], request_ids=False)
+            arkhe.mint_bulk([{"url": "https://example.org/1"}], request_ids=False)
     assert len(tries) == 1
 
 
@@ -149,7 +149,7 @@ def test_every_row_of_a_batch_gets_its_own_key():
         return httpx.Response(201, json={"minted": [], "created": 0, "replayed": 0})
 
     with stub(handler) as arkhe:
-        arkhe.mint_many([{"url": "https://example.org/1"}, {"url": "https://example.org/2"}])
+        arkhe.mint_bulk([{"url": "https://example.org/1"}, {"url": "https://example.org/2"}])
     keys = [row["request_id"] for row in seen["data"]]
     assert len(set(keys)) == 2
 
@@ -350,7 +350,7 @@ def test_a_misspelt_field_in_a_batch_is_refused_here():
     weeks later, in the ledger."""
     with stub(lambda r: minted(r)) as arkhe:
         with pytest.raises(ValueError) as caught:
-            arkhe.mint_many([{"titel": "typo"}])
+            arkhe.mint_bulk([{"titel": "typo"}])
     assert "titel" in str(caught.value)
 
 
@@ -472,6 +472,6 @@ def test_a_batch_delete_sends_what_it_was_given_and_nothing_more():
         return httpx.Response(200, json={"withdrawn": ["ark:99999/x9tn1qkq2g7"], "count": 1})
 
     with stub(handler) as arkhe:
-        gone = arkhe.delete_many(["ark:99999/x9tn1qkq2g7"], reason="abandoned")
+        gone = arkhe.delete_bulk(["ark:99999/x9tn1qkq2g7"], reason="abandoned")
     assert seen == {"data": ["ark:99999/x9tn1qkq2g7"], "reason": "abandoned"}
     assert gone == ["ark:99999/x9tn1qkq2g7"]

@@ -751,7 +751,7 @@ def test_a_batch_of_reservations_goes_in_one_request(db, root, world):
     db.commit()
     keys = [a.ark for a in arks]
 
-    gone = ops.withdraw_arks(db, root, arks=keys, reason="the deposit was abandoned")
+    gone = ops.withdraw_bulk(db, root, arks=keys, reason="the deposit was abandoned")
     db.commit()
     assert len(gone) == 5
     assert db.scalars(select(Ark.ark).where(Ark.ark.in_(keys))).all() == []
@@ -767,7 +767,7 @@ def test_one_name_that_was_public_fails_the_whole_batch(db, root, world, publish
     db.commit()
 
     with pytest.raises(Conflict):
-        ops.withdraw_arks(db, root, arks=[spare.ark, published.ark])
+        ops.withdraw_bulk(db, root, arks=[spare.ark, published.ark])
     db.rollback()
     assert db.get(Ark, spare.ark) is not None, "the batch was applied in part"
     assert db.get(Ark, published.ark) is not None
@@ -778,7 +778,7 @@ def test_a_published_ark_cannot_be_deleted_in_a_batch_either(db, root, world, pu
     spare, _ = mint(db, shoulder=world["sh_a"], created_by="test", reserve=True)
     db.commit()
     with pytest.raises(Conflict):
-        ops.withdraw_arks(db, root, arks=[spare.ark, published.ark])
+        ops.withdraw_bulk(db, root, arks=[spare.ark, published.ark])
 
 
 def test_a_name_withdrawn_then_deleted_is_recorded_as_having_been_public(db, root, published):

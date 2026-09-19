@@ -51,7 +51,7 @@ an hour or a day later is still recognised:
 arkhe.mint(url=record.url, request_id=f"record-{record.id}")
 ```
 
-`mint_many()` puts a key on every row, which is what makes an interrupted batch safe to
+`mint_bulk()` puts a key on every row, which is what makes an interrupted batch safe to
 send again: the rows that got through come back rather than being minted twice.
 
 Only calls that can be sent twice without acting twice are retried. Anything else raises
@@ -115,10 +115,10 @@ and `target` is then `None`. `describe()` asks with `?json`, which never redirec
 
 | | |
 | --- | --- |
-| minting | `mint`, `mint_many`, `register` |
-| taking in | `import_ark`, `import_many` |
-| changing | `update` (replaces), `patch` (only what you pass), `update_many` |
-| publication | `publish`, `unpublish`, `delete`, `delete_many`, `purge` |
+| minting | `mint`, `mint_bulk`, `register` |
+| taking in | `import_ark`, `import_bulk` |
+| changing | `update` (replaces), `patch` (only what you pass), `update_bulk` |
+| publication | `publish`, `unpublish`, `delete`, `delete_bulk`, `purge` |
 | saying it is gone | `tombstone` |
 | stopping redirection | `hold`, `release_hold` |
 | reading | `query`, `stats` |

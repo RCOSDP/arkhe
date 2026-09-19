@@ -173,7 +173,7 @@ class Arkhe:
         status, data = self._call("POST", "/api/mint", json=body, repeatable=True)
         return Ark.of(data, resent=status == 200)
 
-    def mint_many(self, rows, *, request_ids: bool = True) -> BulkMint:
+    def mint_bulk(self, rows, *, request_ids: bool = True) -> BulkMint:
         """Mint a batch. Needs ark:mint.
 
         Each row takes what mint() takes. Rows already minted under the same request_id
@@ -254,7 +254,7 @@ class Arkhe:
         _, data = self._call("POST", "/api/import", json=body)
         return Ark.of(data)
 
-    def import_many(self, rows) -> tuple[list[Ark], int]:
+    def import_bulk(self, rows) -> tuple[list[Ark], int]:
         """Take in a batch. Needs ark:import. Returns the rows and how many there were.
 
         Each row takes what import_ark() takes, with the ARK under "ark". Nothing is
@@ -322,7 +322,7 @@ class Arkhe:
         _, data = self._call("PATCH", "/api/update", json=body)
         return Ark.of(data)
 
-    def update_many(self, rows) -> int:
+    def update_bulk(self, rows) -> int:
         """Replace a batch, and return how many rows changed. Needs ark:update.
 
         Like update(), each row replaces: what a row leaves out is cleared. Every ARK
@@ -368,7 +368,7 @@ class Arkhe:
         )
         return Withdrawn.of(data)
 
-    def delete_many(self, arks, *, reason: str = "") -> list[str]:
+    def delete_bulk(self, arks, *, reason: str = "") -> list[str]:
         """Delete a batch of ARKs that were never published. Needs ark:delete.
 
         Reserving in bulk is one request, so throwing an abandoned batch away is one

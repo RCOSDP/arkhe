@@ -41,17 +41,17 @@ def load(name: str) -> dict:
 #: fails, and a method naming an endpoint that no longer exists fails too.
 MINTER = {
     ("post", "/api/mint"): "mint",
-    ("post", "/api/mint/bulk"): "mint_many",
+    ("post", "/api/mint/bulk"): "mint_bulk",
     ("post", "/api/register"): "register",
     ("post", "/api/import"): "import_ark",
-    ("post", "/api/import/bulk"): "import_many",
+    ("post", "/api/import/bulk"): "import_bulk",
     ("put", "/api/update"): "update",
     ("patch", "/api/update"): "patch",
-    ("put", "/api/update/bulk"): "update_many",
+    ("put", "/api/update/bulk"): "update_bulk",
     ("post", "/api/publish"): "publish",
     ("post", "/api/unpublish"): "unpublish",
     ("post", "/api/delete"): "delete",
-    ("post", "/api/delete/bulk"): "delete_many",
+    ("post", "/api/delete/bulk"): "delete_bulk",
     ("post", "/api/purge"): "purge",
     ("put", "/api/tombstone"): "tombstone",
     ("put", "/api/hold"): "hold",
@@ -161,3 +161,20 @@ def test_the_writing_methods_take_every_field(method):
     reading the source."""
     taken = set(inspect.signature(getattr(Arkhe, method)).parameters)
     assert set(FIELDS) <= taken, f"Arkhe.{method} cannot set {sorted(set(FIELDS) - taken)}"
+
+
+@pytest.mark.parametrize(
+    ("name", "table"), [("openapi-minter.json", MINTER), ("openapi-resolver.json", RESOLVER)]
+)
+def test_a_bulk_endpoint_is_called_by_a_bulk_method(name, table):
+    """One word for one thing. The API calls it bulk, so the client does too.
+
+    Left to taste, these drift into mint_bulk beside delete_many, and a caller has to
+    look up which is which every time.
+    """
+    for (method, path), attr in table.items():
+        assert path.endswith("/bulk") == attr.endswith("_bulk"), (
+            f"{method.upper()} {path} is called by {attr}: an endpoint under /bulk is "
+            "called by a method ending in _bulk, and nothing else is"
+        )
+    assert operations(load(name))  # the document was really read

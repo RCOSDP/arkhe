@@ -49,7 +49,7 @@ ark.resent      # True なら、これは最初の採番が返ってきたもの
 arkhe.mint(url=record.url, request_id=f"record-{record.id}")
 ```
 
-`mint_many()` は各行に鍵を置く。これが**途中で切れた一括採番をそのまま送り直せる**理由で、
+`mint_bulk()` は各行に鍵を置く。これが**途中で切れた一括採番をそのまま送り直せる**理由で、
 通っていた行は二重に採られず、そのまま返る。
 
 再送しても二重に効かない呼び出しだけを再送する。それ以外は `TransportError` になり、判断は
@@ -110,10 +110,10 @@ with Resolver("https://ark.example.org") as resolver:
 
 | | |
 | --- | --- |
-| 採番 | `mint`, `mint_many`, `register` |
-| 取り込み | `import_ark`, `import_many` |
-| 書き換え | `update`（置き換え）, `patch`（渡した分だけ）, `update_many` |
-| 公開と取り下げ | `publish`, `unpublish`, `delete`, `delete_many`, `purge` |
+| 採番 | `mint`, `mint_bulk`, `register` |
+| 取り込み | `import_ark`, `import_bulk` |
+| 書き換え | `update`（置き換え）, `patch`（渡した分だけ）, `update_bulk` |
+| 公開と取り下げ | `publish`, `unpublish`, `delete`, `delete_bulk`, `purge` |
 | 失われたと告げる | `tombstone` |
 | 転送の保留 | `hold`, `release_hold` |
 | 読み | `query`, `stats` |

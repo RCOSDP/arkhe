@@ -444,7 +444,7 @@ def ark_delete(
     that answer. A reservation that was never published is deleted without ceremony, so
     how much is asked matches what is being lost.
 
-    Several go through withdraw_arks, which refuses a name that has ever been public and
+    Several go through withdraw_bulk, which refuses a name that has ever been public and
     fails the batch with it. Abandoning a batch of reservations has to be as cheap as
     minting it was, and the cheap path is only for names nobody has seen; a name that
     went out is deleted on its own.
@@ -477,13 +477,13 @@ def ark_delete(
         # One question for the batch. Asking per ARK would make a thousand
         # reservations unthrowable-away in practice, which is how they end up left in
         # the ledger.
-        if not yes and not typer.confirm(t("ark.delete.confirm_many", count=len(keys))):
+        if not yes and not typer.confirm(t("ark.delete.confirm_bulk", count=len(keys))):
             typer.echo(t("ark.delete.aborted"))
             raise typer.Exit(1)
-        gone_rows = ops.withdraw_arks(s, _root(), arks=keys, reason=reason)
+        gone_rows = ops.withdraw_bulk(s, _root(), arks=keys, reason=reason)
         count = len(gone_rows)
         s.commit()
-        typer.echo(t("ark.delete.done_many", count=count))
+        typer.echo(t("ark.delete.done_bulk", count=count))
 
 
 @ark_app.command("purge", help=t("ark.purge.help"))

@@ -22,8 +22,13 @@ breaking in a system whose identifiers cannot be reissued.
   row that is published, or that has ever been published, fails the whole request with
   the new **`ARKHE-1504`**; that name goes through `/api/delete` on its own, with a
   reason and the ARK typed again. Nothing is deleted in part, every name is still kept
-  and never assigned again, and the batch is one audit event. The Python client gained
-  `delete_many()`.
+  and never assigned again, and the batch is one audit event.
+
+  The Python client gained `delete_bulk()`, and **its bulk methods are now named after
+  the endpoints**: `mint_bulk`, `import_bulk`, `update_bulk`, `delete_bulk` (they were
+  `*_many`). A check keeps them that way — an endpoint under `/bulk` is called by a
+  method ending in `_bulk`, and nothing else is. The client has not been released, so
+  nothing depended on the old names.
 
 - **A page comparing arkhe with the other ARK software** (`docs/project/comparison.md`,
   both languages). arklet, arklet-frick and EZID were installed, given their own
@@ -64,7 +69,7 @@ decision to be made once per caller.
   **Minting carries an idempotency key.** Every `mint()` sends a `request_id`, generated
   when the caller does not supply one, and a retry sends the same one, so a lost answer
   cannot leave a number spent with nobody holding it. `Ark.resent` says which happened.
-  `mint_many()` keys every row, which is what makes an interrupted batch safe to send
+  `mint_bulk()` keys every row, which is what makes an interrupted batch safe to send
   again. Only calls that can be sent twice without acting twice are retried; anything
   else raises `TransportError` and leaves the decision to the caller.
 

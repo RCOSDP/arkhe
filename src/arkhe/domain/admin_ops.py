@@ -1218,7 +1218,7 @@ def withdraw_ark(
     return _remove_ark(session, p, row, reason=reason, action=action)
 
 
-def withdraw_arks(
+def withdraw_bulk(
     session: Session, p: Principal, *, arks: list[str], reason: str = ""
 ) -> list[WithdrawnName]:
     """Delete several ARKs that were never public, in one request.

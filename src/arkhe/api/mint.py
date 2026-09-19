@@ -931,7 +931,7 @@ def bulk_delete(body: BulkDeleteIn, principal: CurrentPrincipal, session: Db, cf
     keys = [_key(a) for a in body.data]
     if len(keys) > cfg.bulk_limit:
         raise authz.Invalid(errors.BULK_LIMIT, limit=cfg.bulk_limit)
-    gone = admin_ops.withdraw_arks(session, principal, arks=keys, reason=body.reason)
+    gone = admin_ops.withdraw_bulk(session, principal, arks=keys, reason=body.reason)
     out = BulkDeleteOut(withdrawn=[compact_ark(g.ark) for g in gone], count=len(gone))
     session.commit()
     return out
