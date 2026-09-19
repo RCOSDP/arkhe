@@ -1,17 +1,18 @@
-"""管理画面へのログイン。**ブラウザから人が入るための経路。**
+"""Signing in to the admin interface: how a person gets in from a browser.
 
-API は Bearer トークンで足りるが、**ブラウザは Authorization ヘッダを付けられない**。
-そこで管理画面だけ、入口を選べるようにする（`ARKHE_ADMIN_LOGIN`）。
+A bearer token is enough for the API, but a browser cannot set an Authorization header,
+so the admin interface has a choice of entrances (ARKHE_ADMIN_LOGIN).
 
-  bearer  既定。ログイン画面を持たない。トークンを付けられる相手（curl・自動化）専用
-  oidc    arkhe が **OIDC のクライアント（RP）として**認可コードフローを回し、
-          戻ってきた身元をセッションにする
-  proxy   前段の認証プロキシ（oauth2-proxy、nginx の OIDC など）が済ませた前提で、
-          そのヘッダを信じる
+  bearer  the default. No login page; for callers that can send a token, such as curl
+  oidc    arkhe acts as an OIDC relying party, runs the authorization code flow and
+          turns the identity it gets back into a session
+  proxy   an authenticating proxy in front (oauth2-proxy, nginx with OIDC) has already
+          done the work, and its header is trusted
 
-**「クライアントになる」ことと「認可サーバになる」ことは別。** 見送ったのは後者で、
-トークンを発行し同意を預かる役目のこと。ここでやるのは、認可サーバに人を送り、
-戻ってきた JWT を確かめるだけ——資源側の仕事の範囲に収まる。
+Being a client and being an authorisation server are different jobs. The second one,
+issuing tokens and holding consent, is not done here. This sends a person to the
+authorisation server and verifies the JWT that comes back, which stays within what the
+resource side does.
 """
 
 from __future__ import annotations
@@ -32,8 +33,8 @@ from arkhe.auth.principal import Principal
 from arkhe.db.models import Client, Subject
 from arkhe.settings import Settings
 
-#: 認可サーバへ送り出すときに、戻り先と PKCE の検証子を預けておく Cookie。
-#: **短命**（フローの往復ぶんだけ）。
+#: The cookie that carries where to return to and the PKCE verifier while the person is
+#: at the authorisation server. It lives only for that round trip.
 FLOW_COOKIE = "arkhe_login"
 FLOW_TTL = 600
 
@@ -43,10 +44,11 @@ def _b64u(raw: bytes) -> str:
 
 
 def start(settings: Settings, *, redirect_uri: str, next_url: str = "/admin/") -> tuple[str, str]:
-    """認可要求の URL と、預けておく値（署名前）を作る。
+    """Build the authorisation request URL and the values to carry, before signing.
 
-    **PKCE を必ず付ける。** 認可コードはブラウザのアドレス欄・履歴・前段のログに
-    残るので、横取りされても使えないようにしておく。
+    PKCE is always used. An authorization code appears in the address bar, in history
+    and in the logs of anything in front, so it must be useless to whoever intercepts
+    it.
     """
     verifier = _b64u(secrets.token_bytes(32))
     challenge = _b64u(hashlib.sha256(verifier.encode()).digest())
@@ -82,25 +84,27 @@ def _endpoint(settings: Settings, name: str) -> str:
         r.raise_for_status()
         _discovery = r.json()
     if name not in _discovery:
-        raise RuntimeError(f"認可サーバのメタデータに {name} がありません")
+        raise RuntimeError(f"the authorisation server metadata has no {name}")
     return _discovery[name]
 
 
 def end_session_url(settings: Settings, *, post_logout_redirect: str) -> str:
-    """認可サーバ側のセッションも終わらせる URL（OIDC RP-Initiated Logout 1.0）。
+    """The URL that also ends the session at the authorisation server (OIDC
+    RP-Initiated Logout 1.0).
 
-    **こちらの Cookie を消すだけでは、ログアウトしたことにならない。** 次に
-    `/admin/` を開くと認可サーバへ送られ、そちらのセッションが生きているので
-    何も訊かれずに戻ってくる——利用者から見れば「ログアウトできない」。
+    Dropping our cookie is not signing out. Opening /admin/ again goes to the
+    authorisation server, and with the session there still alive the person comes back
+    without being asked anything: from where they stand, signing out does not work.
 
-    `id_token_hint` は**渡さない**。渡すには ID トークンをセッション Cookie に
-    抱えることになるが、所属や権限の claim が多い環境では Cookie が 4 KB を
-    超え、**ブラウザが黙って捨てて今度はログインできなくなる**。代わりに
-    `client_id` を渡す形にしてある（認可サーバは確認画面を挟むが、これは
-    ログアウトの CSRF に対する歯止めにもなる）。
+    id_token_hint is not sent. Sending it would mean keeping the ID token in the session
+    cookie, and where claims about membership and roles are many the cookie passes 4 KB,
+    at which point browsers drop it and nobody can sign in at all. client_id is sent
+    instead. The authorisation server then asks for confirmation, which also guards
+    against sign-out by cross-site request.
 
-    メタデータに `end_session_endpoint` が無ければ空文字を返す——その認可サーバは
-    RP からのログアウトに対応していないので、こちら側だけで終える。
+    With no end_session_endpoint in the metadata this returns an empty string: that
+    server does not support logout initiated by the relying party, so it is ended
+    here alone.
     """
     try:
         endpoint = _endpoint(settings, "end_session_endpoint")
@@ -118,7 +122,8 @@ def end_session_url(settings: Settings, *, post_logout_redirect: str) -> str:
 def finish(
     session: Session, settings: Settings, *, code: str, verifier: str, redirect_uri: str
 ) -> Principal:
-    """認可コードをトークンに換え、身元を確かめて主体に写す。"""
+    """Exchange the authorization code for tokens, verify the identity and map it to a
+    principal."""
     data = {
         "grant_type": "authorization_code",
         "code": code,
@@ -136,9 +141,9 @@ def finish(
 
     from arkhe.auth.oidc import OidcVerifier
 
-    # **ID トークンの aud は必ずこのクライアント自身**（OIDC Core §2）。
-    # API 用の `oidc_audience` を流用してはいけない——API のアクセストークンと
-    # ID トークンは別の宛先を持つので、混ぜると片方が必ず落ちる。
+    # The aud of an ID token is always this client itself (OIDC Core, 2). The API's
+    # oidc_audience must not be reused: an access token and an ID token are addressed
+    # differently, and mixing them breaks one of the two.
     verifier_obj = OidcVerifier(
         settings.oidc_issuer, settings.admin_client_id, settings.oidc_jwks_url
     )
@@ -148,10 +153,10 @@ def finish(
 
 
 def by_subject(session: Session, subject: str, *, mechanism: str) -> Principal:
-    """外部で確かめた身元を、arkhe の台帳に突き合わせる。
+    """Match an identity established elsewhere against this ledger.
 
-    **登録が無ければ通さない。** 認可サーバで認証できることと、この名前空間を
-    触ってよいことは別。
+    Without a registration it does not get in: authenticating at the authorisation
+    server and being allowed to touch this namespace are different things.
     """
     client = session.scalar(
         select(Client)
@@ -160,19 +165,20 @@ def by_subject(session: Session, subject: str, *, mechanism: str) -> Principal:
     )
     if client is None or _expired(client.expires_at):
         raise AuthError(f"subject {subject} is not registered with this resolver")
-    # **機械用の主体を外部ログインで名乗らせない。** 前段の設定が緩んで
-    # ヘッダが外から通っても、一括投入バッチや採番クライアントには化けられない。
+    # A machine principal cannot sign in this way. Even if the proxy is misconfigured
+    # and the header arrives from outside, nobody can become the loading batch or a
+    # minting client.
     if client.subject_type != Subject.PERSON:
         raise AuthError(f"subject {subject} is not a person and cannot sign in")
     return _to_principal(client, mechanism=mechanism)
 
 
 def from_proxy(session: Session, settings: Settings, headers) -> Principal:
-    """前段の認証プロキシが立てたヘッダを信じる。
+    """Trust the header set by an authenticating proxy in front.
 
-    **arkhe に直接届く経路が残っていると、誰でもヘッダを詐称できる。** この方式を
-    選ぶなら、arkhe をプロキシの後ろにだけ置くこと（k8s なら NetworkPolicy、
-    単体なら 127.0.0.1 だけで待ち受ける）。設定を明示的に選ばせているのはこのため。
+    If anything can still reach arkhe directly, anyone can forge that header. Choosing
+    this mode means putting arkhe only behind the proxy: a NetworkPolicy on Kubernetes,
+    or listening on 127.0.0.1 alone. That is why the mode has to be chosen explicitly.
     """
     subject = headers.get(settings.proxy_user_header.lower(), "")
     if not subject:
@@ -180,5 +186,5 @@ def from_proxy(session: Session, settings: Settings, headers) -> Principal:
     return by_subject(session, subject, mechanism="proxy")
 
 
-def decode_id_token_unverified(token: str) -> dict:  # pragma: no cover - 診断用
+def decode_id_token_unverified(token: str) -> dict:  # pragma: no cover - for diagnosis
     return jwt.decode(token, options={"verify_signature": False})

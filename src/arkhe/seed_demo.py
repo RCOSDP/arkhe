@@ -1,16 +1,17 @@
-"""体験用の台帳を用意する。**冪等**（既にあれば何もしない）。
+"""Build a ledger to try things out. It is idempotent: with one already there, it does
+nothing.
 
-`compose/oidc` の起動時に一度だけ走る。実運用では使わない——本番の台帳は
-`arkhe naan add` / `arkhe onboard` / `arkhe client add` で組む。
+It runs once when compose/oidc starts. It is not for production, where a ledger is built
+with arkhe naan add, arkhe onboard and arkhe client add.
 
-## 実在するものを置かない
+Nothing real appears here
 
-機関名も NAAN も**例示用のものだけ**にしてある。本物の名前をデモの台帳に
-置くと、その機関が arkhe を使っているように読める——画面をそのまま見せる
-資料や録画に載ったときに、こちらの意図と関係なく既成事実になる。
+The institution names and the NAANs are all invented. Putting a real name in the demo
+ledger reads as though that institution uses arkhe, and a screenshot or a recording
+would make it look settled, whatever was intended.
 
-NAAN も同じで、割り当て済みの番号は使わない。`99999` は仕様が試験用に
-予約している番号で、`12345` / `54321` は例示のための値である。
+The same goes for NAANs: none that are assigned. 99999 is reserved by the specification
+for testing, and 12345 and 54321 are values for examples.
 """
 
 from __future__ import annotations
@@ -25,20 +26,20 @@ from arkhe.db.session import session_factory
 from arkhe.domain import admin_ops as ops
 from arkhe.domain import minting
 
-#: Keycloak の realm に入れてある利用者と、arkhe 側で与える到達範囲。
-#: **`client_id` は認可サーバが返す `preferred_username` と一致させる。**
+#: The users in the Keycloak realm, and the reach arkhe gives them. The client_id has
+#: to match the preferred_username the authorisation server returns.
 PEOPLE = [
-    ("ops", Authority.SYSTEM, None, "運用者（全 NAAN）"),
-    ("naan-admin", Authority.NAAN, None, "NAAN 管理者（99999 配下）"),
-    ("org-admin", Authority.MANAGER, "例示大学", "組織管理者"),
+    ("ops", Authority.SYSTEM, None, "operator, every NAAN"),
+    ("naan-admin", Authority.NAAN, None, "NAAN administrator, under 99999"),
+    ("org-admin", Authority.MANAGER, "Example University", "organisation administrator"),
 ]
 
 INSTITUTIONS = [
-    ("99999", "例示大学", "/x9", 12),
-    ("99999", "例示研究所", "/y2", 7),
-    ("99999", "例示工科大学", "/w4", 3),
-    ("12345", "例示医科大学", "/b7", 21),
-    ("12345", "例示高等専門学校", "/k5", 5),
+    ("99999", "Example University", "/x9", 12),
+    ("99999", "Example Research Institute", "/y2", 7),
+    ("99999", "Example Institute of Technology", "/w4", 3),
+    ("12345", "Example Medical University", "/b7", 21),
+    ("12345", "Example College", "/k5", 5),
 ]
 
 
@@ -47,16 +48,16 @@ def main() -> None:
     factory = session_factory()
     with factory() as s:
         if s.scalar(select(Naan).limit(1)) is not None:
-            print("台帳は用意済みです（何もしません）")
+            print("the ledger is already there; nothing to do")
             return
 
         ops.create_naan(
-            s, root, naan="99999", name="例示 RA（試験用の 99999）",
+            s, root, naan="99999", name="Example RA (99999, reserved for testing)",
             na_policy="NP | NR, OP, CC | 2026 | https://arkhe.example.org/policy",
         )
-        ops.create_naan(s, root, naan="12345", name="別の例示 RA")
+        ops.create_naan(s, root, naan="12345", name="Another example RA")
         ops.create_naan(
-            s, root, naan="54321", name="旧システム（委譲）",
+            s, root, naan="54321", name="A legacy system, delegated",
             is_authoritative=False, redirect="https://legacy.example.org",
         )
         s.flush()
@@ -73,34 +74,38 @@ def main() -> None:
                 minting.mint(
                     s, shoulder=shd, created_by="seed",
                     url=f"https://repo.example.ac.jp/records/{i}",
-                    title=f"{inst} のデータセット {i + 1}",
+                    title=f"Dataset {i + 1} of {inst}",
                 )
-            # **公開前のものを 1 本混ぜる。** 画面で「まだ解決しない ARK」が
-            # どう見えるかは、実物が無いと確かめられない。
+            # Mix in one reserved ARK. How an ARK that does not resolve yet looks on
+            # the screen cannot be checked without a real one.
             minting.mint(
                 s, shoulder=shd, created_by="seed", reserve=True,
                 url=f"https://repo.example.ac.jp/records/draft-{len(managers)}",
-                title=f"{inst} の公開前データセット",
+                title=f"Unpublished dataset of {inst}",
             )
 
-        # shoulder の 4 状態を揃える（画面で状態の違いが見えるように）
+        # One shoulder in each of the four states, so the screens show the difference
         d = ops.add_shoulder(s, root, naan="99999", shoulder="/z1")
         s.flush()
         ops.set_shoulder_status(
             s, root, shoulder_id=d.id, status="delegated",
-            minter="https://mint.partner.example.org", note="外部 minter に委譲",
+            minter="https://mint.partner.example.org", note="delegated to an outside minter",
         )
         r = ops.add_shoulder(s, root, naan="12345", shoulder="/r0")
         s.flush()
-        ops.set_shoulder_status(s, root, shoulder_id=r.id, status="retired", note="移行完了")
+        ops.set_shoulder_status(
+            s, root, shoulder_id=r.id, status="retired", note="migration finished"
+        )
         ops.add_shoulder(
-            s, root, naan="99999", shoulder="/q0", status="reserved", note="将来用に確保"
+            s, root, naan="99999", shoulder="/q0", status="reserved", note="held for later"
         )
 
-        # 機械の主体（API から採番するもの）
+        # Machine principals, which mint through the API
         for cid, naan, inst, scopes, label in [
-            ("example-invenio", "99999", "例示大学", "ark:mint ark:update", "InvenioRDM"),
-            ("example-weko", "12345", "例示医科大学", "ark:mint ark:update", "WEKO"),
+            ("example-invenio", "99999", "Example University",
+             "ark:mint ark:update", "InvenioRDM"),
+            ("example-weko", "12345", "Example Medical University",
+             "ark:mint ark:update", "WEKO"),
         ]:
             c = ops.register_client(
                 s, root, client_id=cid, naan=naan, manager_id=managers[inst],
@@ -109,7 +114,7 @@ def main() -> None:
             s.flush()
             ops.issue_credential(s, root, client_pk=c.id)
 
-        # 人の主体（Keycloak の利用者に対応する）
+        # People, matching the users in Keycloak
         for username, authority, inst, label in PEOPLE:
             if s.scalar(select(Client).where(Client.client_id == username)):
                 continue
@@ -121,8 +126,8 @@ def main() -> None:
                 expires_at=None if authority is not Authority.NAAN else _far_future(),
             )
         s.commit()
-        print("体験用の台帳を用意しました")
-        print("  Keycloak の利用者:", ", ".join(u for u, *_ in PEOPLE))
+        print("the demonstration ledger is ready")
+        print("  Keycloak users:", ", ".join(u for u, *_ in PEOPLE))
 
 
 def _far_future():
@@ -133,6 +138,6 @@ def _far_future():
 
 if __name__ == "__main__":  # pragma: no cover
     if os.environ.get("ARKHE_SKIP_SEED"):
-        print("種蒔きを飛ばします（ARKHE_SKIP_SEED）")
+        print("skipping the seed (ARKHE_SKIP_SEED)")
     else:
         main()
