@@ -1176,6 +1176,78 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#機能単位の対応表" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        機能単位の対応表
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="機能単位の対応表">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#解決" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        解決
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#採番と書き込み" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        採番と書き込み
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#識別子の一生" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        識別子の一生
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#認可と運用" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        認可と運用
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#そのほかの実装粗く" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        そのほかの実装（粗く）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arkletinternet-archive" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1329,6 +1401,78 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#機能単位の対応表" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        機能単位の対応表
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="機能単位の対応表">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#解決" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        解決
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#採番と書き込み" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        採番と書き込み
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#識別子の一生" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        識別子の一生
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#認可と運用" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        認可と運用
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#そのほかの実装粗く" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        そのほかの実装（粗く）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arkletinternet-archive" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1422,6 +1566,372 @@ arkhe はどこに位置するのか、何を借りたのかを書く。</p>
 </div>
 <p>いずれも実際に入れ、使い捨ての PostgreSQL を与え、<strong>その実装自身の view に HTTP で
 投げて</strong>確かめた。読んで疑い、動かして確かめている。</p>
+<h2 id="機能単位の対応表">機能単位の対応表<a class="headerlink" href="#機能単位の対応表" title="Permanent link">&para;</a></h2>
+<p>下の 4 列は踏み込んで見たもの——<strong>arklet と arklet-frick は動かし</strong>、EZID は読んだ。
+剣印（†）は<strong>読んだのではなく動かして確かめた</strong>セル。</p>
+<p><strong>✓</strong> ある ／ <strong>✗</strong> 無い ／ <strong>▲</strong> 条件つきである ／ <strong>—</strong> 見当たらないが、無いとも確かめて
+いない。</p>
+<h3 id="解決">解決<a class="headerlink" href="#解決" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ark:</code> を大小文字を問わず照合（A1）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>ハイフンを無視（A2）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>suffix passthrough</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>登録済みの<strong>最長</strong>の祖先が勝つ（D5）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td><code>?info</code></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td><code>?json</code></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td><code>??</code>（永続性の宣言）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>検査桁で誤写と 404 を見分ける</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>知らない NAAN を取り次ぐ</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p>EZID の正規化は自身のコメントが「仕様の規則に従う。ただし shadow ARK のための例外あり」と
+言っているので、この 2 つは ✓ ではなく ▲ にしてある。</p>
+<h3 id="採番と書き込み">採番と書き込み<a class="headerlink" href="#採番と書き込み" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>採番の API</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>一括採番</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td><strong>行が取り違わらない</strong>一括更新</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>採番の冪等鍵</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>外で採番された ARK の取り込み</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>部分更新（触れない項目は残る）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>全置換（渡さない項目は消える）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+</tbody>
+</table>
+<p>arklet-frick は<strong>要求に無い項目を落とす</strong>ので、更新は常に部分更新であり、<strong>項目を空にする
+手段が無い</strong>。arkhe は同じエンドポイントで両方持つ——<code>PUT</code> は置き換え、<code>PATCH</code> は置き換え
+ない。</p>
+<h3 id="識別子の一生">識別子の一生<a class="headerlink" href="#識別子の一生" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>公開せずに採る（reserved）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>公開を取り下げる</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>公開後は削除を断る</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>tombstone</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>期限つきで転送を保留する</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>取り下げた名前を二度と割り当てない</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p>arklet も arklet-frick も<strong>削除の口そのものが無い</strong>ので、ここは ✓ ではなく —。API からは
+消せず、別の道で消したときにどうなるかも書かれていない。</p>
+<h3 id="認可と運用">認可と運用<a class="headerlink" href="#認可と運用" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>資格情報の届く範囲</td>
+<td style="text-align: center;">NAAN・組織・shoulder の 3 段</td>
+<td style="text-align: center;">NAAN</td>
+<td style="text-align: center;">NAAN</td>
+<td style="text-align: center;">アカウントとグループ（共同所有）</td>
+</tr>
+<tr>
+<td>資格情報の保存</td>
+<td style="text-align: center;">Argon2。接頭辞で引いて 1 回だけ</td>
+<td style="text-align: center;">SHA256 1 回。<strong>平文で持つモデルも現役</strong></td>
+<td style="text-align: center;">Argon2。ただし<strong>その NAAN の全鍵を試す</strong></td>
+<td style="text-align: center;">Django のパスワードハッシュ</td>
+</tr>
+<tr>
+<td>採番を別の minter に委譲（307）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>minter と resolver を分けて建てる</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>監査ログ</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>管理画面</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓（Django admin）</td>
+<td style="text-align: center;">✓（Django admin）</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>画面と CLI が 2 言語</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>実装から生成する OpenAPI</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>同じプロジェクトのクライアント</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">▲（取込 CLI）</td>
+<td style="text-align: center;">▲（CLI）</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="そのほかの実装粗く">そのほかの実装（粗く）<a class="headerlink" href="#そのほかの実装粗く" title="Permanent link">&para;</a></h3>
+<p>こちらは表層——ルーティング・モデル・README——を読んだだけで動かしていないので、言えることは
+少ない。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">AMS</th>
+<th style="text-align: center;">greens</th>
+<th style="text-align: center;">arks-service</th>
+<th style="text-align: center;">NOID 系</th>
+<th style="text-align: center;">N2T</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>解決</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td><code>ark:</code> を大小文字を問わず照合</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td><code>?info</code> / <code>??</code></td>
+<td style="text-align: center;">✓（ERC テキスト）</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>suffix passthrough</td>
+<td style="text-align: center;">✓（NAAN ごと）</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>機械向けの採番 API</td>
+<td style="text-align: center;">✗（画面と CSV）</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">▲（管理画面の口）</td>
+<td style="text-align: center;">✗（ライブラリ）</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>1 つの設置で複数 NAAN</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">対象外</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>解決を止める状態</td>
+<td style="text-align: center;">✓（ARK ごとに HTTP ステータス）</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>公開後は削除を断る</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗（<code>DELETE</code> で消える）</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">対象外</td>
+<td style="text-align: center;">対象外</td>
+</tr>
+</tbody>
+</table>
 <h2 id="arkletinternet-archive">arklet（Internet Archive）<a class="headerlink" href="#arkletinternet-archive" title="Permanent link">&para;</a></h2>
 <p>Django、約 1,500 行。操作は採番・更新・解決の 3 つ。arkhe の仕様層はここから派生している
 （<a href="../../">由来</a>）ので、いちばん近い親戚にあたる。</p>

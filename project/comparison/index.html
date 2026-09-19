@@ -1176,6 +1176,78 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#feature-by-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature by feature
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature by feature">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minting-and-writing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minting and writing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-life-of-an-identifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The life of an identifier
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authorisation-and-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorisation and operation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-rest-of-the-field-more-coarsely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The rest of the field, more coarsely
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arklet-internet-archive" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1329,6 +1401,78 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#feature-by-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature by feature
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature by feature">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#minting-and-writing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minting and writing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-life-of-an-identifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The life of an identifier
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authorisation-and-operation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorisation and operation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-rest-of-the-field-more-coarsely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The rest of the field, more coarsely
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arklet-internet-archive" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1424,6 +1568,374 @@ reading its source.</p>
 <p>Each implementation was installed, given its own throwaway PostgreSQL, and driven
 through its own views over HTTP. Reading source is how the bugs were suspected; running
 it is how they were confirmed.</p>
+<h2 id="feature-by-feature">Feature by feature<a class="headerlink" href="#feature-by-feature" title="Permanent link">&para;</a></h2>
+<p>The four columns below were examined closely: <strong>arklet and arklet-frick were run</strong>, and
+EZID was read. A dagger (†) marks a cell measured by running the software rather than by
+reading it.</p>
+<p><strong>✓</strong> has it · <strong>✗</strong> does not · <strong>▲</strong> has it with a condition · <strong>—</strong> nothing found, and
+not confirmed either way.</p>
+<h3 id="resolution">Resolution<a class="headerlink" href="#resolution" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ark:</code> matched whatever its case (A1)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>hyphens ignored (A2)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>suffix passthrough</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>the longest registered ancestor wins (D5)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td><code>?info</code></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td><code>?json</code></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td><code>??</code>, the persistence statement</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>a wrong check digit told from a 404</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>an unknown NAAN handed on</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p>EZID's own comment says its normalisation "follows the rules given in the specification"
+with exceptions made for shadow ARKs, which is why those two cells are ▲ rather than ✓.</p>
+<h3 id="minting-and-writing">Minting and writing<a class="headerlink" href="#minting-and-writing" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a minting API</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">✓†</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>bulk minting</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>bulk update that cannot cross rows</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗†</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>an idempotency key on minting</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>taking in an ARK minted elsewhere</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>partial update, leaving the rest alone</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>full replace, clearing what is left out</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+</tbody>
+</table>
+<p>arklet-frick drops the fields a request does not mention, so every update is partial and
+there is no way to clear one. arkhe has both, on the same endpoint: <code>PUT</code> replaces and
+<code>PATCH</code> does not.</p>
+<h3 id="the-life-of-an-identifier">The life of an identifier<a class="headerlink" href="#the-life-of-an-identifier" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>minting without publishing (reserved)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>taking a publication down again</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>deletion refused once published</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>a tombstone</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>holding redirection, with an expiry</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>a withdrawn name never assigned again</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p>Neither arklet nor arklet-frick has a delete endpoint at all, which is why those two
+cells are — rather than ✓: nothing can be deleted through the API, and nothing states
+what happens if it is deleted another way.</p>
+<h3 id="authorisation-and-operation">Authorisation and operation<a class="headerlink" href="#authorisation-and-operation" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">arkhe</th>
+<th style="text-align: center;">arklet</th>
+<th style="text-align: center;">arklet-frick</th>
+<th style="text-align: center;">EZID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>how far a credential reaches</td>
+<td style="text-align: center;">NAAN, organisation, shoulder</td>
+<td style="text-align: center;">NAAN</td>
+<td style="text-align: center;">NAAN</td>
+<td style="text-align: center;">account and group, with co-owners</td>
+</tr>
+<tr>
+<td>how credentials are stored</td>
+<td style="text-align: center;">Argon2, found by prefix, hashed once</td>
+<td style="text-align: center;">SHA256 once, <strong>plus a model that keeps the key in plaintext</strong></td>
+<td style="text-align: center;">Argon2, but <strong>every key of the NAAN is tried</strong></td>
+<td style="text-align: center;">Django password hashing</td>
+</tr>
+<tr>
+<td>minting delegated to another minter (307)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>minter and resolver deployed separately</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>an audit log</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>an admin interface</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓ (Django admin)</td>
+<td style="text-align: center;">✓ (Django admin)</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>two languages, in the screens and the CLI</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>OpenAPI generated from the implementation</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>a client library from the same project</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">▲ (an import CLI)</td>
+<td style="text-align: center;">▲ (a CLI)</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-rest-of-the-field-more-coarsely">The rest of the field, more coarsely<a class="headerlink" href="#the-rest-of-the-field-more-coarsely" title="Permanent link">&para;</a></h3>
+<p>These were read at the surface — routes, models, README — and not run, so the cells say
+less.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: center;">AMS</th>
+<th style="text-align: center;">greens</th>
+<th style="text-align: center;">arks-service</th>
+<th style="text-align: center;">NOID family</th>
+<th style="text-align: center;">N2T</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>resolution</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td><code>ark:</code> matched whatever its case</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td><code>?info</code> / <code>??</code></td>
+<td style="text-align: center;">✓ (ERC text)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">▲</td>
+</tr>
+<tr>
+<td>suffix passthrough</td>
+<td style="text-align: center;">✓ (per NAAN)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>a minting API for machines</td>
+<td style="text-align: center;">✗ (screens and CSV)</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">▲ (an admin endpoint)</td>
+<td style="text-align: center;">✗ (a library)</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>more than one NAAN in one install</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">n/a</td>
+<td style="text-align: center;">✓</td>
+</tr>
+<tr>
+<td>a state that stops resolution</td>
+<td style="text-align: center;">✓ (an HTTP status per ARK)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+</tr>
+<tr>
+<td>deletion refused once published</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✗ (<code>DELETE</code> removes it)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">n/a</td>
+<td style="text-align: center;">n/a</td>
+</tr>
+</tbody>
+</table>
 <h2 id="arklet-internet-archive">arklet (Internet Archive)<a class="headerlink" href="#arklet-internet-archive" title="Permanent link">&para;</a></h2>
 <p>Django, about 1,500 lines. Three operations: mint, update, resolve. arkhe's specification
 layer is derived from it (see <a href="../../">Provenance</a>), so it is the closest relative.</p>
