@@ -24,7 +24,7 @@ breaking in a system whose identifiers cannot be reissued.
   EZID, with a dagger on every cell that was measured by running the software, and a
   coarser table for AMS, greens, arks-service, the NOID family and N2T. A cell is left
   at "—" where nothing was found and nothing was confirmed, rather than reading absence
-  as a ✗.
+  as a ✗. Both READMEs link to it from the passage that already named arklet.
 
 ### Fixed
 

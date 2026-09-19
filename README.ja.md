@@ -247,6 +247,12 @@ minter と resolver を建て、台帳を CLI で組み、素の HTTP で叩く�
 [arklet](https://github.com/internetarchive/arklet)（MIT）から派生している。
 該当箇所には出典を記し、[`NOTICE`](NOTICE) に著作権表示と許諾文を含めている。
 
+ARK を採番・解決するソフトウェアはほかにもあり、
+[ほかの実装との比較](https://rcosdp.github.io/arkhe/ja/project/comparison/)に**機能単位の
+対応表**がある。arklet とその Frick フォークは**読むだけでなく動かして**確かめ、実測した
+セルには印を付けた。**arkhe が独自でないもの**——公開の状態は EZID の言い換えであること
+など——も同じページに書いてある。
+
 ## ライセンス
 
 MIT。[LICENSE](LICENSE) を見よ。

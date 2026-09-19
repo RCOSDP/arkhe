@@ -276,6 +276,12 @@ Part of `src/arkhe/arkspec/` is derived from the Internet Archive's
 carry an attribution in place, and [NOTICE](NOTICE) reproduces the copyright notice
 and permission text.
 
+There is other software that mints and resolves ARKs, and
+[How arkhe compares](https://rcosdp.github.io/arkhe/project/comparison/) says feature by
+feature what each one does and where arkhe sits among them. arklet and its Frick fork
+were **run** rather than only read, and every cell measured that way is marked; it also
+records what arkhe followed rather than invented, such as EZID's publication states.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
