@@ -1,10 +1,12 @@
-"""グローバルへの公開と、公開前の取り下げ。
+"""Publishing to the world, and withdrawing before publication.
 
-**NR が縛るのは、外へ出した名前である。** ここで確かめたいのはその 1 点で、
-残りはその系である——公開前は解決するか、公開したものが消せないか、消した
-名前が二度と採られないか、届かない主体が消せないか。
+NR binds names that have been handed out. That is the one thing being checked here, and
+the rest follows from it: whether a reserved ARK resolves, whether a published one can
+be deleted, whether a deleted name is ever minted again, and whether a principal out of
+reach can delete anything.
 
-前半は台帳とドメイン、後半は HTTP と画面と CLI。
+The first half covers the ledger and the domain, the second HTTP, the screens and the
+CLI.
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ from arkhe.domain.queries import narrow_arks, visible_arks
 
 @pytest.fixture
 def reserved(db, world):
-    """公開前の ARK 1 本。"""
+    """One reserved ARK."""
     ark, _ = mint(db, shoulder=world["sh_a"], created_by="test", reserve=True)
     db.commit()
     return ark
@@ -43,39 +45,40 @@ def api(as_principal, root):
     return as_principal(root)
 
 
-# ================================================================ 台帳の側
+# ============================================================= In the ledger
 
 
-def test_既定の採番は公開済み(db, world):
-    """**今までと同じ振る舞いを既定にする。** 公開の一手間を既存の呼び出し側に
-    課すと、足し忘れた側で「採番できるのに解決しない」が静かに積もる。"""
+def test_minting_publishes_by_default(db, world):
+    """Keep the old behaviour as the default. An extra publish step would quietly
+    leave callers minting ARKs that never resolve."""
     ark, _ = mint(db, shoulder=world["sh_a"], created_by="t")
     assert ark.published_at is not None
     assert ark.is_public
 
 
-def test_予約した採番は公開前(reserved):
+def test_a_reserved_mint_is_unpublished(reserved):
     assert reserved.published_at is None
     assert not reserved.is_public
 
 
-def test_公開前のARKは削除できる(db, root, reserved):
+def test_a_reserved_ark_can_be_deleted(db, root, reserved):
     key = reserved.ark
-    ops.withdraw_ark(db, root, ark=key, reason="申請が取り下げられた")
+    ops.withdraw_ark(db, root, ark=key, reason="the request was withdrawn")
     db.commit()
     assert db.get(Ark, key) is None
 
 
-def test_公開したARKは削除できない(db, root, world):
-    """**外に出した名前は消さない。** 消せるのは公開前のものだけ。"""
+def test_a_published_ark_cannot_be_deleted(db, root, world):
+    """A name that went out is not removed. Only a reserved one can be."""
     ark, _ = mint(db, shoulder=world["sh_a"], created_by="t")
     db.commit()
     with pytest.raises(Conflict):
         ops.withdraw_ark(db, root, ark=ark.ark)
 
 
-def test_公開したARKはORMの層でも消せない(db, world):
-    """**規約を人に守らせない。** `admin_ops` を通らずに消そうとしても落ちる。"""
+def test_the_orm_refuses_to_delete_a_published_ark(db, world):
+    """The rule is not left to people: deleting without going through admin_ops
+    fails."""
     ark, _ = mint(db, shoulder=world["sh_a"], created_by="t")
     db.commit()
     with pytest.raises(NotDeletable):
@@ -83,16 +86,16 @@ def test_公開したARKはORMの層でも消せない(db, world):
         db.flush()
 
 
-def test_取り下げた名前は二度と採られない(db, root, world, reserved):
-    """**予約した文字列は既に人の手に渡っている。** 別の対象に振り直せば、
-    外からは NR 違反と見分けがつかない。"""
+def test_a_withdrawn_name_is_never_minted_again(db, root, world, reserved):
+    """A reserved string may already be in someone's hands. Pointing it at another
+    object is indistinguishable, from outside, from an NR violation."""
     key = reserved.ark
-    ops.withdraw_ark(db, root, ark=key, reason="不要になった")
+    ops.withdraw_ark(db, root, ark=key, reason="no longer needed")
     db.commit()
     gone = db.get(WithdrawnName, key)
     assert gone is not None
     assert gone.minted_by == "test" and gone.withdrawn_by == root.client_id
-    # 取り込みも拒む（採番は当たっても採り直す——確率でしか確かめられない）
+    # Import refuses it too. Minting retries on a hit, which only probability shows
     sh = world["sh_a"]
     ops.set_shoulder_status(db, root, shoulder_id=sh.id, status="delegated")
     db.flush()
@@ -100,30 +103,32 @@ def test_取り下げた名前は二度と採られない(db, root, world, reser
         minting.check_importable(db, sh, gone.assigned_name)
 
 
-def test_公開すると解決を始める(db, root, reserved):
+def test_publishing_starts_resolution(db, root, reserved):
     ops.publish_ark(db, root, ark=reserved.ark)
     db.commit()
     assert reserved.published_at is not None
 
 
-def test_公開は二度呼んでも落ちない(db, root, reserved):
-    """**応答だけが失われることがある。** 再送に 409 を返すと、呼び出し側は
-    別の口で確かめに行くことになる。"""
+def test_publishing_twice_is_not_an_error(db, root, reserved):
+    """Sometimes only the response is lost. Answering 409 to a resend would send the
+    caller off to check somewhere else."""
     first = ops.publish_ark(db, root, ark=reserved.ark).published_at
     again = ops.publish_ark(db, root, ark=reserved.ark).published_at
     assert first == again
 
 
-def test_公開はARKの履歴に残る(db, root, reserved):
-    """**いつ外に出たかは後から必ず要る。** 監査は NAAN 単位以上しか残さない。"""
+def test_publication_is_recorded_in_the_arks_history(db, root, reserved):
+    """When something went out is always needed later, and the audit log only keeps
+    NAAN level and above."""
     ops.publish_ark(db, root, ark=reserved.ark)
     db.commit()
     actions = list(db.scalars(select(ArkChange.action).where(ArkChange.ark == reserved.ark)))
     assert "publish" in actions
 
 
-def test_取り下げると採番の控えも消える(db, root, world, reserved):
-    """控えは ARK を指している。**残せば、消えた行を指す控えだけが生き残る。**"""
+def test_withdrawing_also_removes_the_minting_receipt(db, root, world, reserved):
+    """The receipt points at the ARK; keeping it would leave a receipt pointing at a
+    row that is gone."""
     db.add(MintReceipt(client_id="x", request_id="r1", ark=reserved.ark))
     db.commit()
     ops.withdraw_ark(db, root, ark=reserved.ark)
@@ -131,53 +136,54 @@ def test_取り下げると採番の控えも消える(db, root, world, reserved
     assert db.scalars(select(MintReceipt)).all() == []
 
 
-def test_修飾子がぶら下がっていると取り下げられない(db, root, reserved):
-    """**先に下から取り下げる。** 親だけ消すと、継ぐ先の無い部分参照が残る。"""
+def test_an_ark_with_qualifiers_cannot_be_withdrawn(db, root, reserved):
+    """Work upwards: removing only the parent leaves part references with nothing to
+    inherit from."""
     minting.register_qualified(db, base=reserved, qualifier="/c3", created_by="t")
     db.commit()
     with pytest.raises(Conflict):
         ops.withdraw_ark(db, root, ark=reserved.ark)
 
 
-def test_修飾子は公開状態をbaseから継ぐ(db, reserved):
-    """部分参照が base より先に世に出ることはない。"""
+def test_a_qualifier_inherits_publication_from_its_base(db, reserved):
+    """A part reference never goes out before its base."""
     part = minting.register_qualified(db, base=reserved, qualifier="/c3", created_by="t")
     assert part.published_at is None
 
 
-def test_他組織のARKは取り下げられない(db, world, reserved, principal_of):
-    """**負の場合。** 取り下げも「触る」操作なので、届かない相手には効かない。"""
+def test_another_organisations_ark_cannot_be_withdrawn(db, world, reserved, principal_of):
+    """Withdrawing is a way of touching a row, so it stops at the same reach."""
     other = principal_of(manager=world["b"])
     with pytest.raises(Forbidden):
         ops.withdraw_ark(db, other, ark=reserved.ark)
 
 
-def test_無い_ARKの取り下げは404(db, root):
+def test_withdrawing_an_ark_that_does_not_exist_is_404(db, root):
     with pytest.raises(NotFound):
         ops.withdraw_ark(db, root, ark="99999/x9nosuchark")
 
 
-# ============================================================ 解決の側
+# ============================================================ In resolution
 
 
-def test_公開前のARKは解決しない(api, db, reserved):
-    """**まだ無い名前として扱う。** 予約しただけの番号で 200 を返すと、
-    公開していない対象の存在と記述が外に出る。"""
+def test_a_reserved_ark_does_not_resolve(api, db, reserved):
+    """It is treated as a name that does not exist yet. Answering 200 would reveal
+    that an unpublished object exists, and describe it."""
     reserved.url = "https://example.ac.jp/draft"
     db.commit()
     r = api.get(f"/ark:/{reserved.ark}")
     assert r.status_code == 404
 
 
-def test_公開前のARKは記述も返さない(api, db, reserved):
-    reserved.title = "まだ公開していない観測データ"
+def test_a_reserved_ark_is_not_described_either(api, db, reserved):
+    reserved.title = "unpublished observation data"
     db.commit()
     r = api.get(f"/ark:/{reserved.ark}?info")
     assert r.status_code == 404
-    assert "まだ公開していない観測データ" not in r.text
+    assert "unpublished observation data" not in r.text
 
 
-def test_公開すれば解決する(api, db, root, reserved):
+def test_once_published_it_resolves(api, db, root, reserved):
     reserved.url = "https://example.ac.jp/thing"
     ops.publish_ark(db, root, ark=reserved.ark)
     db.commit()
@@ -186,44 +192,44 @@ def test_公開すれば解決する(api, db, root, reserved):
     assert r.headers["location"] == "https://example.ac.jp/thing"
 
 
-def test_公開前のARKは祖先としても使われない(api, db, reserved):
-    """suffix passthrough で拾われては、**公開していない行き先が外に出る。**"""
+def test_a_reserved_ark_is_not_used_as_an_ancestor(api, db, reserved):
+    """Picked up by inheritance, it would send people to an unpublished target."""
     reserved.url = "https://example.ac.jp/draft"
     db.commit()
     r = api.get(f"/ark:/{reserved.ark}/c3")
     assert r.status_code == 404
 
 
-# ======================================== 公開した ARK の破棄
+# ================================== Purging an ARK that has been published
 
 
 @pytest.fixture
 def published(db, world):
-    """公開済みの ARK 1 本。**普通に採番すればこれになる。**"""
+    """One published ARK, which is what ordinary minting produces."""
     ark, _ = mint(db, shoulder=world["sh_a"], created_by="test")
     db.commit()
     return ark
 
 
-def test_RAの運用者は公開したARKを破棄できる(db, root, published):
-    """**逃げ道が無いと、必要に迫られた誰かが DB を直接叩く。**
-    跡の残らない削除がいちばん悪い。"""
+def test_an_ra_operator_can_purge_a_published_ark(db, root, published):
+    """With no way out, someone under pressure edits the database directly, and a
+    deletion that leaves no trace is the worst outcome."""
     key = published.ark
     gone = ops.purge_ark(
-        db, root, ark=key, reason="裁判所の削除命令", confirm=key
+        db, root, ark=key, reason="a court removal order", confirm=key
     )
     db.commit()
     assert db.scalars(select(Ark.ark).where(Ark.ark == key)).all() == []
-    assert gone.published_at is not None  # 取り下げと区別が付く
-    assert gone.reason == "裁判所の削除命令"
+    assert gone.published_at is not None  # tells it apart from a withdrawal
+    assert gone.reason == "a court removal order"
 
 
-def test_破棄した名前も二度と採られない(db, root, world, published):
-    """**約束のうち守れるほうは守る。** 解決は止まるが、その名前が別のものを
-    指すことは無い——残った参照は 404 になるだけ。"""
+def test_a_purged_name_is_never_minted_again(db, root, world, published):
+    """Keep the half of the promise that can still be kept. Resolution stops, but the
+    name never points at something else: an old reference simply gets 404."""
     key = published.ark
     name = published.assigned_name
-    ops.purge_ark(db, root, ark=key, reason="誤って投入した", confirm=key)
+    ops.purge_ark(db, root, ark=key, reason="loaded by mistake", confirm=key)
     db.commit()
     assert db.get(WithdrawnName, key) is not None
     sh = world["sh_a"]
@@ -233,84 +239,85 @@ def test_破棄した名前も二度と採られない(db, root, world, publishe
         minting.check_importable(db, sh, name)
 
 
-def test_NAAN管理者は自NAANの中なら破棄できる(db, world, published, principal_of):
-    """**0.4.0 で位による制限をやめた。** 縛るのは届く範囲と儀式のほうである。
+def test_a_naan_administrator_can_purge_within_that_naan(db, world, published, principal_of):
+    """0.4.0 stopped restricting this by tier; what binds is reach and ceremony.
 
-    公開を取り下げられるようにした以上、`unpublish` → `delete` の 2 手で同じ
-    結果に届く。**1 手だけを位で縛っても、守っていることにはならない。**
+    Once withdrawal existed, unpublish followed by delete reached the same result in two
+    steps, so restricting only the one-step version by tier protected nothing.
     """
     naan_admin = principal_of(authority=Authority.NAAN, scopes={"ark:purge"})
-    ops.purge_ark(db, naan_admin, ark=published.ark, reason="削除命令",
+    ops.purge_ark(db, naan_admin, ark=published.ark, reason="a removal order",
                   confirm=published.ark)
     assert db.get(Ark, published.ark) is None
 
 
-def test_組織の管理者は自分のshoulderなら破棄できる(db, world, published, principal_of):
+def test_an_organisation_admin_can_purge_within_its_shoulder(db, world, published, principal_of):
     org = principal_of(manager=world["a"], scopes={"ark:purge"})
-    ops.purge_ark(db, org, ark=published.ark, reason="削除命令", confirm=published.ark)
+    ops.purge_ark(db, org, ark=published.ark, reason="a removal order", confirm=published.ark)
     assert db.get(Ark, published.ark) is None
 
 
-def test_他組織のARKは破棄できない(db, world, published, principal_of):
-    """**範囲の縛りは残っている。** ここを緩めれば、ただの乗っ取りになる。"""
+def test_another_organisations_ark_cannot_be_purged(db, world, published, principal_of):
+    """Reach still binds. Loosening it here would simply be a takeover."""
     other = principal_of(manager=world["b"], scopes={"ark:purge"})
     with pytest.raises(Forbidden):
-        ops.purge_ark(db, other, ark=published.ark, reason="消したい",
+        ops.purge_ark(db, other, ark=published.ark, reason="we want it gone",
                       confirm=published.ark)
     assert db.get(Ark, published.ark) is not None
 
 
-def test_理由の無い破棄はできない(db, root, published):
-    """**残らない破棄は、無かったことと同じ。**"""
+def test_purging_without_a_reason_is_refused(db, root, published):
+    """A purge that leaves no record is the same as one that never happened."""
     with pytest.raises(Invalid):
         ops.purge_ark(db, root, ark=published.ark, reason="   ", confirm=published.ark)
     assert db.get(Ark, published.ark) is not None
 
 
-def test_打ち直しが合わなければ破棄しない(db, root, world, published):
-    """**一覧を回すスクリプトが、意図せず全件消すことのないように。**"""
+def test_a_mismatched_confirmation_purges_nothing(db, root, world, published):
+    """So that a script walking a list cannot empty the ledger by accident."""
     other, _ = mint(db, shoulder=world["sh_a"], created_by="test")
     db.commit()
     with pytest.raises(Invalid):
-        ops.purge_ark(db, root, ark=published.ark, reason="消す", confirm=other.ark)
+        ops.purge_ark(db, root, ark=published.ark, reason="delete it", confirm=other.ark)
     with pytest.raises(Invalid):
-        ops.purge_ark(db, root, ark=published.ark, reason="消す", confirm="")
+        ops.purge_ark(db, root, ark=published.ark, reason="delete it", confirm="")
     assert db.get(Ark, published.ark) is not None
 
 
-def test_破棄は監査に残る(db, root, published):
-    """**system の操作は全件記録される。** 消えた行について残るのはこれと
-    `WithdrawnName` だけ。"""
+def test_a_purge_is_recorded_in_the_audit_log(db, root, published):
+    """Everything the system administrator does is recorded. For a row that is gone,
+    this and WithdrawnName are all that remain."""
     from arkhe.db.models import AuditEvent
 
-    ops.purge_ark(db, root, ark=published.ark, reason="削除命令", confirm=published.ark)
+    ops.purge_ark(db, root, ark=published.ark, reason="a removal order", confirm=published.ark)
     db.commit()
     rows = list(db.scalars(select(AuditEvent).where(AuditEvent.action == "purge")))
     assert len(rows) == 1
     assert rows[0].target == published.ark
-    assert rows[0].detail["reason"] == "削除命令" and rows[0].detail["published"] is True
+    assert rows[0].detail["reason"] == "a removal order" and rows[0].detail["published"] is True
 
 
-def test_破棄した_ARK_は解決しなくなる(api, db, root, published):
+def test_a_purged_ark_stops_resolving(api, db, root, published):
     published.url = "https://example.ac.jp/thing"
     db.commit()
     assert api.get(f"/ark:/{published.ark}").status_code == 302
-    ops.purge_ark(db, root, ark=published.ark, reason="削除命令", confirm=published.ark)
+    ops.purge_ark(db, root, ark=published.ark, reason="a removal order", confirm=published.ark)
     db.commit()
     assert api.get(f"/ark:/{published.ark}").status_code == 404
 
 
-def test_破棄の経路を通らない削除は今までどおり拒まれる(db, root, published):
-    """**逃げ道を作っても、扉は閉じたまま。** `purge_ark` が名指ししたセッション
-    以外では、公開した行は落ちない。"""
+def test_deleting_outside_the_purge_path_is_still_refused(db, root, published):
+    """The door stays shut even though a way out exists: outside the session purge_ark
+    named, a published row cannot be removed."""
     with pytest.raises(NotDeletable):
         db.delete(published)
         db.flush()
     db.rollback()
 
 
-def test_破棄の宣言はその_ARK_だけに効く(db, root, world, published):
-    """**大域の旗にしない。** 宣言した 1 本のほかは、同じセッションでも落ちない。"""
+def test_the_purge_declaration_applies_to_one_ark_only(db, root, world, published):
+    """Not a global flag: in the same session, nothing but the declared ARK can be
+    removed."""
     from arkhe.db.models import sanctioned_purge
 
     other, _ = mint(db, shoulder=world["sh_a"], created_by="test")
@@ -321,80 +328,86 @@ def test_破棄の宣言はその_ARK_だけに効く(db, root, world, published
     db.rollback()
 
 
-def test_破棄の宣言は抜けたら残らない(db, root, published):
-    """例外で抜けても宣言は消える——**立てっぱなしが起きない**ことが、この
-    仕掛けの価値のほとんど。"""
+def test_the_purge_declaration_does_not_outlive_the_block(db, root, published):
+    """It is cleared even when an exception leaves the block. Not staying raised is
+    most of the value here."""
     from arkhe.db.models import sanctioned_purge
 
     with contextlib.suppress(RuntimeError), sanctioned_purge(db, published.ark):
-        raise RuntimeError("途中で落ちた")
+        raise RuntimeError("failed halfway")
     with pytest.raises(NotDeletable):
         db.delete(published)
         db.flush()
     db.rollback()
 
 
-def test_公開前のARKはpurgeからでも取り下げになる(db, root, reserved):
-    """**同じ操作に 2 つの入口を作らない。** 公開前を purge で消しても、
-    記録は取り下げのまま（`published_at` は入らない）。"""
-    gone = ops.purge_ark(db, root, ark=reserved.ark, reason="下書きを消した",
+def test_purging_a_reserved_ark_records_it_as_a_withdrawal(db, root, reserved):
+    """One operation, not two entrances. Purging a reserved ARK is still recorded as a
+    withdrawal, with no published_at."""
+    gone = ops.purge_ark(db, root, ark=reserved.ark, reason="removed a draft",
                          confirm=reserved.ark)
     db.commit()
     assert gone.published_at is None
 
 
-def test_APIから破棄できる(as_principal, principal_of, db, published):
-    """**scope も到達範囲も別に要る。**"""
+def test_purging_works_through_the_api(as_principal, principal_of, db, published):
+    """The scope and the reach are both required."""
     ops_client = as_principal(
         principal_of(authority=Authority.SYSTEM, scopes={"ark:purge"})
     )
     r = ops_client.post(
         "/api/purge",
-        json={"ark": published.ark, "reason": "削除命令", "confirm": published.ark},
+        json={"ark": published.ark, "reason": "a removal order", "confirm": published.ark},
     )
     assert r.status_code == 200, r.text
     assert r.json()["was_published_at"] is not None
     assert db.scalars(select(Ark.ark).where(Ark.ark == published.ark)).all() == []
 
 
-def test_delete_scopeだけでは破棄できない(as_principal, principal_of, published):
+def test_the_delete_scope_alone_cannot_purge(as_principal, principal_of, published):
     client = as_principal(
         principal_of(authority=Authority.SYSTEM, scopes={"ark:delete"})
     )
     r = client.post(
         "/api/purge",
-        json={"ark": published.ark, "reason": "消す", "confirm": published.ark},
+        json={"ark": published.ark, "reason": "delete it", "confirm": published.ark},
     )
     assert r.status_code == 403
 
 
-def test_NAAN管理者はAPIからも破棄できる(as_principal, principal_of, db, published):
+def test_a_naan_administrator_can_purge_through_the_api_too(
+    as_principal, principal_of, db, published
+):
     client = as_principal(
         principal_of(authority=Authority.NAAN, scopes={"ark:purge"})
     )
     r = client.post(
         "/api/purge",
-        json={"ark": published.ark, "reason": "削除命令", "confirm": published.ark},
+        json={"ark": published.ark, "reason": "a removal order", "confirm": published.ark},
     )
     assert r.status_code == 200
-    # **引き直して見る。** API は別のセッションで commit するので、
-    # こちらの識別マップに残っている行はまだ生きて見える。
+    # Look it up again. The API commits in another session, so the row still in this
+    # identity map would look alive.
     assert db.scalars(select(Ark.ark).where(Ark.ark == published.ark)).all() == []
 
 
-def test_scopeが無ければ破棄できない(as_principal, principal_of, db, published):
-    """**位をやめても scope は残る。** 縛りを 1 つ外したら、残りは効いていること。"""
+def test_without_the_scope_nothing_can_be_purged(as_principal, principal_of, db, published):
+    """Tiers went away; scopes did not. When one restriction is removed, the rest must
+    still hold."""
     client = as_principal(principal_of(authority=Authority.SYSTEM, scopes={"ark:delete"}))
     r = client.post(
         "/api/purge",
-        json={"ark": published.ark, "reason": "消す", "confirm": published.ark},
+        json={"ark": published.ark, "reason": "delete it", "confirm": published.ark},
     )
     assert r.status_code == 403
     assert db.get(Ark, published.ark) is not None
 
 
-def test_画面から破棄できるのはscopeを持つ主体だけ(as_principal, principal_of, db, published):
-    """**押しても断られるだけのボタンを出さない。** 出し分けと認可は同じ判定。"""
+def test_only_a_principal_with_the_scope_can_purge_from_the_screen(
+    as_principal, principal_of, db, published
+):
+    """No button that only refuses when pressed: display and authorisation use one
+    decision."""
     no_scope = as_principal(
         principal_of(authority=Authority.NAAN, scopes={"ark:mint"})
     )
@@ -408,29 +421,29 @@ def test_画面から破棄できるのはscopeを持つ主体だけ(as_principa
     assert "/purge" in page.text
     r = naan_ui.post(
         f"/admin/arks/{published.ark}/purge",
-        data={"reason": "削除命令", "confirm": f"ark:{published.ark}"},
+        data={"reason": "a removal order", "confirm": f"ark:{published.ark}"},
     )
     assert r.status_code == 303
     assert db.scalars(select(Ark.ark).where(Ark.ark == published.ark)).all() == []
 
 
-# ================================================ 閉域のリゾルバ
+# ============================================= A resolver on a closed network
 
 
 @pytest.fixture
 def closed(app, settings, as_principal, root):
-    """**閉域に置いたリゾルバ。** 公開前の ARK も解決する。
+    """A resolver inside a closed network, which resolves reserved ARKs too.
 
-    設定 1 つで変わるので、`settings` を差し替えるだけでよい——判断の置き場所は
-    1 か所（`resolution.serves`）で、公開の口と共有している。
+    One setting changes it, so only the settings are swapped here. The decision lives in
+    one place, resolution.serves, shared with the public endpoints.
     """
     settings.resolve_unpublished = True
     return as_principal(root)
 
 
-def test_閉域のリゾルバは公開前のARKを解決する(closed, db, reserved):
-    """**閉じた網の中で採番した ARK を、その網のリゾルバが解決できなければ
-    配る意味が無い。**「閉じた対象にも同じ形の PID を配る」が成り立たなくなる。"""
+def test_a_closed_resolver_resolves_reserved_arks(closed, db, reserved):
+    """If ARKs minted inside a closed network do not resolve there, handing them out
+    is pointless, and giving closed objects the same kind of identifier fails."""
     reserved.url = "https://closed.example.ac.jp/thing"
     db.commit()
     r = closed.get(f"/ark:/{reserved.ark}")
@@ -438,24 +451,26 @@ def test_閉域のリゾルバは公開前のARKを解決する(closed, db, rese
     assert r.headers["location"] == "https://closed.example.ac.jp/thing"
 
 
-def test_閉域のリゾルバは公開前のARKの記述も返す(closed, db, reserved):
-    reserved.title = "閉域の観測データ"
+def test_a_closed_resolver_describes_reserved_arks_too(closed, db, reserved):
+    reserved.title = "observation data on a closed network"
     db.commit()
     r = closed.get(f"/ark:/{reserved.ark}?info")
     assert r.status_code == 200
-    assert "閉域の観測データ" in r.text
+    assert "observation data on a closed network" in r.text
 
 
-def test_閉域のリゾルバでも公開前なら削除できる(closed, db, root, reserved):
-    """**解決することと、消せることは別。** 名前は `WithdrawnName` に残るので、
-    消した後にその名前が**別のものを指すことはない**（NR が守るのはそこ）。"""
-    ops.withdraw_ark(db, root, ark=reserved.ark, reason="閉域でも取りやめはある")
+def test_a_closed_resolver_still_allows_deleting_a_reserved_ark(closed, db, root, reserved):
+    """Resolving and deleting are different questions. The name stays in
+    WithdrawnName, so afterwards it never points at something else, which is what NR
+    protects."""
+    ops.withdraw_ark(db, root, ark=reserved.ark, reason="plans change on closed networks too")
     db.commit()
     assert db.scalars(select(Ark.ark).where(Ark.ark == reserved.ark)).all() == []
 
 
-def test_公開のリゾルバは既定で公開前を解決しない(api, db, reserved, settings):
-    """**既定は漏れない側。** 取り違えたときに出る側を既定にしない。"""
+def test_a_public_resolver_does_not_serve_reserved_arks(api, db, reserved, settings):
+    """The default is the side that does not leak: a mistake should not expose
+    anything."""
     assert settings.resolve_unpublished is False
     reserved.url = "https://closed.example.ac.jp/thing"
     db.commit()
@@ -465,7 +480,7 @@ def test_公開のリゾルバは既定で公開前を解決しない(api, db, r
 # ================================================================ HTTP
 
 
-def test_APIから公開できる(as_principal, principal_of, db, world):
+def test_publishing_works_through_the_api(as_principal, principal_of, db, world):
     org = principal_of(manager=world["a"], scopes={"ark:mint"})
     client = as_principal(org)
     made = client.post("/api/mint", json={"reserve": True, "url": "https://x.example/1"})
@@ -478,19 +493,19 @@ def test_APIから公開できる(as_principal, principal_of, db, world):
     assert out.json()["published_at"] is not None
 
 
-def test_APIから取り下げられる(as_principal, principal_of, db, world):
+def test_withdrawing_works_through_the_api(as_principal, principal_of, db, world):
     org = principal_of(manager=world["a"], scopes={"ark:mint", "ark:delete"})
     client = as_principal(org)
     ark = client.post("/api/mint", json={"reserve": True}).json()["ark"]
-    r = client.post("/api/delete", json={"ark": ark, "reason": "登録を取りやめた"})
+    r = client.post("/api/delete", json={"ark": ark, "reason": "the registration was cancelled"})
     assert r.status_code == 200
     assert r.json()["ark"] == ark
     assert client.post("/api/delete", json={"ark": ark}).status_code == 404
 
 
-def test_公開したARKの削除は409(as_principal, principal_of, world):
-    """**tombstone との違いを状態符号で示す。** 値も権限も正しいが、対象が
-    その状態にない。"""
+def test_deleting_a_published_ark_is_409(as_principal, principal_of, world):
+    """The status code tells it apart from a tombstone: the values and the permissions
+    are right, but the row is in the wrong state."""
     org = principal_of(manager=world["a"], scopes={"ark:mint", "ark:delete"})
     client = as_principal(org)
     ark = client.post("/api/mint", json={}).json()["ark"]
@@ -499,53 +514,55 @@ def test_公開したARKの削除は409(as_principal, principal_of, world):
     assert r.json()["code"] == "ARKHE-1501"
 
 
-def test_delete_scopeが無ければ取り下げられない(as_principal, principal_of, world):
-    """**負の場合。** 採番できることと、取り下げられることは別。"""
+def test_without_the_delete_scope_nothing_is_withdrawn(as_principal, principal_of, world):
+    """Being able to mint and being able to withdraw are different things."""
     org = principal_of(manager=world["a"], scopes={"ark:mint", "ark:update"})
     client = as_principal(org)
     ark = client.post("/api/mint", json={"reserve": True}).json()["ark"]
     assert client.post("/api/delete", json={"ark": ark}).status_code == 403
 
 
-def test_他組織のARKはAPIからも取り下げられない(as_principal, principal_of, db, world, reserved):
+def test_another_organisations_ark_cannot_be_withdrawn_through_the_api(
+    as_principal, principal_of, db, world, reserved
+):
     other = principal_of(manager=world["b"], scopes={"ark:delete"})
     r = as_principal(other).post("/api/delete", json={"ark": reserved.ark})
     assert r.status_code in (403, 404)
     assert db.get(Ark, reserved.ark) is not None
 
 
-# ================================================================ 画面と CLI
+# ====================================================== The screens and the CLI
 
 
 @pytest.fixture
 def admin(as_principal, principal_of):
-    """画面の主体。**scope も見る**ので、持たせて入る。"""
+    """A principal for the screens. Scopes are checked, so they are granted here."""
     return as_principal(
         principal_of(authority=Authority.SYSTEM, scopes={"ark:mint", "ark:delete"})
     )
 
 
-def test_画面から公開できる(admin, db, reserved):
+def test_publishing_works_from_the_screen(admin, db, reserved):
     r = admin.post(f"/admin/arks/{reserved.ark}/publish")
     assert r.status_code == 303
     db.expire_all()
     assert db.get(Ark, reserved.ark).published_at is not None
 
 
-def test_画面から取り下げられる(admin, db, reserved):
-    r = admin.post(f"/admin/arks/{reserved.ark}/delete", data={"reason": "下書きを消した"})
+def test_withdrawing_works_from_the_screen(admin, db, reserved):
+    r = admin.post(f"/admin/arks/{reserved.ark}/delete", data={"reason": "removed a draft"})
     assert r.status_code == 303
-    # **別のセッションで消えている。** 手元の同一性マップではなく台帳に訊く。
+    # It was removed in another session, so ask the ledger, not the identity map.
     assert db.scalars(select(Ark.ark).where(Ark.ark == reserved.ark)).all() == []
 
 
-def test_画面の詳細に公開前と出る(admin, reserved):
+def test_the_detail_page_says_it_is_unpublished(admin, reserved):
     page = admin.get(f"/admin/arks/{reserved.ark}")
-    assert "公開前" in page.text
+    assert "\u516c\u958b\u524d" in page.text  # "unpublished" in the Japanese UI
 
 
-def test_一覧は状態で絞れる(db, root, world, reserved):
-    """**画面と CLI は同じ式を通る。** 絞り込みを 2 か所に書かない。"""
+def test_the_list_can_be_filtered_by_state(db, root, world, reserved):
+    """The screens and the CLI share one query; the filter is not written twice."""
     mint(db, shoulder=world["sh_a"], created_by="t")
     db.commit()
     only = db.scalars(narrow_arks(visible_arks(root), state="reserved")).all()
@@ -554,46 +571,47 @@ def test_一覧は状態で絞れる(db, root, world, reserved):
     assert reserved.ark not in [a.ark for a in rest]
 
 
-# ==================================== 公開の取り下げと、出し直し（0.4.0）
+# ===================== Withdrawing a publication and publishing again (0.4.0)
 
 
-def test_公開を取り下げると解決しなくなる(db, root, published, api):
-    """**戻せるほうの半分。** 行は残り、解決だけが止まる。"""
-    assert api.get(f"/ark:/{published.ark}").status_code == 200   # 記述が返る
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤って公開した",
+def test_withdrawing_publication_stops_resolution(db, root, published, api):
+    """The reversible half: the row stays and only resolution stops."""
+    assert api.get(f"/ark:/{published.ark}").status_code == 200   # described
+    ops.unpublish_ark(db, root, ark=published.ark, reason="published by mistake",
                       confirm=published.ark)
     db.commit()
-    assert db.get(Ark, published.ark) is not None          # 行は残る
+    assert db.get(Ark, published.ark) is not None          # the row stays
     assert db.get(Ark, published.ark).published_at is None
-    # **知らない名前と同じに答える。** 「在るが伏せてある」と読める応答にしない。
+    # Answer as for a name we do not know. Never hint that it exists but is hidden.
     assert api.get(f"/ark:/{published.ark}").status_code == 404
 
 
-def test_取り下げても一度出した事実は消えない(db, root, published):
-    """**片道の列。** ここが倒れると、儀式の重さが予約と同じになってしまう。"""
+def test_withdrawal_does_not_erase_having_been_published(db, root, published):
+    """A one-way column. If it moved, deleting a published name would be as light as
+    deleting a reserved one."""
     first = db.get(Ark, published.ark).first_published_at
     assert first is not None
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=published.ark)
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
     db.commit()
     assert db.get(Ark, published.ark).first_published_at == first
 
 
-def test_取り下げたものは出し直せる(db, root, published, api):
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=published.ark)
+def test_something_withdrawn_can_be_published_again(db, root, published, api):
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
     db.commit()
     first = db.get(Ark, published.ark).first_published_at
     ops.publish_ark(db, root, ark=published.ark)
     db.commit()
     row = db.get(Ark, published.ark)
     assert row.published_at is not None
-    # **初めて出した時刻は動かない。** 出し直しても、空白の期間は埋まらない。
+    # The first publication time does not move; republishing does not fill the gap.
     assert row.first_published_at == first
     assert api.get(f"/ark:/{published.ark}").status_code == 200
 
 
-def test_出し直しは再公開として履歴に残る(db, root, published):
-    """**読む側にとっては、解決しなかった期間があることが重要。**"""
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=published.ark)
+def test_republishing_is_recorded_as_such(db, root, published):
+    """What matters to a reader is that there was a period when it did not resolve."""
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
     ops.publish_ark(db, root, ark=published.ark)
     db.commit()
     actions = db.scalars(
@@ -603,72 +621,73 @@ def test_出し直しは再公開として履歴に残る(db, root, published):
     assert "republish" in actions
 
 
-def test_公開していないものは取り下げられない(db, root, reserved):
+def test_something_unpublished_cannot_be_withdrawn(db, root, reserved):
     with pytest.raises(Conflict):
-        ops.unpublish_ark(db, root, ark=reserved.ark, reason="誤り", confirm=reserved.ark)
+        ops.unpublish_ark(db, root, ark=reserved.ark, reason="a mistake", confirm=reserved.ark)
 
 
-def test_理由の無い取り下げはできない(db, root, published):
-    """**その間に誰かが引用しているかもしれない。** 残るのは理由だけである。"""
+def test_withdrawal_without_a_reason_is_refused(db, root, published):
+    """Someone may already be citing it. The reason is all that will remain."""
     with pytest.raises(Invalid):
         ops.unpublish_ark(db, root, ark=published.ark, reason="  ", confirm=published.ark)
     assert db.get(Ark, published.ark).published_at is not None
 
 
-def test_打ち直しが合わなければ取り下げない(db, root, world, published):
+def test_a_mismatched_confirmation_withdraws_nothing(db, root, world, published):
     other, _ = mint(db, shoulder=world["sh_a"], created_by="test")
     with pytest.raises(Invalid):
-        ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=other.ark)
+        ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=other.ark)
     assert db.get(Ark, published.ark).published_at is not None
 
 
-def test_公開中のARKは取り下げてからでないと消せない(db, root, published):
-    """**引っ込めることと消すことを 1 手にまとめない。** 前者は戻せる。"""
+def test_a_published_ark_must_be_withdrawn_before_it_is_deleted(db, root, published):
+    """Withdrawing and deleting are not one step: the first can be undone."""
     with pytest.raises(Conflict):
-        ops.withdraw_ark(db, root, ark=published.ark, reason="消す", confirm=published.ark)
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=published.ark)
-    ops.withdraw_ark(db, root, ark=published.ark, reason="消す", confirm=published.ark)
+        ops.withdraw_ark(db, root, ark=published.ark, reason="delete it", confirm=published.ark)
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
+    ops.withdraw_ark(db, root, ark=published.ark, reason="delete it", confirm=published.ark)
     db.commit()
     assert db.scalars(select(Ark.ark).where(Ark.ark == published.ark)).all() == []
     assert db.get(WithdrawnName, published.ark) is not None
 
 
-def test_一度公開した名前を消すには理由と打ち直しが要る(db, root, published):
-    """**重さは主体の位ではなく、名前の履歴で決まる。**"""
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=published.ark)
-    with pytest.raises(Invalid):   # 理由が無い
+def test_deleting_a_once_published_name_needs_a_reason_and_confirmation(db, root, published):
+    """The weight comes from the name's history, not from the caller's tier."""
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
+    with pytest.raises(Invalid):   # no reason
         ops.withdraw_ark(db, root, ark=published.ark, reason="", confirm=published.ark)
-    with pytest.raises(Invalid):   # 打ち直しが合わない
-        ops.withdraw_ark(db, root, ark=published.ark, reason="消す", confirm="ark:99999/x")
+    with pytest.raises(Invalid):   # the confirmation does not match
+        ops.withdraw_ark(db, root, ark=published.ark, reason="delete it", confirm="ark:99999/x")
     assert db.get(Ark, published.ark) is not None
 
 
-def test_一度も公開していない予約は今までどおり軽く消せる(db, root, reserved):
-    """**訊く回数は、消えるものの重さに合わせる。** ここが重くなったら退化である。"""
+def test_a_reserved_ark_that_was_never_published_stays_easy_to_delete(db, root, reserved):
+    """How much is asked matches what is being lost. Making this heavier would be a
+    regression."""
     ops.withdraw_ark(db, root, ark=reserved.ark)
     db.commit()
     assert db.scalars(select(Ark.ark).where(Ark.ark == reserved.ark)).all() == []
 
 
-def test_取り下げてから消した名前は外に出たものとして残る(db, root, published):
-    """**予約の取り下げと区別が付くこと。** 記録の側で両者が混ざると、
-    「この名前は世に出ていたのか」が後から言えなくなる。
+def test_a_name_withdrawn_then_deleted_is_recorded_as_having_been_public(db, root, published):
+    """It has to be distinguishable from withdrawing a reservation. Mixed together in
+    the records, nobody could later say whether the name was ever public.
     """
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=published.ark)
-    gone = ops.withdraw_ark(db, root, ark=published.ark, reason="消す",
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
+    gone = ops.withdraw_ark(db, root, ark=published.ark, reason="delete it",
                             confirm=published.ark)
     db.commit()
     assert gone.published_at is not None
     assert db.get(WithdrawnName, published.ark) is not None
 
 
-def test_取り下げてから消す道もORMで塞がれている(db, root, published):
-    """**抜け道が 1 手でできるなら、守っていないのと同じ。**
+def test_the_orm_also_blocks_withdraw_then_delete(db, root, published):
+    """A guard that can be stepped around in one move is not a guard.
 
-    `published_at` だけを見ていると「取り下げてから消す」で守りを抜けられる。
-    見るのは `first_published_at`（一度でも出したか）である。
+    Looking only at published_at, withdrawing and then deleting walks past it. What is
+    checked is first_published_at: whether it was ever public.
     """
-    ops.unpublish_ark(db, root, ark=published.ark, reason="誤り", confirm=published.ark)
+    ops.unpublish_ark(db, root, ark=published.ark, reason="a mistake", confirm=published.ark)
     db.flush()
     row = db.get(Ark, published.ark)
     with pytest.raises(NotDeletable):
@@ -676,73 +695,76 @@ def test_取り下げてから消す道もORMで塞がれている(db, root, pub
         db.flush()
 
 
-# --------------------------- 誰がどこまで届くか（**位ではなく範囲で縛る**）
+# ------------------------------- Who reaches how far: bound by reach, not tier
 
 
-def test_組織の管理者は自分のshoulderの公開を取り下げられる(db, world, published, principal_of):
-    """**依頼の本体。** 取り下げの判断は、対象を持っている組織のところにある。"""
+def test_an_organisation_admin_can_withdraw_within_its_shoulder(db, world, published, principal_of):
+    """The decision to withdraw belongs to the organisation that holds the object."""
     org = principal_of(manager=world["a"], scopes={"ark:unpublish"})
-    ops.unpublish_ark(db, org, ark=published.ark, reason="公開を止めたい",
+    ops.unpublish_ark(db, org, ark=published.ark, reason="we want it taken down",
                       confirm=published.ark)
     db.commit()
     assert db.get(Ark, published.ark).published_at is None
 
 
-def test_組織の管理者は取り下げてから消せる(db, world, published, principal_of):
+def test_an_organisation_admin_can_withdraw_then_delete(db, world, published, principal_of):
     org = principal_of(manager=world["a"], scopes={"ark:unpublish", "ark:delete"})
-    ops.unpublish_ark(db, org, ark=published.ark, reason="誤り", confirm=published.ark)
-    ops.withdraw_ark(db, org, ark=published.ark, reason="消す", confirm=published.ark)
+    ops.unpublish_ark(db, org, ark=published.ark, reason="a mistake", confirm=published.ark)
+    ops.withdraw_ark(db, org, ark=published.ark, reason="delete it", confirm=published.ark)
     db.commit()
     assert db.scalars(select(Ark.ark).where(Ark.ark == published.ark)).all() == []
 
 
-def test_組織の管理者は取り下げたものを出し直せる(db, world, published, principal_of):
+def test_an_organisation_admin_can_publish_again(db, world, published, principal_of):
     org = principal_of(manager=world["a"], scopes={"ark:unpublish", "ark:mint"})
-    ops.unpublish_ark(db, org, ark=published.ark, reason="誤り", confirm=published.ark)
+    ops.unpublish_ark(db, org, ark=published.ark, reason="a mistake", confirm=published.ark)
     ops.publish_ark(db, org, ark=published.ark)
     db.commit()
     assert db.get(Ark, published.ark).published_at is not None
 
 
-def test_NAAN管理者は自NAANの公開を取り下げられる(db, published, principal_of):
+def test_a_naan_administrator_can_withdraw_within_that_naan(db, published, principal_of):
     naan_admin = principal_of(authority=Authority.NAAN, scopes={"ark:unpublish"})
-    ops.unpublish_ark(db, naan_admin, ark=published.ark, reason="誤り",
+    ops.unpublish_ark(db, naan_admin, ark=published.ark, reason="a mistake",
                       confirm=published.ark)
     db.commit()
     assert db.get(Ark, published.ark).published_at is None
 
 
-def test_他組織のARKの公開は取り下げられない(db, world, published, principal_of):
-    """**範囲の縛りは残っている。** ここを緩めると、ただの乗っ取りになる。"""
+def test_another_organisations_publication_cannot_be_withdrawn(db, world, published, principal_of):
+    """Reach still binds. Loosening it here would simply be a takeover."""
     other = principal_of(manager=world["b"], scopes={"ark:unpublish"})
     with pytest.raises(Forbidden):
-        ops.unpublish_ark(db, other, ark=published.ark, reason="止めたい",
+        ops.unpublish_ark(db, other, ark=published.ark, reason="we want it stopped",
                           confirm=published.ark)
     assert db.get(Ark, published.ark).published_at is not None
 
 
-def test_採番の鍵だけでは取り下げられない(as_principal, principal_of, db, published):
-    """**出せることと引っ込められることは別の判断。** scope を分けた理由。"""
+def test_a_minting_key_alone_cannot_withdraw(as_principal, principal_of, db, published):
+    """Publishing and taking down are different decisions, which is why the scopes are
+    separate."""
     minter = as_principal(principal_of(manager=None, scopes={"ark:mint"}))
     r = minter.post(
         "/api/unpublish",
-        json={"ark": published.ark, "reason": "止めたい", "confirm": published.ark},
+        json={"ark": published.ark, "reason": "we want it stopped", "confirm": published.ark},
     )
     assert r.status_code == 403
     assert db.get(Ark, published.ark).published_at is not None
 
 
-def test_取り下げの鍵だけでは消せない(db, world, published, principal_of):
-    """**戻せる操作と戻せない操作に、同じ鍵を渡さない。**"""
+def test_a_withdrawal_key_alone_cannot_delete(db, world, published, principal_of):
+    """A reversible operation and an irreversible one do not share a key."""
     org = principal_of(manager=world["a"], scopes={"ark:unpublish"})
-    ops.unpublish_ark(db, org, ark=published.ark, reason="誤り", confirm=published.ark)
+    ops.unpublish_ark(db, org, ark=published.ark, reason="a mistake", confirm=published.ark)
     db.flush()
     from arkhe.domain import authz as _authz
     with pytest.raises(Forbidden):
         _authz.require_scope(org, "ark:delete")
 
 
-def test_画面から取り下げと出し直しができる(as_principal, principal_of, db, published):
+def test_withdrawing_and_republishing_work_from_the_screen(
+    as_principal, principal_of, db, published
+):
     ui = as_principal(
         principal_of(authority=Authority.NAAN, scopes={"ark:unpublish", "ark:mint"})
     )
@@ -750,12 +772,12 @@ def test_画面から取り下げと出し直しができる(as_principal, princ
     assert "/unpublish" in page.text
     r = ui.post(
         f"/admin/arks/{published.ark}/unpublish",
-        data={"reason": "誤って公開した", "confirm": f"ark:{published.ark}"},
+        data={"reason": "published by mistake", "confirm": f"ark:{published.ark}"},
     )
     assert r.status_code == 303
     db.expire_all()
     assert db.get(Ark, published.ark).published_at is None
-    # **出し直せることも同じ画面から。** 戻れない操作だけを見せない。
+    # Republishing is on the same page: never show only the irreversible option.
     r = ui.post(f"/admin/arks/{published.ark}/publish")
     assert r.status_code == 303
     db.expire_all()
