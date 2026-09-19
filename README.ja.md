@@ -75,6 +75,23 @@ ARKHE_AUTH=apikey,oidc
 到達範囲は 3 段（`system` / `naan` / `manager`）。**配られた側が、配った側より広く
 届くことはない。**
 
+## 壊さないもの
+
+ARK は「名前を振り直さない」と宣言する体系で、**この 1 つの約束**のために
+コードの多くが組まれている。
+
+- **ARK は削除しない。** 行を消すと解決が止まる＝識別子が壊れる。対象が
+  失われたときは tombstone に付け替えるか、行き先を空にして記述を返す。
+- **shoulder は削除しない。** 乱数割当が同じ文字列を再び当てうる。離脱した
+  組織の名前空間は retired にして残す。
+- **retired からは戻せない。** その間に外部が同じ名前を使っている可能性を
+  否定できない。
+- **採番は UPDATE に化けない。** 主キー衝突は落ちるべきもので、既存 ARK の
+  向き先を黙って書き換えてはならない。
+
+承継と離脱も同じ約束の上にある——**管理主体がどう変わっても識別子は壊さない**。
+変わるのは「誰が新規に採番するか」と「どこへ転送するか」だけである。
+
 ## 管理画面への入口
 
 **ブラウザは Authorization ヘッダを付けられない。** API は Bearer トークンで足りるが、
@@ -181,8 +198,7 @@ introspection、revocation。これらが要るようになったら、その時
 
 ```bash
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 403 件（2026-08 時点）
-python -m ruff check src tests
+bash scripts/check.sh        # 検査ぜんぶ（lint・テスト・移行・通し・文書）
 
 # 台帳を組み立てる
 arkhe naan add 99999 "国立情報学研究所"
@@ -196,8 +212,21 @@ uvicorn arkhe.app:create_app --factory
 
 管理画面は `/admin/`（日英切替つき）。API のドキュメントは `/api/docs`。
 
+**検査は `scripts/check.sh` の 1 本だけ**で、版を出せるかはこれが決める（CI は持たない）。
+いちばん時間がかかるのは**通しの検査**——docker で PostgreSQL を立て、`uvicorn` で
+minter と resolver を建て、台帳を CLI で組み、素の HTTP で叩く。単体で走らせるなら
+`uv run pytest -m e2e`、同じ台帳を手で作るなら `uv run python scripts/seed_e2e.py`。
+
+**コードは英語で書く**——識別子・コメント・docstring とも。日本語が残るのは、
+日本語が画面そのものである場所だけ（多言語カタログ `src/arkhe/api/i18n/` と
+`src/arkhe/cli_i18n.py`、`errors.py` の `ja`、そして文書の日本語ページ）。
+
 ## 由来
 
 `src/arkhe/arkspec/` の一部は Internet Archive の
 [arklet](https://github.com/internetarchive/arklet)（MIT）から派生している。
 該当箇所には出典を記し、[`NOTICE`](NOTICE) に著作権表示と許諾文を含めている。
+
+## ライセンス
+
+MIT。[LICENSE](LICENSE) を見よ。

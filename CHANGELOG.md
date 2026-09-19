@@ -9,6 +9,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Changed
+
+- **The two READMEs line up again.** The split is unchanged, English in `README.md` and
+  Japanese in `README.ja.md`, but the sections that existed in only one are now in both:
+  the Japanese one had neither what the invariants protect nor the licence.
+
+  **A stale number is gone too** (403 tests). Both now say that `scripts/check.sh` is the
+  one way in, and how to run the end-to-end suite and the seeder on their own.
+
 ## [0.12.0] — 2026-09-19
 
 **The release that settled which language the code is written in.**

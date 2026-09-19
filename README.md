@@ -221,8 +221,7 @@ They **combine** — `ARKHE_AUTH=apikey,oidc` is a normal thing to want while mi
 
 ```bash
 uv venv --python 3.12 && uv pip install -e '.[app,dev]'
-python -m pytest -q          # 403 tests (2026-08)
-python -m ruff check src tests
+bash scripts/check.sh        # every check: lint, tests, migrations, end to end, docs
 
 # Build up the ledger
 arkhe naan add 99999 "National Institute of Informatics"
@@ -236,6 +235,18 @@ uvicorn arkhe.app:create_app --factory
 
 The admin interface is at `/admin/` (Japanese and English). API documentation is at
 `/api/docs`.
+
+`scripts/check.sh` is the only set of checks there is, and it is what decides whether a
+version can be released: there is no CI. Its slowest step is the end-to-end suite, which
+starts PostgreSQL in docker, brings up a minter and a resolver under `uvicorn`, builds
+the ledger through the CLI and drives the result over plain HTTP. Run it alone with
+`uv run pytest -m e2e`, and build the same ledger by hand with
+`uv run python scripts/seed_e2e.py`.
+
+**The code is written in English** — identifiers, comments and docstrings alike.
+Japanese remains only where it is the interface itself: the message catalogues
+(`src/arkhe/api/i18n/` and `src/arkhe/cli_i18n.py`), the `ja` field of each error code,
+and the Japanese pages of the documentation.
 
 ## Provenance
 
