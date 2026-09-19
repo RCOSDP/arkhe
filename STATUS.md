@@ -1,6 +1,6 @@
 # STATUS
 
-**2026-09-18 時点の arkhe の現在地。** 作業を止めて再開するときに、まずここを読む。
+**2026-09-19 時点の arkhe の現在地。** 作業を止めて再開するときに、まずここを読む。
 
 設計の意図は[不変条件](docs/concepts/invariants.md)、手順と踏んだ罠は
 [AGENTS.md](AGENTS.md)、変更の履歴は [CHANGELOG.ja.md](CHANGELOG.ja.md) にある。
@@ -15,8 +15,8 @@
 
 | | |
 | --- | --- |
-| 版 | **0.10.0**（2026-09-18 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
-| テスト | **すべて green**（`uv run pytest -q`） |
+| 版 | **0.11.0**（2026-09-19 リリース）。`main` は clean、タグと `pyproject.toml` は一致 |
+| テスト | **すべて green**（`uv run pytest -q`）。**通しの検査は別枠**（`uv run pytest -m e2e`——docker で PostgreSQL を立て、minter と resolver を `uvicorn` で建てて HTTP で叩く。`check.sh` の手順 5） |
 | 静的検査 | `ruff check src tests` 通過（E/F/I/UP/B、line-length 100） |
 | 文書 | `mkdocs build --strict` 警告 0。日英 2 言語 |
 | マイグレーション | head は単一（`b9d4a17c3e85`）。`scripts/check.sh` が PostgreSQL 17 で up→down→up→check を回し、`tests/test_migrations.py` が SQLite で頭まで流す |
@@ -106,6 +106,30 @@ test_stats.py        台帳の統計（**届かないものが混ざらないこ
    手立ては[デプロイ](docs/guides/deployment.md)に書いた。**組んでいないだけである。**
 
 ## やってみて分かったこと
+
+### 通しの検査を足した（2026-09-19・3 つの穴に効くことを確かめた）
+
+**この版までに見つけた失敗は、どれも試験ではなく「動かしたこと」で見つかっている。**
+試験は全部 green のまま、復元手順は起動せず、`/readyz` は読まない DB を見ていた。
+**同じ形の見落としが、次も試験をすり抜ける。**
+
+そこで `tests/e2e/` を足した。**本番と同じ形に建てて、素の HTTP で叩く**——docker で
+PostgreSQL、`uvicorn` で minter と resolver を別々に、台帳は CLI で組み、**その CLI が
+刷った鍵**で採番して解決する。
+
+**効くことを確かめた**:
+
+| 見ているもの | 戻すとどうなるか |
+| --- | --- |
+| app がファクトリであること | `arkhe.app:app` では起動せず、fixture が uvicorn の出力ごと落とす |
+| `/readyz` がその役割の**読む** DB を見ること | `read_only=s.resolver` を戻すと**実際に落ちた**（確認済み） |
+| resolver が書き込み DB に触れないこと | resolver の書き込み側は**どこにも繋がらない先**に向けてある |
+
+**組み立てでも 1 つ見つかった。** 組織に結び付けずに作った主体は採番できない
+（ARKHE-1303）——`client add --manager` が要る。**CLI だけを追っていては気づかない**。
+
+既定の `pytest` からは外してある（`-m 'not e2e'`）。**混ぜると誰も普段は流さなくなる**
+——`check.sh` が手順 5 として呼び、**docker が無ければ SKIP と出す**。
 
 ### 復元リハーサル（2026-09-18・通った）
 

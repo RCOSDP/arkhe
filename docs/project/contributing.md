@@ -21,13 +21,23 @@ bash scripts/check.sh --no-db  # without docker — **not the same thing**
 ```
 
 Sync (`--frozen`) → ruff → pytest → **a disposable PostgreSQL with the migrations
-round-tripped** → the OpenAPI spec still matching the implementation → `mkdocs build
---strict`. It never touches the demo database, and **a check whose tooling is missing
+round-tripped** → **the end-to-end check** (built in the production shape and driven over
+HTTP) → the OpenAPI spec still matching the implementation → `mkdocs build --strict`. It never touches the demo database, and **a check whose tooling is missing
 prints SKIP rather than passing quietly** — "it passed because it wasn't installed" is
 the dangerous outcome.
 
 **One system, not two.** Split between a laptop and CI, a change that "passes on one
 side" appears, and before long nobody looks at the other side.
+
+```bash
+uv run pytest -m e2e           # the end-to-end check on its own
+```
+
+It is deselected from a plain `pytest` run because it takes about a minute: it starts
+PostgreSQL in docker, brings up **a minter and a resolver with `uvicorn`**, builds the
+ledger **through the CLI**, and drives the result over **plain HTTP**. The rest of the
+suite calls the app directly with `TestClient`, on SQLite, with authentication
+substituted — **what gets checked here is the assembled shape, not the parts.**
 
 Two more, for publishing:
 

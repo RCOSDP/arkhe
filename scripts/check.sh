@@ -16,8 +16,9 @@
 #   3. pytest
 #   4. マイグレーションを **PostgreSQL で往復**（SQLite は PostgreSQL が弾く形を通す）
 #      ＋ alembic check
-#   5. OpenAPI を実装から書き出して、コミット済みのものとずれていないか
-#   6. mkdocs build --strict（ページ内のアンカー切れも落とす）
+#   5. **通しの検査**——本番と同じ形（uvicorn × 2 役割 ＋ PostgreSQL）に建てて HTTP で叩く
+#   6. OpenAPI を実装から書き出して、コミット済みのものとずれていないか
+#   7. mkdocs build --strict（ページ内のアンカー切れも落とす）
 #
 # **道具が無い項目は黙って通さず SKIP と出す。**「入っていないから通った」が
 # いちばん危ない——緑を見て出したのに、見ていない検査があることになる。
@@ -90,7 +91,20 @@ else
   ok "upgrade → downgrade base → upgrade → check"
 fi
 
-sec "5. OpenAPI が実装に追随しているか"
+sec "5. 通しの検査（uvicorn × 2 役割 ＋ PostgreSQL）"
+# **速い網が通り抜けるものを、ここで捕まえる。** app をファクトリとして建てられるか、
+# CLI で組んだ台帳に CLI が刷った鍵で届くか、resolver が書き込み DB に触れないか。
+# 自前で使い捨ての PostgreSQL を立てる（pytest の fixture の中）。
+if [ "$WITH_DB" = 0 ]; then
+  skip "--no-db が指定された。**通しの検査を通していない**"
+elif ! command -v docker >/dev/null 2>&1; then
+  skip "docker が無い。**通しの検査を通していない**"
+else
+  run uv run pytest -q -m e2e
+  ok "通しの検査"
+fi
+
+sec "6. OpenAPI が実装に追随しているか"
 # 仕様は実装から起こす。**コミット済みのものがずれていたら、ここで気づく。**
 run uv run python scripts/export_openapi.py
 if git diff --quiet -- docs/assets/openapi-*.json 2>/dev/null; then
@@ -100,7 +114,7 @@ else
   die "コミット済みの OpenAPI が実装から遅れている。書き出した結果をコミットする"
 fi
 
-sec "6. 文書"
+sec "7. 文書"
 if [ "$WITH_DOCS" = 0 ]; then
   skip "--no-docs が指定された"
 else

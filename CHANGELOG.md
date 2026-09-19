@@ -9,20 +9,39 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
-### Fixed
+## [0.11.0] — 2026-09-19
 
-- **The start-up command in the restore procedure did not work.** It said
-  `uvicorn arkhe.app:app`, but **the app is a factory** (`arkhe.app:create_app --factory`)
-  and will not start that way — **found by actually running the procedure written moments
-  earlier**. Everywhere else (Quickstart, the federation guide, the Dockerfile, compose)
-  was right.
+**The release that measured first, then ran what it had written down.**
 
-- **`scripts/bench.py` sent fewer requests than `-n`.** Integer division by the concurrency
-  meant `-n 3000 -c 16` sent 2992. **Compared against `-n`, the status breakdown looks like
-  eight failures** — which is exactly how it was misread. The remainder is now distributed,
-  so what it counts matches what it said it would send.
+The knobs shipped in the previous release were rebuilt on the recommended values and
+re-measured. **Workers double up to 4, then give about 10%.** **A pool 30× larger changes
+nothing.** Exactly **one** knob made a difference, and it was invisible in rps —
+**counting the round trips is what made it decisive**.
+
+Along the way: **a restore procedure written that same day did not start**, and
+**`/readyz` probed a database the resolver does not read**. Both pass every check that
+exists. **This is the release that found what only running things finds** — and then **made the
+running into a check**: an end-to-end suite that builds the production shape and drives
+it over HTTP.
 
 ### Added
+
+- **An end-to-end check** (`tests/e2e/`, `uv run pytest -m e2e`). It **builds the
+  production shape and drives it over plain HTTP**: PostgreSQL in docker, **a minter and
+  a resolver started separately under `uvicorn`**, the ledger built **through the CLI**,
+  and minting and resolution done with the key that CLI printed.
+
+  The rest of the suite calls the app directly with `TestClient`, on SQLite, with
+  authentication substituted — faster, and a finer net for authorisation. **What this
+  catches is what passes through that net**: that the app is a factory (`arkhe.app:app`
+  does not start), that the minter has no resolution route and **the resolver has no
+  minting route**, and that **the resolver never touches the write database**.
+
+  **The resolver's write URL points nowhere.** Touch it and the check fails — reverting
+  this release's `/readyz` fix does exactly that, which was verified.
+
+  It is step 5 of `check.sh`, and **prints SKIP when docker is missing** rather than
+  passing quietly.
 
 - **Figures re-measured on the recommended settings**, in
   [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/). A ledger of one million
@@ -70,18 +89,6 @@ breaking in a system whose identifiers cannot be reissued.
   for `synchronous_commit`: **53 of the 60 ms a mint takes is Argon2** — **if giving up
   durability buys nothing, there is no reason to give it up.**
 
-### Fixed
-
-- **`/readyz` probed a database the role does not read.** A resolver reads from
-  `ARKHE_READ_DATABASE_URL` (the replica), yet the probe went to the **primary** — so
-  **with the replica down and resolution returning `500`, it kept answering Ready** as
-  long as the primary was alive, and a load balancer kept sending traffic.
-
-  Found by actually stopping the replica. **It now probes the side the role reads** (the
-  read connection for a resolver, the write one for a minter).
-
-### Added
-
 - **What a replica actually does**, measured and written up in
   [Deployment](https://rcosdp.github.io/arkhe/guides/deployment/).
 
@@ -95,6 +102,42 @@ breaking in a system whose identifiers cannot be reissued.
   request** — the `404` warned about in the monitoring section **never once happened under
   these conditions**. The warning stays, with the conditions that would produce it spelled
   out (another machine, a replica busy with reads, a large ingest).
+
+- **Three procedural notes for following a procedure** (`.claude/skills/`):
+  `release` (the six steps of cutting a version), `measure` (how to measure), `chaos`
+  (breaking it on purpose).
+
+  **What they record is mistakes.** Appending a version section to an already-released
+  one, measuring the client instead of the server, re-`apply`ing an expired chaos object
+  and reading "no effect" — each happened. **`AGENTS.md` is the source of truth**; these
+  are notes for carrying it out.
+
+### Changed
+
+- **The step for whoever embeds arkhe was removed from `AGENTS.md`.** Advancing a
+  submodule pointer is **the embedder's procedure**, and **this document is arkhe's
+  guide**. Written in two places, one of them goes stale.
+
+### Fixed
+
+- **The start-up command in the restore procedure did not work.** It said
+  `uvicorn arkhe.app:app`, but **the app is a factory** (`arkhe.app:create_app --factory`)
+  and will not start that way — **found by actually running the procedure written moments
+  earlier**. Everywhere else (Quickstart, the federation guide, the Dockerfile, compose)
+  was right.
+
+- **`scripts/bench.py` sent fewer requests than `-n`.** Integer division by the concurrency
+  meant `-n 3000 -c 16` sent 2992. **Compared against `-n`, the status breakdown looks like
+  eight failures** — which is exactly how it was misread. The remainder is now distributed,
+  so what it counts matches what it said it would send.
+
+- **`/readyz` probed a database the role does not read.** A resolver reads from
+  `ARKHE_READ_DATABASE_URL` (the replica), yet the probe went to the **primary** — so
+  **with the replica down and resolution returning `500`, it kept answering Ready** as
+  long as the primary was alive, and a load balancer kept sending traffic.
+
+  Found by actually stopping the replica. **It now probes the side the role reads** (the
+  read connection for a resolver, the write one for a minter).
 
 ## [0.10.0] — 2026-09-18
 
@@ -1541,7 +1584,8 @@ the version starts with `0`.**
   unmodified.
 - `arkspec/` derives in part from the Internet Archive's arklet (MIT); see NOTICE.
 
-[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/RCOSDP/arkhe/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.11.0
 [0.10.0]: https://github.com/RCOSDP/arkhe/releases/tag/v0.10.0
 [0.9.2]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.2
 [0.9.1]: https://github.com/RCOSDP/arkhe/releases/tag/v0.9.1

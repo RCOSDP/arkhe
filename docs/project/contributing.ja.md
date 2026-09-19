@@ -21,12 +21,22 @@ bash scripts/check.sh --no-db  # docker が無いとき（**同じにはなら�
 ```
 
 sync（`--frozen`）→ ruff → pytest → **使い捨ての PostgreSQL を立ててマイグレーションを
-往復** → OpenAPI が実装からずれていないか → `mkdocs build --strict`。デモの DB には
+往復** → **通しの検査**（本番と同じ形に建てて HTTP で叩く）→ OpenAPI が実装から
+ずれていないか → `mkdocs build --strict`。デモの DB には
 当たらない。**道具が無い項目は黙って通さず SKIP と出す**——「入っていないから通った」が
 いちばん危ない。
 
 **系統を 2 つ持たないため**にこうしてある。手元と CI に分かれると、「片方では通る」
 変更が生まれ、やがて誰も片方を見なくなる。
+
+```bash
+uv run pytest -m e2e           # 通しの検査だけ
+```
+
+素の `pytest` からは外してある——1 分ほどかかるからで、docker で PostgreSQL を立て、
+**minter と resolver を `uvicorn` で建て**、台帳を **CLI で組み**、**素の HTTP** で
+叩く。ほかの試験は `TestClient` で app を直に呼び、SQLite の上で、認証を差し替えて
+いる——**ここで見るのは部品ではなく、組み上がった形である。**
 
 出す側の 2 本:
 

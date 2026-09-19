@@ -1,6 +1,6 @@
 [project]
 name = "arkhe"
-version = "0.10.0"
+version = "0.11.0"
 description = "ARK identifier infrastructure — minter and resolver as separate services"
 requires-python = ">=3.12"
 license = "MIT"
@@ -41,6 +41,11 @@ packages = ["src/arkhe"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# **通しの検査は既定では走らせない。** docker で PostgreSQL を立て、uvicorn を 2 つ
+# 建てるので 1 分ほどかかる——速い網と混ぜると、誰も普段は流さなくなる。
+# `check.sh` が別の手順として呼ぶ（`uv run pytest -m e2e`)。
+addopts = "-m 'not e2e'"
+markers = ["e2e: 本番と同じ形で建てて HTTP で叩く通しの検査（docker が要る）"]
 
 [tool.ruff]
 line-length = 100

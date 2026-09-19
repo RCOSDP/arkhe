@@ -56,7 +56,8 @@ bash scripts/release.sh vX.Y.Z # 版を出す（--publish を付けたときだ�
 force push していた**。**止めたつもりが出ている**のがいちばん困る。
 
 `check.sh` は sync（`--frozen`）→ ruff → pytest → **使い捨ての PostgreSQL を立てて
-マイグレーションを往復**（デモの DB には当たらない）→ OpenAPI のずれ → `mkdocs --strict`。
+マイグレーションを往復**（デモの DB には当たらない）→ **通しの検査**（本番と同じ形に
+建てて HTTP で叩く）→ OpenAPI のずれ → `mkdocs --strict`。
 **道具が無い項目は黙って通さず SKIP と出す**——「入っていないから通った」がいちばん危ない。
 
 ### 手順をなぞるための覚え書き（`.claude/skills/`）
@@ -67,7 +68,7 @@ force push していた**。**止めたつもりが出ている**のがいちば
 
 | | 何のため |
 | --- | --- |
-| `release` | 版を出す 7 手順と、**踏んだ罠**（節の差し込み先・日英・STATUS・OpenAPI の検査） |
+| `release` | 版を出す 6 手順と、**踏んだ罠**（節の差し込み先・日英・STATUS・OpenAPI の検査） |
 | `measure` | 測り方。**クライアントの天井**・ばらつき ±20%・**時間で見えないものは数える** |
 | `chaos` | kind の arkhe を壊して可用性を測る。**期限切れの chaos は `apply` で再実行されない** |
 
@@ -80,7 +81,7 @@ force push していた**。**止めたつもりが出ている**のがいちば
 
 ```
 src/arkhe/     実装。層の説明は下
-tests/         ファイル名が対象を表す
+tests/         ファイル名が対象を表す。`tests/e2e/` は**通しの検査**（`-m e2e`。docker が要る）
 alembic/       マイグレーション。**PostgreSQL で検証する**
 docs/          MkDocs。`page.md` が英語、`page.ja.md` が日本語
 compose/oidc/  Keycloak つきの体験環境。**見本であって手本ではない**
