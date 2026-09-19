@@ -1,15 +1,17 @@
-"""設定。**認証機構は排他ではなく、個別に有効化できる。**
+"""Settings. The authentication mechanisms are not exclusive; each can be enabled on
+its own.
 
-`ARKHE_AUTH` に列挙したものを順に試す。移行期に「API キーと OIDC の両方を受ける」
-が普通に要るので、単一の「モード」にはしない。
+Whatever ARKHE_AUTH lists is tried in order. During a migration, accepting both an API
+key and OIDC is ordinary, so this is not a single mode.
 
-  apikey  … arklet 方式の API キー。**arkhe 単体で完結する**（外部依存なし）
-  oauth2  … arkhe 自身が client_credentials でトークンを発行する。単体で完結する
-  oidc    … 外部の認可サーバ（Keycloak 等）が発行した JWT を検証する。委譲
+  apikey  API keys as arklet did them, with no external dependency
+  oauth2  arkhe issues its own tokens with client_credentials, again on its own
+  oidc    a JWT from an external authorisation server, such as Keycloak, is verified
 
-`oauth2` を client_credentials だけに絞っているのは、ARK の採番が組織システムから
-の M2M だからで、認可コードフロー（＝利用者がブラウザで第三者アプリに許可を与える
-手順）が要る場面が無いため。人間のログインが要るなら `oidc` で外部に委譲する。
+oauth2 is limited to client_credentials because minting is machine to machine from an
+organisation's system, and nothing here needs the authorization code flow, where a
+person grants a third-party application access in a browser. Where people have to sign
+in, that is delegated with oidc.
 """
 
 from __future__ import annotations
@@ -27,9 +29,10 @@ AdminLogin = Literal["bearer", "password", "oidc", "proxy"]
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="ARKHE_", env_file=".env", extra="ignore")
 
-    # ---------------------------------------------------------------- 役割
-    #: resolver として起動する。**minter に解決の口は無く、resolver に採番の口は無い。**
-    #: 別々にスケールさせ、resolver を読み取り専用ロールとレプリカに向けるため。
+    # ----------------------------------------------------------------- Role
+    #: Start as a resolver. The minter has no resolution route and a resolver has no
+    #: minting route, so they can be scaled separately and a resolver can be pointed at
+    #: a read-only role and a replica.
     resolver: bool = False
 
     debug: bool = False
@@ -37,126 +40,134 @@ class Settings(BaseSettings):
 
     # ---------------------------------------------------------------- DB
     database_url: str = "postgresql+psycopg://arkhe@localhost/arkhe"
-    #: 1 プロセスが常に持つ接続の数。**worker 数と掛け算になる。**
+    #: How many connections one process keeps open. This multiplies by the number of
+    #: workers.
     #:
-    #: 既定のままだと 1 プロセスで最大 `5 + 10 = 15` 接続を開きうる。
-    #: **resolver 2 台 × 4 worker なら 120** で、PostgreSQL の既定
-    #: `max_connections = 100`（予約を除くと 97）を**超える**——推奨の形のまま
-    #: 既定で動かすと、そこで詰まる。解決は短い問い合わせ 1 回なので、
-    #: **worker あたり 2〜3 で足りることが多い。**
+    #: On the defaults one process may open 5 + 10 = 15, so two resolvers with four
+    #: workers each reach 120, past PostgreSQL's default max_connections of 100, or 97
+    #: once the reserve is taken out: the recommended shape jams there on the defaults.
+    #: Resolution is one short query, so two or three per worker is usually enough.
     db_pool_size: int = 5
-    #: 混み合ったときに一時的に増やせる上限。`db_pool_size` に**足される**。
+    #: How many more may be opened under load. This is added to db_pool_size.
     db_max_overflow: int = 10
-    #: 接続を貸す前に生きているか確かめる（`SELECT 1`）。
+    #: Check a connection is alive before lending it out (SELECT 1).
     #:
-    #: **切ると、解決 1 件あたりの DB 往復がほぼ半分になる**——実測で
-    #: 1.60 → 0.82（100 万件の台帳、`xact_commit + xact_rollback` を数えた）。
-    #: 解決はもともと**索引 1 回しか引かない**ので、確認の 1 往復が相対的に重い。
+    #: Turning it off roughly halves the database round trips per resolution: 1.60
+    #: against 0.82 when measured over a million rows, counting xact_commit plus
+    #: xact_rollback. Resolution reads one index, so the check costs a lot in relative
+    #: terms.
     #:
-    #: **既定は入れたまま**。切ってよいのは、**DB が近く、切られた接続が
-    #: そのまま例外として呼び出し側に出ても構わない**構成である。前段が接続を
-    #: 黙って切るなら、切る前に `db_pool_recycle` を設定すること。
+    #: It stays on by default. Turning it off suits a deployment where the database is
+    #: close and a dropped connection surfacing as an exception is acceptable. Where
+    #: something in front drops connections silently, set db_pool_recycle first.
     db_pre_ping: bool = True
 
-    #: 接続を作り直すまでの秒数。`0` で作り直さない（既定）。
-    #: **接続を黙って切る前段**（NAT・LB・ファイアウォール）の下では、
-    #: その保持時間より短くする。`pool_pre_ping` が拾うが、**拾うたびに
-    #: 1 往復を捨てている。**
+    #: Seconds before a connection is replaced. 0, the default, never replaces one.
+    #: Behind anything that drops idle connections silently, a NAT, a load balancer or
+    #: a firewall, set it below that timeout. pool_pre_ping catches it, but every catch
+    #: costs a round trip.
     db_pool_recycle: int = 0
 
-    #: resolver 用の読み取り専用接続。未設定なら `database_url` を使う。
+    #: The read-only connection for a resolver. Unset, database_url is used.
     read_database_url: str = ""
 
-    # ---------------------------------------------------------------- 認証
-    #: `NoDecode` を付けるのは、pydantic-settings が環境変数の list を JSON として
-    #: 解釈しようとするため。`ARKHE_AUTH=apikey,oidc` と書けるようにする。
+    # --------------------------------------------------------- Authentication
+    #: NoDecode is needed because pydantic-settings would read a list from the
+    #: environment as JSON. This allows ARKHE_AUTH=apikey,oidc.
     auth: Annotated[list[Mechanism], NoDecode] = Field(
         default_factory=lambda: ["apikey", "oidc"]
     )
 
-    #: `oauth2`（自前発行）用。トークンの署名鍵と寿命。
+    #: For oauth2, where we issue tokens: the signing key and how long they live.
     token_secret: str = ""
     token_ttl: int = 3600
     token_issuer: str = ""
 
-    #: `oidc`（委譲）用。発行者と、**API のアクセストークン**に求める audience。
+    #: For oidc, where it is delegated: the issuer, and the audience required of an
+    #: access token for the API.
     #:
-    #: 管理画面のログインで検証する ID トークンの `aud` は必ず `admin_client_id`
-    #: なので、ここの値は使わない（混ぜると片方が必ず落ちる）。
+    #: The aud of the ID token verified when signing in to the admin interface is always
+    #: admin_client_id, so this value is not used there; mixing them breaks one of the
+    #: two.
     oidc_issuer: str = ""
     oidc_audience: str = ""
-    #: JWKS の取得先。未設定なら issuer の discovery から引く。
+    #: Where to fetch the JWKS. Unset, it is found through the issuer's discovery
+    #: document.
     oidc_jwks_url: str = ""
 
-    # ------------------------------------------------------- 管理画面への入口
-    #: **ブラウザは Authorization ヘッダを付けられない。** API は Bearer で足りるが、
-    #: 人が管理画面に入る経路は別に要る。
+    # ------------------------------------------ Ways in to the admin interface
+    #: A browser cannot set an Authorization header. Bearer is enough for the API, but
+    #: people need another way in.
     #:
-    #:   bearer    既定。ログイン画面を持たない（自動化・curl 専用）
-    #:   password  arkhe が ID とパスワードを預かる。**外部 IdP が無くても単体で建つ**
-    #:   oidc      arkhe が OIDC のクライアントとして認可コードフローを回す
-    #:   proxy     前段の認証プロキシが済ませた前提で、そのヘッダを信じる
+    #:   bearer    the default. No login page; for automation and curl
+    #:   password  arkhe holds the usernames and passwords, so it runs without an
+    #:             identity provider
+    #:   oidc      arkhe acts as an OIDC client and runs the authorization code flow
+    #:   proxy     an authenticating proxy in front has done the work, and its header
+    #:             is trusted
     #:
-    #: **oidc / proxy が使えるならそちらがよい。** 身元の管理が 1 か所に集まり、
-    #: 退職や異動が組織側の操作だけで効く。password は、それが無い組織のためのもの。
+    #: Where oidc or proxy is available they are better: identities stay in one place,
+    #: and someone leaving is handled entirely on that side. password is for
+    #: organisations without one.
     admin_login: AdminLogin = "bearer"
 
-    #: セッション Cookie の署名鍵と寿命。**既定値は持たない。**
+    #: The signing key and lifetime of the session cookie. There is no default.
     session_secret: str = ""
-    session_ttl: int = 28800  # 8 時間。断続的に 1 日使う想定
-    #: Cookie に Secure を付けるか。HTTPS で出すなら true のままにする。
+    session_ttl: int = 28800  # eight hours: a day of intermittent use
+    #: Whether the cookie is marked Secure. Leave it true when served over HTTPS.
     session_secure: bool = True
 
-    #: `admin_login=oidc` のときの、arkhe 自身のクライアント登録。
+    #: arkhe's own client registration, for admin_login=oidc.
     admin_client_id: str = ""
     admin_client_secret: str = ""
     admin_scope: str = "openid profile email"
 
-    #: `admin_login=proxy` のときに身元を読むヘッダ。
+    #: The header the identity is read from, for admin_login=proxy.
     proxy_user_header: str = "X-Forwarded-User"
 
-    # ---------------------------------------------------------------- 解決
-    #: D2: 未知 NAAN の取次先。
-    #: **前段（ロードバランサやプロキシ）を何段信じるか。**
+    # ----------------------------------------------------------- Resolution
+    #: D2: where an unknown NAAN is forwarded.
+    #: How many proxies in front to trust.
     #:
-    #: `X-Forwarded-For` は誰でも付けられるヘッダなので、既定では見ない（`0`）。
-    #: 見ずに直接の接続元を記録するほうが、詐称された値を記録するよりましである
-    #: ——監査ログに攻撃者の書いた文字列が並ぶのがいちばん困る。
+    #: Anyone can set X-Forwarded-For, so by default (0) it is ignored. Recording the
+    #: direct peer is better than recording a forged value: an audit log full of
+    #: strings an attacker chose is the worst outcome.
     #:
-    #: 前段が n 段あるなら `n` を入れる。**右から n 番目**を採る（右端は自分の
-    #: 直前の前段が書いた値で、これは信じられる）。左端を採ってはいけない
-    #: ——そこは client が書いた値だから。
+    #: With n proxies in front, set n. The nth entry from the right is used; the
+    #: rightmost was written by the proxy immediately in front, which can be trusted.
+    #: The leftmost must never be used: the client wrote it.
     trusted_proxies: int = 0
 
-    #: 記録の細かさ。`DEBUG` / `INFO` / `WARNING`。
+    #: How much is logged: DEBUG, INFO or WARNING.
     log_level: str = "INFO"
 
     global_resolver: str = "https://n2t.net"
 
-    #: **このリゾルバは公開前の ARK も解決する。** 閉域に置くリゾルバ向け。
+    #: This resolver serves reserved ARKs as well, for use inside a closed network.
     #:
-    #: 「公開前」は**グローバルに出していない**という意味であって、どこからも
-    #: 引けないという意味ではない。閉じた網の中で採番した ARK は、**その網の
-    #: リゾルバが解決できなければ配る意味が無い**——「閉じた対象にも同じ形の
-    #: PID を配る」という設計の目的そのものが成り立たなくなる。
+    #: Reserved means not published to the world, not that nothing can look it up. An
+    #: ARK minted inside a closed network is pointless if the resolver on that network
+    #: cannot resolve it, and giving closed objects the same kind of identifier is the
+    #: point of the design.
     #:
-    #: だから解決するかどうかは、ARK の状態だけでは決まらない。**どのリゾルバが
-    #: 答えているか**で決まる:
+    #: So whether something resolves does not follow from the state of the ARK alone; it
+    #: follows from which resolver is answering:
     #:
-    #:   閉域のリゾルバ  … 自分の領域の ARK は公開前でも解決する（`1`）
-    #:   公開のリゾルバ  … 公開したものだけを解決する（既定）
+    #:   a closed resolver  serves its own reserved ARKs (1)
+    #:   a public resolver  serves only what has been published (the default)
     #:
-    #: **既定は `false`。** 公開の口（`?info` / `??`）は認証を要さないので、
-    #: 取り違えたときに漏れる側を既定にしない。閉域に置く側が明示的に開ける。
+    #: The default is false. The public endpoints (?info and ??) need no credentials, so
+    #: a mistake should not expose anything; a closed deployment opens it explicitly.
     resolve_unpublished: bool = False
 
-    # ---------------------------------------------------------------- 採番
+    # -------------------------------------------------------------- Minting
     bulk_limit: int = 1000
 
-    # ---------------------------------------------------------------- 保留
-    #: **転送を一時停止できる最長日数。** 期限を必須にしただけでは足りない
-    #: ——「1 年後」と書けば恒久と変わらないので、上限を置く。延ばしたければ
-    #: 掛け直す（そのたびに監査に残り、**忘れられた保留が目に入る**）。
+    # ---------------------------------------------------------------- Holds
+    #: The longest a hold may run. Requiring an expiry is not enough on its own: "in a
+    #: year" is no different from permanent, so there is a ceiling. Extending means
+    #: setting it again, which the audit log records and which makes a forgotten hold
+    #: visible.
     hold_max_days: int = 90
 
     @field_validator("auth", mode="before")
@@ -174,11 +185,11 @@ class Settings(BaseSettings):
         return v
 
     def check(self) -> None:
-        """**設定し忘れをその場で止める。** 既定の秘密値は持たない。
+        """Stop on a setting that was forgotten. There is no default secret.
 
-        resolver は例外。解決に認証は要らず、管理画面も載らないので、
-        **認証まわりの設定は一切要求しない**——要求すると、使いもしない
-        セッション鍵を解決系の全ノードに配ることになる。
+        A resolver is the exception. Resolution needs no authentication and carries no
+        admin interface, so nothing about authentication is required: requiring it would
+        mean distributing an unused session key to every resolver.
         """
         if self.resolver:
             return
@@ -193,8 +204,9 @@ class Settings(BaseSettings):
                     "(the signing key for tokens arkhe issues itself; there is no "
                     "default)."
                 )
-            # RFC 7518 §3.2: HS256 の鍵はハッシュ長（32 バイト）以上であること。
-            # 短い鍵でも PyJWT は警告を出すだけで動いてしまうので、ここで止める。
+            # RFC 7518 3.2: a key for HS256 must be at least the hash length, 32
+            # bytes. PyJWT only warns about a short key and carries on, so it is
+            # stopped here.
             if len(self.token_secret.encode()) < 32:
                 raise ValueError(
                     "ARKHE_TOKEN_SECRET is too short (32 bytes or more, RFC 7518 "
