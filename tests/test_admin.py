@@ -82,8 +82,8 @@ def test_他組織の主体は作れない(db, world, principal_of):
 def test_組織管理者には自分の範囲しか見えない(db, world, principal_of, as_principal):
     c = as_principal(principal_of(manager=world["a"]))
     body = c.get("/admin/").text
-    assert "A組織" in body
-    assert "B組織" not in body  # 同じ NAAN の他組織も見えない
+    assert "org A" in body
+    assert "org B" not in body  # 同じ NAAN の他組織も見えない
     assert "88888" not in body
 
 
@@ -272,7 +272,7 @@ def test_proxy_モードは前段のヘッダを信じる(db, world, root, raw_a
     # ヘッダが無ければログインへ（この構成に画面は無いので 404 になる）
     assert cli.get("/admin/").status_code == 302
     r = cli.get("/admin/", headers={"X-Forwarded-User": "alice@example.ac.jp"})
-    assert r.status_code == 200 and "A組織" in r.text
+    assert r.status_code == 200 and "org A" in r.text
 
 
 def test_proxy_モードでも台帳に無い身元は通さない(db, world, raw_app):
@@ -378,7 +378,7 @@ def test_パスワードでログインできる(db, world, with_password, raw_a
     r = cli.post("/admin/login", data={"username": "alice@example.ac.jp",
                                        "password": "correct-horse-battery"})
     assert r.status_code == 302 and r.headers["location"] == "/admin/"
-    assert "A組織" in cli.get("/admin/").text
+    assert "org A" in cli.get("/admin/").text
 
 
 def test_誤ったパスワードは入れない(db, world, with_password, raw_app):

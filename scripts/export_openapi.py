@@ -1,7 +1,8 @@
-"""OpenAPI をドキュメントへ書き出す。**API 仕様を手で二重に書かないため。**
+"""Write the OpenAPI documents out for the documentation site.
 
-minter と resolver は役割ごとに口が違うので、両方を出す。
-mkdocs のビルド前に走らせる（`scripts/check.sh` と `deploy-docs.sh` がそうしている）。
+The specification comes from the implementation rather than being written twice. The
+minter and the resolver expose different routes, so both are written. Run this before
+mkdocs builds, as scripts/check.sh and deploy-docs.sh do.
 """
 
 from __future__ import annotations

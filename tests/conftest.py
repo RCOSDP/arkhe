@@ -1,7 +1,8 @@
-"""テストの土台。**本番と同じ経路を通す**——認可も採番も差し替えない。
+"""Fixtures for the unit tests. They go through the real path: neither authorisation
+nor minting is substituted.
 
-DB は SQLite の in-memory。`StaticPool` を使うのは、既定だと接続ごとに別の DB に
-なってしまうため（TestClient は別スレッドから引く）。
+The database is SQLite in memory. StaticPool is needed because otherwise every
+connection gets its own database, and TestClient calls from another thread.
 """
 
 from __future__ import annotations
@@ -53,22 +54,23 @@ def db(factory) -> Session:
 
 @pytest.fixture
 def root() -> Principal:
-    """システム管理者。台帳を組み立てるのに使う。"""
+    """The system administrator, used to build the ledger."""
     return Principal(client_id="test-root", naan="", authority=Authority.SYSTEM)
 
 
 @pytest.fixture
 def world(db, root):
-    """NAAN 1 つ・組織 2 つの最小の台帳。
+    """The smallest ledger: one NAAN and two organisations.
 
-    **組織を 2 つ置くのが要点。** 1 つだと「他組織に届かないこと」を確かめられない。
+    Two organisations is the point. With one, there is no way to check that reach stops
+    at the organisation.
     """
     ops.create_naan(db, root, naan="99999", name="RA", na_policy="NP | NR, OP, CC | 2026")
-    ops.create_naan(db, root, naan="88888", name="別 RA")
+    ops.create_naan(db, root, naan="88888", name="another RA")
     db.flush()
-    a, sh_a = ops.onboard_manager(db, root, naan="99999", name="A組織", shoulder="/a1")
-    b, sh_b = ops.onboard_manager(db, root, naan="99999", name="B組織", shoulder="/b2")
-    c, sh_c = ops.onboard_manager(db, root, naan="88888", name="C組織", shoulder="/c3")
+    a, sh_a = ops.onboard_manager(db, root, naan="99999", name="org A", shoulder="/a1")
+    b, sh_b = ops.onboard_manager(db, root, naan="99999", name="org B", shoulder="/b2")
+    c, sh_c = ops.onboard_manager(db, root, naan="88888", name="org C", shoulder="/c3")
     db.commit()
     return {
         "a": a, "b": b, "c": c,
@@ -81,7 +83,7 @@ ALL_SCOPES = frozenset({"ark:mint", "ark:update", "ark:read", "ark:tombstone"})
 
 @pytest.fixture
 def principal_of():
-    """到達範囲を変えた主体を作る。"""
+    """Build a principal with a given reach."""
 
     def make(authority=Authority.MANAGER, naan="99999", manager=None, shoulder=None,
              scopes=ALL_SCOPES, client_id="test-client"):
@@ -128,12 +130,13 @@ def app(factory, settings):
 
 @pytest.fixture
 def as_principal(app):
-    """**認証だけを差し替える。認可は本物を通す。**"""
+    """Substitute authentication only. Authorisation runs for real."""
 
     def use(principal: Principal) -> TestClient:
-        # API と管理画面で主体の解決経路が違う（管理画面はセッションや前段ヘッダも
-        # 見る）。**どちらも差し替える**——テストで見たいのは認可であって、
-        # 「どうやって認証したか」ではない。
+        # The API and the admin interface resolve the principal differently: the admin
+        # interface also looks at the session and at headers from the proxy in front.
+        # Substitute both, because what these tests look at is authorisation, not how
+        # the caller authenticated.
         app.dependency_overrides[deps.current_principal] = lambda: principal
         app.dependency_overrides[admin_router.admin_principal] = lambda: principal
         return TestClient(app, follow_redirects=False)

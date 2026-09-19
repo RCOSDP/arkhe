@@ -1,7 +1,8 @@
-"""運用コマンド。**画面と同じ式を通ることを確かめる。**
+"""The operator commands, checked against the same queries the screens use.
 
-CLI は `_root()` でシステム管理者として動くので、ここで見たいのは認可ではなく
-**絞り込みと打ち切り**——「これで全部」と読み違えないこと。
+The CLI runs as the system administrator through _root(), so what matters here is not
+authorisation but filtering and truncation: a truncated list must not read as the whole
+list.
 """
 
 from __future__ import annotations
@@ -18,7 +19,8 @@ runner = CliRunner()
 
 
 def _run(factory, *args):
-    """CLI を叩く。**DB だけ差し替える**（認可も出力も本物を通す）。"""
+    """Run a command. Only the database is substituted; authorisation and output are
+    the real ones."""
     from contextlib import contextmanager
 
     @contextmanager
@@ -36,7 +38,7 @@ def _run(factory, *args):
         cli._session = orig
 
 
-def _mint(db, shoulder, n, *, by="minter", url="https://例.jp/{i}", title=""):
+def _mint(db, shoulder, n, *, by="minter", url="https://example.org/{i}", title=""):
     out = []
     for i in range(n):
         ark, _ = minting.mint(
@@ -47,70 +49,74 @@ def _mint(db, shoulder, n, *, by="minter", url="https://例.jp/{i}", title=""):
     return out
 
 
-def test_ark_listは発行したarkを出す(db, factory, world):
+def test_ark_list_shows_what_was_minted(db, factory, world):
     _mint(db, world["sh_a"], 2)
     r = _run(factory, "ark", "list")
     assert r.exit_code == 0
     assert r.stdout.count("ark:99999/a1") == 2
-    # **行き先が出ること。** 一覧から目で追って写す列なので、これが無いと使えない。
-    assert "https://例.jp/0" in r.stdout
+    # The target has to be there: it is the column people read off the list.
+    assert "https://example.org/0" in r.stdout
 
 
-def test_該当が無いときは黙らない(db, factory, world):
+def test_an_empty_result_says_so(db, factory, world):
     r = _run(factory, "ark", "list")
     assert r.exit_code == 0
-    assert "該当なし" in r.output or "nothing matched" in r.output
+    from arkhe import cli_i18n
+
+    assert any(cat["ark.list.empty"] in r.output for cat in cli_i18n.CATALOGS.values())
 
 
-def test_打ち切ったことを知らせる(db, factory, world):
+def test_a_truncated_list_says_so(db, factory, world):
     _mint(db, world["sh_a"], 5)
     r = _run(factory, "ark", "list", "--limit", "2")
     assert r.exit_code == 0
-    # 上限ちょうどで止まり、**続きの入り口を示す**。示さなければ「これで全部」と読まれる。
+    # It stops at the limit and shows how to get the rest. Without that, the list
+    # reads as complete.
     assert r.stdout.count("ark:") == 2
     assert "--offset 2" in r.output
 
 
-def test_打ち切っていないときは知らせない(db, factory, world):
+def test_a_complete_list_says_nothing_about_offsets(db, factory, world):
     _mint(db, world["sh_a"], 2)
     r = _run(factory, "ark", "list", "--limit", "2")
     assert "--offset" not in r.output
 
 
-def test_offsetで続きが取れる(db, factory, world):
+def test_offset_returns_the_rest(db, factory, world):
     _mint(db, world["sh_a"], 5)
     first = _run(factory, "ark", "list", "--limit", "2").stdout
     rest = _run(factory, "ark", "list", "--limit", "2", "--offset", "2").stdout
     got = {ln.split()[0] for ln in (first + rest).splitlines() if ln.startswith("ark:")}
-    assert len(got) == 4  # 重複なく続いている
+    assert len(got) == 4  # the pages continue without repeating
 
 
-def test_naanと組織で絞る(db, factory, world):
+def test_filtering_by_naan_and_organisation(db, factory, world):
     _mint(db, world["sh_a"], 1)
     _mint(db, world["sh_b"], 1)
-    _mint(db, world["sh_c"], 1)  # 別 NAAN
+    _mint(db, world["sh_c"], 1)  # another NAAN
 
     assert _run(factory, "ark", "list", "--naan", "88888").stdout.count("ark:") == 1
     out = _run(factory, "ark", "list", "--org", str(world["a"].id)).stdout
     assert "ark:99999/a1" in out and "ark:99999/b2" not in out
 
 
-def test_検索はark行き先題名の3つを見る(db, factory, world):
-    """**画面と同じ 3 項目。** 運用で手元にあるのがどれか分からないため。"""
-    _mint(db, world["sh_a"], 1, url="https://見つかる.jp/x", title="無関係")
-    _mint(db, world["sh_b"], 1, url="https://別.jp/y", title="探したい題名")
+def test_search_looks_at_the_ark_the_target_and_the_title(db, factory, world):
+    """The same three fields as the screens, because whoever is searching may only
+    have one of them."""
+    _mint(db, world["sh_a"], 1, url="https://findme.example/x", title="unrelated")
+    _mint(db, world["sh_b"], 1, url="https://other.example/y", title="the wanted title")
 
-    assert _run(factory, "ark", "list", "-q", "見つかる").stdout.count("ark:") == 1
-    assert _run(factory, "ark", "list", "-q", "探したい").stdout.count("ark:") == 1
-    # ARK そのものでも引ける
+    assert _run(factory, "ark", "list", "-q", "findme").stdout.count("ark:") == 1
+    assert _run(factory, "ark", "list", "-q", "wanted").stdout.count("ark:") == 1
+    # The ARK itself works as a query too
     assert _run(factory, "ark", "list", "-q", "a1").stdout.count("ark:") == 1
 
 
-def test_絞り込みは到達範囲の外に出る鍵にならない(db, world):
-    """**画面と CLI が同じ式を通る**ことの肝。
+def test_filtering_cannot_widen_the_reach(db, world):
+    """Why the screens and the CLI share one query.
 
-    組織単位の主体が別組織を `--org` に指定しても、`visible_arks` で先に
-    絞ってあるので何も出ない。
+    When a principal bound to one organisation names another one with --org, nothing
+    comes back, because visible_arks has already narrowed the query.
     """
     _mint(db, world["sh_a"], 1)
     _mint(db, world["sh_b"], 1)

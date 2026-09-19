@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-"""bench.py — 一本の口に負荷をかけて、rps と遅延の分布を出す。
+"""Load one endpoint and report requests per second and the latency spread.
 
-**検査ではない。** `check.sh` からは呼ばない——時間がかかるうえ、結果が機械と
-その日の負荷に左右されるので、緑/赤で語れるものではない。**自分の環境で自分の
-数字を取る**ための道具である。
+This is not a check. check.sh does not call it: it takes a while, and the numbers depend
+on the machine and on what else is running, so they cannot be read as pass or fail. It is
+a tool for taking your own numbers on your own machine.
 
     python scripts/bench.py http://127.0.0.1:8000/ark:99999/x9abc -n 3000 -c 8
     python scripts/bench.py http://127.0.0.1:8000/api/mint -n 200 -c 4 \\
         --post --auth "$ARKHE_KEY"
 
-読むときの約束が 2 つある。
+Two things to keep in mind when reading the output.
 
-**① クライアントが先に飽和していないか確かめる。** この道具はスレッドを並べて
-同期 HTTP を投げるだけなので、サーバより先にこちら側が詰まる。`/healthz`（DB も
-認証も通らない口）を同じ条件で測り、**その値に近づいていたら測っているのは
-クライアント**である。
+First, check that the client is not the bottleneck. This tool runs threads that send
+synchronous HTTP, so it saturates before the server does. Measure /healthz, which touches
+neither the database nor authentication, under the same settings: if your figure is close
+to that one, you are measuring the client.
 
-**② 同じ機械に置かない構成なら、必ず取り直す。** 往復にネットワークが入ると
-分布の形が変わる。ここで出る数字は「この機械では」以上のことを言わない。
+Second, measure again for any layout that is not on a single machine. A network round
+trip changes the shape of the distribution. These numbers say nothing beyond "on this
+machine".
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ import httpx
 
 
 def _worker(url: str, count: int, method: str, body, headers) -> list[tuple[float, int]]:
-    """1 スレッド分。**接続は使い回す**——毎回張り直すと TCP の分を測ってしまう。"""
+    """One thread's share. The connection is reused; reopening it would measure TCP."""
     out: list[tuple[float, int]] = []
     with httpx.Client(follow_redirects=False, timeout=30, headers=headers or {}) as client:
         for _ in range(count):
@@ -42,13 +43,14 @@ def _worker(url: str, count: int, method: str, body, headers) -> list[tuple[floa
 
 
 def run(url: str, n: int, concurrency: int, *, method="GET", body=None, headers=None) -> dict:
-    # **温める。** 最初の 1 回はクエリの計画や接続の確立を含み、桁が違う
-    # （実測で 20 ms 対 0.03 ms）。それを分布に混ぜると中央値まで濁る。
+    # Warm up. The first request includes query planning and opening the connection,
+    # and is an order of magnitude slower (20 ms against 0.03 ms here). Leaving it in
+    # the sample would move even the median.
     _worker(url, 1, method, body, headers)
 
-    # **端数を配る。** `n // concurrency` で切り捨てると、`-n 3000 -c 16` は
-    # 2992 しか送らない——**応答の内訳を `-n` と見比べた人には、8 件落ちたように
-    # 見える**（実際に読み違えた）。数えている数と、送ると言った数を揃える。
+    # Spread the remainder. Truncating with n // concurrency would send 2992 requests
+    # for -n 3000 -c 16, and anyone comparing the status counts against -n reads that as
+    # eight lost requests. Send exactly as many as were asked for.
     per = [n // concurrency + (1 if i < n % concurrency else 0) for i in range(concurrency)]
     per = [max(1, c) for c in per]
     started = time.perf_counter()
@@ -75,11 +77,11 @@ def run(url: str, n: int, concurrency: int, *, method="GET", body=None, headers=
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("url")
-    ap.add_argument("-n", type=int, default=2000, help="要求の総数")
-    ap.add_argument("-c", type=int, default=8, help="同時数")
-    ap.add_argument("--post", action="store_true", help="空の JSON を POST する")
-    ap.add_argument("--auth", default="", help="Bearer トークン / API キー")
-    ap.add_argument("--label", default="", help="行の見出し")
+    ap.add_argument("-n", type=int, default=2000, help="how many requests in total")
+    ap.add_argument("-c", type=int, default=8, help="how many at a time")
+    ap.add_argument("--post", action="store_true", help="POST an empty JSON body")
+    ap.add_argument("--auth", default="", help="bearer token or API key")
+    ap.add_argument("--label", default="", help="label for the output line")
     args = ap.parse_args()
 
     headers = {"Authorization": f"Bearer {args.auth}"} if args.auth else None

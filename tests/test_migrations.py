@@ -1,13 +1,13 @@
-"""マイグレーションが**実際に流れること**。
+"""That the migrations actually run.
 
-テストは `Base.metadata.create_all` で表を作る——速いが、**マイグレーションを
-1 行も通らない**。だから移行の壊れは、ここに検査を置かないかぎり、誰かが
-`alembic upgrade head` を打つまで見つからない。実際そうなっていた：
-Quickstart に書いてあるとおり SQLite で打つと、3 本目で落ちていた。
+The rest of the suite builds its tables with Base.metadata.create_all. That is fast, but
+it runs no migration at all, so a broken migration stays hidden until someone types
+alembic upgrade head. That happened: following the Quickstart on SQLite failed at the
+third migration.
 
-**PostgreSQL での往復は `scripts/check.sh` が見る**（SQLite は PostgreSQL が
-弾くスキーマを通すので、あちらが本番）。ここで見るのは別のこと——**文書に
-書いた手順が、書いたとおりに動くか**である。
+The round trip on PostgreSQL is scripts/check.sh's job, and that is the one that counts,
+because SQLite accepts schemas PostgreSQL rejects. What is checked here is different:
+whether the procedure in the documentation works as written.
 """
 
 from __future__ import annotations
@@ -21,13 +21,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _alembic(*args: str, url: str) -> subprocess.CompletedProcess:
-    """**利用者と同じ道を通す。** ライブラリとして呼ぶと `env.py` を迂回できて
-    しまうが、迂回した先に落ちる場所があった。"""
+    """Take the same path a user takes. Calling alembic as a library skips env.py, and
+    there was a failure hiding on the path that skips it."""
     env = {
         **os.environ,
         "ARKHE_DATABASE_URL": url,
         "ARKHE_AUTH": "apikey",
-        # 設定の検査に引っかからないように、口の無い構成の既定だけ与える。
+        # Just enough to pass the settings check for a deployment with no admin login.
         "ARKHE_ADMIN_LOGIN": "bearer",
     }
     return subprocess.run(
@@ -36,13 +36,13 @@ def _alembic(*args: str, url: str) -> subprocess.CompletedProcess:
     )
 
 
-def test_SQLiteでもマイグレーションが頭まで流れる(tmp_path):
-    """**Quickstart に書いてある手順そのもの。**
+def test_migrations_run_to_head_on_sqlite_too(tmp_path):
+    """Exactly the procedure the Quickstart describes.
 
-    SQLite には制約を付け外しする `ALTER` が無いので、`create_foreign_key` や
-    `drop_constraint` は batch（表を作り直して移し替える）を通す必要がある。
-    素で書くと `NotImplementedError` で止まる——**PostgreSQL だけで検証して
-    いるあいだ、それが見えない。**
+    SQLite has no ALTER for adding or dropping constraints, so create_foreign_key and
+    drop_constraint have to go through batch mode, which rebuilds the table and copies
+    the rows. Written plainly they stop with NotImplementedError, and that is invisible
+    while only PostgreSQL is being checked.
     """
     url = f"sqlite:///{tmp_path / 'arkhe.db'}"
     up = _alembic("upgrade", "head", url=url)
@@ -55,15 +55,15 @@ def test_SQLiteでもマイグレーションが頭まで流れる(tmp_path):
     assert again.returncode == 0, again.stderr[-3000:]
 
 
-def test_移行後のスキーマがモデルと同じ形をしている(tmp_path):
-    """**移行を流した DB と、`create_all` で作った DB を突き合わせる。**
+def test_the_migrated_schema_matches_the_models(tmp_path):
+    """Compare a database built by the migrations with one built by create_all.
 
-    テストが見ているのは後者なので、ここが揃っていないと「テストは緑だが
-    本番のスキーマは違う」が成立してしまう。
+    The rest of the suite looks at the second one, so if they differ it is possible for
+    the tests to pass while the production schema is something else.
 
-    列の**幅は見ない**——`d2a7f4b81c63` が書いているとおり、SQLite では
-    varchar の長さを見ないので広げる移行を流していない。ここで見るのは
-    **表と列と、その有無**である。
+    Column widths are not compared. As migration d2a7f4b81c63 notes, SQLite ignores
+    varchar lengths, so the widening migration is not run there. What is compared is
+    which tables and columns exist.
     """
     import sqlalchemy as sa
 
@@ -78,10 +78,10 @@ def test_移行後のスキーマがモデルと同じ形をしている(tmp_pat
     declared = sa.inspect(fresh)
 
     tables = set(declared.get_table_names())
-    assert tables <= set(migrated.get_table_names()), "移行で作られていない表がある"
+    assert tables <= set(migrated.get_table_names()), "a table is missing after migrating"
     for table in sorted(tables):
         want = {c["name"] for c in declared.get_columns(table)}
         got = {c["name"] for c in migrated.get_columns(table)}
         assert want == got, (
-            f"{table}: 宣言と移行後で列が違う（不足 {want - got} / 余り {got - want}）"
+            f"{table}: columns differ (missing {want - got}, unexpected {got - want})"
         )

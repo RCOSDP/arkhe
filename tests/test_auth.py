@@ -1,4 +1,4 @@
-"""3 つの認証機構。**どれで認証しても Principal 1 つに集約される。**"""
+"""The three authentication mechanisms. All of them end at one Principal."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def client_with_keys(db, world, root):
     return c, key.secret, sec.secret
 
 
-def test_apikey_で認証できる(db, client_with_keys):
+def test_an_api_key_authenticates(db, client_with_keys):
     _, key, _ = client_with_keys
     p = apikey.authenticate(db, key)
     assert p.client_id == "a-web" and p.mechanism == "apikey"
@@ -36,12 +36,12 @@ def test_apikey_で認証できる(db, client_with_keys):
 
 
 @pytest.mark.parametrize("bad", ["", "arkhe_wrong", "garbage", "arkhe_"])
-def test_apikey_不正な鍵は一律で拒む(db, client_with_keys, bad):
+def test_a_bad_api_key_is_always_refused(db, client_with_keys, bad):
     with pytest.raises(AuthError):
         apikey.authenticate(db, bad)
 
 
-def test_apikey_失効させた鍵は通らない(db, root, client_with_keys):
+def test_a_revoked_api_key_stops_working(db, root, client_with_keys):
     from sqlalchemy import select
 
     from arkhe.db.models import Credential
@@ -54,7 +54,7 @@ def test_apikey_失効させた鍵は通らない(db, root, client_with_keys):
         apikey.authenticate(db, key)
 
 
-def test_oauth2_client_credentialsで発行し検証できる(db, client_with_keys):
+def test_client_credentials_issues_a_token_that_verifies(db, client_with_keys):
     _, _, sec = client_with_keys
     tok = oauth2.issue_token(db, client_id="a-web", client_secret=sec, secret_key=SECRET)
     assert tok["token_type"] == "Bearer"
@@ -62,20 +62,21 @@ def test_oauth2_client_credentialsで発行し検証できる(db, client_with_ke
     assert p.client_id == "a-web" and p.mechanism == "oauth2"
 
 
-def test_oauth2_登録に無いscopeは取れない(db, client_with_keys):
-    """**権限昇格そのもの。** 黙って削らず invalid_scope で返す。"""
+def test_a_scope_that_was_not_registered_cannot_be_taken(db, client_with_keys):
+    """That would be privilege escalation. The scope is refused with invalid_scope
+    rather than trimmed silently."""
     _, _, sec = client_with_keys
     with pytest.raises(Forbidden) as e:
         oauth2.issue_token(
             db, client_id="a-web", client_secret=sec,
             requested_scope="ark:mint ark:admin", secret_key=SECRET,
         )
-    # **RFC 6749 §5.2 の形を守る**（符号は併記する）。
+    # The shape RFC 6749 section 5.2 defines, with our own code alongside.
     assert e.value.detail["error"] == "invalid_scope"
     assert e.value.detail["code"] == "ARKHE-1305"
 
 
-def test_oauth2_要求すると狭くなるが広がらない(db, client_with_keys):
+def test_asking_can_narrow_a_token_but_never_widen_it(db, client_with_keys):
     _, _, sec = client_with_keys
     tok = oauth2.issue_token(
         db, client_id="a-web", client_secret=sec, requested_scope="ark:mint", secret_key=SECRET
@@ -84,8 +85,9 @@ def test_oauth2_要求すると狭くなるが広がらない(db, client_with_ke
     assert p.scopes == frozenset({"ark:mint"})
 
 
-def test_oauth2_主体を止めるとトークンが即座に効かなくなる(db, client_with_keys):
-    """自己完結の JWT でも、到達範囲は毎回 Client 表から引くので即時に失効する。"""
+def test_stopping_a_principal_invalidates_its_tokens_at_once(db, client_with_keys):
+    """Even with a self-contained JWT, the reach is read from the Client table on
+    every request, so it stops immediately."""
     c, _, sec = client_with_keys
     tok = oauth2.issue_token(db, client_id="a-web", client_secret=sec, secret_key=SECRET)
     c.active = False
@@ -94,7 +96,7 @@ def test_oauth2_主体を止めるとトークンが即座に効かなくなる(
         oauth2.authenticate(db, tok["access_token"], secret_key=SECRET)
 
 
-def test_oauth2_誤ったsecretでは発行されない(db, client_with_keys):
+def test_a_wrong_secret_issues_nothing(db, client_with_keys):
     with pytest.raises(AuthError):
         oauth2.issue_token(db, client_id="a-web", client_secret="wrong", secret_key=SECRET)
 
@@ -102,28 +104,27 @@ def test_oauth2_誤ったsecretでは発行されない(db, client_with_keys):
 @pytest.mark.parametrize(
     "kw,why",
     [
-        ({"auth": ["oauth2"], "token_secret": "short"}, "短い鍵"),
-        ({"auth": ["oauth2"]}, "鍵なし"),
-        ({"auth": ["oidc"]}, "issuer なし"),
-        ({"auth": []}, "機構なし"),
+        ({"auth": ["oauth2"], "token_secret": "short"}, "the key is too short"),
+        ({"auth": ["oauth2"]}, "no key at all"),
+        ({"auth": ["oidc"]}, "no issuer"),
+        ({"auth": []}, "no mechanism"),
     ],
 )
-def test_設定の抜けは起動時に落とす(kw, why):
-    """**既定の秘密値は持たない。** 設定し忘れで弱い値のまま動くより、その場で止める。"""
+def test_missing_settings_fail_at_startup(kw, why):
+    """There is no default secret. Stopping here beats running on a weak value that
+    someone forgot to set."""
     with pytest.raises(ValueError):
         Settings(**kw).check()
 
 
-def test_resolverは認証設定を要求されない():
-    """解決に認証は要らず管理画面も載らない。
-
-    使いもしないセッション鍵を、解決系の全ノードに配らせないため。
-    """
+def test_a_resolver_needs_no_authentication_settings():
+    """Resolution needs no authentication and carries no admin interface, so there is
+    no reason to distribute an unused session key to every resolver."""
     Settings(resolver=True, auth=[], admin_login="oidc", session_secret="").check()
 
 
-def test_同じ設定でもminterなら止まる():
-    """resolver だけの例外であること（無条件に緩めていないことの確認）。"""
+def test_the_same_settings_still_stop_a_minter():
+    """The exception applies to resolvers only; nothing was loosened in general."""
     with pytest.raises(ValueError, match="ARKHE_SESSION_SECRET"):
         Settings(
             resolver=False, auth=["oidc"], oidc_issuer="https://kc/realms/x",
@@ -131,8 +132,8 @@ def test_同じ設定でもminterなら止まる():
         ).check()
 
 
-def test_break_glassには期限が要る(db, world, root):
-    """恒久的な万能鍵を作らせない。"""
+def test_break_glass_needs_an_expiry(db, world, root):
+    """A permanent master key must not be creatable."""
     from arkhe.domain.authz import Invalid
 
     with pytest.raises(Invalid):
@@ -141,12 +142,12 @@ def test_break_glassには期限が要る(db, world, root):
         )
 
 
-# ------------------------------------------- 自前でトークンを配る（Keycloak 不要）
+# --------------------------------------- Issuing our own tokens, without Keycloak
 
 
 @pytest.fixture
 def standalone(factory):
-    """`ARKHE_AUTH=oauth2` の素のアプリ。**外部の認可サーバを使わない構成。**"""
+    """A plain app with ARKHE_AUTH=oauth2: no external authorisation server."""
     from fastapi.testclient import TestClient
 
     from arkhe.app import create_app
@@ -168,8 +169,10 @@ def standalone(factory):
     return TestClient(app, follow_redirects=False)
 
 
-def test_単体でトークンを取ってAPIを叩ける(db, world, root, client_with_keys, standalone):
-    """**Keycloak が無くても OAuth2 の作法で API を叩ける。**"""
+def test_a_token_can_be_taken_and_used_without_keycloak(
+    db, world, root, client_with_keys, standalone
+):
+    """The API can be called the OAuth2 way with nothing else installed."""
     _, _, secret = client_with_keys
     r = standalone.post(
         "/oauth/token",
@@ -189,9 +192,9 @@ def test_単体でトークンを取ってAPIを叩ける(db, world, root, clien
     assert m.status_code == 201
 
 
-def test_Basic認証でも資格情報を渡せる(db, world, client_with_keys, standalone):
-    """RFC 6749 §2.3.1 は Basic を推奨し、本文も認めている。既存の
-    クライアントライブラリはどちらも使う。"""
+def test_credentials_can_also_be_sent_with_basic_auth(db, world, client_with_keys, standalone):
+    """RFC 6749 section 2.3.1 recommends Basic and permits the body. Client libraries
+    in the wild use both."""
     import base64
 
     _, _, secret = client_with_keys
@@ -203,19 +206,20 @@ def test_Basic認証でも資格情報を渡せる(db, world, client_with_keys, 
     assert r.status_code == 200
 
 
-def test_client_credentials以外のgrantは持たない(db, world, standalone):
-    """**実装しないものを明示して返す。** 後から「無い」と驚かないように。"""
+def test_no_grant_other_than_client_credentials(db, world, standalone):
+    """Say plainly what is not implemented, rather than let a caller discover it
+    later."""
     r = standalone.post("/oauth/token", data={"grant_type": "authorization_code", "code": "x"})
     assert r.status_code == 400 and r.json()["error"] == "unsupported_grant_type"
 
 
-def test_誤った資格情報はinvalid_client(db, world, client_with_keys, standalone):
+def test_wrong_credentials_give_invalid_client(db, world, client_with_keys, standalone):
     r = standalone.post(
         "/oauth/token",
         data={"grant_type": "client_credentials", "client_id": "a-web", "client_secret": "no"},
     )
     assert r.status_code == 401 and r.json()["error"] == "invalid_client"
-    # 存在しないクライアントでも同じ応答（名前を総当たりで探せないように）
+    # An unknown client gets the same answer, so names cannot be found by trying
     r2 = standalone.post(
         "/oauth/token",
         data={"grant_type": "client_credentials", "client_id": "nope", "client_secret": "no"},
@@ -223,34 +227,35 @@ def test_誤った資格情報はinvalid_client(db, world, client_with_keys, sta
     assert r2.json() == r.json()
 
 
-def test_oauth2を使わない構成に発行の口は無い(db, world, app):
-    """**使わない構成に認可サーバの入口を生やさない。**"""
+def test_a_deployment_without_oauth2_has_no_token_endpoint(db, world, app):
+    """A deployment that does not use it should not expose it."""
     from fastapi.testclient import TestClient
 
     c = TestClient(app, follow_redirects=False)
     assert c.post("/oauth/token", data={"grant_type": "client_credentials"}).status_code == 404
 
 
-# ------------------------------------------------------- 接続元の記録
+# ------------------------------------------------------- Recording the caller
 
 
 @pytest.mark.parametrize(
     "trusted,xff,peer,want,why",
     [
-        (0, "1.2.3.4", "10.0.0.1", "10.0.0.1", "既定は前段を見ない"),
-        (0, "", "10.0.0.1", "10.0.0.1", "ヘッダが無ければ直接の接続元"),
-        (1, "1.2.3.4, 10.0.0.9", "10.0.0.1", "10.0.0.9", "1 段なら右端"),
-        (2, "1.2.3.4, 10.0.0.9, 10.0.0.8", "10.0.0.1", "10.0.0.9", "2 段なら右から 2 番目"),
-        # **足りない分を client の申告で埋めない。**
-        (2, "1.2.3.4", "10.0.0.1", "10.0.0.1", "前段より短ければ詐称を疑って落とす"),
-        (1, "", "10.0.0.1", "10.0.0.1", "ヘッダが無ければ落とす"),
+        (0, "1.2.3.4", "10.0.0.1", "10.0.0.1", "by default no proxy is trusted"),
+        (0, "", "10.0.0.1", "10.0.0.1", "with no header, the direct peer"),
+        (1, "1.2.3.4, 10.0.0.9", "10.0.0.1", "10.0.0.9", "one hop: the rightmost"),
+        (2, "1.2.3.4, 10.0.0.9, 10.0.0.8", "10.0.0.1", "10.0.0.9",
+         "two hops: the second from the right"),
+        # What is missing is never filled in from what the client claims.
+        (2, "1.2.3.4", "10.0.0.1", "10.0.0.1", "shorter than expected: fall back"),
+        (1, "", "10.0.0.1", "10.0.0.1", "no header: fall back"),
     ],
 )
-def test_接続元は前段を信じる段数で決まる(trusted, xff, peer, want, why):
-    """**`X-Forwarded-For` は誰でも付けられる。**
+def test_the_caller_address_depends_on_how_many_proxies_are_trusted(trusted, xff, peer, want, why):
+    """Anyone can set X-Forwarded-For.
 
-    無条件に左端を採ると、監査ログに攻撃者の書いた文字列が並ぶ——直接の
-    接続元を記録するより悪い。
+    Taking the leftmost entry unconditionally fills the audit log with strings an
+    attacker chose, which is worse than recording the direct peer.
     """
     from types import SimpleNamespace
 
@@ -263,8 +268,8 @@ def test_接続元は前段を信じる段数で決まる(trusted, xff, peer, wa
     assert client_ip(req, Settings(trusted_proxies=trusted)) == want, why
 
 
-def test_詐称された左端は採らない():
-    """1 段構成に長い XFF を投げても、client の書いた左端は使わない。"""
+def test_a_forged_leftmost_entry_is_not_used():
+    """With one trusted proxy, a long header does not make the client's entry count."""
     from types import SimpleNamespace
 
     from arkhe.auth.deps import client_ip

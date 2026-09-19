@@ -1,8 +1,8 @@
-"""承継と離脱。**管理主体がどう変わっても、識別子は壊さない。**
+"""Succession and departure: identifiers survive a change of custodian.
 
-`NR`（再割当てしない）を宣言している以上、配ってしまった名前は振り直せない——
-振り直すことは元の識別子を殺すこと。だから解決は続け、変えるのは「誰が新規に
-採番するか」と「どこへ転送するか」だけ。
+With NR declared, a name that has been handed out cannot be reassigned, because
+reassigning it kills the original identifier. Resolution therefore continues; what
+changes is only who mints new names and where they redirect.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ def _resolve(db, key):
     return resolve(SqlArkRepository(db), naan, name)
 
 
-def test_承継しても解決先は変わらない(db, world, root):
+def test_succession_does_not_change_where_arks_resolve(db, world, root):
     arks = [
         minting.mint(db, shoulder=world["sh_a"], created_by="a", url=f"https://a/{i}")[0]
         for i in range(3)
@@ -35,10 +35,10 @@ def test_承継しても解決先は変わらない(db, world, root):
     for i, k in enumerate(keys):
         r = _resolve(db, k)
         assert r.outcome is Outcome.REDIRECT
-        assert r.location == f"https://a/{i}"  # **無傷**
+        assert r.location == f"https://a/{i}"  # untouched
 
 
-def test_承継すると名前空間の預かり主が変わる(db, world, root):
+def test_succession_moves_the_namespace_to_the_successor(db, world, root):
     ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["b"].id)
     db.commit()
     assert world["sh_a"].manager_id == world["b"].id
@@ -46,19 +46,20 @@ def test_承継すると名前空間の預かり主が変わる(db, world, root)
     assert world["a"].active is False
 
 
-def test_承継後は旧名前空間で新規採番できない(db, world, root):
+def test_after_succession_the_old_namespace_stops_minting(db, world, root):
     ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["b"].id, retire=True)
     db.commit()
     assert world["sh_a"].status == "retired"
 
 
-def test_承継はNAANを跨げない(db, world, root):
-    """跨ぐと識別子の形が変わる＝別の名前になってしまう。"""
+def test_succession_cannot_cross_naans(db, world, root):
+    """Crossing NAANs would change the shape of the identifier, making it another
+    name."""
     with pytest.raises(Invalid):
         ops.succeed(db, root, predecessor_id=world["a"].id, successor_id=world["c"].id)
 
 
-def test_離脱_転送先を組織のリゾルバへ一括で向け直す(db, world, root):
+def test_departure_repoints_every_target_at_the_organisations_resolver(db, world, root):
     arks = [
         minting.mint(db, shoulder=world["sh_a"], created_by="a", url="https://old/x")[0]
         for _ in range(2)
@@ -75,9 +76,10 @@ def test_離脱_転送先を組織のリゾルバへ一括で向け直す(db, wo
         assert res.location.startswith("https://repo.example.ac.jp/ark/")
 
 
-def test_離脱_未登録の名前も組織のリゾルバへ流れる(db, world, root):
-    """**継続作業を要求する形にすると放置されて死んだリンクが残る。**
-    以後の運用が組織側に閉じるよう、shoulder にも同じ委譲を置く。"""
+def test_departure_sends_unregistered_names_to_that_resolver_too(db, world, root):
+    """Anything that needs ongoing work gets forgotten, and dead links remain. The
+    same delegation is placed on the shoulder so that later work stays with the
+    organisation."""
     from arkhe.arkspec.betanumeric import check_digit_base, noid_check_digit
 
     ops.depart(
@@ -92,18 +94,18 @@ def test_離脱_未登録の名前も組織のリゾルバへ流れる(db, world
     assert res.reason == "delegated by shoulder"
 
 
-def test_離脱_新規採番は止まるが解決は続く(db, world, root):
+def test_departure_stops_minting_and_keeps_resolution(db, world, root):
     ark, _ = minting.mint(db, shoulder=world["sh_a"], created_by="a", url="https://old/x")
     db.commit()
     ops.depart(db, root, manager_id=world["a"].id)
     db.commit()
     assert world["sh_a"].status == "retired"
-    assert _resolve(db, ark.ark).outcome is Outcome.REDIRECT  # **解決は続く**
+    assert _resolve(db, ark.ark).outcome is Outcome.REDIRECT  # resolution continues
 
 
-def test_離脱_更新権限だけ残せる(db, world, root):
-    """scope を分けた設計がここで効く——新規採番はできないが、転送先の付け替えは
-    自分でできる。"""
+def test_departure_can_leave_update_rights_behind(db, world, root):
+    """Separate scopes pay off here: the organisation can no longer mint, but it can
+    still repoint its own targets."""
     r = ops.depart(db, root, manager_id=world["a"].id, keep_update_label="self-managed")
     db.commit()
     assert r["update_secret"]
@@ -113,7 +115,7 @@ def test_離脱_更新権限だけ残せる(db, world, root):
     assert p.scopes == frozenset({"ark:update"})
 
 
-def test_離脱で古い鍵は止まるが行は残る(db, world, root):
+def test_departure_disables_old_keys_but_keeps_the_rows(db, world, root):
     from sqlalchemy import select
 
     from arkhe.db.models import Client
@@ -123,4 +125,4 @@ def test_離脱で古い鍵は止まるが行は残る(db, world, root):
     ops.depart(db, root, manager_id=world["a"].id)
     db.commit()
     still = db.scalar(select(Client).where(Client.client_id == "a-web"))
-    assert still is not None and still.active is False  # 誰の鍵だったかを残す
+    assert still is not None and still.active is False  # keep whose key it was

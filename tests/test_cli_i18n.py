@@ -1,7 +1,8 @@
-"""コマンドの国際化。
+"""Localisation of the command line.
 
-**言語は import の時点で決まる**（Typer が help を組み立てるのがそこだから）ので、
-実行時に切り替えるテストは書けない。決め方そのものと、カタログの整合を見る。
+The language is fixed at import time, because that is when Typer builds its help, so a
+test cannot switch it at run time. What is checked here is how the language is chosen and
+whether the catalogues agree with each other.
 """
 
 from __future__ import annotations
@@ -18,42 +19,44 @@ from arkhe import cli_i18n
         ({"LANG": "ja_JP.UTF-8"}, "ja"),
         ({"LANG": "en_US.UTF-8"}, "en"),
         ({"LANG": "en_GB"}, "en"),
-        # `C` と `POSIX` は「英語」ではなく「言語の情報が無い」。次の変数を見る。
+        # C and POSIX do not mean English; they mean no language was stated. Look at
+        # the next variable.
         ({"LANG": "C"}, "ja"),
         ({"LANG": "C", "LC_MESSAGES": "en_US.UTF-8"}, "en"),
         ({"LANG": "C.UTF-8"}, "ja"),
-        # POSIX の優先順位: LC_ALL > LC_MESSAGES > LANG
+        # POSIX precedence: LC_ALL, then LC_MESSAGES, then LANG
         ({"LC_ALL": "en_GB.UTF-8", "LANG": "ja_JP.UTF-8"}, "en"),
-        # 明示の指定はすべてに優先する
+        # An explicit setting wins over all of them
         ({"ARKHE_LANG": "en", "LC_ALL": "ja_JP.UTF-8"}, "en"),
         ({"ARKHE_LANG": "ja", "LANG": "en_US.UTF-8"}, "ja"),
-        # 持っていない言語は既定に落とす（半端に英語へ倒さない）
+        # A language we do not have falls back to the default rather than half English
         ({"LANG": "fr_FR.UTF-8"}, "ja"),
         ({"ARKHE_LANG": "fr"}, "ja"),
     ],
 )
-def test_言語は環境から決まる(env, want):
+def test_the_language_comes_from_the_environment(env, want):
     assert cli_i18n.pick(env) == want
 
 
-def test_カタログに抜けがない():
-    """**片方だけ足して気づかない**を防ぐ。import 時にも落ちるが、意図として残す。"""
+def test_no_catalogue_is_missing_a_key():
+    """Adding a message to one language only would otherwise go unnoticed. Importing
+    would fail too, but the intent belongs here."""
     ja = set(cli_i18n.JA)
     for lang, cat in cli_i18n.CATALOGS.items():
-        assert set(cat) == ja, f"{lang} の鍵が {sorted(ja ^ set(cat))} でずれている"
+        assert set(cat) == ja, f"{lang} differs by {sorted(ja ^ set(cat))}"
 
 
-def test_差し込み先が両言語で揃っている():
-    """`{name}` の集合が言語で違うと、片方だけ KeyError で落ちる。"""
+def test_both_languages_have_the_same_placeholders():
+    """If the set of {name} slots differs, one language raises KeyError."""
     import string
 
     def slots(s: str) -> set[str]:
         return {f for _, f, _, _ in string.Formatter().parse(s) if f}
 
     for key, ja in cli_i18n.JA.items():
-        assert slots(ja) == slots(cli_i18n.EN[key]), f"{key} の差し込み先がずれている"
+        assert slots(ja) == slots(cli_i18n.EN[key]), f"{key} has different placeholders"
 
 
-def test_訳が引ける():
+def test_a_translation_can_be_looked_up():
     assert cli_i18n.CATALOGS["en"]["check.ok"] == "The configuration is valid"
     assert "{days}" not in cli_i18n.EN["client.breakglass.expires"].format(days=7)
