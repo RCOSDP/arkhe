@@ -188,6 +188,19 @@ def test_d2_unknown_naan_is_forwarded_to_the_global_resolver():
     assert r.location == "https://n2t.net/ark:12345/abcde"
 
 
+def test_d2_a_naan_with_a_terminal_letter_is_forwarded_rather_than_refused():
+    """Same proposal as test_n3_a_naan_with_a_terminal_letter_reads_as_its_own_naan.
+
+    Until it is registered here, ark:12345c/987 is simply a NAAN we do not hold, and an
+    unregistered NAAN is handed on rather than refused. That is the safe default while
+    the proposal is being discussed: the ARK keeps working through n2t, and nothing in
+    this ledger has to guess what the letter means.
+    """
+    r = resolve(FakeRepo(), "12345c", "987")
+    assert r.outcome is Outcome.FORWARD
+    assert r.location == "https://n2t.net/ark:12345c/987"
+
+
 def test_d2_metadata_for_an_unknown_naan_is_404_not_a_forward():
     r = resolve(FakeRepo(), "12345", "abcde", Inflection.JSON)
     assert r.outcome is Outcome.NOT_FOUND

@@ -189,6 +189,21 @@ def test_n3_betanumeric_naan_is_accepted():
     assert parse_ark("ark:/bcd12/xyz").naan == "bcd12"
 
 
+def test_n3_a_naan_with_a_terminal_letter_reads_as_its_own_naan():
+    """The ARKA Tech working group is considering letting a NAAN holder add a terminal
+    letter to carry meaning: ark:12345c/987 for a "concept" object assigned by 12345.
+
+    Nothing here implements that. This pins what happens today, so that a change to how
+    NAANs are read cannot quietly make such an ARK unreadable: it parses, and 12345c is
+    a different NAAN from 12345 (N2), which is what a string NAAN buys. Whether the two
+    should be related, and how the check digit is then computed, is for the working
+    group to settle.
+    """
+    variant = parse_ark("ark:12345c/987")
+    assert variant.naan == "12345c"
+    assert variant.naan != parse_ark("ark:12345/987").naan
+
+
 def test_n3_naan_rejects_non_betanumeric():
     for bad in ["ark:/abc12/xyz", "ark:/ab-12/xyz", "ark:/12_45/xyz"]:
         with pytest.raises(ArkParseError):
