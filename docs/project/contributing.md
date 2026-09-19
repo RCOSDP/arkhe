@@ -91,8 +91,13 @@ New behaviour needs a test that fails without it. For anything touching
 authorisation, add the negative case too: the interesting question is not that the
 right principal got in, but that the wrong one did not.
 
-Tests read as sentences on purpose — `test_他組織のARKは更新できない` — so a failure
-names the rule that broke rather than the function that raised.
+Tests read as sentences on purpose — `test_m3_another_organisations_ark_cannot_be_updated`
+— so a failure names the rule that broke rather than the function that raised.
+
+The code is written in English: identifiers, comments and docstrings alike. Japanese
+remains only in the message catalogues (`api/i18n/`, `cli_i18n.py`, and the `ja` field in
+`errors.py`), which are the Japanese interface itself. The documentation keeps both
+languages.
 
 ## The layers
 

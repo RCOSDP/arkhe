@@ -11,6 +11,27 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Added
 
+- **The code is now written in English throughout**: identifiers, comments, docstrings
+  and test names, across `src/`, `tests/`, `scripts/`, `alembic/` and `compose/`,
+  including renaming 493 test functions.
+
+  **Japanese remains in the three places where the Japanese is the product**: the message
+  catalogues (`api/i18n/` and `cli_i18n.py`), the `ja` field of each error code, which is
+  what the reference page prints, and the Japanese navigation of the documentation site.
+  The screens and the CLI still speak both languages.
+
+  The documentation (this changelog, STATUS and `docs/*.ja.md`) stays in Japanese. The
+  readers are different people: whoever reads the code is working on the implementation,
+  and that is better in one language.
+
+  **A check watches it** (`test_the_code_is_written_in_english`). A rule like this decays
+  one file at a time, because a Japanese comment added next to Japanese comments looks
+  like it belongs.
+
+  The migration files were renamed too (`b5f83e2c9014_namespace_rules.py` and the rest).
+  **The revision ids are unchanged**, so the chain and any applied history stay as they
+  were.
+
 - **A tool that builds the ledger for the end-to-end suite** (`scripts/seed_e2e.py`). It
   creates the NAANs, organisations, principals with their keys and the admin password, and
   `--arks N` fills the ledger with **ARKs in mixed states** (published, reserved, held,
@@ -38,7 +59,7 @@ breaking in a system whose identifiers cannot be reissued.
   | `test_concurrency` | 32 simultaneous sends of one `request_id`, 32 simultaneous mints, simultaneous withdrawals |
 
   **It was verified to bite.** Remove the `ARKHE_ALLOWED_HOSTS` middleware from
-  `create_app` and `test_許していない_Host_は断る` fails — **that setting was dead until
+  `create_app` and `test_a_host_that_was_not_allowed_is_refused` fails — **that setting was dead until
   0.9.2** (declared, documented, read by nothing). The rest of the suite assembles the app
   by hand, so **a missing middleware is invisible to it.**
 
@@ -55,7 +76,7 @@ breaking in a system whose identifiers cannot be reissued.
   rows, so an index alone cannot answer it, and it costs more as the ledger grows. When
   `domain.stats` was fixed this way in 0.6.0, **these three were left behind.**
 
-  **A check now watches for it** (`test_数える列は必ず名指しする`). Fixing the three that
+  **A check now watches for it** (`test_every_count_names_its_column`). Fixing the three that
   exist today is not enough; the next person writes `func.count()` again.
 
 ## [0.11.0] — 2026-09-19

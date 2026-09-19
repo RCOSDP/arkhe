@@ -447,3 +447,47 @@ def test_the_migration_head_in_status_matches_the_real_one():
     head = heads.pop()
     status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
     assert head in status, f"STATUS.md does not name the current head ({head})"
+
+
+#: Files that may contain Japanese, because the Japanese is the product rather than a
+#: comment: the message catalogues, the ja field of each error code, and the Japanese
+#: navigation labels of the documentation site.
+JAPANESE_IS_THE_PRODUCT = {
+    "src/arkhe/cli_i18n.py",
+    "src/arkhe/errors.py",
+    "mkdocs.yml",
+}
+
+
+def test_the_code_is_written_in_english():
+    """Identifiers, comments and docstrings are English everywhere.
+
+    The reader of the implementation and the reader of the interface are different
+    people. The interface speaks both languages through the catalogues; the code speaks
+    one, so that anyone who works on it can read all of it.
+
+    Checked mechanically because a rule like this decays one file at a time: a Japanese
+    comment added next to Japanese comments looks like it belongs.
+    """
+    import re
+
+    cjk = re.compile("[" + "".join(
+        f"{chr(a)}-{chr(b)}" for a, b in ((0x3040, 0x309f), (0x30a0, 0x30ff),
+                                         (0x4e00, 0x9fff))
+    ) + "]")
+    root = ROOT
+    checked = ("src", "tests", "scripts", "alembic", "compose")
+    offenders = []
+    for folder in checked:
+        for path in sorted((root / folder).rglob("*")):
+            if path.suffix not in {".py", ".sh", ".html", ".yml", ".json", ".toml"}:
+                continue
+            if "__pycache__" in path.parts:
+                continue
+            rel = str(path.relative_to(root))
+            if rel in JAPANESE_IS_THE_PRODUCT or rel.startswith("src/arkhe/api/i18n/"):
+                continue
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if cjk.search(line):
+                    offenders.append(f"{rel}:{i}")
+    assert not offenders, "Japanese in the code:\n  " + "\n  ".join(offenders[:20])

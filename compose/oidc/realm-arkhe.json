@@ -8,7 +8,7 @@
   "clients": [
     {
       "clientId": "arkhe-admin",
-      "name": "arkhe 管理画面",
+      "name": "arkhe admin interface",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
@@ -39,7 +39,7 @@
     },
     {
       "clientId": "example-invenio",
-      "name": "例示大学の InvenioRDM",
+      "name": "InvenioRDM at Example University",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
@@ -63,8 +63,8 @@
       "enabled": true,
       "emailVerified": true,
       "email": "ops@example.ac.jp",
-      "firstName": "運用者",
-      "lastName": "システム",
+      "firstName": "operator",
+      "lastName": "system",
       "credentials": [
         {
           "type": "password",
@@ -79,7 +79,7 @@
       "emailVerified": true,
       "email": "naan-admin@example.ac.jp",
       "firstName": "NAAN",
-      "lastName": "管理者",
+      "lastName": "administrator",
       "credentials": [
         {
           "type": "password",
@@ -93,8 +93,8 @@
       "enabled": true,
       "emailVerified": true,
       "email": "org-admin@example.ac.jp",
-      "firstName": "組織",
-      "lastName": "管理者",
+      "firstName": "organisation",
+      "lastName": "administrator",
       "credentials": [
         {
           "type": "password",
@@ -497,7 +497,7 @@
     },
     {
       "name": "arkhe-api",
-      "description": "arkhe の API を叩くための audience",
+      "description": "audience for calling the arkhe API",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
@@ -518,42 +518,42 @@
     },
     {
       "name": "ark:mint",
-      "description": "ARK を採番する",
+      "description": "mint an ARK",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true",
-        "consent.screen.text": "ARK を採番する"
+        "consent.screen.text": "mint an ARK"
       }
     },
     {
       "name": "ark:update",
-      "description": "既存 ARK を更新する",
+      "description": "update an existing ARK",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true",
-        "consent.screen.text": "既存 ARK を更新する"
+        "consent.screen.text": "update an existing ARK"
       }
     },
     {
       "name": "ark:read",
-      "description": "ARK を読む",
+      "description": "read an ARK",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true",
-        "consent.screen.text": "ARK を読む"
+        "consent.screen.text": "read an ARK"
       }
     },
     {
       "name": "ark:tombstone",
-      "description": "対象が失われたと宣言する",
+      "description": "declare that the object is gone",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "true",
         "display.on.consent.screen": "true",
-        "consent.screen.text": "対象が失われたと宣言する"
+        "consent.screen.text": "declare that the object is gone"
       }
     }
   ],
