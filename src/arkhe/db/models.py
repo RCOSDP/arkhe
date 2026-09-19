@@ -1,19 +1,19 @@
-"""ドメインモデル（SQLAlchemy 2.0）。
+"""The domain models (SQLAlchemy 2.0).
 
-`Naan → Manager → Shoulder → Ark` の 1 本で全 NAAN を扱う。**個別 NAAN を持つ
-組織でも shoulder を必ず使う**——使わないと NAAN ごとにモデルが分岐し、
-first-digit 規約が NAAN によって成立したりしなかったりする。
+One chain, Naan to Manager to Shoulder to Ark, covers every NAAN. Even an organisation
+with a NAAN of its own uses a shoulder: without that the model would branch per NAAN,
+and the first-digit convention would hold for some NAANs and not others.
 
-Django 版が「構造で」守っていた不変条件は、ここでも構造で守る:
+The invariants the Django version kept structurally are kept structurally here too:
 
-  E1  既存 ARK を黙って上書きしない
-      → 採番は INSERT のみ。ORM の merge/upsert 経路を使わない（`mint()` を見よ）
-  I5  条件つき unique 制約でローテーションを型として表現する
-      → 部分インデックス（`postgresql_where`）
-  NR  名前空間も、**公開した** ARK も削除しない
-      → `Shoulder` / `Ark` に削除を禁じるガードを置く（公開前の ARK だけが例外）
-  R2  監査証跡
-  D3  自 NAAN の未知名は 404（`Naan.is_authoritative` で判定する）
+  E1  an existing ARK is never overwritten silently
+      minting is INSERT only, and no merge or upsert path is used (see mint())
+  I5  rotation is expressed as a type through a conditional unique constraint
+      a partial index (postgresql_where)
+  NR  neither a namespace nor a published ARK is deleted
+      guards on Shoulder and Ark refuse it; a reserved ARK is the one exception
+  R2  an audit trail
+  D3  an unknown name under our own NAAN is 404 (decided by Naan.is_authoritative)
 """
 
 from __future__ import annotations
@@ -47,7 +47,8 @@ from sqlalchemy.types import JSON
 
 from arkhe.arkspec.naming import MAX_ARK_LENGTH, MAX_NAAN_LENGTH, MAX_NAME_LENGTH
 
-#: JSONB は Postgres だけ。テストの SQLite では JSON に落とす。
+#: JSONB exists only on PostgreSQL; on SQLite, which the tests use, it falls back to
+#: JSON.
 JSONType = JSON().with_variant(JSONB(), "postgresql")
 
 
@@ -60,10 +61,11 @@ class Base(DeclarativeBase):
 
 
 class CommitmentLevel(StrEnum):
-    """NMA コミットメント（対象へのサービスの約束）。
+    """The NMA commitment: what is promised about serving an object.
 
-    NLM の permanence ratings を採る（自前定義しない）。`descriptive-only` だけは
-    NLM の軸に無い追加で、**物理オブジェクト**に使う。
+    These are NLM's permanence ratings rather than a vocabulary invented here.
+    descriptive-only is the one addition, which is not on NLM's axis; it is for physical
+    objects.
     """
 
     NOT_GUARANTEED = "not-guaranteed"
@@ -74,11 +76,11 @@ class CommitmentLevel(StrEnum):
 
 
 class ShoulderStatus(StrEnum):
-    """shoulder の管理状態。
+    """The administrative state of a shoulder.
 
-    **名前空間は一度配ったら取り戻せない**（NR を宣言する以上、既存 ARK は解決し
-    続ける）。だから「押さえてあるが使わせない」「もう新規は採らない」を状態として
-    持てるようにする。
+    A namespace cannot be taken back once it is handed out: having declared NR, existing
+    ARKs keep resolving. So "held but not in use" and "no longer minting" exist as
+    states.
     """
 
     ACTIVE = "active"
@@ -88,46 +90,53 @@ class ShoulderStatus(StrEnum):
 
 
 class Authority(StrEnum):
-    """到達範囲。**上の段は下の段を含む。**
+    """How far a principal reaches. A wider tier contains the narrower ones.
 
-    ARK は「中央の権威が保証する」体系ではなく、**名前空間を委譲し、各組織が
-    自分の約束を自己申告する**体系。この 3 段はその委譲構造をそのまま写している。
+    ARK is not a scheme where a central authority vouches for things; it delegates
+    namespaces, and each organisation states its own promises. These three tiers are that
+    delegation, written down.
 
-      SYSTEM   RA の運用者。全 NAAN に届く。名前空間を配る側
-      NAAN     1 つの NAAN の配下すべて。その NAAN を預かる組織の管理者
-      MANAGER  1 組織ぶん。`shoulder_id` を併せて指定すれば 1 shoulder に固定できる
+      SYSTEM   the RA operator, reaching every NAAN: the side that hands namespaces out
+      NAAN     everything under one NAAN: the administrator of the organisation holding
+               it
+      MANAGER  one organisation. With shoulder_id it can be pinned to one shoulder
 
-    **配られた側が、配った側より広く届くことはない。** 判定は `reaches()` 1 か所。
+    Nobody a namespace was delegated to reaches further than whoever delegated it. The
+    decision lives in reaches().
     """
 
-    SYSTEM = "system"  # 全 NAAN（RA 運用者）
-    NAAN = "naan"  # NAAN 配下の全 shoulder
-    MANAGER = "manager"  # その組織の shoulder のみ
+    SYSTEM = "system"  # every NAAN: the RA operator
+    NAAN = "naan"  # every shoulder under one NAAN
+    MANAGER = "manager"  # only that organisation's shoulders
 
 
 class HoldMixin:
-    """**転送の一時停止。** 解決は止めない——止めるのは転送だけ。
+    """A hold on redirection. Resolution is not stopped; only redirection is.
 
-    委譲先のリゾルバが落ちた、間違った行き先を配ってしまった、機密が漏れて
-    取り下げを求められた、対象が移動中——**どれも急いで止めたいが、識別子を
-    殺したくない**。`404` は嘘（その識別子は存在する）で、`503` は識別子が
-    壊れて見える。だから `200` と記述を返す経路（D6・tombstone と同じ）に乗せる。
+    A delegate's resolver is down, a wrong target was handed out, something confidential
+    leaked and has to be taken down, an object is being moved: each is a reason to stop
+    quickly without killing the identifier. 404 would be untrue, because the identifier
+    exists, and 503 makes it look broken, so it answers 200 with a description, as D6 and
+    a tombstone do.
 
-    tombstone との違いは意味と可逆性である:
+    It differs from a tombstone in meaning and in reversibility:
 
-      tombstone  **対象が失われた。** 恒久。元の行き先は捨てる
-      hold       **対象は在るが、今は行き先を出せない。** 期限つき。元の行き先は残す
+      tombstone  the object is gone. Permanent, and the original target is discarded
+      hold       the object exists but we cannot give out its target. It has an expiry,
+                 and the original target is kept
 
-    **期限は必須。**「一時的」を人の記憶に頼ると恒久化する。そして**期限切れを
-    バッチで戻さない**——解決のたびに時計で見るので、戻し忘れが起きない
+    The expiry is required: "temporary" left to memory becomes permanent. Nothing puts
+    an expired hold back either, because the clock is read on each resolution, so nobody
+    has to remember to lift one
     （`domain.resolution.hold_of`）。
     """
 
-    #: **これを過ぎたら効かない。** null は保留していない。
+    #: After this it no longer applies. null means there is no hold.
     hold_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None, index=True
     )
-    #: 止めている理由。**公開の口（`?info` / `?json`）に出る**ので、機微を書かない。
+    #: Why it is held. It appears on the public endpoints (?info and ?json), so nothing
+    #: sensitive belongs here.
     hold_reason: Mapped[str] = mapped_column(String(500), default="")
     hold_by: Mapped[str] = mapped_column(String(255), default="")
 
@@ -135,7 +144,8 @@ class HoldMixin:
 class Naan(Base, HoldMixin):
     """Name Assigning Authority Number。
 
-    N2: **naan は文字列**。`099999` と `99999` は別の NAAN であり、整数化してはならない。
+    N2: a naan is a string. 099999 and 99999 are different NAANs and must never become
+    integers.
     """
 
     __tablename__ = "naan"
@@ -144,29 +154,33 @@ class Naan(Base, HoldMixin):
     name: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
 
-    #: D3: **自分が権威を持つ NAAN の未知名は 404**（「無い」と言える）。
-    #: ホスト名との文字列比較ではなくこの属性で判定する——9 NAAN 構成では権威を持つ
-    #: NAAN と委譲先を持つ NAAN が同居するため、文字列では区別できない。
+    #: D3: an unknown name under a NAAN we are authoritative for is 404, because we can
+    #: say it does not exist. The decision uses this attribute rather than comparing host
+    #: names: with several NAANs, those we are authoritative for and those we forward sit
+    #: side by side and a string cannot tell them apart.
     is_authoritative: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    #: 権威を持たない NAAN の委譲先。`is_authoritative=False` のときだけ意味を持つ。
+    #: Where a NAAN we are not authoritative for is forwarded. It means something only
+    #: when is_authoritative is False.
     redirect: Mapped[str] = mapped_column(String(500), default="")
 
-    #: NAA ポリシー。`NP | NR, OP, CC | 2026 | <URL>`。
+    #: The NAA policy: NP | NR, OP, CC | 2026 | <URL>.
     na_policy: Mapped[str] = mapped_column(String(500), default="")
 
-    #: **この名前空間の決まり。** 配下の組織すべてにかかる既定で、組織ごとの
-    #: 設定はここから**狭めるだけ**（広げられない）。
+    #: The rules for this namespace: the default for every organisation under it, which
+    #: an organisation may narrow but never widen.
     #:
-    #: 既定を NAAN 側に持たせるのは、**組織が増えると 1 つずつ掛けるのが
-    #: 現実的でなくなる**から。800 機関に同じ制限を入れて回る運用は成立しない。
-    #: 組織ごとの設定は例外を刻むためのもので、原則はここにある。
+    #: The default belongs to the NAAN because applying it per organisation does not
+    #: scale: setting the same restriction on 800 institutions one at a time is not a
+    #: workable way to run anything. Per-organisation settings record exceptions; the
+    #: rule lives here.
     allowed_auth: Mapped[str] = mapped_column(String(100), default="")
     may_self_register: Mapped[bool] = mapped_column(Boolean, default=True)
     max_scopes: Mapped[str] = mapped_column(String(200), default="")
 
-    #: **この NAAN の採番を外で行う場合の案内先。** 解決はここが続けることがありうる。
-    #: `/.well-known/ark` で公開し、クライアントがどこへ行けばよいか分かるようにする。
+    #: Where minting for this NAAN happens when it happens elsewhere. Resolution may
+    #: still continue here. It is published at /.well-known/ark so that a client knows
+    #: where to go.
     minter: Mapped[str] = mapped_column(String(500), default="")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -178,7 +192,8 @@ class Naan(Base, HoldMixin):
     shoulders: Mapped[list[Shoulder]] = relationship(back_populates="naan_obj")
 
     __table_args__ = (
-        # 権威を持たないなら転送先が要る。持つなら転送してはならない（D3）。
+        # Without authority a redirect is required; with it, redirecting is forbidden
+        # (D3).
         CheckConstraint(
             "(is_authoritative AND redirect = '') OR (NOT is_authoritative AND redirect <> '')",
             name="naan_redirect_only_when_not_authoritative",
@@ -187,10 +202,10 @@ class Naan(Base, HoldMixin):
 
 
 class Manager(Base):
-    """組織テナント。N2T の shoulder レコードが持つ `manager` を実体化したもの。
+    """An organisation: the manager that an n2t shoulder record names, made a row.
 
-    **資格情報は shoulder ではなくここに紐づける**——部局別・分野別に shoulder を
-    足しても鍵の再発行が要らない。
+    Credentials belong to this rather than to a shoulder, so that adding a shoulder per
+    department or per discipline does not mean issuing credentials again.
     """
 
     __tablename__ = "manager"
@@ -198,16 +213,16 @@ class Manager(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     naan: Mapped[str] = mapped_column(ForeignKey("naan.naan"), index=True)
 
-    #: **内部専用。公開しない。** shoulder の不透明性（N5）を壊さないため。
+    #: Internal only, never published, so that the opacity of a shoulder (N5) is not
+    #: broken.
     name: Mapped[str] = mapped_column(String(200))
 
-    #: mint 要求が shoulder を省略したときに使う。**全 Manager が必ず 1 つ持つ。**
+    #: Used when a mint request omits the shoulder. Every organisation has one.
     #:
-    #: `manager → shoulder → manager` の**循環参照**になる。PostgreSQL は
-    #: CREATE TABLE の時点で参照先を要求するので、そのままでは作成順が決まらない。
-    #: `use_alter` で「両方できてから ALTER で足す」形にし、名前も付ける
-    #: （名前が無いと落とせない）。**SQLite では見えない問題**なので、
-    #: 移行の検証は Postgres で行うこと。
+    #: manager to shoulder to manager is a cycle. PostgreSQL wants the target to exist
+    #: at CREATE TABLE, so there is no order in which both can be created. use_alter adds
+    #: the constraint afterwards, and it is named so that it can be dropped. SQLite does
+    #: not show this problem, which is why migrations are verified on PostgreSQL.
     default_shoulder_id: Mapped[int | None] = mapped_column(
         ForeignKey(
             "shoulder.id",
@@ -221,37 +236,43 @@ class Manager(Base):
     commitment_level: Mapped[str] = mapped_column(
         String(32), default=CommitmentLevel.PERMANENT_DYNAMIC.value
     )
-    quota_per_day: Mapped[int | None] = mapped_column(Integer, nullable=True)  # null は無制限
+    quota_per_day: Mapped[int | None] = mapped_column(Integer, nullable=True)  # null: no limit
 
-    #: **この組織に許す認証の機構。** 空白区切り。空なら構成の既定（`ARKHE_AUTH`）。
+    #: Which authentication mechanisms this organisation may use, space separated. Empty
+    #: means the deployment default (ARKHE_AUTH).
     #:
-    #: 名前空間を配る側が、配られた側の**入り方まで決められる**ようにするもの。
-    #: 「うちの NAAN では機関は認可サーバ経由でしか入れない」を、機関ごとの設定
-    #: ではなく**配る側の宣言**として持てる。組織自身では変えられない
-    #: （課された制限を課された側が外せては意味がない——`quota_per_day` と同じ）。
+    #: It lets whoever hands out the namespace decide how the other side gets in. "Under
+    #: our NAAN, institutions may only enter through the authorisation server" becomes a
+    #: statement by the side handing it out rather than a setting on each institution.
+    #: The organisation cannot change it: a limit the limited party can lift is not a
+    #: limit, as with quota_per_day.
     #:
-    #: **発行時だけでなく認証時にも効く。** 発行を止めるだけだと、制限を掛ける前に
-    #: 出した鍵が生き残り、「制限した」と思っているのに通り続ける。
+    #: It applies at authentication, not only when issuing. Stopping new credentials
+    #: alone would let those issued before the restriction keep working while everyone
+    #: believes it is in force.
     allowed_auth: Mapped[str] = mapped_column(String(100), default="")
 
-    #: **組織の管理者が自分で利用者を登録してよいか。**
+    #: Whether an organisation's administrator may register principals.
     #:
-    #: 名前空間を配る側が、配られた側にどこまで任せるかを決める。任せない運用では
-    #: 「利用者を増やしたい」を配る側に依頼させる——小さな NAAN では現実的で、
-    #: 誰が入れるかを一手に把握できる。
+    #: It is how much the side handing out the namespace delegates. Where it does not,
+    #: "we need another principal" becomes a request to them, which is workable for a
+    #: small NAAN and keeps who can get in in one pair of hands.
     may_self_register: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    #: **この組織の利用者に与えられる scope の上限。** 空白区切り。空なら制限なし。
+    #: The ceiling on the scopes this organisation's principals may hold, space
+    #: separated. Empty means no ceiling.
     #:
-    #: 上限であって既定ではない。`ark:tombstone` を配る側だけの操作にしておく、
-    #: といった使い方をする。**組織自身では上げられない**（上げられる上限は上限
-    #: ではない）。誰が作った利用者かによらず効く——例外を作るなら上限のほうを
-    #: 動かす。宣言と実態がずれないようにするため。
+    #: It is a ceiling, not a default: it can keep ark:tombstone to the side handing out
+    #: the namespace, for instance. The organisation cannot raise it, since a ceiling
+    #: that can be raised is not one, and it applies whoever created the principal. To
+    #: make an exception, move the ceiling, so that what is declared and what is true do
+    #: not drift apart.
     max_scopes: Mapped[str] = mapped_column(String(200), default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    #: **統廃合の承継先。** 管理主体が変わっても**識別子は壊さない**（`NR` を宣言して
-    #: いる以上、解決は続ける）。系譜を辿れるように残す。
+    #: The successor after a merger. Identifiers survive a change of custodian: having
+    #: declared NR, resolution continues. The link is kept so that the lineage can be
+    #: followed.
     succeeded_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("manager.id", ondelete="SET NULL"), nullable=True
     )
@@ -273,7 +294,8 @@ class Manager(Base):
 
 
 class Shoulder(Base, HoldMixin):
-    """NAAN の下位名前空間。組織への名前空間の委譲を担う。"""
+    """A namespace below a NAAN. It is how a namespace is delegated to an
+    organisation."""
 
     __tablename__ = "shoulder"
 
@@ -287,30 +309,33 @@ class Shoulder(Base, HoldMixin):
     name: Mapped[str] = mapped_column(String(200), default="")
     description: Mapped[str] = mapped_column(Text, default="")
 
-    #: N2T の `redirect`。**shoulder 単位の解決委譲。** `$id` / `${blade}` /
-    #: 先頭の `303 ` に対応する（展開は `domain.resolution.expand_redirect`）。
+    #: n2t's redirect: resolution delegated per shoulder. It supports $id, ${blade} and
+    #: a leading 303; expansion happens in domain.resolution.expand_redirect.
     redirect: Mapped[str] = mapped_column(String(500), default="")
 
-    #: N2T の `minter`。**採番の委譲先——機械が叩ける口。** `status=delegated` の
-    #: とき、mint 要求は 307 でここへ案内する（**プロキシしない**）。
+    #: n2t's minter: where minting is delegated to, as an endpoint a machine can call.
+    #: With status=delegated, a mint request is pointed here with 307; nothing is
+    #: proxied.
     #:
-    #: **空でよい。** 委譲とは「ここでは採番しない」と決めることであって、
-    #: 「どこで採るかを外に公示する」ことではない。かつては委譲に行き先を必須に
-    #: していたが、**それが内部ホスト名や説明ページを minter に押し込ませていた**
-    #: ——制約を満たすために、嘘の値を入れる圧力になっていた。
+    #: It may be empty. Delegating means deciding that we do not mint here, not
+    #: announcing where minting happens. Requiring a URL used to push internal host names
+    #: and explanatory pages into this field: pressure to invent a value to satisfy a
+    #: constraint.
     #:
-    #: **外から到達できないなら、ここは空にする。** 説明ページを入れてはいけない
-    #: ——`/.well-known/ark` と 307 の `Location` は「ここを叩けば採番できる」と
-    #: 言う契約で、人向けのページを置くと**受け取った側に見分ける手段が無くなる**。
-    #: そういう委譲は `about` を使う。
+    #: Leave it empty when nothing outside can reach it, and never put an explanatory
+    #: page here. /.well-known/ark and the Location of a 307 both promise that calling
+    #: this mints something, and a page for people leaves the recipient no way to tell.
+    #: Such a delegation uses about instead.
     minter: Mapped[str] = mapped_column(String(500), default="")
 
-    #: **人に読ませる案内。** 「この名前空間の採番は外で行っている。事情はここ」。
+    #: Guidance for people: minting for this namespace happens elsewhere, and here is
+    #: the explanation.
     #:
-    #: `minter` と分けてあるのは、**機械が叩ける口と、人が読むページは別物**だから。
-    #: 閉域へ委譲した shoulder では `minter` が空で `about` だけが在り、mint 要求は
-    #: **403 と本文の案内**で返る（307 で人向けのページへ送ると、クライアントは
-    #: そこへ POST しにいく）。
+    #: It is separate from minter because an endpoint a machine calls and a page a
+    #: person reads are different things. On a shoulder delegated to a closed network,
+    #: minter is empty and only about is set, and a mint request answers 403 with the
+    #: guidance in the body: a 307 to a page for people would make clients POST to that
+    #: page.
     about: Mapped[str] = mapped_column(String(500), default="")
 
     status: Mapped[str] = mapped_column(
@@ -338,16 +363,17 @@ class Shoulder(Base, HoldMixin):
 
 
 class Ark(Base, HoldMixin):
-    """採番済みの ARK。
+    """A minted ARK.
 
-    **子リソースは採番しない。** suffix passthrough が任意の深さを賄うので、
-    1 レコード 1 採番で済む。容量設計上これがいちばん効いている。
+    Child resources are not minted. Inheritance covers any depth, so one record is one
+    mint, which is what keeps the capacity plan workable.
     """
 
     __tablename__ = "ark"
 
-    #: `<naan>/<name>`。N2 のため naan は文字列のまま連結する。
-    #: 幅は仕様の下限から決める（NAAN 16 ＋ `/` ＋ Base Name+Qualifier 255）。
+    #: <naan>/<name>. For N2 the naan is joined as a string. The width comes from the
+    #: minimums the specification requires: 16 for the NAAN, a slash, and 255 for the
+    #: base name plus qualifier.
     ark: Mapped[str] = mapped_column(String(MAX_ARK_LENGTH), primary_key=True)
     naan: Mapped[str] = mapped_column(ForeignKey("naan.naan"), index=True)
     shoulder_id: Mapped[int] = mapped_column(ForeignKey("shoulder.id"), index=True)
@@ -357,51 +383,51 @@ class Ark(Base, HoldMixin):
     commitment: Mapped[str] = mapped_column(Text, default="")
     metadata_: Mapped[str] = mapped_column("metadata", Text, default="")
 
-    #: **グローバルに公開した時刻。null は「まだ公開していない」。**
+    #: When it was published to the world. null means it has not been.
     #:
-    #: NR（再割当てしない）が縛るのは**外へ出した名前**である。採番した瞬間から
-    #: 縛られるわけではない——下書きの対象に先に番号を振っておき、公開をやめた
-    #: ときに、その番号が**誰も指さないまま台帳に残り続ける**ほうが、約束を
-    #: 守っていることにはならない。
+    #: NR binds names that went out. It does not bind from the moment of minting: giving
+    #: a draft a number in advance and then deciding not to publish it, leaving that
+    #: number in the ledger naming nothing, is not keeping the promise either.
     #:
-    #: だから公開前という状態を持つ。公開前の ARK は:
+    #: So a reserved state exists. A reserved ARK:
     #:
-    #:   - **解決しない**（`domain.resolution` は未登録の名前と同じに扱う）
-    #:   - **削除できる**（`domain.admin_ops.withdraw_ark`）
+    #:   - does not resolve (domain.resolution treats it as an unregistered name)
+    #:   - can be deleted (domain.admin_ops.withdraw_ark)
     #:
-    #: **今この瞬間、公開しているか。** 0.3.0 では一方通行だったが、0.4.0 で
-    #: 戻せるようにした——取り下げの判断は、対象を持っている組織のところに
-    #: あるからである。**戻しても「一度出した」事実は消えない**
-    #: （`first_published_at` を見よ）。
+    #: Whether it is published right now. In 0.3.0 this was one-way; 0.4.0 made it
+    #: reversible, because the decision to take something down belongs to the
+    #: organisation that holds the object. Taking it down does not erase that it was
+    #: published (see first_published_at).
     #:
-    #: 既定は「採番と同時に公開」。**今までと同じ振る舞いを既定にする**ため
-    #: ——公開の一手間を既存の呼び出し側に課すと、足すのを忘れた側では
-    #: 採番できているのに解決しない ARK が静かに積もる。
+    #: The default is to publish as it is minted, which keeps the previous behaviour:
+    #: requiring an extra step would quietly leave callers who forget it minting ARKs
+    #: that never resolve.
     #:
-    #: **列の `default` では決めない。** SQLAlchemy は「None を代入した」と
-    #: 「値を入れていない」を区別せず、どちらにも `default` を当てる——
-    #: `default=utcnow` を置くと**予約が黙って公開になる**。値を決めるのは
-    #: `domain.minting`（Ark を作る唯一の層）で、ここは器だけを持つ。
+    #: The value is not decided by a column default. SQLAlchemy does not distinguish
+    #: assigning None from leaving a value out and applies the default to both, so
+    #: default=utcnow would silently publish a reservation. domain.minting, the only
+    #: layer that creates an Ark, decides the value; this is only the column.
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None, index=True
     )
 
-    #: **一度でも外に出したか。初めて公開した時刻で、二度と消えない。**
+    #: Whether it was ever public: when it was first published, and it is never
+    #: cleared.
     #:
-    #: `published_at` は行ったり来たりするが、**こちらは片道である**。外の世界に
-    #: 出た名前は、引っ込めても「出ていなかったこと」にはならない——その間に
-    #: 誰かが引用しているかもしれず、こちらからは知りようがないからである。
+    #: published_at goes back and forth; this is one-way. A name that went out into the
+    #: world does not become one that never did, because someone may have cited it in
+    #: the meantime and there is no way to know from here.
     #:
-    #: この列が決めるのは**儀式の重さ**だけで、誰が行えるかではない。一度も
-    #: 公開していない名前の取り下げは軽く、**一度でも出した名前の取り下げは、
-    #: 理由と打ち直しを要求する**（`domain.admin_ops`）。重さを主体の位ではなく
-    #: 名前の履歴に結びつけたのは、**危ないのは「誰が消すか」ではなく
-    #: 「何が消えるか」**だからである。
+    #: This column decides how much ceremony an operation takes, not who may perform it.
+    #: Withdrawing a name that was never published is light; withdrawing one that was
+    #: requires a reason and the ARK typed again (domain.admin_ops). The weight follows
+    #: the name's history rather than the caller's tier, because what matters is what is
+    #: being lost, not who is deleting it.
     first_published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None
     )
 
-    # ERC / Dublin Core（分野標準の受け皿）
+    # The ERC and Dublin Core fields
     title: Mapped[str] = mapped_column(Text, default="")
     type: Mapped[str] = mapped_column(Text, default="")
     identifier: Mapped[str] = mapped_column(Text, default="")
@@ -411,7 +437,7 @@ class Ark(Base, HoldMixin):
     who: Mapped[str] = mapped_column(Text, default="")
     when: Mapped[str] = mapped_column(Text, default="")
 
-    # R2: 監査証跡
+    # R2: the audit trail
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, index=True
     )
@@ -427,51 +453,56 @@ class Ark(Base, HoldMixin):
 
     @validates("url")
     def _refuse_dangerous_url(self, _key: str, value: str) -> str:
-        """**ブラウザに解釈させると危ない行き先を、層の底で拒む。**
+        """Refuse, at the bottom layer, a target that is dangerous for a browser to
+        interpret.
 
-        検証は API のスキーマ（`ArkFields`）にもあるが、**あれは JSON の口しか
-        通らない**——画面のフォームは素の文字列を受けて `minting.mint()` を直接
-        呼ぶので、素通りしていた。**画面と API に差を作らない**という決まりが、
-        入口ごとに書いた検証では守れていなかった。
+        The API schema (ArkFields) validates this too, but only on the JSON routes: the
+        admin form took a plain string and called minting.mint() directly, so it went
+        straight past. The rule that the screens and the API behave alike could not hold
+        with validation written at each entrance.
 
-        **実際に悪用はできない。** 転送とリンクの側は**許可リスト**
-        （`is_followable`、`http` と `https` だけ）で守っているので、`javascript:`
-        が入っていても転送されずリンクにもならない。だがそれは**使う瞬間の守り**
-        であって、**入る瞬間の守り**は別に要る——許可リストをいつか緩めたとき、
-        台帳に既に入っているものが効いてくる。
+        It was not exploitable. Redirection and links go through an allow list
+        (is_followable, http and https only), so a javascript: URL was never followed or
+        linked. But that guards the moment of use, and the moment of entry needs its own:
+        if the allow list is ever loosened, what is already in the ledger starts to
+        matter.
 
-        `urn:` `doi:` `ark:` `mailto:` は拒まない。**ARK は物理オブジェクトにも
-        他の識別子にも付けられる**ので、行き先は HTTP URL とは限らない。
+        urn:, doi:, ark: and mailto: are not refused. An ARK can name a physical object
+        or another identifier, so a target is not necessarily an HTTP URL.
         """
         from arkhe.domain.resolution import DANGEROUS_SCHEMES, is_registrable
 
         if not is_registrable(value):
             raise ValueError(
-                "url にブラウザが実行しうるスキームは入れられない: "
+                "a url may not use a scheme a browser could execute: "
                 + "/".join(sorted(DANGEROUS_SCHEMES))
             )
         return value
 
     @property
     def is_public(self) -> bool:
-        """**今この瞬間、解決してよいか。** 取り下げていれば偽になる。"""
+        """Whether it may resolve right now. False once it has been withdrawn."""
         return self.published_at is not None
 
     @property
     def was_ever_public(self) -> bool:
-        """**一度でも外に出したか。** 取り下げても真のままで、消えることは無い。"""
+        """Whether it was ever public. It stays true after a withdrawal and is never
+        cleared."""
         return self.first_published_at is not None
 
 
 class Subject(StrEnum):
-    """主体の種別。**人と機械を分ける。**
+    """What kind of principal this is: a person or a machine.
 
-    分けないと、前段の認証プロキシが立てるヘッダ（`X-Forwarded-User`）で
-    **機械用のクライアントを名乗れてしまう**。プロキシを正しく置けば防げるが、
-    設定 1 つの誤りが「一括投入バッチとして全件書き換え」に化けるのは脆い。
+    Without the distinction, the header an authenticating proxy sets (X-Forwarded-User)
+    could be used to become a machine client. Placing the proxy correctly prevents it,
+    but one wrong setting turning into "rewrite everything as the loading batch" is too
+    fragile.
 
-      machine  資格情報（API キー / client_secret）で名乗る。**外部ログインでは名乗れない**
-      person   外部の認可サーバやプロキシが身元を保証する。**資格情報を持てない**
+      machine  identifies itself with a credential, an API key or a client secret, and
+               cannot sign in from outside
+      person   vouched for by an external authorisation server or proxy, and holds no
+               credential
     """
 
     MACHINE = "machine"
@@ -479,16 +510,18 @@ class Subject(StrEnum):
 
 
 class Client(Base):
-    """主体。**API キー・自前トークン・OIDC のどれで認証しても、行き着く先はここ。**
+    """A principal. An API key, a token we issued and an OIDC token all end here.
 
-    到達範囲（NAAN / manager / shoulder / scope）を**クライアント登録の属性として**
-    持つのが要点で、トークン要求やリクエスト本文で指定させない（権限昇格を防ぐ）。
+    The point is that the reach, the NAAN, the organisation, the shoulder and the scopes,
+    is an attribute of the registration rather than something named in a token request or
+    a request body, which is what prevents privilege escalation.
     """
 
     __tablename__ = "client"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    #: 外部に見せる識別子。OAuth2 の client_id、OIDC の sub / azp に対応させる。
+    #: The identifier shown outside, matching an OAuth2 client_id or an OIDC sub or
+    #: azp.
     client_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
 
     naan: Mapped[str] = mapped_column(ForeignKey("naan.naan"), index=True)
@@ -496,27 +529,28 @@ class Client(Base):
         ForeignKey("manager.id", ondelete="CASCADE"), nullable=True, index=True
     )
 
-    #: 人か機械か。**この 1 列が、名乗れる経路を分ける**（`Subject` を見よ）。
+    #: Person or machine. This one column decides which routes can be used to identify
+    #: as it (see Subject).
     subject_type: Mapped[str] = mapped_column(String(16), default=Subject.MACHINE.value)
 
-    #: **到達範囲はクライアント登録の属性。トークン要求で指定させない。**
+    #: The reach is an attribute of the registration, never named in a token request.
     authority: Mapped[str] = mapped_column(String(16), default=Authority.MANAGER.value)
 
-    #: **この Client が使える shoulder を 1 つに固定する**（任意）。
-    #: 同一 shoulder に複数のクライアントが採番するのは正常——web-api / worker /
-    #: 一括投入バッチのように同じ名前空間を使う主体が複数いるのが普通で、
-    #: **それぞれに別の資格情報を発行し、鍵を共有させない。**
+    #: Optionally pins this client to one shoulder. Several clients minting into one
+    #: shoulder is ordinary: a web API, a worker and a loading batch all use the same
+    #: namespace. Each is issued its own credential, and none of them share one.
     shoulder_id: Mapped[int | None] = mapped_column(
         ForeignKey("shoulder.id"), nullable=True
     )
 
-    #: 付与する操作。登録に無い scope をトークン要求で取れてはならない。
+    #: The operations granted. A scope that was not registered must not be obtainable
+    #: through a token request.
     allowed_scopes: Mapped[str] = mapped_column(String(200), default="ark:mint")
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
-    )  # `authority=naan` では必須
+    )  # required when authority=naan
     label: Mapped[str] = mapped_column(String(200), default="")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -528,13 +562,14 @@ class Client(Base):
     )
 
     __table_args__ = (
-        # I5: **有効なものだけ (manager, label) で一意。** 旧を無効化して同名で
-        # 新規発行できる＝ローテーションが型として表現される。
+        # I5: unique on (manager, label) among the active ones, so that disabling the
+        # old one and issuing another under the same label works: rotation expressed as
+        # a type.
         #
-        # **空のラベルは制約の外。** 空は「名前を付けていない」であって、名前が
-        # 衝突しているのではない。含めると、1 組織にラベル無しの主体を 2 つ置け
-        # なくなる（web-api / web-ui / worker のように役割で分ける普通の構成が
-        # 通らない）。
+        # An empty label is outside the constraint. Empty means unnamed, not a name
+        # collision. Including it would stop one organisation having two unlabelled
+        # principals, which rules out an ordinary split by role: web-api, web-ui and
+        # worker.
         Index(
             "uniq_active_label_per_manager",
             "manager_id",
@@ -547,23 +582,25 @@ class Client(Base):
 
 
 class CredentialKind(StrEnum):
-    """資格情報の種別。**人が持てるのはパスワードだけ。**
+    """The kinds of credential. A person can hold only a password.
 
-    API キーと client_secret は機械のもの——人に配ると、その人が組織を離れても
-    鍵が生き残る。逆にパスワードは機械に持たせない（覚える主体がいない）。
+    API keys and client secrets belong to machines: handed to a person, they outlive
+    their time at the organisation. A password is not given to a machine, which has
+    nobody to remember it.
     """
 
-    API_KEY = "api_key"  # arklet 方式。平文は発行時に一度だけ返す
-    CLIENT_SECRET = "client_secret"  # OAuth2 client_credentials 用
-    PASSWORD = "password"  # 管理画面へのローカルログイン（人のみ）
+    API_KEY = "api_key"  # as in arklet. The plaintext is returned once, when issued
+    CLIENT_SECRET = "client_secret"  # for OAuth2 client_credentials
+    PASSWORD = "password"  # local sign-in to the admin interface, for people only
 
 
 class Credential(Base):
-    """クライアントの資格情報。**平文は保存しない。**
+    """A client's credential. The plaintext is not stored.
 
-    API キーと client_secret を 1 つの表で扱う。どちらも「発行時に一度だけ平文を
-    返し、以後はハッシュ照合するだけ」で扱いが同じだから。ローテーションのために
-    **1 クライアントが複数の有効な資格情報を持てる**（新旧を並行させて切り替える）。
+    API keys and client secrets share one table because they are handled the same way:
+    the plaintext is returned once when issued, and afterwards only a hash is compared.
+    For rotation, one client may hold several active credentials at once, so that the
+    old and the new run side by side during a switch.
     """
 
     __tablename__ = "credential"
@@ -574,8 +611,9 @@ class Credential(Base):
     )
     kind: Mapped[str] = mapped_column(String(16), default=CredentialKind.API_KEY.value)
 
-    #: 照合を O(1) にするための前置き。**秘密ではない**（平文の先頭 8 文字）。
-    #: これが無いと、全レコードのハッシュを総当たりすることになる（arklet はそうしていた）。
+    #: A prefix that makes lookup constant time. It is not a secret: it is the first
+    #: eight characters of the plaintext. Without it, every row's hash would have to be
+    #: tried, which is what arklet did.
     prefix: Mapped[str] = mapped_column(String(16), index=True)
     hashed: Mapped[str] = mapped_column(String(255))
 
@@ -585,9 +623,9 @@ class Credential(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    #: **総当たりを止める。** ログイン画面を出す以上、これが無いと辞書攻撃に
-    #: 素で晒される。API キーは 256 bit の乱数なので対象外だが、人が決める
-    #: パスワードは推測されうる。
+    #: Stops guessing. Offering a login page without this leaves it open. An API key is
+    #: 256 random bits and needs none, but a password chosen by a person can be
+    #: guessed.
     failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -597,17 +635,18 @@ class Credential(Base):
 
 
 class MintReceipt(Base):
-    """F4: **採番の控え。** 同じ `request_id` の再送に、前回と同じ ARK を返す。
+    """F4: the receipt of a mint, so that a resend with the same request_id gets the
+    same ARK.
 
-    採番は再試行できない——ARK は `NR`（再割当てしない）を宣言する識別子で、応答が
-    失われたときに再送すると**誰も指していない ARK が増える**（＝死んだ番号）。
+    Minting cannot simply be retried: an ARK declares NR, and resending after a lost
+    response adds an ARK that names nothing, a dead number.
 
-    だが**万オーダーの投入では、途中でネットワークが切れるほうが普通**。
-    **控えを持てば、再送を安全にできる。** 呼び出し側が `request_id` を付け、
-    サーバは (client, request_id) で 1 行に固定する。
+    But over a batch of tens of thousands, a network dropping partway is ordinary. With
+    a receipt, resending is safe: the caller supplies a request_id and the server pins it
+    to one row per (client, request_id).
 
-    **client ごとに独立。** 他組織の `request_id` と衝突しないし、鍵の推測で
-    他組織の ARK を引くこともできない。
+    They are per client. They do not collide with another organisation's request_ids, and
+    guessing one does not reveal another organisation's ARK.
     """
 
     __tablename__ = "mint_receipt"
@@ -624,22 +663,23 @@ class MintReceipt(Base):
 
 
 class ArkChange(Base):
-    """ARK の**行き先が変わった記録**。
+    """The record of an ARK's target changing.
 
-    ここが無いと、**以前どこを指していたかを復元できない。** `NR`（振り直さない）
-    を宣言する体系で「この識別子は変わらない」と言うなら、変えたのは何であって
-    いつ誰が変えたのかを示せなければならない——さもないと、**約束を検証する手段が
-    利用者の側に無い。**
+    Without it, where something used to point cannot be recovered. A scheme that declares
+    NR and says an identifier does not change has to be able to show what changed, when,
+    and who changed it; otherwise nobody outside can verify the promise.
 
-    監査ログとは別に持つ理由が 2 つある:
+    There are two reasons it is separate from the audit log:
 
-      監査は NAAN 単位以上の操作だけを残す。**採番も付け替えも組織が行う**ので、
-      監査だけでは肝心の変更が落ちる（`authz.audit` の R2）。
+      the audit log keeps only operations at NAAN level and above, while minting and
+      repointing are done by organisations, so it would miss the changes that matter
+      (R2 in authz.audit)
 
-      監査は運用者のためのもので、これは**識別子そのものの履歴**。保存期間も
-      切り出し方も違う（監査は間引けるが、こちらは間引けない）。
+      the audit log is for operators, while this is the history of the identifier
+      itself. They are kept for different periods and thinned differently: the audit log
+      can be thinned, this cannot
 
-    行は**足すだけ**。消さない——消せる履歴は履歴ではない。
+    Rows are only ever added. A history that can be deleted is not a history.
     """
 
     __tablename__ = "ark_change"
@@ -649,11 +689,11 @@ class ArkChange(Base):
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
     #: `update` / `tombstone` / `hold` / `release_hold` / `publish`。
-    #: **意味が違うので分けて残す**（転送先の付け替えと「対象が失われた」の宣言、
-    #: そして「グローバルに出した」は別のこと）。
+    #: Kept apart because they mean different things: repointing a target, declaring
+    #: that an object is gone, and publishing to the world are three separate acts.
     action: Mapped[str] = mapped_column(String(16))
 
-    #: 変える前の行き先。**これが復元したいもの。**
+    #: The target before the change. This is what anyone would want to recover.
     before_url: Mapped[str] = mapped_column(String(2000), default="")
     after_url: Mapped[str] = mapped_column(String(2000), default="")
 
@@ -662,7 +702,8 @@ class ArkChange(Base):
 
 
 class AuditEvent(Base):
-    """R2: 誰がいつ何をしたか。**`authority=naan` の操作は全件記録する。**"""
+    """R2: who did what and when. Every operation at NAAN level and above is
+    recorded."""
 
     __tablename__ = "audit_event"
 
@@ -674,34 +715,36 @@ class AuditEvent(Base):
     target: Mapped[str] = mapped_column(String(MAX_ARK_LENGTH), default="")
     detail: Mapped[dict] = mapped_column(JSONType, default=dict)
 
-    #: 接続元のアドレス。**前段を信じた結果**であって、証拠ではない
-    #: （`ARKHE_TRUSTED_PROXIES` を 0 にしていれば、直接の接続元そのもの）。
+    #: The caller's address: the result of trusting whatever is in front, not evidence.
+    #: With ARKHE_TRUSTED_PROXIES at 0 it is the direct peer itself.
     ip: Mapped[str] = mapped_column(String(45), default="", index=True)
 
     __table_args__ = (Index("ix_audit_authority_at", "authority", "at"),)
 
 
 class UnknownSubject(Base):
-    """認可サーバから来たが、台帳に登録の無い主体。
+    """A principal that arrived from the authorisation server without a registration.
 
-    **綴りが 1 文字違うと黙って 401 になる。** その 1 文字を、arkhe は弾いた
-    瞬間に手に持っている——`azp` はもう署名検証を通っている。捨てずに残せば、
-    運用者は打ち直さずに登録できる。
+    One wrong character means a silent 401, and at the moment of refusal arkhe has that
+    exact string in hand: azp has already passed signature verification. Keeping it lets
+    an operator register without retyping.
 
-    残すのは**認可サーバが署名した値だけ**である。ログイン欄に打たれた文字列は
-    残さない（`record_sign_in` の方針）が、ここは事情が違う——攻撃者が仕込める
-    値ではないし、これを見せないと typo の切り分け手段が運用者の側に無い。
+    Only what the authorisation server signed is kept. A string typed into a login field
+    is not (see record_sign_in), but this is different: it is not a value an attacker can
+    plant, and without it an operator has no way to track down a typo.
 
-    **どの組織のものかは分からない。** トークンにその情報は無く、推測もしない。
-    だから見えるのは NAAN 以上に届く主体だけにしてある——組織単位の管理者に
-    見せると、他組織の client_id が混ざって出る。
+    Which organisation it belongs to is unknown. The token does not say, and nothing here
+    guesses, so it is visible only to principals that reach NAAN level or above: shown to
+    an organisation-level administrator, it would mix in another organisation's client
+    ids.
     """
 
     __tablename__ = "unknown_subject"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    #: `azp` → `client_id` → `sub` の順で採った、認可サーバ側の識別子。
+    #: The identifier from the authorisation server, taken as azp, then client_id,
+    #: then sub.
     subject: Mapped[str] = mapped_column(String(255), index=True)
     issuer: Mapped[str] = mapped_column(String(500), default="")
 
@@ -709,32 +752,33 @@ class UnknownSubject(Base):
     last_seen: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, index=True
     )
-    #: 何回来たか。**1 回なら間違い、何度も来るなら設定が生きている**——
-    #: 直す優先度がこれで分かる。
+    #: How many times it arrived. Once is a typo; repeatedly means something is
+    #: configured and running, which says how urgent it is.
     seen: Mapped[int] = mapped_column(Integer, default=1)
     ip: Mapped[str] = mapped_column(String(45), default="")
 
-    #: **同じ主体で行を増やさない。** 認可サーバの client 数で頭打ちになる。
+    #: One row per principal, so the table is bounded by the number of clients at the
+    #: authorisation server.
     __table_args__ = (UniqueConstraint("subject", "issuer", name="uq_unknown_subject"),)
 
 
 class WithdrawnName(Base):
-    """**公開前に取り下げた名前。二度と採らない。**
+    """A name withdrawn before publication. It is never minted again.
 
-    公開前の ARK は消せる（`Ark.published_at` を見よ）。だが消してよいのは
-    **台帳の行**であって、名前そのものではない——公開していなくても、予約した
-    文字列は既に人の手に渡っている（先に番号を貰って対象に刻むのが予約の目的
-    そのものである）。その名前を別の対象に振り直せば、**外の世界では NR 違反と
-    見分けがつかない。**
+    A reserved ARK can be deleted (see Ark.published_at), but what may be deleted is the
+    row, not the name. Even unpublished, a reserved string may already be in someone's
+    hands: taking a number in advance and putting it on the object is the whole point of
+    reserving one. Pointing that name at a different object is indistinguishable, from
+    outside, from an NR violation.
 
-    だから行を消すときに、ここへ名前を移す。以後その名前は:
+    So when the row goes, the name moves here. From then on it:
 
-      - 採番では当たらない（当たっても衝突として採り直す）
-      - 取り込み（`import_minted`）では拒む
+      - is never drawn by minting (a hit is counted as a collision and retried)
+      - is refused by import (import_minted)
 
-    **`Ark` への外部キーを持たない。** 参照先はもう無いし、`AuditEvent` と同じ
-    理由でもある——記録は対象より長く残るべきもので、参照整合性で縛ると
-    「消せないから記録も消す」が楽になってしまう。
+    There is no foreign key to Ark. The row it would reference is gone, and for the same
+    reason as AuditEvent: a record should outlive what it is about, and referential
+    integrity makes "the record cannot stay, so delete it too" the easy path.
     """
 
     __tablename__ = "withdrawn_name"
@@ -743,19 +787,23 @@ class WithdrawnName(Base):
     naan: Mapped[str] = mapped_column(String(MAX_NAAN_LENGTH), index=True)
     assigned_name: Mapped[str] = mapped_column(String(MAX_NAME_LENGTH))
 
-    #: **どの名前空間の容量を使ったか。** shoulder は消えないので、後から辿れる。
+    #: Which namespace's capacity it used. A shoulder is never deleted, so this can be
+    #: followed later.
     shoulder_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
-    #: 採ったのは誰でいつか。**取り下げた側だけを残すと、誰が予約したかが消える。**
+    #: Who minted it and when. Keeping only who withdrew it would lose who reserved
+    #: it.
     minted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     minted_by: Mapped[str] = mapped_column(String(255), default="")
 
-    #: **公開していたか。** null なら公開前の取り下げ、値があれば**公開した名前の
-    #: 破棄**（`purge_ark`）で、その時刻が「いつ外に出ていたか」を示す。
+    #: Whether it had been published. null means it was withdrawn before publication;
+    #: a value means a published name was purged (purge_ark), and the time says when it
+    #: was out in the world.
     #:
-    #: 2 つを同じ表に置くのは、**名前を再び採らないという扱いが同じ**だから。
-    #: だが意味は違う——前者は約束の外側で起きたことで、後者は**約束を破ったこと**
-    #: である。見分けがつかないと、破棄が何件あったかを後から数えられない。
+    #: They share a table because the consequence is the same: the name is never minted
+    #: again. Their meaning differs, though. The first happened outside the promise; the
+    #: second broke it. Without telling them apart, nobody could count afterwards how
+    #: often the promise was broken.
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -764,54 +812,60 @@ class WithdrawnName(Base):
         DateTime(timezone=True), default=utcnow, index=True
     )
     withdrawn_by: Mapped[str] = mapped_column(String(255), default="", index=True)
-    #: なぜ取り下げたか。**残らない操作にはしない**——消えた行の唯一の説明になる。
+    #: Why it was withdrawn. Nothing here happens without a record: this is the only
+    #: explanation left of a row that is gone.
     reason: Mapped[str] = mapped_column(String(500), default="")
     ip: Mapped[str] = mapped_column(String(45), default="")
 
 
-# --------------------------------------------------------------------- 削除の禁止
+# ------------------------------------------------------------- Deletion is refused
 #
-# **shoulder と、公開した ARK は消さない。**
-#   公開した ARK を消す → 解決が止まる＝識別子が壊れる。`NR` を宣言している以上
-#                         許されない。対象が失われたときは tombstone に付け替えるか、
-#                         url を空にして記述を返す（FAIR A2）。
-#   公開前の ARK        → **消せる。** まだ外に出していない名前は、NR が縛る
-#                         対象ではない。ただし名前は `WithdrawnName` に移り、
-#                         二度と採られない（`domain.admin_ops.withdraw_ark`）。
-#   shoulder を消す     → 乱数割当が同じ文字列を再び当てうる＝**NR 違反の芽**。組織が
-#                         消えても行は残し、status=retired にする。とくに delegated
-#                         だった shoulder は、外部 minter が我々の知らない識別子を作って
-#                         いる可能性があるので絶対に消せない。
+# Shoulders and published ARKs are not deleted.
+#   deleting a published ARK  resolution stops, which breaks the identifier. Having
+#                             declared NR, that is not allowed. When an object is gone,
+#                             tombstone it or empty the url and return the description
+#                             (FAIR A2)
+#   a reserved ARK            can be deleted. A name that never went out is not what NR
+#                             binds. The name moves to WithdrawnName and is never minted
+#                             again (domain.admin_ops.withdraw_ark)
+#   deleting a shoulder       random assignment could hand out the same string again,
+#                             which is how an NR violation starts. When an organisation
+#                             goes, the row stays and its status becomes retired. A
+#                             shoulder that was delegated especially cannot go: an
+#                             outside minter may have created identifiers we know
+#                             nothing about
 #
-#   公開した ARK の破棄 → **届く範囲の内側で、理由と打ち直しを残して行える**
-#                         （`domain.admin_ops.purge_ark`）。法的な削除命令や、
-#                         公開してはならないものが公開されたときのための逃げ道で、
-#                         **使えば約束を破ったことになる**。だから経路を 1 本に
-#                         絞り、跡（監査と `WithdrawnName`）が必ず残るようにする。
+#   purging a published ARK   possible within the caller's reach, leaving a reason and
+#                             the ARK typed again (domain.admin_ops.purge_ark). It is
+#                             the way out for a legal removal order, or for something
+#                             that should never have been published, and using it means
+#                             the promise was broken. So there is one path, and it
+#                             always leaves a trace: the audit log and WithdrawnName
 #
-# 規約を人に守らせるのではなく、ORM 側で不可能にする。**公開した行は、その
-# セッションが「この ARK を破棄する」と名指ししていないかぎり落とせない**
-# ——`purge_ark` だけがその宣言をする。
+# Rather than asking people to follow the rule, the ORM makes it impossible. A published
+# row cannot be removed unless the session has named that ARK as one to purge, and only
+# purge_ark makes that declaration.
 #
-# 印をセッションに持たせ、**名指した 1 本だけ**に効かせているのは、
-# 大域の旗にすると立てっぱなしが起きるからである。旗が寝ていることを誰も
-# 確かめない——そして気づくのは、消えてはいけない行が消えた後になる。
+# The mark lives on the session and applies to the one ARK it names, because a global
+# flag gets left raised. Nobody checks that a flag is down, and it is noticed only after
+# a row that should have stayed is gone.
 
 
 class NotDeletable(RuntimeError):
     pass
 
 
-#: `session.info` に置く鍵。**そのセッションで破棄を宣言した ARK**。
+#: The key in session.info: the ARK this session declared it would purge.
 _PURGING = "arkhe_purging"
 
 
 @contextmanager
 def sanctioned_purge(session, ark: str):
-    """**この 1 本の破棄を、この session に限って許す。**
+    """Allow this one ARK to be purged, in this session only.
 
-    `purge_ark` 以外から使わない。抜けたら必ず落とす——例外で抜けた場合も含めて、
-    **宣言が残り続けないこと**が、この仕掛けの価値のほとんどである。
+    Nothing but purge_ark uses it. The declaration is always cleared on the way out,
+    including when an exception leaves the block: not staying raised is most of the
+    value here.
     """
     before = session.info.get(_PURGING)
     session.info[_PURGING] = ark
@@ -820,33 +874,35 @@ def sanctioned_purge(session, ark: str):
     finally:
         if before is None:
             session.info.pop(_PURGING, None)
-        else:  # pragma: no cover - 入れ子にする呼び出しは無い
+        else:  # pragma: no cover - no caller nests this
             session.info[_PURGING] = before
 
 
 @event.listens_for(Ark, "before_delete")
 def _no_published_ark_delete(mapper, connection, target):  # noqa: ARG001
-    """**一度でも公開した ARK は消さない。** 名指しで取り下げるものだけが通る。
+    """An ARK that was ever published is not deleted. Only one that was named for
+    purging gets through.
 
-    見るのは `published_at`（今 公開中か）ではなく **`first_published_at`（一度でも
-    出したか）**である。公開を取り消せるようになった以上、前者で見ると
-    **「取り下げてから消す」だけでこの守りを抜けられる**——抜け道が 1 手で
-    できるなら、守っていないのと同じである。
+    It looks at first_published_at, whether it was ever public, rather than
+    published_at, whether it is published now. Once publication became reversible,
+    looking at the latter would let withdrawing and then deleting walk straight past
+    this guard, and a guard that can be stepped around in one move is not a guard.
     """
     if target.first_published_at is None and target.published_at is None:
         return
     session = object_session(target)
     if session is not None and session.info.get(_PURGING) == target.ark:
-        return  # RA の運用者による破棄（`admin_ops.purge_ark`）
+        return  # a purge by the RA operator (admin_ops.purge_ark)
     raise NotDeletable(
-        "公開した ARK は削除しない（解決が止まる＝識別子が壊れる）。"
-        "tombstone に付け替えるか url を空にすること。"
-        "どうしても消すなら RA の運用者が purge を通す（跡が残る）。"
+        "a published ARK is not deleted: resolution would stop, which breaks the "
+        "identifier. Tombstone it or empty the url. If it truly has to go, the RA "
+        "operator purges it, which leaves a trace."
     )
 
 
 @event.listens_for(Shoulder, "before_delete")
 def _no_shoulder_delete(mapper, connection, target):  # noqa: ARG001
     raise NotDeletable(
-        "shoulder は削除しない（名前空間の再利用は NR 違反）。status=retired にすること。"
+        "a shoulder is not deleted: reusing a namespace violates NR. Set its status "
+        "to retired instead."
     )
