@@ -1471,6 +1471,8 @@ shoulder を必ず使う</strong>——使わないと NAAN ごとにモデル�
         string redirect "権威を持たないときの委譲先"
         string na_policy "永続性宣言（NP | NR, OP, CC | 2026 | URL）"
         string minter "採番を外に委ねている場合の案内先"
+        date   hold_until "保留の期限。null は保留なし"
+        string hold_reason "保留の理由（公開する）"
     }
 
     MANAGER {
@@ -1493,6 +1495,8 @@ shoulder を必ず使う</strong>——使わないと NAAN ごとにモデル�
         string minter "N2T: 採番の委譲先"
         string status "active / reserved / delegated / retired"
         string note
+        date   hold_until "保留の期限。null は保留なし"
+        string hold_reason "保留の理由（公開する）"
     }
 
     ARK {
@@ -1501,7 +1505,10 @@ shoulder を必ず使う</strong>——使わないと NAAN ごとにモデル�
         int    shoulder_id FK
         string assigned_name
         string url "空なら記述を返す（D6）"
-        date   published_at "null は公開前。**解決せず、削除できる**"
+        date   published_at "今 公開中か。null は公開のリゾルバで解決しない。取り下げで戻る"
+        date   first_published_at "一度でも公開したか。**片道で、消さない**。削除の重さを決める"
+        date   hold_until "保留の期限。null は保留なし"
+        string hold_reason "保留の理由（公開する）"
         string commitment "この対象への約束"
         string metadata
         string who "ERC"
@@ -1614,8 +1621,12 @@ NAAN 単位以上の操作しか残さないが、<strong>採番も付け替え�
 <td>行を消すと解決が止まる＝識別子が壊れる。<code>before_delete</code> は、そのセッションがその ARK を名指ししていないかぎり拒む——見るのは「<strong>一度でも公開したか</strong>」であって「今 公開中か」ではない（後者だと取り下げてから消せてしまう）。対象が失われただけなら tombstone にするか <code>url</code> を空にして記述を返す</td>
 </tr>
 <tr>
-<td><strong>公開前の ARK は削除できる</strong></td>
-<td><code>published_at</code> が null のものだけ。まだ外に出していない名前は <code>NR</code> が縛る対象ではない——ただし名前は <code>WITHDRAWN_NAME</code> に移り、二度と採られない</td>
+<td><strong>一度も公開していない ARK は軽く削除できる</strong></td>
+<td><code>first_published_at</code> が null のものだけ（<strong>公開を取り下げただけのものは含まない</strong>——<code>published_at</code> は往復するが、<code>first_published_at</code> は片道で消えない）。まだ外に出していない名前は <code>NR</code> が縛る対象ではない——ただし名前は <code>WITHDRAWN_NAME</code> に移り、二度と採られない</td>
+</tr>
+<tr>
+<td><strong>保留は行き先を消さない</strong></td>
+<td><code>hold_until</code> / <code>hold_reason</code>（と <code>hold_by</code>）は NAAN・shoulder・ARK が同じ列で持ち、狭いほうが優先する。転送だけを止めて <code>200</code> と記述を返し、元の行き先は残す。期限切れは解決のたびに時計で判定するので、戻すための書き込みが無い</td>
 </tr>
 <tr>
 <td><strong>shoulder も削除できない</strong></td>
