@@ -578,6 +578,89 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#qualifiers-in-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qualifiers in use
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Qualifiers in use">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-trailing-slash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do not end the target with /
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-one-part-lives-somewhere-else" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When one part lives somewhere else
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suffix-as-parameter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passing the suffix as a request parameter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#part-of-something-with-no-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part of something with no target
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#asking-about-a-qualified-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asking about a qualified name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spellings-that-vary-and-ones-that-do-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spellings that vary, and ones that do not
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#read-on" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1395,6 +1478,89 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#qualifiers-in-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qualifiers in use
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Qualifiers in use">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-trailing-slash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do not end the target with /
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-one-part-lives-somewhere-else" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When one part lives somewhere else
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suffix-as-parameter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passing the suffix as a request parameter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#part-of-something-with-no-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part of something with no target
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#asking-about-a-qualified-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asking about a qualified name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spellings-that-vary-and-ones-that-do-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spellings that vary, and ones that do not
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#read-on" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1569,6 +1735,213 @@ appear throughout this documentation are not parts of the string at all:</p>
 <tr>
 <td><strong>suffix passthrough</strong></td>
 <td><code>…/x9tn1qkq2g7/page/3</code> resolves through the record for <code>…/x9tn1qkq2g7</code>, so children need no identifiers of their own — one record per minting is enough</td>
+</tr>
+</tbody>
+</table>
+<h2 id="qualifiers-in-use">Qualifiers in use<a class="headerlink" href="#qualifiers-in-use" title="Permanent link">&para;</a></h2>
+<p>A qualifier (the <code>/c3/s5.pdf</code> part) lets <strong>one minted name point into what it names, or
+at another form of it</strong>. Every example below assumes a ledger where only
+<code>ark:99999/x9tn1qkq2g7</code> was minted, with the target
+<code>https://repo.example.ac.jp/records/1</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Used for</th>
+<th>Name requested</th>
+<th>What arkhe answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chapter 3, section 5 of a thesis, as PDF</td>
+<td><code>ark:99999/x9tn1qkq2g7/c3/s5.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/c3/s5.pdf</code></td>
+</tr>
+<tr>
+<td>Frame 12 of a digitised item</td>
+<td><code>ark:99999/x9tn1qkq2g7/f12</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/f12</code></td>
+</tr>
+<tr>
+<td>One file inside a dataset</td>
+<td><code>ark:99999/x9tn1qkq2g7/data/2020.csv</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/data/2020.csv</code></td>
+</tr>
+<tr>
+<td>The same item in another format</td>
+<td><code>ark:99999/x9tn1qkq2g7.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1.pdf</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>None of the children was given an identifier.</strong> A name the ledger does not hold is
+resolved through its <strong>longest registered ancestor</strong> (here <code>x9tn1qkq2g7</code>), and the rest
+is appended to that target as it is — suffix passthrough. So <strong>the server at the target
+has to answer the URL that results</strong>; what arkhe guarantees is the mapping from name to
+URL.</p>
+<h3 id="no-trailing-slash">Do not end the target with <code>/</code><a class="headerlink" href="#no-trailing-slash" title="Permanent link">&para;</a></h3>
+<p>The suffix begins with its own separator (<code>/</code> or <code>.</code>), so the target needs none. End the
+target with <code>/</code> and slashes double up — and, worse, <strong>a variant becomes a different
+path</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Name requested</th>
+<th>Target <code>…/viewer/1</code></th>
+<th>Target <code>…/viewer/1/</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>…/x9tn1qkq2g7</code></td>
+<td><code>…/viewer/1</code></td>
+<td><code>…/viewer/1/</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s6.pdf</code></td>
+<td><code>…/viewer/1/c3/s6.pdf</code></td>
+<td><code>…/viewer/1//c3/s6.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7.pdf</code></td>
+<td><code>…/viewer/1.pdf</code></td>
+<td><code>…/viewer/1/.pdf</code> ← <strong>a different path</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Most servers absorb <code>//</code>, but nothing turns <code>1/.pdf</code> back into <code>1.pdf</code>. <strong>Register the
+target as <code>https://repo.example.ac.jp/viewer/1</code>.</strong></p>
+<h3 id="when-one-part-lives-somewhere-else">When one part lives somewhere else<a class="headerlink" href="#when-one-part-lives-somewhere-else" title="Permanent link">&para;</a></h3>
+<p>If chapter 3 alone moved to another server, register just that part with
+<code>POST /api/register</code> (qualifier <code>/c3</code>). From then on <strong>the longer match wins</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Name requested</th>
+<th>Record it resolves through</th>
+<th>What arkhe answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3</code></td>
+<td><code>…/x9tn1qkq2g7/c3</code></td>
+<td><code>302</code> → <code>https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s6.pdf</code></td>
+<td><code>…/x9tn1qkq2g7/c3</code></td>
+<td><code>302</code> → <code>https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3/s6.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c4/s5.pdf</code></td>
+<td><code>…/x9tn1qkq2g7</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/c4/s5.pdf</code></td>
+</tr>
+</tbody>
+</table>
+<p>The steps are in <a href="../../guides/walkthrough/#register-a-part">Point one part somewhere else</a>.</p>
+<h3 id="suffix-as-parameter">Passing the suffix as a request parameter<a class="headerlink" href="#suffix-as-parameter" title="Permanent link">&para;</a></h3>
+<p>If the server at the target takes the part <strong>in the query string</strong> rather than the path,
+<strong>end the target with the parameter name and <code>=</code></strong>. The suffix is appended as it is, so
+it becomes that parameter's value.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>target  https://repo.example.ac.jp/viewer?id=1&amp;part=
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Name requested</th>
+<th>What arkhe answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>…/x9tn1qkq2g7</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s5.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=/c3/s5.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s6.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=/c3/s6.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=.pdf</code></td>
+</tr>
+</tbody>
+</table>
+<p>Three things are for the receiving side to settle:</p>
+<ul>
+<li><strong>With no qualifier the value is empty</strong> (<code>part=</code>). Read empty as "the whole thing".</li>
+<li>The value begins with <code>/</code> or <code>.</code>: it is <strong>the suffix exactly as sent</strong>, separators
+  included.</li>
+<li><strong>Percent-encoding arrives undecoded</strong> (<code>/c3/s6%20a.pdf</code> gives <code>part=/c3/s6%20a.pdf</code>).
+  <code>%26</code> does not turn back into <code>&amp;</code> either, so a suffix cannot add a parameter of its
+  own. Decode the value once before using it.</li>
+</ul>
+<p>When the target moves, <strong>move the parameter form with it, or keep accepting the old
+form</strong> — if the new server takes paths, <code>PATCH</code> the target without <code>part=</code> and suffixes
+land on the path from then on.</p>
+<p>For a namespace whose whole shoulder is handed to someone else, a template does the same
+(<code>https://other.example.org/resolve?id=${blade}</code>, or <code>?ark=$id</code>; both include the
+qualifier). See <a href="../../guides/federation/">Running several arkhe</a>.</p>
+<h3 id="part-of-something-with-no-target">Part of something with no target<a class="headerlink" href="#part-of-something-with-no-target" title="Permanent link">&para;</a></h3>
+<p>Things with <strong>no target</strong> — a physical specimen, an original that is not online — take
+qualifiers too. For <code>ark:99999/x9m3k8rv5q4</code> (no target), <code>…/x9m3k8rv5q4/c4/s5.pdf</code> is
+not redirected: <strong>the ancestor's description comes back with <code>200</code></strong>. arkhe never builds
+a URL out of a suffix with nothing in front of it.</p>
+<h3 id="asking-about-a-qualified-name">Asking about a qualified name<a class="headerlink" href="#asking-about-a-qualified-name" title="Permanent link">&para;</a></h3>
+<p><code>?info</code> and <code>?json</code> may follow a qualifier. The answer is the ancestor's description,
+together with <strong>where it was inherited from</strong> and the suffix that was carried.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c4/s5.pdf?json"</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"ark"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ark:99999/x9tn1qkq2g7/c4/s5.pdf"</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"inherited_from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ark:99999/x9tn1qkq2g7"</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"suffix"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/c4/s5.pdf"</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">"redirect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://repo.example.ac.jp/records/1/c4/s5.pdf"</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>(An excerpt: the description's own fields come with it.)</p>
+<h3 id="spellings-that-vary-and-ones-that-do-not">Spellings that vary, and ones that do not<a class="headerlink" href="#spellings-that-vary-and-ones-that-do-not" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Request</th>
+<th>How it is treated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ark:/99999/x9tn1qkq2g7/c4/s5.pdf</code> (the older label)</td>
+<td>Resolved as the same name</td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7//c4/s5.pdf/</code> (doubled or trailing separators)</td>
+<td>Normalised as the specification says, and resolved like <code>…/c4/s5.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1-qkq2g7/c4/s5.pdf</code> (a hyphen in the base)</td>
+<td>Ignored when matching. Hyphens in the suffix are passed to the target <strong>as they are</strong></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c4/s5.pdf?x=1</code> (a query that is not an inflection)</td>
+<td><strong>Not</strong> carried to the target. Only the path is appended</td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7%2Fc4/s5.pdf</code></td>
+<td><strong>A different identifier.</strong> <code>%2F</code> is not a separator, so this is no child of <code>x9tn1qkq2g7</code>, and it answers <code>404</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g8/c4/s5.pdf</code> (a wrong check digit)</td>
+<td><code>404</code> (<code>ARKHE-1403</code>). The check digit is verified over the base, without the qualifier</td>
+</tr>
+<tr>
+<td><code>ark:12345/…/c4/s5.pdf</code> (a NAAN this ledger does not hold)</td>
+<td><code>302</code> to the global resolver, suffix and all</td>
 </tr>
 </tbody>
 </table>

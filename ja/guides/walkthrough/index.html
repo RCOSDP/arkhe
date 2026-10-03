@@ -727,7 +727,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-一部だけ別の所在に向ける" class="md-nav__link">
+  <a href="#register-a-part" class="md-nav__link">
     <span class="md-ellipsis">
       
         4. 一部だけ別の所在に向ける
@@ -1533,7 +1533,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-一部だけ別の所在に向ける" class="md-nav__link">
+  <a href="#register-a-part" class="md-nav__link">
     <span class="md-ellipsis">
       
         4. 一部だけ別の所在に向ける
@@ -1836,9 +1836,13 @@ ARK と、ここに無いだけの ARK を区別できる</strong>のはこの 1
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>要求    …/x9tn1qkq2g7/page/3
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>結果    https://repo.example.ac.jp/view?id=1/page/3   ← クエリの値の中
 </code></pre></div>
-<p>末尾が <code>/</code> の行き先も <code>//</code> になる（こちらは大抵のサーバが吸収する）。ARK の先の
+<p>末尾が <code>/</code> の行き先も <code>//</code> になる（こちらは大抵のサーバが吸収する）。ただし変種は
+<code>…/1/.pdf</code> になり、<strong><code>…/1.pdf</code> とは別のパス</strong>になる——行き先の末尾に <code>/</code> を付けない
+（<a href="../../concepts/ark/#no-trailing-slash">理由と例</a>）。ARK の先の
 対象をクエリで指す構成なら、<strong>パス形の URL を行き先にする</strong>か、passthrough に
 頼らず必要な部分を明示的に登録する（次節）。</p>
+<p>尾を<strong>意図してクエリパラメータとして渡す</strong>なら、行き先をパラメータ名と <code>=</code> で
+終わらせる——<a href="../../concepts/ark/#suffix-as-parameter">尾をリクエストパラメータとして渡す</a>。</p>
 </div>
 <h2 id="3-追いかけずに識別子について尋ねる">3. 追いかけずに、識別子について尋ねる<a class="headerlink" href="#3-追いかけずに識別子について尋ねる" title="Permanent link">&para;</a></h2>
 <p><code>??</code> を付けると、その名前について<strong>リゾルバが何を約束しているか</strong>を訊ける。返るのは
@@ -1881,7 +1885,7 @@ ERC/ANVL——ARK が 20 年答えてきた形式である。</p>
 inflection だから——ので、言語は <code>&amp;</code> の後ろに書くか、<code>Accept-Language</code> で渡す。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$R</span><span class="s2">/ark:99999/x9tn1qkq2g7?info&amp;lang=en"</span>
 </code></pre></div>
-<h2 id="4-一部だけ別の所在に向ける">4. 一部だけ別の所在に向ける<a class="headerlink" href="#4-一部だけ別の所在に向ける" title="Permanent link">&para;</a></h2>
+<h2 id="register-a-part">4. 一部だけ別の所在に向ける<a class="headerlink" href="#register-a-part" title="Permanent link">&para;</a></h2>
 <p>一般の深い参照は suffix passthrough が賄う。<strong>その 1 点だけ本当に別の場所にある</strong>
 とき——IIIF の canvas、別ストレージのサブツリー——はそこを登録する。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="nv">$M</span>/api/register<span class="w"> </span><span class="se">\</span>

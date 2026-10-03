@@ -578,6 +578,89 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#qualifiers-in-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        修飾子の使われ方
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="修飾子の使われ方">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-trailing-slash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        行き先の末尾に / を付けない
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#一部だけ別の場所にあるとき" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一部だけ別の場所にあるとき
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suffix-as-parameter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        尾をリクエストパラメータとして渡す
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#行き先の無い対象の一部" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        行き先の無い対象の一部
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#修飾子つきの名前について尋ねる" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        修飾子つきの名前について尋ねる
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#書き方の揺れと揺れではないもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        書き方の揺れと、揺れではないもの
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#この先を読む" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1395,6 +1478,89 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#qualifiers-in-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        修飾子の使われ方
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="修飾子の使われ方">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-trailing-slash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        行き先の末尾に / を付けない
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#一部だけ別の場所にあるとき" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一部だけ別の場所にあるとき
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suffix-as-parameter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        尾をリクエストパラメータとして渡す
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#行き先の無い対象の一部" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        行き先の無い対象の一部
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#修飾子つきの名前について尋ねる" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        修飾子つきの名前について尋ねる
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#書き方の揺れと揺れではないもの" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        書き方の揺れと、揺れではないもの
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#この先を読む" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1562,6 +1728,207 @@ ARK は、ロゴで匂わせるのではなく、<strong>主張を明示して�
 <tr>
 <td><strong>suffix passthrough</strong></td>
 <td><code>…/x9tn1qkq2g7/page/3</code> は <code>…/x9tn1qkq2g7</code> のレコードで解決される。子に識別子を振らなくてよい——<strong>1 レコード 1 採番</strong>で足りる</td>
+</tr>
+</tbody>
+</table>
+<h2 id="qualifiers-in-use">修飾子の使われ方<a class="headerlink" href="#qualifiers-in-use" title="Permanent link">&para;</a></h2>
+<p>修飾子（<code>/c3/s5.pdf</code> の部分）は、<strong>1 つ採番した名前から、その中身や別の形を指す</strong>
+ために使う。以下はどれも、<code>ark:99999/x9tn1qkq2g7</code> を 1 件だけ採番し、行き先を
+<code>https://repo.example.ac.jp/records/1</code> にした台帳での例である。</p>
+<table>
+<thead>
+<tr>
+<th>使われ方</th>
+<th>要求する名前</th>
+<th>arkhe の答え</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>論文の第 3 章第 5 節の PDF</td>
+<td><code>ark:99999/x9tn1qkq2g7/c3/s5.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/c3/s5.pdf</code></td>
+</tr>
+<tr>
+<td>デジタル化した資料の 12 コマ目</td>
+<td><code>ark:99999/x9tn1qkq2g7/f12</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/f12</code></td>
+</tr>
+<tr>
+<td>データセットの中の 1 ファイル</td>
+<td><code>ark:99999/x9tn1qkq2g7/data/2020.csv</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/data/2020.csv</code></td>
+</tr>
+<tr>
+<td>同じ資料の別の形式</td>
+<td><code>ark:99999/x9tn1qkq2g7.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1.pdf</code></td>
+</tr>
+</tbody>
+</table>
+<p>どれも<strong>子に識別子を振っていない</strong>。台帳に無い名前は、登録されている<strong>いちばん長い
+祖先</strong>（ここでは <code>x9tn1qkq2g7</code>）で解決し、残りの尾を行き先の後ろにそのまま継ぐ
+（suffix passthrough）。したがって<strong>継いだ先の URL を、行き先のサーバが実際に
+返せること</strong>が前提になる——arkhe が保証するのは名前から URL への写像までである。</p>
+<h3 id="no-trailing-slash">行き先の末尾に <code>/</code> を付けない<a class="headerlink" href="#no-trailing-slash" title="Permanent link">&para;</a></h3>
+<p>尾は区切り（<code>/</code> か <code>.</code>）から始まるので、行き先の側に区切りは要らない。末尾に <code>/</code> を
+付けると、<code>/</code> が重なるだけでなく、<strong>変種が別のパスになる</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>要求する名前</th>
+<th>行き先 <code>…/viewer/1</code></th>
+<th>行き先 <code>…/viewer/1/</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>…/x9tn1qkq2g7</code></td>
+<td><code>…/viewer/1</code></td>
+<td><code>…/viewer/1/</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s6.pdf</code></td>
+<td><code>…/viewer/1/c3/s6.pdf</code></td>
+<td><code>…/viewer/1//c3/s6.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7.pdf</code></td>
+<td><code>…/viewer/1.pdf</code></td>
+<td><code>…/viewer/1/.pdf</code> ← <strong>別のパス</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>//</code> は大抵のサーバが吸収するが、<code>1.pdf</code> と <code>1/.pdf</code> は吸収されない。行き先は
+<strong><code>https://repo.example.ac.jp/viewer/1</code> の形で登録する</strong>。</p>
+<h3 id="一部だけ別の場所にあるとき">一部だけ別の場所にあるとき<a class="headerlink" href="#一部だけ別の場所にあるとき" title="Permanent link">&para;</a></h3>
+<p>第 3 章だけが別のサーバに移った、という場合は、その部分だけを <code>POST /api/register</code>
+で登録する（修飾子 <code>/c3</code>）。以後は<strong>長いほうの一致が勝つ</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>要求する名前</th>
+<th>解決に使う記録</th>
+<th>arkhe の答え</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3</code></td>
+<td><code>…/x9tn1qkq2g7/c3</code></td>
+<td><code>302</code> → <code>https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s6.pdf</code></td>
+<td><code>…/x9tn1qkq2g7/c3</code></td>
+<td><code>302</code> → <code>https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3/s6.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c4/s5.pdf</code></td>
+<td><code>…/x9tn1qkq2g7</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/records/1/c4/s5.pdf</code></td>
+</tr>
+</tbody>
+</table>
+<p>手順は<a href="../../guides/walkthrough/#register-a-part">一部だけ別の所在に向ける</a>。</p>
+<h3 id="suffix-as-parameter">尾をリクエストパラメータとして渡す<a class="headerlink" href="#suffix-as-parameter" title="Permanent link">&para;</a></h3>
+<p>行き先のサーバがパスではなく<strong>クエリで部分を受け取る</strong>作りなら、行き先を
+<strong>パラメータ名と <code>=</code> で終わらせる</strong>。尾は単純に連結されるので、そのままその値になる。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>行き先  https://repo.example.ac.jp/viewer?id=1&amp;part=
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>要求する名前</th>
+<th>arkhe の答え</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>…/x9tn1qkq2g7</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s5.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=/c3/s5.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c3/s6.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=/c3/s6.pdf</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7.pdf</code></td>
+<td><code>302</code> → <code>https://repo.example.ac.jp/viewer?id=1&amp;part=.pdf</code></td>
+</tr>
+</tbody>
+</table>
+<p>受け取る側が決めておくことは 3 つ。</p>
+<ul>
+<li><strong>修飾子の無い要求では値が空になる</strong>（<code>part=</code>）。空を「全体」と読むこと。</li>
+<li>値は <code>/</code> か <code>.</code> で始まる。区切りも含めて<strong>送られたままの尾</strong>である。</li>
+<li><strong>%-エンコードは復号せずに渡る</strong>（<code>/c3/s6%20a.pdf</code> は <code>part=/c3/s6%20a.pdf</code>）。
+  <code>%26</code> も <code>&amp;</code> に戻らないので、尾が別のパラメータを付け足すことはできない。値を使う
+  前に 1 度だけ復号すること。</li>
+</ul>
+<p>行き先を移すときは、<strong>パラメータの形ごと移すか、受け取り側で古い形を受けつづける</strong>
+——移した先がパスで受けるなら、<code>part=</code> を外した行き先に <code>PATCH</code> すれば以後の尾は
+パスに付く。</p>
+<p>shoulder ごと外に委ねている名前空間では、テンプレートで同じことができる
+（<code>https://other.example.org/resolve?id=${blade}</code> や <code>?ark=$id</code>。どちらも修飾子まで
+含む）。設定は<a href="../../guides/federation/">分散して運用する</a>を参照。</p>
+<h3 id="行き先の無い対象の一部">行き先の無い対象の一部<a class="headerlink" href="#行き先の無い対象の一部" title="Permanent link">&para;</a></h3>
+<p>実物の標本や、公開していない原本のように<strong>行き先を持たない</strong>ものにも修飾子は付けられる。
+<code>ark:99999/x9m3k8rv5q4</code>（行き先なし）に対する <code>…/x9m3k8rv5q4/c4/s5.pdf</code> は、転送せずに
+<strong>祖先の記述を <code>200</code> で返す</strong>。尾だけを持った行き先の無い URL を作ることはしない。</p>
+<h3 id="修飾子つきの名前について尋ねる">修飾子つきの名前について尋ねる<a class="headerlink" href="#修飾子つきの名前について尋ねる" title="Permanent link">&para;</a></h3>
+<p><code>?info</code> や <code>?json</code> は修飾子の後ろに付けてよい。答えるのは祖先の記述で、
+<strong>どこから継いだか</strong>と、継いだ尾も併せて返る。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>curl<span class="w"> </span><span class="s2">"https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c4/s5.pdf?json"</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"ark"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ark:99999/x9tn1qkq2g7/c4/s5.pdf"</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"inherited_from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ark:99999/x9tn1qkq2g7"</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"suffix"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/c4/s5.pdf"</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">"redirect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://repo.example.ac.jp/records/1/c4/s5.pdf"</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">}</span>
+</code></pre></div>
+<p>（抜粋。実際にはこのほかに記述の欄が並ぶ。）</p>
+<h3 id="書き方の揺れと揺れではないもの">書き方の揺れと、揺れではないもの<a class="headerlink" href="#書き方の揺れと揺れではないもの" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>要求</th>
+<th>扱い</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ark:/99999/x9tn1qkq2g7/c4/s5.pdf</code>（旧形式のラベル）</td>
+<td>同じ名前として解決する</td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7//c4/s5.pdf/</code>（区切りの重複・末尾の <code>/</code>）</td>
+<td>仕様どおり正規化して、<code>…/c4/s5.pdf</code> と同じに解決する</td>
+</tr>
+<tr>
+<td><code>…/x9tn1-qkq2g7/c4/s5.pdf</code>（base の中のハイフン）</td>
+<td>照合では無視する。尾の中のハイフンは<strong>そのまま</strong>行き先へ渡す</td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7/c4/s5.pdf?x=1</code>（inflection でないクエリ）</td>
+<td>行き先には<strong>付かない</strong>。行き先へ継ぐのはパスだけ</td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g7%2Fc4/s5.pdf</code></td>
+<td><strong>別の識別子</strong>。<code>%2F</code> は区切りではないので <code>x9tn1qkq2g7</code> の子にならず、<code>404</code></td>
+</tr>
+<tr>
+<td><code>…/x9tn1qkq2g8/c4/s5.pdf</code>（検査桁の誤り）</td>
+<td><code>404</code>（<code>ARKHE-1403</code>）。検査桁は修飾子を除いた base で確かめる</td>
+</tr>
+<tr>
+<td><code>ark:12345/…/c4/s5.pdf</code>（この台帳が預からない NAAN）</td>
+<td>尾ごとグローバルリゾルバへ <code>302</code></td>
 </tr>
 </tbody>
 </table>
