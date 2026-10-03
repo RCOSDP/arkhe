@@ -92,10 +92,16 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $R/ark:99999/x9tn1qkq2g7
     result  https://repo.example.ac.jp/view?id=1/page/3   ← inside the query value
     ```
 
-    A target ending in `/` likewise yields `//`, which most servers absorb. If the
+    A target ending in `/` likewise yields `//`, which most servers absorb — but a variant
+    becomes `…/1/.pdf`, **a different path from `…/1.pdf`**, so leave the trailing `/` off
+    ([why, with examples](../concepts/ark.md#no-trailing-slash)). If the
     objects behind an ARK are addressed by query string, either point the ARK at a path
     form, or register the parts you need explicitly (next section) instead of relying on
     passthrough.
+
+    To have the tail land **as a query parameter** on purpose, end the target with the
+    parameter name and `=` — see
+    [Passing the suffix as a request parameter](../concepts/ark.md#suffix-as-parameter).
 
 ## 3. Ask about the identifier instead of following it
 
@@ -154,7 +160,7 @@ inflection — so the language goes after an `&`, or comes from `Accept-Language
 $ curl "$R/ark:99999/x9tn1qkq2g7?info&lang=en"
 ```
 
-## 4. Point one part somewhere else
+## 4. Point one part somewhere else {#register-a-part}
 
 Suffix passthrough covers the general case. When one part genuinely lives elsewhere —
 a IIIF canvas, a subtree in another store — register that one point:

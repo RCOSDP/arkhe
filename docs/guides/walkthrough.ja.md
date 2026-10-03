@@ -89,9 +89,14 @@ $ curl -o /dev/null -w '%{http_code} %{redirect_url}\n' $R/ark:99999/x9tn1qkq2g7
     結果    https://repo.example.ac.jp/view?id=1/page/3   ← クエリの値の中
     ```
 
-    末尾が `/` の行き先も `//` になる（こちらは大抵のサーバが吸収する）。ARK の先の
+    末尾が `/` の行き先も `//` になる（こちらは大抵のサーバが吸収する）。ただし変種は
+    `…/1/.pdf` になり、**`…/1.pdf` とは別のパス**になる——行き先の末尾に `/` を付けない
+    （[理由と例](../concepts/ark.md#no-trailing-slash)）。ARK の先の
     対象をクエリで指す構成なら、**パス形の URL を行き先にする**か、passthrough に
     頼らず必要な部分を明示的に登録する（次節）。
+
+    尾を**意図してクエリパラメータとして渡す**なら、行き先をパラメータ名と `=` で
+    終わらせる——[尾をリクエストパラメータとして渡す](../concepts/ark.md#suffix-as-parameter)。
 
 ## 3. 追いかけずに、識別子について尋ねる
 
@@ -149,7 +154,7 @@ inflection だから——ので、言語は `&` の後ろに書くか、`Accept
 $ curl "$R/ark:99999/x9tn1qkq2g7?info&lang=en"
 ```
 
-## 4. 一部だけ別の所在に向ける
+## 4. 一部だけ別の所在に向ける {#register-a-part}
 
 一般の深い参照は suffix passthrough が賄う。**その 1 点だけ本当に別の場所にある**
 とき——IIIF の canvas、別ストレージのサブツリー——はそこを登録する。

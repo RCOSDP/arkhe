@@ -9,6 +9,29 @@ breaking in a system whose identifiers cannot be reissued.
 
 ## [Unreleased]
 
+### Added
+
+- "What ARK is" now shows **qualifiers in use**: how one minted name answers for
+  `/c3/s5.pdf` (a section of a thesis as PDF), `/f12` (a frame), `/data/2020.csv` (a file
+  in a dataset) and `.pdf` (another format); that the longer match wins once one part is
+  registered; that a trailing `/` on the target sends a variant to a different path;
+  that a name with no target returns its description;
+  how to pass the suffix **as a request parameter** by ending the target with `…&part=`
+  (and what an empty value and percent-encoding look like there); and which spellings
+  are variations (the old label, doubled separators, hyphens, a query) and which are
+  **not** (`%2F`, a check digit). Every answer in the tables was taken from a running
+  resolver.
+
+### Fixed
+
+- **The 0.4.0 unpublish had still not reached two hand-written documents.** STATUS
+  described `purge` as 0.3.0 had it, "the RA operator only" (the item just above says
+  that was dropped). The data model diagram had no `first_published_at` and no hold
+  columns, and the note on `published_at` and the constraints table still said "null
+  means it can be deleted", which read as if **an ARK that was published and then
+  unpublished** could be deleted lightly. Only one whose `first_published_at` is null
+  can be — and that is the column `before_delete` looks at.
+
 ## [0.14.0] — 2026-09-19
 
 **The release that made throwing away as cheap as minting.**

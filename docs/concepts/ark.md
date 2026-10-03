@@ -127,6 +127,127 @@ appear throughout this documentation are not parts of the string at all:
 | **inflection** | A `?`, `??` or `?info` suffix that asks the resolver **about** the identifier instead of following it. `?info` is the one the specification requires |
 | **suffix passthrough** | `…/x9tn1qkq2g7/page/3` resolves through the record for `…/x9tn1qkq2g7`, so children need no identifiers of their own — one record per minting is enough |
 
+## Qualifiers in use {#qualifiers-in-use}
+
+A qualifier (the `/c3/s5.pdf` part) lets **one minted name point into what it names, or
+at another form of it**. Every example below assumes a ledger where only
+`ark:99999/x9tn1qkq2g7` was minted, with the target
+`https://repo.example.ac.jp/records/1`.
+
+| Used for | Name requested | What arkhe answers |
+| --- | --- | --- |
+| Chapter 3, section 5 of a thesis, as PDF | `ark:99999/x9tn1qkq2g7/c3/s5.pdf` | `302` → `https://repo.example.ac.jp/records/1/c3/s5.pdf` |
+| Frame 12 of a digitised item | `ark:99999/x9tn1qkq2g7/f12` | `302` → `https://repo.example.ac.jp/records/1/f12` |
+| One file inside a dataset | `ark:99999/x9tn1qkq2g7/data/2020.csv` | `302` → `https://repo.example.ac.jp/records/1/data/2020.csv` |
+| The same item in another format | `ark:99999/x9tn1qkq2g7.pdf` | `302` → `https://repo.example.ac.jp/records/1.pdf` |
+
+**None of the children was given an identifier.** A name the ledger does not hold is
+resolved through its **longest registered ancestor** (here `x9tn1qkq2g7`), and the rest
+is appended to that target as it is — suffix passthrough. So **the server at the target
+has to answer the URL that results**; what arkhe guarantees is the mapping from name to
+URL.
+
+### Do not end the target with `/` {#no-trailing-slash}
+
+The suffix begins with its own separator (`/` or `.`), so the target needs none. End the
+target with `/` and slashes double up — and, worse, **a variant becomes a different
+path**.
+
+| Name requested | Target `…/viewer/1` | Target `…/viewer/1/` |
+| --- | --- | --- |
+| `…/x9tn1qkq2g7` | `…/viewer/1` | `…/viewer/1/` |
+| `…/x9tn1qkq2g7/c3/s6.pdf` | `…/viewer/1/c3/s6.pdf` | `…/viewer/1//c3/s6.pdf` |
+| `…/x9tn1qkq2g7.pdf` | `…/viewer/1.pdf` | `…/viewer/1/.pdf` ← **a different path** |
+
+Most servers absorb `//`, but nothing turns `1/.pdf` back into `1.pdf`. **Register the
+target as `https://repo.example.ac.jp/viewer/1`.**
+
+### When one part lives somewhere else
+
+If chapter 3 alone moved to another server, register just that part with
+`POST /api/register` (qualifier `/c3`). From then on **the longer match wins**.
+
+| Name requested | Record it resolves through | What arkhe answers |
+| --- | --- | --- |
+| `…/x9tn1qkq2g7/c3` | `…/x9tn1qkq2g7/c3` | `302` → `https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3` |
+| `…/x9tn1qkq2g7/c3/s6.pdf` | `…/x9tn1qkq2g7/c3` | `302` → `https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3/s6.pdf` |
+| `…/x9tn1qkq2g7/c4/s5.pdf` | `…/x9tn1qkq2g7` | `302` → `https://repo.example.ac.jp/records/1/c4/s5.pdf` |
+
+The steps are in [Point one part somewhere else](../guides/walkthrough.md#register-a-part).
+
+### Passing the suffix as a request parameter {#suffix-as-parameter}
+
+If the server at the target takes the part **in the query string** rather than the path,
+**end the target with the parameter name and `=`**. The suffix is appended as it is, so
+it becomes that parameter's value.
+
+```
+target  https://repo.example.ac.jp/viewer?id=1&part=
+```
+
+| Name requested | What arkhe answers |
+| --- | --- |
+| `…/x9tn1qkq2g7` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=` |
+| `…/x9tn1qkq2g7/c3/s5.pdf` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=/c3/s5.pdf` |
+| `…/x9tn1qkq2g7/c3/s6.pdf` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=/c3/s6.pdf` |
+| `…/x9tn1qkq2g7.pdf` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=.pdf` |
+
+Three things are for the receiving side to settle:
+
+- **With no qualifier the value is empty** (`part=`). Read empty as "the whole thing".
+- The value begins with `/` or `.`: it is **the suffix exactly as sent**, separators
+  included.
+- **Percent-encoding arrives undecoded** (`/c3/s6%20a.pdf` gives `part=/c3/s6%20a.pdf`).
+  `%26` does not turn back into `&` either, so a suffix cannot add a parameter of its
+  own. Decode the value once before using it.
+
+When the target moves, **move the parameter form with it, or keep accepting the old
+form** — if the new server takes paths, `PATCH` the target without `part=` and suffixes
+land on the path from then on.
+
+For a namespace whose whole shoulder is handed to someone else, a template does the same
+(`https://other.example.org/resolve?id=${blade}`, or `?ark=$id`; both include the
+qualifier). See [Running several arkhe](../guides/federation.md).
+
+### Part of something with no target
+
+Things with **no target** — a physical specimen, an original that is not online — take
+qualifiers too. For `ark:99999/x9m3k8rv5q4` (no target), `…/x9m3k8rv5q4/c4/s5.pdf` is
+not redirected: **the ancestor's description comes back with `200`**. arkhe never builds
+a URL out of a suffix with nothing in front of it.
+
+### Asking about a qualified name
+
+`?info` and `?json` may follow a qualifier. The answer is the ancestor's description,
+together with **where it was inherited from** and the suffix that was carried.
+
+```console
+$ curl "https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c4/s5.pdf?json"
+```
+
+```json
+{
+  "ark": "ark:99999/x9tn1qkq2g7/c4/s5.pdf",
+  "inherited_from": "ark:99999/x9tn1qkq2g7",
+  "suffix": "/c4/s5.pdf",
+  "redirect": "https://repo.example.ac.jp/records/1/c4/s5.pdf"
+}
+```
+
+(An excerpt: the description's own fields come with it.)
+
+### Spellings that vary, and ones that do not
+
+| Request | How it is treated |
+| --- | --- |
+| `ark:/99999/x9tn1qkq2g7/c4/s5.pdf` (the older label) | Resolved as the same name |
+| `…/x9tn1qkq2g7//c4/s5.pdf/` (doubled or trailing separators) | Normalised as the specification says, and resolved like `…/c4/s5.pdf` |
+| `…/x9tn1-qkq2g7/c4/s5.pdf` (a hyphen in the base) | Ignored when matching. Hyphens in the suffix are passed to the target **as they are** |
+| `…/x9tn1qkq2g7/c4/s5.pdf?x=1` (a query that is not an inflection) | **Not** carried to the target. Only the path is appended |
+| `…/x9tn1qkq2g7%2Fc4/s5.pdf` | **A different identifier.** `%2F` is not a separator, so this is no child of `x9tn1qkq2g7`, and it answers `404` |
+| `…/x9tn1qkq2g8/c4/s5.pdf` (a wrong check digit) | `404` (`ARKHE-1403`). The check digit is verified over the base, without the qualifier |
+| `ark:12345/…/c4/s5.pdf` (a NAAN this ledger does not hold) | `302` to the global resolver, suffix and all |
+
 ## Read on
 
 - **<https://arks.org/>** — the scheme, the FAQ, shoulder conventions, the registry of

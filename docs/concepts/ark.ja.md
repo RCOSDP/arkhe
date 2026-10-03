@@ -120,6 +120,121 @@ ARK は **NR（No Re-assignment、再割当てしない）** を宣言する。�
 | **inflection** | `?` `??` `?info` の接尾。**対象へ行く**のではなく、**識別子について尋ねる**。仕様が必須としているのは `?info` |
 | **suffix passthrough** | `…/x9tn1qkq2g7/page/3` は `…/x9tn1qkq2g7` のレコードで解決される。子に識別子を振らなくてよい——**1 レコード 1 採番**で足りる |
 
+## 修飾子の使われ方 {#qualifiers-in-use}
+
+修飾子（`/c3/s5.pdf` の部分）は、**1 つ採番した名前から、その中身や別の形を指す**
+ために使う。以下はどれも、`ark:99999/x9tn1qkq2g7` を 1 件だけ採番し、行き先を
+`https://repo.example.ac.jp/records/1` にした台帳での例である。
+
+| 使われ方 | 要求する名前 | arkhe の答え |
+| --- | --- | --- |
+| 論文の第 3 章第 5 節の PDF | `ark:99999/x9tn1qkq2g7/c3/s5.pdf` | `302` → `https://repo.example.ac.jp/records/1/c3/s5.pdf` |
+| デジタル化した資料の 12 コマ目 | `ark:99999/x9tn1qkq2g7/f12` | `302` → `https://repo.example.ac.jp/records/1/f12` |
+| データセットの中の 1 ファイル | `ark:99999/x9tn1qkq2g7/data/2020.csv` | `302` → `https://repo.example.ac.jp/records/1/data/2020.csv` |
+| 同じ資料の別の形式 | `ark:99999/x9tn1qkq2g7.pdf` | `302` → `https://repo.example.ac.jp/records/1.pdf` |
+
+どれも**子に識別子を振っていない**。台帳に無い名前は、登録されている**いちばん長い
+祖先**（ここでは `x9tn1qkq2g7`）で解決し、残りの尾を行き先の後ろにそのまま継ぐ
+（suffix passthrough）。したがって**継いだ先の URL を、行き先のサーバが実際に
+返せること**が前提になる——arkhe が保証するのは名前から URL への写像までである。
+
+### 行き先の末尾に `/` を付けない {#no-trailing-slash}
+
+尾は区切り（`/` か `.`）から始まるので、行き先の側に区切りは要らない。末尾に `/` を
+付けると、`/` が重なるだけでなく、**変種が別のパスになる**。
+
+| 要求する名前 | 行き先 `…/viewer/1` | 行き先 `…/viewer/1/` |
+| --- | --- | --- |
+| `…/x9tn1qkq2g7` | `…/viewer/1` | `…/viewer/1/` |
+| `…/x9tn1qkq2g7/c3/s6.pdf` | `…/viewer/1/c3/s6.pdf` | `…/viewer/1//c3/s6.pdf` |
+| `…/x9tn1qkq2g7.pdf` | `…/viewer/1.pdf` | `…/viewer/1/.pdf` ← **別のパス** |
+
+`//` は大抵のサーバが吸収するが、`1.pdf` と `1/.pdf` は吸収されない。行き先は
+**`https://repo.example.ac.jp/viewer/1` の形で登録する**。
+
+### 一部だけ別の場所にあるとき
+
+第 3 章だけが別のサーバに移った、という場合は、その部分だけを `POST /api/register`
+で登録する（修飾子 `/c3`）。以後は**長いほうの一致が勝つ**。
+
+| 要求する名前 | 解決に使う記録 | arkhe の答え |
+| --- | --- | --- |
+| `…/x9tn1qkq2g7/c3` | `…/x9tn1qkq2g7/c3` | `302` → `https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3` |
+| `…/x9tn1qkq2g7/c3/s6.pdf` | `…/x9tn1qkq2g7/c3` | `302` → `https://cold.example.ac.jp/archive/x9tn1qkq2g7/chapter3/s6.pdf` |
+| `…/x9tn1qkq2g7/c4/s5.pdf` | `…/x9tn1qkq2g7` | `302` → `https://repo.example.ac.jp/records/1/c4/s5.pdf` |
+
+手順は[一部だけ別の所在に向ける](../guides/walkthrough.md#register-a-part)。
+
+### 尾をリクエストパラメータとして渡す {#suffix-as-parameter}
+
+行き先のサーバがパスではなく**クエリで部分を受け取る**作りなら、行き先を
+**パラメータ名と `=` で終わらせる**。尾は単純に連結されるので、そのままその値になる。
+
+```
+行き先  https://repo.example.ac.jp/viewer?id=1&part=
+```
+
+| 要求する名前 | arkhe の答え |
+| --- | --- |
+| `…/x9tn1qkq2g7` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=` |
+| `…/x9tn1qkq2g7/c3/s5.pdf` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=/c3/s5.pdf` |
+| `…/x9tn1qkq2g7/c3/s6.pdf` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=/c3/s6.pdf` |
+| `…/x9tn1qkq2g7.pdf` | `302` → `https://repo.example.ac.jp/viewer?id=1&part=.pdf` |
+
+受け取る側が決めておくことは 3 つ。
+
+- **修飾子の無い要求では値が空になる**（`part=`）。空を「全体」と読むこと。
+- 値は `/` か `.` で始まる。区切りも含めて**送られたままの尾**である。
+- **%-エンコードは復号せずに渡る**（`/c3/s6%20a.pdf` は `part=/c3/s6%20a.pdf`）。
+  `%26` も `&` に戻らないので、尾が別のパラメータを付け足すことはできない。値を使う
+  前に 1 度だけ復号すること。
+
+行き先を移すときは、**パラメータの形ごと移すか、受け取り側で古い形を受けつづける**
+——移した先がパスで受けるなら、`part=` を外した行き先に `PATCH` すれば以後の尾は
+パスに付く。
+
+shoulder ごと外に委ねている名前空間では、テンプレートで同じことができる
+（`https://other.example.org/resolve?id=${blade}` や `?ark=$id`。どちらも修飾子まで
+含む）。設定は[分散して運用する](../guides/federation.md)を参照。
+
+### 行き先の無い対象の一部
+
+実物の標本や、公開していない原本のように**行き先を持たない**ものにも修飾子は付けられる。
+`ark:99999/x9m3k8rv5q4`（行き先なし）に対する `…/x9m3k8rv5q4/c4/s5.pdf` は、転送せずに
+**祖先の記述を `200` で返す**。尾だけを持った行き先の無い URL を作ることはしない。
+
+### 修飾子つきの名前について尋ねる
+
+`?info` や `?json` は修飾子の後ろに付けてよい。答えるのは祖先の記述で、
+**どこから継いだか**と、継いだ尾も併せて返る。
+
+```console
+$ curl "https://ark.example.ac.jp/ark:99999/x9tn1qkq2g7/c4/s5.pdf?json"
+```
+
+```json
+{
+  "ark": "ark:99999/x9tn1qkq2g7/c4/s5.pdf",
+  "inherited_from": "ark:99999/x9tn1qkq2g7",
+  "suffix": "/c4/s5.pdf",
+  "redirect": "https://repo.example.ac.jp/records/1/c4/s5.pdf"
+}
+```
+
+（抜粋。実際にはこのほかに記述の欄が並ぶ。）
+
+### 書き方の揺れと、揺れではないもの
+
+| 要求 | 扱い |
+| --- | --- |
+| `ark:/99999/x9tn1qkq2g7/c4/s5.pdf`（旧形式のラベル） | 同じ名前として解決する |
+| `…/x9tn1qkq2g7//c4/s5.pdf/`（区切りの重複・末尾の `/`） | 仕様どおり正規化して、`…/c4/s5.pdf` と同じに解決する |
+| `…/x9tn1-qkq2g7/c4/s5.pdf`（base の中のハイフン） | 照合では無視する。尾の中のハイフンは**そのまま**行き先へ渡す |
+| `…/x9tn1qkq2g7/c4/s5.pdf?x=1`（inflection でないクエリ） | 行き先には**付かない**。行き先へ継ぐのはパスだけ |
+| `…/x9tn1qkq2g7%2Fc4/s5.pdf` | **別の識別子**。`%2F` は区切りではないので `x9tn1qkq2g7` の子にならず、`404` |
+| `…/x9tn1qkq2g8/c4/s5.pdf`（検査桁の誤り） | `404`（`ARKHE-1403`）。検査桁は修飾子を除いた base で確かめる |
+| `ark:12345/…/c4/s5.pdf`（この台帳が預からない NAAN） | 尾ごとグローバルリゾルバへ `302` |
+
 ## この先を読む
 
 - **<https://arks.org/>** — 体系、FAQ、shoulder の作法、発行組織の登録簿、
