@@ -30,6 +30,8 @@ erDiagram
         string redirect "権威を持たないときの委譲先"
         string na_policy "永続性宣言（NP | NR, OP, CC | 2026 | URL）"
         string minter "採番を外に委ねている場合の案内先"
+        date   hold_until "保留の期限。null は保留なし"
+        string hold_reason "保留の理由（公開する）"
     }
 
     MANAGER {
@@ -52,6 +54,8 @@ erDiagram
         string minter "N2T: 採番の委譲先"
         string status "active / reserved / delegated / retired"
         string note
+        date   hold_until "保留の期限。null は保留なし"
+        string hold_reason "保留の理由（公開する）"
     }
 
     ARK {
@@ -60,7 +64,10 @@ erDiagram
         int    shoulder_id FK
         string assigned_name
         string url "空なら記述を返す（D6）"
-        date   published_at "null は公開前。**解決せず、削除できる**"
+        date   published_at "今 公開中か。null は公開のリゾルバで解決しない。取り下げで戻る"
+        date   first_published_at "一度でも公開したか。**片道で、消さない**。削除の重さを決める"
+        date   hold_until "保留の期限。null は保留なし"
+        string hold_reason "保留の理由（公開する）"
         string commitment "この対象への約束"
         string metadata
         string who "ERC"
@@ -172,7 +179,8 @@ ER 図は形しか示さない。**arkhe の設計の中身は制約のほうに
 | | |
 | --- | --- |
 | **公開した ARK は、軽くは消せない** | 行を消すと解決が止まる＝識別子が壊れる。`before_delete` は、そのセッションがその ARK を名指ししていないかぎり拒む——見るのは「**一度でも公開したか**」であって「今 公開中か」ではない（後者だと取り下げてから消せてしまう）。対象が失われただけなら tombstone にするか `url` を空にして記述を返す |
-| **公開前の ARK は削除できる** | `published_at` が null のものだけ。まだ外に出していない名前は `NR` が縛る対象ではない——ただし名前は `WITHDRAWN_NAME` に移り、二度と採られない |
+| **一度も公開していない ARK は軽く削除できる** | `first_published_at` が null のものだけ（**公開を取り下げただけのものは含まない**——`published_at` は往復するが、`first_published_at` は片道で消えない）。まだ外に出していない名前は `NR` が縛る対象ではない——ただし名前は `WITHDRAWN_NAME` に移り、二度と採られない |
+| **保留は行き先を消さない** | `hold_until` / `hold_reason`（と `hold_by`）は NAAN・shoulder・ARK が同じ列で持ち、狭いほうが優先する。転送だけを止めて `200` と記述を返し、元の行き先は残す。期限切れは解決のたびに時計で判定するので、戻すための書き込みが無い |
 | **shoulder も削除できない** | 乱数割当が同じ文字列を再び当てうる＝NR 違反の芽。`status=retired` にする |
 | **retired からは戻せない** | 引退した名前空間の再開は、その間に外部が同じ名前を使った可能性を否定できない |
 | **採番は UPDATE に化けない** | 主キー衝突は必ず失敗させる。出発点にした arklet で最重大の欠陥がこれだった（本家では解消済み） |

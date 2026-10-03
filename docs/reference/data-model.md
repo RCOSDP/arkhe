@@ -30,6 +30,8 @@ erDiagram
         string redirect "where to forward when not authoritative"
         string na_policy "persistence statement"
         string minter "where minting happens, if elsewhere"
+        date   hold_until "hold expiry. null: no hold"
+        string hold_reason "why it is held (published)"
     }
 
     MANAGER {
@@ -52,6 +54,8 @@ erDiagram
         string minter "N2T: delegated minting"
         string status "active / reserved / delegated / retired"
         string note
+        date   hold_until "hold expiry. null: no hold"
+        string hold_reason "why it is held (published)"
     }
 
     ARK {
@@ -60,7 +64,10 @@ erDiagram
         int    shoulder_id FK
         string assigned_name
         string url "empty: return a description (D6)"
-        date   published_at "null: not published. **does not resolve, can be deleted**"
+        date   published_at "published right now. null: a public resolver does not resolve it. unpublish clears it"
+        date   first_published_at "ever published. **one-way, never cleared**. decides the ceremony of deletion"
+        date   hold_until "hold expiry. null: no hold"
+        string hold_reason "why it is held (published)"
         string commitment "commitment to this object"
         string metadata
         string who "ERC"
@@ -175,7 +182,8 @@ An ER diagram shows shape. **In arkhe the design lives in the constraints.**
 | | |
 | --- | --- |
 | **A published ARK is not deleted lightly** | Deleting the row stops resolution — the identifier breaks. `before_delete` refuses unless the session named that one ARK, and it keys on **whether the name was ever published**, not on whether it is published now. When a target is merely lost you tombstone it, or empty `url` so a description is returned |
-| **A reserved one can be** | Only while `published_at` is null. A name that never went out is not what NR binds — but the name still moves to `WITHDRAWN_NAME` and is never assigned again |
+| **One never published can be deleted lightly** | Only while `first_published_at` is null (**an unpublished one that was once published does not count** — `published_at` goes back and forth, `first_published_at` is one-way and never cleared). A name that never went out is not what NR binds — but the name still moves to `WITHDRAWN_NAME` and is never assigned again |
+| **A hold keeps the target** | `hold_until` / `hold_reason` (and `hold_by`) are the same columns on NAAN, shoulder and ARK, and the narrowest wins. Only redirection stops — it answers `200` with a description — and the original target is kept. Expiry is read from the clock on each resolution, so nothing has to be written to lift it |
 | **A shoulder is never deleted either** | Random assignment could hand out the same string again — the seed of an NR violation. Set `status=retired` |
 | **`retired` is one-way** | Reviving a retired namespace cannot rule out that something outside used the name meanwhile |
 | **Minting never becomes an update** | A primary key collision must fail. This was the worst defect in the arklet arkhe started from (fixed upstream since) |
