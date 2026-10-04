@@ -162,7 +162,8 @@ It has no foreign keys: **which organisation it belongs to is unknowable** from 
 token, and arkhe does not guess — which is why only NAAN-wide principals see the list.
 
 `ARK_CHANGE` records **where an ARK used to point**, separately from the audit log.
-The audit log keeps only what reaches NAAN scope or wider, but **minting and
+The audit log keeps only what reaches NAAN scope or wider (and the removal of a
+published name), but **minting and
 repointing are done by organisations**, so the audit log alone loses exactly the
 changes that matter. Declaring `NR` and saying the identifier does not change means
 being able to show what changed, when and by whom — otherwise the promise cannot be

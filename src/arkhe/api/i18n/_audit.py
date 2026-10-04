@@ -10,7 +10,9 @@ JA: dict[str, str] = {
     # Audit
     "au.title": "監査ログ",
     "au.lede": "<b>NAAN 以上に届く操作は全件記録します。</b>"
-               "届く範囲が広いほど、後から誰が何をしたかを辿れる必要が高いためです。",
+               "届く範囲が広いほど、後から誰が何をしたかを辿れる必要が高いためです。"
+               "<b>公開した名前を消す操作（破棄と、公開歴のある名前の削除）は、"
+               "誰が行っても記録します</b>——解決し続けるという約束を破る操作だからです。",
     "au.recent": "直近の操作",
     "au.at": "日時",
     "au.who": "主体",
@@ -34,7 +36,9 @@ EN: dict[str, str] = {
     "au.lede": "<b>Every action that reaches NAAN scope or wider is recorded.</b> "
                "The wider the reach, the more it matters that you can trace who did "
                "what. <b>Sign-ins and sign-outs are recorded for everyone</b> — "
-               "including the ones that failed.",
+               "including the ones that failed. <b>Removing a published name (a purge, or "
+               "deleting a name that was ever published) is recorded whoever does "
+               "it</b>, because it breaks the promise that the name keeps resolving.",
     "au.recent": "Recent actions",
     "au.at": "When",
     "au.who": "Principal",

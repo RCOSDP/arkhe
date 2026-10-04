@@ -167,6 +167,12 @@ deleting the record the convenient answer.
 Everything that reaches NAAN scope or wider is recorded, because the wider the reach,
 the more it matters that you can trace who did what.
 
+**Removing a published name (`purge`, or deleting a name that was ever published) is
+recorded whoever does it.** It breaks the promise that the name keeps resolving. When
+0.4.0 opened it to organisations it counted the audit log among the bindings that
+remained, yet organisation-level operations were not recorded, so an organisation's
+`purge` left nothing in the audit log.
+
 ## Where these live
 
 | Invariant | Enforced by |
