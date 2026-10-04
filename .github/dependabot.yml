@@ -26,6 +26,9 @@ updates:
       python:
         patterns: ["*"]
     commit-message: {prefix: "chore(deps)"}
+    # Branches follow Gitflow: updates go into develop with everything else and reach
+    # main in a release. Against main, an update would ship without passing a release.
+    target-branch: develop
 
 # Workflow actions are not watched, because there are no workflows. Checking and
 # publishing are the three scripts in scripts/, run locally (see AGENTS.md).

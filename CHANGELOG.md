@@ -22,6 +22,17 @@ breaking in a system whose identifiers cannot be reissued.
   **not** (`%2F`, a check digit). Every answer in the tables was taken from a running
   resolver.
 
+### Changed
+
+- **Branches now follow Gitflow.** `develop` was created (2026-10-04); changes go from
+  `feature/` and `bugfix/` branches into `develop` through pull requests, and a version is
+  raised on `release/X.Y.Z` and published from `main`. `release.sh --publish` and
+  `deploy-docs.sh` **publish only on `main`**: a tag on `release/` would let a commit that
+  `main` lacks claim a version, and a site built from `develop` would describe what has
+  not been released. Dependabot's pull requests go to `develop` too. Committing straight
+  to `main` up to 0.14.0 was for speed early on; `AGENTS.md` called it "this setup", which
+  read as a policy.
+
 ### Fixed
 
 - **The 0.4.0 unpublish had still not reached two hand-written documents.** STATUS

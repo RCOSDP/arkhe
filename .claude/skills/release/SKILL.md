@@ -22,7 +22,12 @@ description: arkhe の版を出す。版・変更履歴（日英）・STATUS・O
 
 ## 手順
 
+ブランチは Gitflow（`AGENTS.md` §8）。**版は `release/NEW` で上げ、`main` で出す。**
+
 ```bash
+# 0. release ブランチ
+git switch develop && git pull && git switch -c release/NEW
+
 # 1. 版
 sed -i 's/^version = "OLD"$/version = "NEW"/' pyproject.toml && uv lock
 
@@ -37,8 +42,12 @@ git commit -F - <<'MSG'
 release: NEW
 …なぜこの版なのかを本文に…
 MSG
-bash scripts/release.sh vNEW --publish       # タグ → push → GitHub のリリース
-bash scripts/deploy-docs.sh                  # 変更履歴のページを追随させる
+
+git switch main && git pull && git merge --no-ff release/NEW
+bash scripts/release.sh vNEW --publish       # main の上でだけ動く。タグ → push → リリース
+git switch develop && git merge --no-ff main && git push origin develop
+git branch -d release/NEW
+git switch main && bash scripts/deploy-docs.sh   # 変更履歴のページを追随させる（main からだけ）
 ```
 
 **組み込んでいる側がある構成なら、そこのポインタも進める。** それは置き場ごとに
@@ -60,7 +69,11 @@ bash scripts/deploy-docs.sh                  # 変更履歴のページを追随
 ——**中身の問題ではない**。コミットしてから通す。
 
 **リリースノートは `CHANGELOG.md` から起きる。** `--generate-notes` は使わない
-（PR を並べるので、main へ直接コミットするこの体系では空になる）。
+（PR を並べる。`main` へ直接コミットしていた頃は空になり、PR を通す今は CHANGELOG と
+ずれるもう 1 か所になる）。
+
+**`main` を `develop` に戻し忘れない。** 戻さないと、次の版の `develop` に版上げと
+CHANGELOG の節が無く、次の `release/` で比較リンクの起点がずれる。
 
 ## 出した後に間違いに気づいたら
 
