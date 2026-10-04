@@ -229,42 +229,70 @@ uv run python scripts/export_openapi.py   # API 仕様はここだけ生成物
 4. 日本語の見出しに深いリンクを張るなら `{#anchor}` を自分で書く（`attr_list` が効く）。
    自動生成のアンカーは見出しを 1 つ足すとずれる
 
-## 8. コミットとリリース
+## 8. コミット、ブランチ、リリース
 
 コミットメッセージは**変更ではなく理由**を書く。将来の読者が知りたいのは、
 何を知っていたからそれが正解だったのか——特に答えが奇妙に見えるところで。
+
+### ブランチは Gitflow に沿う
+
+| ブランチ | 切る元 | 戻す先 | 何を載せるか |
+| --- | --- | --- | --- |
+| `main` | — | — | **リリースした版だけ。** タグはここに打つ |
+| `develop` | `main` | — | 次の版に入るもの |
+| `feature/<名前>` | `develop` | `develop` | 機能・文書・手順の変更 |
+| `bugfix/<名前>` | `develop` | `develop` | 次の版で直すもの |
+| `release/X.Y.Z` | `develop` | `main` と `develop` | 版を上げ、CHANGELOG と STATUS を揃える。**機能は足さない** |
+| `hotfix/X.Y.Z` | `main` | `main` と `develop` | 出した版への急ぎの修正 |
+
+**`main` と `develop` には直接コミットしない。** 変更は PR を通し、`--no-ff` で
+マージする——ブランチの単位が履歴に残り、何をひとまとまりとして入れたかを後から
+辿れる。Dependabot の PR も `develop` に向ける（`.github/dependabot.yml`）。
+
+0.14.0 までは `main` へ直接コミットしていた。**初期は速かったからで、方針では
+なかった。** この節が以前「main へ直接コミットするこの体系」と書いていたので、
+方針と読まれた。`develop` は 2026-10-04 に `main` から作った。
+
+### リリース
 
 リリースも手元で回る。**既定は「出さない」**——確かめるのは安く何度でもできるが、
 タグと GitHub のリリースはそうではない。
 
 ```bash
-bash scripts/release.sh v0.0.9              # 検査と dist の作成だけ
-bash scripts/release.sh v0.0.9 --publish    # タグ → push → GitHub のリリース
+bash scripts/release.sh v0.0.9              # 検査と dist の作成だけ（どのブランチでも）
+bash scripts/release.sh v0.0.9 --publish    # タグ → push → GitHub のリリース（main でだけ）
 ```
 
 **手順そのものも検査する**——版の一致（`pyproject` とタグ）、CHANGELOG にその版の節と
 リンク定義が**日英とも**あること、「未リリース」の比較リンクが新しい版を指していること。
-どれも実際に間違えたことのある場所である。
+どれも実際に間違えたことのある場所である。**`--publish` は `main` の上でしか動かない**
+——タグが `release/X.Y.Z` の上に打たれると、`main` に無いコミットが版を名乗る。
 
 **リリースノートは `CHANGELOG.md` のその版の節から起こす**（本文は英語、日本語は
-在処を指すだけ）。`gh --generate-notes` は使わない——**あれが並べるのは PR** で、
-main へ直接コミットするこの体系では拾うものが無く、比較リンク 1 行だけの空の本文に
-なる。v0.0.9 と v0.2.0 が実際そうなった。**変更履歴は CHANGELOG に在るのに、
-リリースから辿った人がいちばん先に見る場所だけが空**、という形にしない。
+在処を指すだけ）。`gh --generate-notes` は使わない。`main` へ直接コミットしていた頃は、
+**あれが並べるのは PR** なので拾うものが無く、比較リンク 1 行だけの空の本文になった
+（v0.0.9 と v0.2.0）。PR を通すようになっても使わない——PR の題を並べたものは、
+同じ変更を別の言葉で書いた**もう 1 か所**で、CHANGELOG と必ずずれる。
 
 版は `pyproject.toml` だけで決まる。ずれていれば `release.sh` が落とす
 ——**「v0.0.2 と名乗る 0.0.1」を世に出さないため**。手順:
 
-1. `pyproject.toml` の `version` を上げる → `uv lock`
-2. CHANGELOG の「未リリース / Unreleased」の下に版の節を作る（**リリース済みの
+1. `git switch -c release/X.Y.Z develop`
+2. `pyproject.toml` の `version` を上げる → `uv lock`
+3. CHANGELOG の「未リリース / Unreleased」の下に版の節を作る（**リリース済みの
    節に追記しない**）。末尾のリンク定義も 2 言語ぶん、「未リリース」の比較リンクも
    新しい版に置き換える
-3. `STATUS.md` の版と日付を合わせる（**同じコミットに入れる**——0.1.0 と
+4. `STATUS.md` の版と日付を合わせる（**同じコミットに入れる**——0.1.0 と
    0.2.0 では触らずに出したので、「版 0.0.9」のまま 2 版ぶん据え置きになった。
    **リリースで動く数字を、リリースの手が触らない**ならそうなる）
-4. コミット
-5. `bash scripts/release.sh vX.Y.Z` が緑 → `--publish` を付けて出す
-6. `bash scripts/deploy-docs.sh`（変更履歴のページを追随させる）
+5. コミットし、`bash scripts/release.sh vX.Y.Z` が緑になるまで `release/X.Y.Z` で直す
+6. `main` に `--no-ff` でマージ → `main` の上で `bash scripts/release.sh vX.Y.Z --publish`
+7. `main` を `develop` に `--no-ff` でマージして push し、`release/X.Y.Z` を消す
+   ——**戻し忘れると、次の版の `develop` に版上げと CHANGELOG の節が無い**
+8. `main` の上で `bash scripts/deploy-docs.sh`（変更履歴のページを追随させる。
+   `main` 以外からは出さない——サイトに未リリースの記述が載る）
+
+急ぎの修正は `hotfix/X.Y.Z` を `main` から切り、2〜8 を同じにたどる。
 
 **arkhe を submodule として組み込んでいる側があるなら、そこのポインタも進める。**
 それは**組み込んだ側の手順**なので、ここには書かない——この文書は arkhe の手引きで

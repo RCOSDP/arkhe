@@ -7,6 +7,7 @@
 
 <!-- There is no CI. The checks run on your machine. -->
 
+- [ ] It targets `develop` (only `release/` and `hotfix/` branches go to `main`)
 - [ ] `bash scripts/check.sh` passes (or the SKIPs are explained below)
 - [ ] New behaviour has a test that fails without it
 - [ ] If it touches authorisation, the negative case is tested too

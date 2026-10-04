@@ -7,6 +7,10 @@
 #   bash scripts/release.sh v0.0.9              # check and build dist only (default)
 #   bash scripts/release.sh v0.0.9 --publish    # and tag, push, and create the release
 #
+# Branches follow Gitflow (AGENTS.md section 8). Checking runs on any branch, so a
+# release/X.Y.Z branch can be made green before it is merged. Publishing runs only on
+# main, after release/X.Y.Z or hotfix/X.Y.Z has been merged into it.
+#
 # The default is not to publish, because checking and publishing are separate jobs.
 # Checking is cheap and can be repeated; a tag and a GitHub release are not.
 #
@@ -16,8 +20,9 @@
 #                     in both languages
 #   3. check.sh       every check
 #   4. dist/          the sdist and the wheel
-#   5. --publish      tag, push, then the GitHub release (0.x is a prerelease). The
-#                     notes come from that version's section of CHANGELOG.md
+#   5. --publish      on main only, and not behind origin/main: tag, push, then the
+#                     GitHub release (0.x is a prerelease). The notes come from that
+#                     version's section of CHANGELOG.md
 #
 # It needs uv, docker (for the migration check), and gh (only with --publish).
 set -uo pipefail
@@ -89,15 +94,25 @@ command -v gh >/dev/null 2>&1 || die "gh is not installed. https://cli.github.co
 [ -z "$(git status --porcelain --untracked-files=no)" ] \
   || die "there are uncommitted changes. A tag cannot be moved, so commit first"
 branch="$(git rev-parse --abbrev-ref HEAD)"
+# A tag on release/X.Y.Z would name as a version a commit that main does not have.
+[ "$branch" = "main" ] \
+  || die "publishing runs on main only (now on $branch). Merge release/$VER or hotfix/$VER into main first"
+# Behind origin/main, the push below fails after the tag is already made locally.
+git fetch --quiet origin main 2>/dev/null
+if git rev-parse --verify --quiet origin/main >/dev/null; then
+  git merge-base --is-ancestor origin/main HEAD \
+    || die "main is behind origin/main. Pull first, so that the tag lands on what is published"
+fi
 git rev-parse "$TAG" >/dev/null 2>&1 && die "$TAG already exists"
 
 git tag -a "$TAG" -m "release: $TAG"
 git push origin "$branch" || die "cannot push $branch"
 git push origin "$TAG"    || die "cannot push $TAG"
-# The release notes come from CHANGELOG.md. --generate-notes lists pull requests, and
-# where commits go straight to main that leaves a body of one compare link, which is what
-# happened with v0.0.9 and v0.2.0. The content is in the changelog, and the first place
-# anyone arriving from the release looks should not be the empty one.
+# The release notes come from CHANGELOG.md. --generate-notes lists pull requests: while
+# commits went straight to main that left a body of one compare link (v0.0.9 and
+# v0.2.0), and with pull requests it would be a second account of the same changes in
+# other words, which drifts from the changelog. The content is in the changelog, and the
+# first place anyone arriving from the release looks should say what it says.
 notes="$(mktemp)"
 trap 'rm -f "$notes"' EXIT
 # The heading line is dropped, since GitHub uses the title for it. The match uses
@@ -129,6 +144,9 @@ cat <<MSG
 Published: $(gh release view "$TAG" --json url -q .url)
 
 Left to do:
-  bash scripts/deploy-docs.sh          # bring the changelog pages up to date
+  git switch develop && git merge --no-ff main && git push origin develop
+                                       # without it, develop lacks the version bump
+  git branch -d release/$VER           # or hotfix/$VER
+  git switch main && bash scripts/deploy-docs.sh   # bring the changelog pages up to date
   # if anything embeds arkhe as a submodule, advance that pointer too
 MSG

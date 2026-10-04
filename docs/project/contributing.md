@@ -129,6 +129,17 @@ hand** — add a setting or a command and you must add its row, in both language
 `tests/test_docs.py` fails if you don't; this page used to claim they were generated,
 and two settings and one command went undocumented because of it.
 
+## Branches
+
+Branches follow Gitflow. **Open pull requests against `develop`** — `main` holds
+released versions only.
+
+| Branch | From | For |
+| --- | --- | --- |
+| `feature/<name>` | `develop` | features, documentation, process changes |
+| `bugfix/<name>` | `develop` | fixes for the next version |
+| `release/X.Y.Z`, `hotfix/X.Y.Z` | `develop`, `main` | cutting a version (the steps are in `AGENTS.md` section 8) |
+
 ## Commits
 
 Explain the reasoning, not just the change. A future reader wants to know what you

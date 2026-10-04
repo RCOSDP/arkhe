@@ -6,22 +6,26 @@
 # gh-pages branch directly (Settings, Pages, Deploy from a branch, gh-pages / root).
 # gh-pages is generated, so nobody edits it by hand; this script is its only writer.
 #
-#   bash scripts/deploy-docs.sh              # check, build, publish
+#   bash scripts/deploy-docs.sh              # check, build, publish (on main only)
 #   bash scripts/deploy-docs.sh --dry-run    # check and build only, without pushing
+#   bash scripts/deploy-docs.sh --any-branch # publish from another branch, on purpose
 #
 # Two things are checked first. Both exist to stop content being on the site that cannot
 # be traced in the repository, which is what checkout did under CI.
 #   * no uncommitted changes to tracked files (ALLOW_DIRTY=1 skips it)
 #   * HEAD has been pushed to origin (a warning if it has not)
+# And publishing runs on main, which holds released versions only (Gitflow, AGENTS.md
+# section 8). From develop the site would describe what has not been released.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-DRY=""
+DRY=""; ANY_BRANCH=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1;;
+    --any-branch) ANY_BRANCH=1;;
     -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1' "$0"; exit 0;;
     # A misspelt flag is not passed over silently. While it was, typing --dryrun
     # force-pushed to gh-pages without a word: publishing something meant to be held
@@ -45,6 +49,13 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   fi
 fi
 branch="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$branch" != "main" ] && [ -z "$DRY" ]; then
+  if [ -n "$ANY_BRANCH" ]; then
+    echo "  ! publishing from $branch, not main (--any-branch)"
+  else
+    die "publishing runs on main only (now on $branch). Use --dry-run to build, or --any-branch on purpose"
+  fi
+fi
 git fetch --quiet origin "$branch" 2>/dev/null
 remote="$(git rev-parse "origin/$branch" 2>/dev/null || true)"
 if [ -n "$remote" ] && [ "$(git rev-parse HEAD)" != "$remote" ]; then
