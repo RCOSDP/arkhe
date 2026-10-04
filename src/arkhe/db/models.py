@@ -703,7 +703,8 @@ class ArkChange(Base):
 
 class AuditEvent(Base):
     """R2: who did what and when. Every operation at NAAN level and above is
-    recorded."""
+    recorded, and so is removing a published name, whoever does it
+    (authz.ALWAYS_AUDITED)."""
 
     __tablename__ = "audit_event"
 

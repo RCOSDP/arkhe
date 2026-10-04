@@ -35,6 +35,15 @@ breaking in a system whose identifiers cannot be reissued.
 
 ### Fixed
 
+- **An organisation's `purge` left nothing in the audit log.** When 0.4.0 opened
+  `purge` to anyone within reach, it counted the audit log among the bindings that
+  remained, but the audit log records only principals that reach NAAN scope or wider.
+  An organisation's `purge`, and the two-step route of unpublishing and then deleting
+  (deleting a name that was ever published), left a trace only in `WithdrawnName`.
+  **Removing a published name is now audited whoever does it**
+  (`authz.ALWAYS_AUDITED`). Other organisation-level operations are still not
+  recorded. The tests looked only at the system administrator's `purge` and **never
+  checked the side that should not have slipped through.**
 - **The 0.4.0 unpublish had still not reached two hand-written documents.** STATUS
   described `purge` as 0.3.0 had it, "the RA operator only" (the item just above says
   that was dropped). The data model diagram had no `first_published_at` and no hold

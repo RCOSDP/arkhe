@@ -297,6 +297,53 @@ def test_a_purge_is_recorded_in_the_audit_log(db, root, published):
     assert rows[0].detail["reason"] == "a removal order" and rows[0].detail["published"] is True
 
 
+def test_a_purge_by_an_organisation_is_recorded_in_the_audit_log(
+    db, world, published, principal_of
+):
+    """Purging breaks the promise that a published name keeps resolving, so it is
+    recorded whoever does it. Until this, an organisation's purge reached no audit row:
+    audit() kept only NAAN-wide callers, and 0.4.0 opened purging to organisations while
+    still counting the audit log among the bindings that remained."""
+    from arkhe.db.models import AuditEvent
+
+    org = principal_of(manager=world["a"], scopes={"ark:purge"}, client_id="org-a")
+    ops.purge_ark(db, org, ark=published.ark, reason="a removal order", confirm=published.ark)
+    db.commit()
+    rows = list(db.scalars(select(AuditEvent).where(AuditEvent.action == "purge")))
+    assert [(r.client_id, r.target) for r in rows] == [("org-a", published.ark)]
+    assert rows[0].detail["reason"] == "a removal order"
+
+
+def test_deleting_a_once_published_name_is_recorded_whoever_does_it(
+    db, world, published, principal_of
+):
+    """Taking down and then deleting reaches the same result as a purge in two steps, so
+    it is recorded the same way."""
+    from arkhe.db.models import AuditEvent
+
+    org = principal_of(
+        manager=world["a"], scopes={"ark:unpublish", "ark:delete"}, client_id="org-a"
+    )
+    ops.unpublish_ark(db, org, ark=published.ark, reason="a mistake", confirm=published.ark)
+    ops.withdraw_ark(db, org, ark=published.ark, reason="a mistake", confirm=published.ark)
+    db.commit()
+    rows = list(db.scalars(select(AuditEvent).where(AuditEvent.action == "withdraw_exposed")))
+    assert [(r.client_id, r.target) for r in rows] == [("org-a", published.ark)]
+
+
+def test_an_organisation_deleting_a_reservation_is_still_not_audited(
+    db, world, reserved, principal_of
+):
+    """The exception is for names that went out, not for everything an organisation
+    does. A reservation nobody saw stays outside the audit log at that reach."""
+    from arkhe.db.models import AuditEvent
+
+    org = principal_of(manager=world["a"], scopes={"ark:delete"}, client_id="org-a")
+    ops.withdraw_ark(db, org, ark=reserved.ark)
+    db.commit()
+    assert db.scalars(select(AuditEvent).where(AuditEvent.client_id == "org-a")).all() == []
+
+
 def test_a_purged_ark_stops_resolving(api, db, root, published):
     published.url = "https://example.ac.jp/thing"
     db.commit()

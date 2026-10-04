@@ -1208,7 +1208,8 @@ def withdraw_ark(
     ArkChange and MintReceipt reference this ARK and go with it. Deleting history is not
     pleasant, but this is the history of an identifier that was never published, and
     keeping it would leave rows alive only to satisfy a foreign key. That it was
-    withdrawn remains in WithdrawnName and in the audit log.
+    withdrawn remains in WithdrawnName, and in the audit log when the caller reaches
+    NAAN scope or the name was ever published (authz.ALWAYS_AUDITED).
     """
     row = _ark_in_reach(session, p, ark)
     if row.published_at is not None:
@@ -1279,7 +1280,7 @@ def purge_ark(
          empty the ledger by accident
       4. the name is not returned to use. It moves to WithdrawnName and is never minted
          again
-      5. it is recorded in the audit log
+      5. it is recorded in the audit log, whoever performs it (authz.ALWAYS_AUDITED)
 
     0.4.0 stopped restricting this to authority=system. Once publication could be
     withdrawn, unpublish followed by withdraw reached the same result in two steps, so
