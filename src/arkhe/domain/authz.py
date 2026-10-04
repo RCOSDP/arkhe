@@ -307,7 +307,8 @@ def record_sign_in(
 ) -> None:
     """Record people arriving and leaving, whoever they are.
 
-    audit() keeps only operations at NAAN level and above; these are kept for everyone.
+    audit() keeps operations at NAAN level and above (plus the few in ALWAYS_AUDITED);
+    these are kept for everyone.
     Who signed in and when is needed later as much as what they did, and a failed
     sign-in is the record people want to read first.
 
@@ -384,13 +385,25 @@ def record_change(
     )
 
 
+#: Operations recorded whoever performs them: each removes a name that went out into the
+#: world, which breaks the promise that it keeps resolving.
+#:
+#: Thinning by reach (see audit) suits everyday operations, but not these. 0.4.0 opened
+#: purging to organisations and counted the audit log among the bindings that remained,
+#: while audit() still dropped every organisation-level call, so an organisation's purge
+#: left nothing here. withdraw_exposed is the same result reached in two steps
+#: (unpublish, then delete), so it is listed with it.
+ALWAYS_AUDITED = frozenset({"purge", "withdraw_exposed"})
+
+
 def audit(session: Session, principal: Principal, action: str, target: str = "", **detail) -> None:
-    """R2: every operation that reaches NAAN level or above is recorded.
+    """R2: every operation that reaches NAAN level or above is recorded, and so is any
+    operation in ALWAYS_AUDITED, whoever performs it.
 
     The wider the reach, the more it matters that who did what can be traced afterwards.
     The system administrator reaches every NAAN, so it is included.
     """
-    if not principal.is_naan_wide:
+    if not principal.is_naan_wide and action not in ALWAYS_AUDITED:
         return
     session.add(
         AuditEvent(
